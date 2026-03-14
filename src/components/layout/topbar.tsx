@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Menu, Download, ChevronDown, User } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Menu, Download, ChevronDown, User, LogOut, Settings, UserCircle, LogIn } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { useThemeStore, themes } from "@/store/theme-store";
+import { useAuthStore } from "@/store/auth-store";
 import type { ThemeName } from "@/types";
 
 const themeSwatches: Record<ThemeName, string> = {
@@ -17,10 +20,16 @@ const themeSwatches: Record<ThemeName, string> = {
 export function Topbar() {
   const { toggleSidebar } = useAppStore();
   const { themeName, setTheme } = useThemeStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const router = useRouter();
+
   const [themeOpen, setThemeOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [userOpen, setUserOpen] = useState(false);
+
   const themeRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
+  const userRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -30,10 +39,29 @@ export function Topbar() {
       if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
         setExportOpen(false);
       }
+      if (userRef.current && !userRef.current.contains(e.target as Node)) {
+        setUserOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  function handleLogout() {
+    logout();
+    setUserOpen(false);
+    router.push("/login");
+  }
+
+  // Get initials for avatar fallback
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "?";
 
   return (
     <header
@@ -65,7 +93,7 @@ export function Topbar() {
         </div>
       </div>
 
-      {/* Right: theme switcher, export, avatar */}
+      {/* Right: theme switcher, export, user */}
       <div className="flex items-center gap-2">
         {/* Theme switcher */}
         <div ref={themeRef} className="relative">
@@ -120,7 +148,7 @@ export function Topbar() {
           )}
         </div>
 
-        {/* Export dropdown placeholder */}
+        {/* Export dropdown */}
         <div ref={exportRef} className="relative">
           <button
             onClick={() => setExportOpen(!exportOpen)}
@@ -153,13 +181,97 @@ export function Topbar() {
           )}
         </div>
 
-        {/* User avatar placeholder */}
-        <button
-          className="flex h-8 w-8 items-center justify-center rounded-full transition-colors"
-          style={{ backgroundColor: "var(--secondary)", color: "var(--secondary-foreground)" }}
-        >
-          <User size={16} />
-        </button>
+        {/* User profile */}
+        <div ref={userRef} className="relative">
+          {isAuthenticated && user ? (
+            <>
+              <button
+                onClick={() => setUserOpen(!userOpen)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80"
+                style={{
+                  backgroundColor: "var(--primary)",
+                  color: "var(--primary-foreground, #fff)",
+                }}
+                title={user.name}
+              >
+                {initials}
+              </button>
+
+              {userOpen && (
+                <div
+                  className="absolute right-0 top-full mt-1 w-52 rounded-lg border shadow-lg"
+                  style={{
+                    backgroundColor: "var(--card)",
+                    borderColor: "var(--border)",
+                  }}
+                >
+                  {/* User info */}
+                  <div
+                    className="border-b px-4 py-3"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    <p
+                      className="text-sm font-semibold"
+                      style={{ color: "var(--card-foreground)" }}
+                    >
+                      {user.name}
+                    </p>
+                    <p
+                      className="truncate text-xs"
+                      style={{ color: "var(--muted-foreground, #888)" }}
+                    >
+                      {user.email}
+                    </p>
+                  </div>
+
+                  {/* Menu items */}
+                  <div className="p-2">
+                    <button
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:opacity-80"
+                      style={{ color: "var(--card-foreground)" }}
+                      onClick={() => setUserOpen(false)}
+                    >
+                      <UserCircle size={15} />
+                      Profile
+                    </button>
+                    <button
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:opacity-80"
+                      style={{ color: "var(--card-foreground)" }}
+                      onClick={() => setUserOpen(false)}
+                    >
+                      <Settings size={15} />
+                      Settings
+                    </button>
+                    <div
+                      className="my-1 h-px"
+                      style={{ backgroundColor: "var(--border)" }}
+                    />
+                    <button
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:opacity-80"
+                      style={{ color: "#ef4444" }}
+                      onClick={handleLogout}
+                    >
+                      <LogOut size={15} />
+                      Sign out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors hover:opacity-80"
+              style={{
+                backgroundColor: "var(--primary)",
+                color: "var(--primary-foreground, #fff)",
+              }}
+            >
+              <LogIn size={15} />
+              <span className="hidden sm:inline">Sign in</span>
+            </Link>
+          )}
+        </div>
       </div>
     </header>
   );
