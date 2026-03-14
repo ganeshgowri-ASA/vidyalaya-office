@@ -1,0 +1,374 @@
+'use client';
+
+import React, { useRef, useState } from 'react';
+import {
+  Bold,
+  Italic,
+  Type,
+  Image,
+  Square,
+  Circle,
+  Palette,
+  Play,
+  LayoutTemplate,
+  MessageSquare,
+  Printer,
+} from 'lucide-react';
+import {
+  usePresentationStore,
+  GRADIENT_PRESETS,
+  SOLID_COLORS,
+} from '@/store/presentation-store';
+
+export default function Toolbar() {
+  const {
+    slides,
+    activeSlideIndex,
+    selectedElementId,
+    updateSlideBackground,
+    addElement,
+    updateElement,
+    setPresenterMode,
+    setShowTemplateModal,
+    setShowAIPanel,
+    showAIPanel,
+  } = usePresentationStore();
+
+  const [showBgPicker, setShowBgPicker] = useState(false);
+  const [showFontSize, setShowFontSize] = useState(false);
+  const [showTextColor, setShowTextColor] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const slide = slides[activeSlideIndex];
+  const selectedElement = slide?.elements.find((el) => el.id === selectedElementId);
+
+  const handleAddText = () => {
+    addElement(activeSlideIndex, {
+      type: 'text',
+      x: 100,
+      y: 200,
+      width: 400,
+      height: 60,
+      content: 'New text box',
+      style: { fontSize: 24, color: '#ffffff' },
+    });
+  };
+
+  const handleAddImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      addElement(activeSlideIndex, {
+        type: 'image',
+        x: 200,
+        y: 100,
+        width: 300,
+        height: 200,
+        content: reader.result as string,
+        style: {},
+      });
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleAddShape = (shape: 'rect' | 'circle') => {
+    addElement(activeSlideIndex, {
+      type: 'shape',
+      x: 300,
+      y: 200,
+      width: 120,
+      height: 120,
+      content: shape,
+      style: {
+        backgroundColor: '#3b82f6',
+        borderRadius: shape === 'circle' ? '50%' : '0',
+      },
+    });
+  };
+
+  const toggleBold = () => {
+    if (!selectedElement) return;
+    updateElement(activeSlideIndex, selectedElement.id, {
+      style: {
+        fontWeight: selectedElement.style.fontWeight === 'bold' ? 'normal' : 'bold',
+      },
+    });
+  };
+
+  const toggleItalic = () => {
+    if (!selectedElement) return;
+    updateElement(activeSlideIndex, selectedElement.id, {
+      style: {
+        fontStyle: selectedElement.style.fontStyle === 'italic' ? 'normal' : 'italic',
+      },
+    });
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const TEXT_COLORS = ['#ffffff', '#000000', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+  const FONT_SIZES = [14, 18, 20, 24, 28, 32, 36, 44, 56, 72];
+
+  return (
+    <div
+      className="flex items-center gap-1 px-3 py-2 border-b flex-wrap no-print"
+      style={{
+        borderColor: 'var(--border)',
+        background: 'var(--topbar)',
+        color: 'var(--topbar-foreground)',
+      }}
+    >
+      {/* Background picker */}
+      <div className="relative">
+        <button
+          onClick={() => setShowBgPicker(!showBgPicker)}
+          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--topbar-foreground)' }}
+          title="Slide background"
+        >
+          <Palette size={16} />
+          <span className="hidden sm:inline">Background</span>
+        </button>
+        {showBgPicker && (
+          <div
+            className="absolute left-0 top-full mt-1 p-3 rounded shadow-xl z-50 border"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 220 }}
+          >
+            <div className="text-xs font-medium mb-2" style={{ color: 'var(--card-foreground)' }}>
+              Gradients
+            </div>
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              {GRADIENT_PRESETS.map((g, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    updateSlideBackground(activeSlideIndex, g);
+                    setShowBgPicker(false);
+                  }}
+                  className="w-10 h-10 rounded border"
+                  style={{ background: g, borderColor: 'var(--border)' }}
+                />
+              ))}
+            </div>
+            <div className="text-xs font-medium mb-2" style={{ color: 'var(--card-foreground)' }}>
+              Solid Colors
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {SOLID_COLORS.map((c, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    updateSlideBackground(activeSlideIndex, c);
+                    setShowBgPicker(false);
+                  }}
+                  className="w-10 h-10 rounded border"
+                  style={{ background: c, borderColor: 'var(--border)' }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="w-px h-6 mx-1" style={{ background: 'var(--border)' }} />
+
+      {/* Add text */}
+      <button
+        onClick={handleAddText}
+        className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+        style={{ color: 'var(--topbar-foreground)' }}
+        title="Add text box"
+      >
+        <Type size={16} />
+        <span className="hidden sm:inline">Text</span>
+      </button>
+
+      {/* Add image */}
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+        style={{ color: 'var(--topbar-foreground)' }}
+        title="Add image"
+      >
+        <Image size={16} />
+        <span className="hidden sm:inline">Image</span>
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleAddImage}
+      />
+
+      {/* Shapes */}
+      <button
+        onClick={() => handleAddShape('rect')}
+        className="p-1.5 rounded hover:opacity-80 transition-opacity"
+        style={{ color: 'var(--topbar-foreground)' }}
+        title="Add rectangle"
+      >
+        <Square size={16} />
+      </button>
+      <button
+        onClick={() => handleAddShape('circle')}
+        className="p-1.5 rounded hover:opacity-80 transition-opacity"
+        style={{ color: 'var(--topbar-foreground)' }}
+        title="Add circle"
+      >
+        <Circle size={16} />
+      </button>
+
+      <div className="w-px h-6 mx-1" style={{ background: 'var(--border)' }} />
+
+      {/* Font size */}
+      <div className="relative">
+        <button
+          onClick={() => setShowFontSize(!showFontSize)}
+          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--topbar-foreground)' }}
+          title="Font size"
+        >
+          <span style={{ fontSize: 14, fontWeight: 'bold' }}>A</span>
+          <span className="hidden sm:inline">
+            {selectedElement?.style.fontSize || '--'}
+          </span>
+        </button>
+        {showFontSize && (
+          <div
+            className="absolute left-0 top-full mt-1 rounded shadow-xl z-50 border py-1"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 80 }}
+          >
+            {FONT_SIZES.map((size) => (
+              <button
+                key={size}
+                onClick={() => {
+                  if (selectedElement) {
+                    updateElement(activeSlideIndex, selectedElement.id, {
+                      style: { fontSize: size },
+                    });
+                  }
+                  setShowFontSize(false);
+                }}
+                className="w-full text-left px-3 py-1 text-sm hover:opacity-80"
+                style={{ color: 'var(--card-foreground)' }}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Bold */}
+      <button
+        onClick={toggleBold}
+        className="p-1.5 rounded hover:opacity-80 transition-opacity"
+        style={{
+          color: 'var(--topbar-foreground)',
+          opacity: selectedElement?.style.fontWeight === 'bold' ? 1 : 0.6,
+        }}
+        title="Bold"
+      >
+        <Bold size={16} />
+      </button>
+
+      {/* Italic */}
+      <button
+        onClick={toggleItalic}
+        className="p-1.5 rounded hover:opacity-80 transition-opacity"
+        style={{
+          color: 'var(--topbar-foreground)',
+          opacity: selectedElement?.style.fontStyle === 'italic' ? 1 : 0.6,
+        }}
+        title="Italic"
+      >
+        <Italic size={16} />
+      </button>
+
+      {/* Text color */}
+      <div className="relative">
+        <button
+          onClick={() => setShowTextColor(!showTextColor)}
+          className="p-1.5 rounded hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--topbar-foreground)' }}
+          title="Text color"
+        >
+          <div className="w-4 h-4 rounded border" style={{ background: selectedElement?.style.color || '#fff', borderColor: 'var(--border)' }} />
+        </button>
+        {showTextColor && (
+          <div
+            className="absolute left-0 top-full mt-1 p-2 rounded shadow-xl z-50 border"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
+          >
+            <div className="grid grid-cols-4 gap-1.5">
+              {TEXT_COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => {
+                    if (selectedElement) {
+                      updateElement(activeSlideIndex, selectedElement.id, {
+                        style: { color: c },
+                      });
+                    }
+                    setShowTextColor(false);
+                  }}
+                  className="w-6 h-6 rounded border"
+                  style={{ background: c, borderColor: 'var(--border)' }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1" />
+
+      {/* Right side actions */}
+      <button
+        onClick={() => setShowTemplateModal(true)}
+        className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+        style={{ color: 'var(--topbar-foreground)' }}
+        title="Templates"
+      >
+        <LayoutTemplate size={16} />
+        <span className="hidden md:inline">Templates</span>
+      </button>
+
+      <button
+        onClick={() => setShowAIPanel(!showAIPanel)}
+        className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+        style={{
+          color: showAIPanel ? 'var(--primary)' : 'var(--topbar-foreground)',
+        }}
+        title="AI Assistant"
+      >
+        <MessageSquare size={16} />
+        <span className="hidden md:inline">AI</span>
+      </button>
+
+      <button
+        onClick={handlePrint}
+        className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+        style={{ color: 'var(--topbar-foreground)' }}
+        title="Print slides"
+      >
+        <Printer size={16} />
+      </button>
+
+      <button
+        onClick={() => setPresenterMode(true)}
+        className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium hover:opacity-80 transition-opacity"
+        style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+        title="Present (F5)"
+      >
+        <Play size={16} />
+        <span className="hidden sm:inline">Present</span>
+      </button>
+    </div>
+  );
+}

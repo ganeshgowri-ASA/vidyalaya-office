@@ -1,25 +1,50 @@
-import { Presentation } from "lucide-react";
+'use client';
+
+import React, { useEffect, useCallback } from 'react';
+import { usePresentationStore } from '@/store/presentation-store';
+import SlidePanel from '@/components/presentation/slide-panel';
+import SlideCanvas from '@/components/presentation/slide-canvas';
+import Toolbar from '@/components/presentation/toolbar';
+import PresenterMode from '@/components/presentation/presenter-mode';
+import SpeakerNotes from '@/components/presentation/speaker-notes';
+import TemplateModal from '@/components/presentation/template-modal';
+import AIPanel from '@/components/presentation/ai-panel';
+import PrintView from '@/components/presentation/print-view';
 
 export default function PresentationPage() {
+  const { setPresenterMode, presenterMode } = usePresentationStore();
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'F5' && !presenterMode) {
+        e.preventDefault();
+        setPresenterMode(true);
+      }
+    },
+    [presenterMode, setPresenterMode],
+  );
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   return (
-    <div className="flex flex-col items-center justify-center gap-4 py-20">
-      <Presentation size={48} style={{ color: "var(--primary)" }} />
-      <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
-        Presentation Editor
-      </h1>
-      <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-        Presentation Editor coming in P5
-      </p>
-      <div
-        className="mt-4 rounded-lg border px-6 py-3 text-sm"
-        style={{
-          backgroundColor: "var(--card)",
-          borderColor: "var(--border)",
-          color: "var(--card-foreground)",
-        }}
-      >
-        Slide-based presentations with AI layout suggestions, animations, and speaker notes.
+    <>
+      <div className="flex flex-col h-[calc(100vh-48px)] no-print">
+        <Toolbar />
+        <div className="flex flex-1 overflow-hidden">
+          <SlidePanel />
+          <div className="flex flex-col flex-1 overflow-hidden" style={{ background: 'var(--muted)' }}>
+            <SlideCanvas />
+            <SpeakerNotes />
+          </div>
+          <AIPanel />
+        </div>
       </div>
-    </div>
+      <PresenterMode />
+      <TemplateModal />
+      <PrintView />
+    </>
   );
 }
