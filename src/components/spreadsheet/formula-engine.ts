@@ -118,6 +118,61 @@ export function evaluateFormula(
             ? evaluateExpression(ifArgs[1], getCell)
             : evaluateExpression(ifArgs[2], getCell);
         }
+        case "VLOOKUP": {
+          const vArgs = splitIfArgs(args);
+          if (vArgs.length < 3) return "#ERROR";
+          const lookupValue = evaluateExpression(vArgs[0], getCell);
+          const rangeStr = vArgs[1].trim();
+          const colIndex = Number(evaluateExpression(vArgs[2], getCell));
+          const exactMatch = vArgs.length >= 4 ? evaluateExpression(vArgs[3], getCell) : 1;
+          const rangeCells = parseRange(rangeStr);
+          if (rangeCells.length === 0 || colIndex < 1) return "#ERROR";
+          const minCol = Math.min(...rangeCells.map((c) => c.col));
+          const maxCol = Math.max(...rangeCells.map((c) => c.col));
+          const minRow = Math.min(...rangeCells.map((c) => c.row));
+          const maxRow = Math.max(...rangeCells.map((c) => c.row));
+          if (minCol + colIndex - 1 > maxCol) return "#REF!";
+          for (let r = minRow; r <= maxRow; r++) {
+            const cellVal = getCell(minCol, r);
+            const matches = exactMatch
+              ? cellVal == lookupValue || String(cellVal) === String(lookupValue)
+              : String(cellVal).toLowerCase().includes(String(lookupValue).toLowerCase());
+            if (matches) {
+              return getCell(minCol + colIndex - 1, r);
+            }
+          }
+          return "#N/A";
+        }
+        case "CONCAT":
+        case "CONCATENATE": {
+          const cArgs = resolveArgs(args, getCell);
+          return cArgs.map((v) => String(v)).join("");
+        }
+        case "ROUND": {
+          const rArgs = splitIfArgs(args);
+          if (rArgs.length < 2) return "#ERROR";
+          const num = Number(evaluateExpression(rArgs[0], getCell));
+          const decimals = Number(evaluateExpression(rArgs[1], getCell));
+          if (isNaN(num) || isNaN(decimals)) return "#ERROR";
+          const factor = Math.pow(10, decimals);
+          return Math.round(num * factor) / factor;
+        }
+        case "ABS": {
+          const aArgs = resolveArgs(args, getCell);
+          const aNum = toNumbers(aArgs);
+          if (aNum.length === 0) return "#ERROR";
+          return Math.abs(aNum[0]);
+        }
+        case "UPPER": {
+          const uArgs = resolveArgs(args, getCell);
+          if (uArgs.length === 0) return "#ERROR";
+          return String(uArgs[0]).toUpperCase();
+        }
+        case "LOWER": {
+          const lArgs = resolveArgs(args, getCell);
+          if (lArgs.length === 0) return "#ERROR";
+          return String(lArgs[0]).toLowerCase();
+        }
         default:
           return "#NAME?";
       }

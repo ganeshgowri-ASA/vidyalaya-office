@@ -13,7 +13,7 @@ import { useDocumentStore } from "@/store/document-store";
 import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
 
 export default function DocumentPage() {
-  const { fileName, setFileName } = useDocumentStore();
+  const { fileName, setFileName, setShowFindReplace } = useDocumentStore();
   const [showExport, setShowExport] = React.useState(false);
 
   // Keyboard shortcuts
@@ -23,10 +23,14 @@ export default function DocumentPage() {
         e.preventDefault();
         window.print();
       }
+      if (e.ctrlKey && e.key === "f") {
+        e.preventDefault();
+        setShowFindReplace(true);
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [setShowFindReplace]);
 
   const handleExportHTML = useCallback(() => {
     exportAsHTML(fileName);

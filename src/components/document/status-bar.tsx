@@ -7,6 +7,8 @@ import { PAGE_SIZES } from "./constants";
 export function StatusBar() {
   const { wordCount, charCount, pageSize, currentFont, currentFontSize, zoom, lastSaved } = useDocumentStore();
 
+  const pageEstimate = Math.max(1, Math.ceil(wordCount / 300));
+
   return (
     <div
       className="no-print flex items-center justify-between border-t px-4 py-1.5 text-[11px] flex-shrink-0"
@@ -17,9 +19,10 @@ export function StatusBar() {
       }}
     >
       <div className="flex items-center gap-4">
+        <span>Page {pageEstimate} of {pageEstimate}</span>
         <span>Words: {wordCount.toLocaleString()}</span>
         <span>Characters: {charCount.toLocaleString()}</span>
-        <span>Page: {PAGE_SIZES[pageSize].label}</span>
+        <span>{PAGE_SIZES[pageSize].label}</span>
       </div>
       <div className="flex items-center gap-4">
         <span>{currentFont} {currentFontSize}pt</span>

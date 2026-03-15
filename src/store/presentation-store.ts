@@ -5,7 +5,7 @@ import { generateId } from '@/lib/utils';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-export type SlideLayout = 'title' | 'content' | 'two-column' | 'blank';
+export type SlideLayout = 'title' | 'content' | 'two-column' | 'blank' | 'section-header';
 
 export interface SlideElement {
   id: string;
@@ -31,6 +31,7 @@ export interface Slide {
   background: string;
   elements: SlideElement[];
   notes: string;
+  transition?: 'none' | 'fade' | 'slide' | 'zoom';
 }
 
 export interface PresentationState {
@@ -59,6 +60,7 @@ export interface PresentationActions {
   setShowAIPanel: (on: boolean) => void;
   loadTemplate: (slides: Slide[]) => void;
   updateElementContent: (slideIndex: number, elementId: string, content: string) => void;
+  updateSlideTransition: (index: number, transition: string) => void;
 }
 
 // ── Gradient presets ───────────────────────────────────────────────────────────
@@ -160,6 +162,29 @@ function createLayoutElements(layout: SlideLayout): SlideElement[] {
           height: 380,
           content: 'Right column content...',
           style: { fontSize: 18, color: '#e0e0e0' },
+        },
+      ];
+    case 'section-header':
+      return [
+        {
+          id: generateId(),
+          type: 'text',
+          x: 80,
+          y: 200,
+          width: 800,
+          height: 80,
+          content: 'Section Title',
+          style: { fontSize: 40, fontWeight: 'bold', color: '#ffffff' },
+        },
+        {
+          id: generateId(),
+          type: 'text',
+          x: 80,
+          y: 290,
+          width: 800,
+          height: 50,
+          content: 'Section subtitle or description',
+          style: { fontSize: 20, color: '#b0b0b0' },
         },
       ];
     case 'blank':
@@ -304,6 +329,14 @@ export const usePresentationStore = create<PresentationState & PresentationActio
               ),
             }
           : s,
+      );
+      return { slides };
+    }),
+
+  updateSlideTransition: (index, transition) =>
+    set((state) => {
+      const slides = state.slides.map((s, i) =>
+        i === index ? { ...s, transition: transition as Slide['transition'] } : s,
       );
       return { slides };
     }),

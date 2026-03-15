@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useSpreadsheetStore } from "@/store/spreadsheet-store";
 import { SpreadsheetToolbar } from "@/components/spreadsheet/spreadsheet-toolbar";
 import { FormulaBar } from "@/components/spreadsheet/formula-bar";
@@ -15,6 +15,23 @@ import { exportToCSV, printSheet } from "@/components/spreadsheet/export-utils";
 export default function SpreadsheetPage() {
   const getActiveSheet = useSpreadsheetStore((s) => s.getActiveSheet);
   const getCellDisplay = useSpreadsheetStore((s) => s.getCellDisplay);
+  const loadTemplate = useSpreadsheetStore((s) => s.loadTemplate);
+
+  // Load template from localStorage if navigated from Templates page
+  useEffect(() => {
+    const templateData = localStorage.getItem("vidyalaya-spreadsheet-template");
+    if (templateData) {
+      try {
+        const parsed = JSON.parse(templateData);
+        if (parsed.cells) {
+          loadTemplate(parsed.cells);
+        }
+      } catch (e) {
+        console.error("Failed to load template:", e);
+      }
+      localStorage.removeItem("vidyalaya-spreadsheet-template");
+    }
+  }, [loadTemplate]);
 
   const handleExportCSV = useCallback(() => {
     const sheet = getActiveSheet();
