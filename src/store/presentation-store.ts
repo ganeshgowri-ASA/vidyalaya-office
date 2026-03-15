@@ -23,23 +23,46 @@ export interface ElementAnimation {
   delay: number; // seconds
 }
 
+export interface TableData {
+  rows: number;
+  cols: number;
+  cells: string[][];
+  headerRow?: boolean;
+}
+
+export interface ChartData {
+  chartType: 'bar' | 'line' | 'pie' | 'doughnut';
+  labels: string[];
+  datasets: { label: string; data: number[]; color: string }[];
+}
+
 export interface SlideElement {
   id: string;
-  type: 'text' | 'image' | 'shape';
+  type: 'text' | 'image' | 'shape' | 'table' | 'chart';
   x: number;
   y: number;
   width: number;
   height: number;
   content: string;
+  rotation?: number;
+  locked?: boolean;
+  tableData?: TableData;
+  chartData?: ChartData;
   style: {
     fontSize?: number;
     fontWeight?: string;
     fontStyle?: string;
+    fontFamily?: string;
+    textDecoration?: string;
+    textAlign?: string;
+    lineHeight?: number;
+    letterSpacing?: number;
     color?: string;
     backgroundColor?: string;
     borderRadius?: string;
     borderColor?: string;
     borderWidth?: number;
+    opacity?: number;
     shadow?: boolean;
     rotateX?: number;
     rotateY?: number;
@@ -54,15 +77,20 @@ export interface SlideTransitionTiming {
   loop: boolean;
 }
 
+export type SlideTransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'split' | 'push' | 'cover' | 'dissolve';
+
 export interface Slide {
   id: string;
   layout: SlideLayout;
   background: string;
   elements: SlideElement[];
   notes: string;
-  transition?: 'none' | 'fade' | 'slide' | 'zoom';
+  transition?: SlideTransitionType;
   transitionTiming?: SlideTransitionTiming;
   hidden?: boolean;
+  slideNumberVisible?: boolean;
+  dateTimeVisible?: boolean;
+  footerText?: string;
 }
 
 export interface PresentationTheme {
@@ -71,6 +99,8 @@ export interface PresentationTheme {
   titleColor: string;
   textColor: string;
 }
+
+export type RibbonTab = 'home' | 'insert' | 'design' | 'transitions' | 'animations' | 'slideshow' | 'review' | 'view';
 
 export interface PresentationState {
   slides: Slide[];
@@ -83,7 +113,16 @@ export interface PresentationState {
   showSmartArtModal: boolean;
   canvasZoom: number;
   showGrid: boolean;
+  showRuler: boolean;
+  showGuides: boolean;
+  snapToGrid: boolean;
   currentTheme: string | null;
+  activeRibbonTab: RibbonTab;
+  showSlideSorter: boolean;
+  clipboardSlide: Slide | null;
+  clipboardElement: SlideElement | null;
+  undoStack: Slide[][];
+  redoStack: Slide[][];
 }
 
 export interface PresentationActions {
@@ -108,11 +147,26 @@ export interface PresentationActions {
   setShowSmartArtModal: (on: boolean) => void;
   setCanvasZoom: (zoom: number) => void;
   setShowGrid: (on: boolean) => void;
+  setShowRuler: (on: boolean) => void;
+  setShowGuides: (on: boolean) => void;
+  setSnapToGrid: (on: boolean) => void;
   applyTheme: (theme: PresentationTheme) => void;
   setCurrentTheme: (name: string | null) => void;
   updateElementAnimation: (slideIndex: number, elementId: string, animation: ElementAnimation | undefined) => void;
   updateSlideTransitionTiming: (index: number, timing: Partial<SlideTransitionTiming>) => void;
   toggleSlideHidden: (index: number) => void;
+  setActiveRibbonTab: (tab: RibbonTab) => void;
+  setShowSlideSorter: (on: boolean) => void;
+  copySlide: (index: number) => void;
+  pasteSlide: (afterIndex: number) => void;
+  copyElement: () => void;
+  pasteElement: () => void;
+  undo: () => void;
+  redo: () => void;
+  pushUndo: () => void;
+  updateSlideFooter: (index: number, footer: { slideNumberVisible?: boolean; dateTimeVisible?: boolean; footerText?: string }) => void;
+  bringForward: (slideIndex: number, elementId: string) => void;
+  sendBackward: (slideIndex: number, elementId: string) => void;
 }
 
 // ── Themes ──────────────────────────────────────────────────────────────────────
@@ -403,7 +457,9 @@ function createDefaultSlides(): Slide[] {
 
 // ── Store ──────────────────────────────────────────────────────────────────────
 
-export const usePresentationStore = create<PresentationState & PresentationActions>((set) => ({
+const MAX_UNDO = 50;
+
+export const usePresentationStore = create<PresentationState & PresentationActions>((set, get) => ({
   slides: createDefaultSlides(),
   activeSlideIndex: 0,
   selectedElementId: null,
@@ -414,7 +470,48 @@ export const usePresentationStore = create<PresentationState & PresentationActio
   showSmartArtModal: false,
   canvasZoom: 100,
   showGrid: false,
+  showRuler: false,
+  showGuides: false,
+  snapToGrid: false,
   currentTheme: null,
+  activeRibbonTab: 'home',
+  showSlideSorter: false,
+  clipboardSlide: null,
+  clipboardElement: null,
+  undoStack: [],
+  redoStack: [],
+
+  pushUndo: () =>
+    set((state) => ({
+      undoStack: [...state.undoStack.slice(-(MAX_UNDO - 1)), state.slides.map(s => ({ ...s, elements: s.elements.map(e => ({ ...e, style: { ...e.style } })) }))],
+      redoStack: [],
+    })),
+
+  undo: () =>
+    set((state) => {
+      if (state.undoStack.length === 0) return state;
+      const prev = state.undoStack[state.undoStack.length - 1];
+      return {
+        undoStack: state.undoStack.slice(0, -1),
+        redoStack: [...state.redoStack, state.slides.map(s => ({ ...s, elements: s.elements.map(e => ({ ...e, style: { ...e.style } })) }))],
+        slides: prev,
+        activeSlideIndex: Math.min(state.activeSlideIndex, prev.length - 1),
+        selectedElementId: null,
+      };
+    }),
+
+  redo: () =>
+    set((state) => {
+      if (state.redoStack.length === 0) return state;
+      const next = state.redoStack[state.redoStack.length - 1];
+      return {
+        redoStack: state.redoStack.slice(0, -1),
+        undoStack: [...state.undoStack, state.slides.map(s => ({ ...s, elements: s.elements.map(e => ({ ...e, style: { ...e.style } })) }))],
+        slides: next,
+        activeSlideIndex: Math.min(state.activeSlideIndex, next.length - 1),
+        selectedElementId: null,
+      };
+    }),
 
   setActiveSlide: (index) => set({ activeSlideIndex: index, selectedElementId: null }),
 
@@ -518,7 +615,12 @@ export const usePresentationStore = create<PresentationState & PresentationActio
   setShowSmartArtModal: (on) => set({ showSmartArtModal: on }),
   setCanvasZoom: (zoom) => set({ canvasZoom: zoom }),
   setShowGrid: (on) => set({ showGrid: on }),
+  setShowRuler: (on) => set({ showRuler: on }),
+  setShowGuides: (on) => set({ showGuides: on }),
+  setSnapToGrid: (on) => set({ snapToGrid: on }),
   setCurrentTheme: (name) => set({ currentTheme: name }),
+  setActiveRibbonTab: (tab) => set({ activeRibbonTab: tab }),
+  setShowSlideSorter: (on) => set({ showSlideSorter: on }),
 
   loadTemplate: (slides) => set({ slides, activeSlideIndex: 0, selectedElementId: null, showTemplateModal: false }),
 
@@ -540,7 +642,7 @@ export const usePresentationStore = create<PresentationState & PresentationActio
   updateSlideTransition: (index, transition) =>
     set((state) => {
       const slides = state.slides.map((s, i) =>
-        i === index ? { ...s, transition: transition as Slide['transition'] } : s,
+        i === index ? { ...s, transition: transition as SlideTransitionType } : s,
       );
       return { slides };
     }),
@@ -606,6 +708,79 @@ export const usePresentationStore = create<PresentationState & PresentationActio
       const slides = state.slides.map((s, i) =>
         i === index ? { ...s, hidden: !s.hidden } : s,
       );
+      return { slides };
+    }),
+
+  copySlide: (index) =>
+    set((state) => {
+      const source = state.slides[index];
+      return { clipboardSlide: { ...source, id: generateId(), elements: source.elements.map(el => ({ ...el, id: generateId(), style: { ...el.style } })) } };
+    }),
+
+  pasteSlide: (afterIndex) =>
+    set((state) => {
+      if (!state.clipboardSlide) return state;
+      get().pushUndo();
+      const pasted = { ...state.clipboardSlide, id: generateId(), elements: state.clipboardSlide.elements.map(el => ({ ...el, id: generateId(), style: { ...el.style } })) };
+      const slides = [...state.slides];
+      slides.splice(afterIndex + 1, 0, pasted);
+      return { slides, activeSlideIndex: afterIndex + 1 };
+    }),
+
+  copyElement: () =>
+    set((state) => {
+      const slide = state.slides[state.activeSlideIndex];
+      const el = slide?.elements.find(e => e.id === state.selectedElementId);
+      if (!el) return state;
+      return { clipboardElement: { ...el, style: { ...el.style } } };
+    }),
+
+  pasteElement: () =>
+    set((state) => {
+      if (!state.clipboardElement) return state;
+      get().pushUndo();
+      const newEl: SlideElement = { ...state.clipboardElement, id: generateId(), x: state.clipboardElement.x + 20, y: state.clipboardElement.y + 20, style: { ...state.clipboardElement.style } };
+      const slides = state.slides.map((s, i) =>
+        i === state.activeSlideIndex ? { ...s, elements: [...s.elements, newEl] } : s,
+      );
+      return { slides, selectedElementId: newEl.id };
+    }),
+
+  updateSlideFooter: (index, footer) =>
+    set((state) => {
+      const slides = state.slides.map((s, i) =>
+        i === index ? { ...s, ...footer } : s,
+      );
+      return { slides };
+    }),
+
+  bringForward: (slideIndex, elementId) =>
+    set((state) => {
+      get().pushUndo();
+      const slides = state.slides.map((s, i) => {
+        if (i !== slideIndex) return s;
+        const elements = [...s.elements];
+        const idx = elements.findIndex(e => e.id === elementId);
+        if (idx < elements.length - 1) {
+          [elements[idx], elements[idx + 1]] = [elements[idx + 1], elements[idx]];
+        }
+        return { ...s, elements };
+      });
+      return { slides };
+    }),
+
+  sendBackward: (slideIndex, elementId) =>
+    set((state) => {
+      get().pushUndo();
+      const slides = state.slides.map((s, i) => {
+        if (i !== slideIndex) return s;
+        const elements = [...s.elements];
+        const idx = elements.findIndex(e => e.id === elementId);
+        if (idx > 0) {
+          [elements[idx], elements[idx - 1]] = [elements[idx - 1], elements[idx]];
+        }
+        return { ...s, elements };
+      });
       return { slides };
     }),
 }));
