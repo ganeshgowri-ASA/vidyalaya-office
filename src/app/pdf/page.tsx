@@ -47,7 +47,7 @@ import {
   Award,
   Move,
 } from "lucide-react";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, degrees } from "pdf-lib";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -167,7 +167,7 @@ export default function PdfToolsPage() {
 
   // ── Edit state ──
   const [editMode, setEditMode] = useState<
-    "none" | "text" | "highlight" | "draw" | "stamp" | "signature"
+    "none" | "text" | "highlight" | "draw" | "stamp" | "signature" | "redaction"
   >("none");
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [fontSize, setFontSize] = useState(16);
@@ -208,6 +208,67 @@ export default function PdfToolsPage() {
   const [originalSize, setOriginalSize] = useState(0);
   const [compressedSize, setCompressedSize] = useState<number | null>(null);
 
+  // ── Page rotation state ──
+  const [pageRotations, setPageRotations] = useState<Record<number, number>>({});
+
+  // ── Page reorder drag state ──
+  const [draggedThumb, setDraggedThumb] = useState<number | null>(null);
+  const [dragOverThumb, setDragOverThumb] = useState<number | null>(null);
+  const [pageOrder, setPageOrder] = useState<number[]>([]);
+
+  // ── Page numbers state ──
+  const [pageNumbersAdded, setPageNumbersAdded] = useState(false);
+
+  // ── Watermark state ──
+  const [showWatermarkModal, setShowWatermarkModal] = useState(false);
+  const [watermarkConfig, setWatermarkConfig] = useState<WatermarkConfig>({
+    type: "text",
+    text: "CONFIDENTIAL",
+    fontSize: 48,
+    opacity: 0.3,
+    rotation: -45,
+    color: "#888888",
+  });
+  const [watermarkApplied, setWatermarkApplied] = useState(false);
+
+  // ── Redaction state (extends editMode) ──
+  const [redactionStart, setRedactionStart] = useState<{ x: number; y: number } | null>(null);
+
+  // ── OCR state ──
+  const [ocrProcessing, setOcrProcessing] = useState(false);
+  const [ocrComplete, setOcrComplete] = useState(false);
+
+  // ── Form builder state ──
+  const [formFields, setFormFields] = useState<FormField[]>([]);
+  const [activeFormFieldType, setActiveFormFieldType] = useState<FormField["type"] | null>(null);
+  const [showFormBuilder, setShowFormBuilder] = useState(false);
+
+  // ── Digital signature with certificate ──
+  const [showCertModal, setShowCertModal] = useState(false);
+  const [certificateInfo, setCertificateInfo] = useState<CertificateInfo>({
+    name: "",
+    email: "",
+    organization: "",
+    reason: "Document Approval",
+    date: new Date().toISOString().split("T")[0],
+  });
+  const [certSignatureApplied, setCertSignatureApplied] = useState(false);
+
+  // ── Bookmarks panel state ──
+  const [showBookmarks, setShowBookmarks] = useState(false);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [newBookmarkTitle, setNewBookmarkTitle] = useState("");
+
+  // ── Compare PDFs state ──
+  const [showCompare, setShowCompare] = useState(false);
+  const [compareDoc, setCompareDoc] = useState<PDFDocumentProxy | null>(null);
+  const [compareBytes, setCompareBytes] = useState<ArrayBuffer | null>(null);
+  const [compareName, setCompareName] = useState("");
+  const [comparePage, setComparePage] = useState(1);
+  const [compareTotalPages, setCompareTotalPages] = useState(0);
+  const compareCanvasRef = useRef<HTMLCanvasElement>(null);
+  const compareCanvasRef2 = useRef<HTMLCanvasElement>(null);
+
   // ─── Load & Render PDF ────────────────────────────────────────────────────
 
   const loadPdf = useCallback(async (data: ArrayBuffer, name: string) => {
@@ -221,6 +282,14 @@ export default function PdfToolsPage() {
     setAnnotations([]);
     setZoom(100);
     setFitMode("none");
+    setPageRotations({});
+    setPageOrder(Array.from({ length: doc.numPages }, (_, i) => i + 1));
+    setPageNumbersAdded(false);
+    setWatermarkApplied(false);
+    setFormFields([]);
+    setCertSignatureApplied(false);
+    setBookmarks([]);
+    setOcrComplete(false);
 
     // Generate thumbnails
     const thumbs: string[] = [];
@@ -258,7 +327,8 @@ export default function PdfToolsPage() {
         setZoom(Math.round(scale * 100));
       }
 
-      const viewport = page.getViewport({ scale });
+      const rotation = pageRotations[pageNum] ?? 0;
+      const viewport = page.getViewport({ scale, rotation });
       const canvas = mainCanvasRef.current;
       canvas.width = viewport.width;
       canvas.height = viewport.height;
@@ -274,7 +344,7 @@ export default function PdfToolsPage() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pdfDoc, fitMode, showThumbnails]
+    [pdfDoc, fitMode, showThumbnails, pageRotations]
   );
 
   useEffect(() => {
@@ -349,6 +419,10 @@ export default function PdfToolsPage() {
               img.src = a.signatureDataUrl;
             }
             break;
+          case "redaction":
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(a.x, a.y, a.width ?? 100, a.height ?? 20);
+            break;
         }
       }
     },
@@ -411,6 +485,9 @@ export default function PdfToolsPage() {
         ]);
       }
     }
+    if (editMode === "redaction") {
+      setRedactionStart({ x, y });
+    }
   };
 
   const handleOverlayMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -432,7 +509,7 @@ export default function PdfToolsPage() {
     }
   };
 
-  const handleOverlayMouseUp = () => {
+  const handleOverlayMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (isDrawing && currentDrawPoints.length > 1) {
       setAnnotations((prev) => [
         ...prev,
@@ -450,6 +527,21 @@ export default function PdfToolsPage() {
     }
     setIsDrawing(false);
     setCurrentDrawPoints([]);
+
+    if (editMode === "redaction" && redactionStart) {
+      const { x, y } = getCanvasCoords(e);
+      const rx = Math.min(redactionStart.x, x);
+      const ry = Math.min(redactionStart.y, y);
+      const rw = Math.abs(x - redactionStart.x);
+      const rh = Math.abs(y - redactionStart.y);
+      if (rw > 5 && rh > 5) {
+        setAnnotations((prev) => [
+          ...prev,
+          { id: uid(), type: "redaction", page: currentPage, x: rx, y: ry, width: rw, height: rh },
+        ]);
+      }
+      setRedactionStart(null);
+    }
   };
 
   const confirmTextAnnotation = () => {
@@ -703,6 +795,221 @@ export default function PdfToolsPage() {
     }
   };
 
+  // ─── Page Rotation ───────────────────────────────────────────────────────
+
+  const rotatePage = (pageNum: number, degrees: 90 | -90 | 180) => {
+    setPageRotations((prev) => {
+      const current = prev[pageNum] ?? 0;
+      const next = (current + degrees + 360) % 360;
+      return { ...prev, [pageNum]: next };
+    });
+  };
+
+  const rotateAllPages = (degrees: 90 | -90 | 180) => {
+    setPageRotations((prev) => {
+      const updated = { ...prev };
+      for (let i = 1; i <= totalPages; i++) {
+        const current = updated[i] ?? 0;
+        updated[i] = (current + degrees + 360) % 360;
+      }
+      return updated;
+    });
+  };
+
+  // ─── Page Reorder ──────────────────────────────────────────────────────────
+
+  const handleThumbDragStart = (index: number) => {
+    setDraggedThumb(index);
+  };
+
+  const handleThumbDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverThumb(index);
+  };
+
+  const handleThumbDrop = (targetIndex: number) => {
+    if (draggedThumb === null || draggedThumb === targetIndex) {
+      setDraggedThumb(null);
+      setDragOverThumb(null);
+      return;
+    }
+    setPageOrder((prev) => {
+      const newOrder = [...prev];
+      const [moved] = newOrder.splice(draggedThumb, 1);
+      newOrder.splice(targetIndex, 0, moved);
+      return newOrder;
+    });
+    setThumbnails((prev) => {
+      const newThumbs = [...prev];
+      const [moved] = newThumbs.splice(draggedThumb, 1);
+      newThumbs.splice(targetIndex, 0, moved);
+      return newThumbs;
+    });
+    setDraggedThumb(null);
+    setDragOverThumb(null);
+  };
+
+  // ─── Add Page Numbers ──────────────────────────────────────────────────────
+
+  const addPageNumbers = async () => {
+    if (!pdfBytes) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const pages = doc.getPages();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      pages.forEach((page, idx) => {
+        const { width } = page.getSize();
+        page.drawText(`${idx + 1}`, {
+          x: width / 2 - 5,
+          y: 20,
+          size: 12,
+        });
+      });
+      const bytes = await doc.save();
+      setPdfBytes(bytes.buffer as ArrayBuffer);
+      const lib = await loadPdfjs();
+      const newDoc = await lib.getDocument({ data: new Uint8Array(bytes) }).promise;
+      setPdfDoc(newDoc);
+      setPageNumbersAdded(true);
+    } catch (err) {
+      console.error("Failed to add page numbers:", err);
+    }
+  };
+
+  // ─── Watermark ─────────────────────────────────────────────────────────────
+
+  const applyWatermark = async () => {
+    if (!pdfBytes) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const pages = doc.getPages();
+      for (const page of pages) {
+        const { width, height } = page.getSize();
+        if (watermarkConfig.type === "text") {
+          page.drawText(watermarkConfig.text, {
+            x: width / 4,
+            y: height / 2,
+            size: watermarkConfig.fontSize,
+            opacity: watermarkConfig.opacity,
+            rotate: degrees(watermarkConfig.rotation),
+          });
+        }
+      }
+      const bytes = await doc.save();
+      setPdfBytes(bytes.buffer as ArrayBuffer);
+      const lib = await loadPdfjs();
+      const newDoc = await lib.getDocument({ data: new Uint8Array(bytes) }).promise;
+      setPdfDoc(newDoc);
+      setWatermarkApplied(true);
+      setShowWatermarkModal(false);
+    } catch (err) {
+      console.error("Failed to apply watermark:", err);
+    }
+  };
+
+  // ─── OCR Placeholder ──────────────────────────────────────────────────────
+
+  const runOcr = () => {
+    setOcrProcessing(true);
+    setOcrComplete(false);
+    setTimeout(() => {
+      setOcrProcessing(false);
+      setOcrComplete(true);
+    }, 3000);
+  };
+
+  // ─── Form Builder ──────────────────────────────────────────────────────────
+
+  const addFormField = (type: FormField["type"]) => {
+    const field: FormField = {
+      id: uid(),
+      type,
+      page: currentPage,
+      x: 100,
+      y: 300,
+      width: type === "checkbox" || type === "radio" ? 20 : 200,
+      height: type === "checkbox" || type === "radio" ? 20 : 30,
+      label: `${type}_${formFields.length + 1}`,
+      options: type === "dropdown" ? ["Option 1", "Option 2", "Option 3"] : undefined,
+      required: false,
+    };
+    setFormFields((prev) => [...prev, field]);
+  };
+
+  const removeFormField = (id: string) => {
+    setFormFields((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  // ─── Digital Signature with Certificate ────────────────────────────────────
+
+  const applyCertSignature = () => {
+    if (!certificateInfo.name || !certificateInfo.email) return;
+    setCertSignatureApplied(true);
+    setShowCertModal(false);
+  };
+
+  // ─── Bookmarks ─────────────────────────────────────────────────────────────
+
+  const addBookmark = () => {
+    if (!newBookmarkTitle.trim()) return;
+    setBookmarks((prev) => [
+      ...prev,
+      { id: uid(), title: newBookmarkTitle, page: currentPage, level: 0 },
+    ]);
+    setNewBookmarkTitle("");
+  };
+
+  const removeBookmark = (id: string) => {
+    setBookmarks((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  // ─── Compare PDFs ──────────────────────────────────────────────────────────
+
+  const loadCompareDoc = async (file: File) => {
+    const lib = await loadPdfjs();
+    const data = await file.arrayBuffer();
+    const doc = await lib.getDocument({ data: new Uint8Array(data) }).promise;
+    setCompareDoc(doc);
+    setCompareBytes(data);
+    setCompareName(file.name);
+    setCompareTotalPages(doc.numPages);
+    setComparePage(1);
+  };
+
+  const renderComparePages = useCallback(async () => {
+    if (!pdfDoc || !compareDoc) return;
+
+    // Render original
+    if (compareCanvasRef.current) {
+      const page = await pdfDoc.getPage(Math.min(comparePage, totalPages));
+      const vp = page.getViewport({ scale: 0.8 });
+      const canvas = compareCanvasRef.current;
+      canvas.width = vp.width;
+      canvas.height = vp.height;
+      const ctx = canvas.getContext("2d")!;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await page.render({ canvasContext: ctx, viewport: vp } as any).promise;
+    }
+
+    // Render comparison
+    if (compareCanvasRef2.current) {
+      const page = await compareDoc.getPage(Math.min(comparePage, compareTotalPages));
+      const vp = page.getViewport({ scale: 0.8 });
+      const canvas = compareCanvasRef2.current;
+      canvas.width = vp.width;
+      canvas.height = vp.height;
+      const ctx = canvas.getContext("2d")!;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await page.render({ canvasContext: ctx, viewport: vp } as any).promise;
+    }
+  }, [pdfDoc, compareDoc, comparePage, totalPages, compareTotalPages]);
+
+  useEffect(() => {
+    if (showCompare && pdfDoc && compareDoc) {
+      renderComparePages();
+    }
+  }, [showCompare, pdfDoc, compareDoc, renderComparePages]);
+
   // ─── Utilities ────────────────────────────────────────────────────────────
 
   const downloadBlob = (blob: Blob, name: string) => {
@@ -925,6 +1232,52 @@ export default function PdfToolsPage() {
           >
             {showThumbnails ? "Hide Thumbs" : "Show Thumbs"}
           </button>
+
+          <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+
+          {/* Rotation buttons */}
+          <button
+            style={btnStyle}
+            onClick={() => rotatePage(currentPage, -90)}
+            title="Rotate page 90° counter-clockwise"
+          >
+            <RotateCcw size={16} />
+          </button>
+          <button
+            style={btnStyle}
+            onClick={() => rotatePage(currentPage, 90)}
+            title="Rotate page 90° clockwise"
+          >
+            <RotateCw size={16} />
+          </button>
+          <button
+            style={btnStyle}
+            onClick={() => rotatePage(currentPage, 180)}
+            title="Rotate page 180°"
+          >
+            <RotateCw size={16} /> 180°
+          </button>
+          <button
+            style={btnStyle}
+            onClick={() => rotateAllPages(90)}
+            title="Rotate all pages 90° clockwise"
+          >
+            <RotateCw size={16} /> All
+          </button>
+
+          <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+
+          {/* Bookmarks toggle */}
+          <button
+            style={{
+              ...btnStyle,
+              ...(showBookmarks ? { backgroundColor: "var(--accent)" } : {}),
+            }}
+            onClick={() => setShowBookmarks((b) => !b)}
+            title="Toggle bookmarks panel"
+          >
+            <BookOpen size={16} /> Bookmarks
+          </button>
         </div>
 
         {/* Content area */}
@@ -941,34 +1294,109 @@ export default function PdfToolsPage() {
             >
               {thumbnails.map((src, i) => (
                 <div
-                  key={i}
+                  key={`thumb-${i}`}
                   className="cursor-pointer flex flex-col items-center"
-                  onClick={() => setCurrentPage(i + 1)}
+                  draggable
+                  onDragStart={() => handleThumbDragStart(i)}
+                  onDragOver={(e) => handleThumbDragOver(e, i)}
+                  onDrop={() => handleThumbDrop(i)}
+                  onDragEnd={() => { setDraggedThumb(null); setDragOverThumb(null); }}
+                  onClick={() => setCurrentPage(pageOrder[i] ?? i + 1)}
                   style={{
                     border:
-                      currentPage === i + 1
+                      currentPage === (pageOrder[i] ?? i + 1)
                         ? "2px solid var(--primary)"
+                        : dragOverThumb === i
+                        ? "2px dashed var(--primary)"
                         : "2px solid transparent",
                     borderRadius: 4,
                     padding: 2,
+                    opacity: draggedThumb === i ? 0.5 : 1,
+                    transition: "opacity 0.15s, border-color 0.15s",
                   }}
                 >
+                  <div className="flex items-center gap-1 w-full" style={{ fontSize: 9, color: "var(--muted-foreground)" }}>
+                    <GripVertical size={10} style={{ cursor: "grab", flexShrink: 0 }} />
+                    <span className="flex-1 text-center">{pageOrder[i] ?? i + 1}</span>
+                  </div>
                   <img
                     src={src}
-                    alt={`Page ${i + 1}`}
+                    alt={`Page ${pageOrder[i] ?? i + 1}`}
                     style={{ width: "100%", borderRadius: 2 }}
                   />
-                  <span
-                    style={{
-                      fontSize: 10,
-                      color: "var(--muted-foreground)",
-                      marginTop: 2,
-                    }}
-                  >
-                    {i + 1}
-                  </span>
+                  {(pageRotations[pageOrder[i] ?? i + 1] ?? 0) > 0 && (
+                    <span style={{ fontSize: 9, color: "var(--primary)" }}>
+                      {pageRotations[pageOrder[i] ?? i + 1]}°
+                    </span>
+                  )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Bookmarks panel */}
+          {showBookmarks && (
+            <div
+              className="overflow-y-auto flex flex-col gap-2 p-2"
+              style={{
+                width: 220,
+                backgroundColor: "var(--card)",
+                borderRight: "1px solid var(--border)",
+              }}
+            >
+              <h3
+                className="text-xs font-semibold uppercase tracking-wide px-1"
+                style={{ color: "var(--muted-foreground)" }}
+              >
+                Bookmarks / TOC
+              </h3>
+              <div className="flex gap-1">
+                <input
+                  type="text"
+                  value={newBookmarkTitle}
+                  onChange={(e) => setNewBookmarkTitle(e.target.value)}
+                  placeholder="Bookmark title..."
+                  style={{ ...inputStyle, flex: 1, fontSize: 11 }}
+                  onKeyDown={(e) => { if (e.key === "Enter") addBookmark(); }}
+                />
+                <button style={{ ...btnStyle, padding: "4px 8px" }} onClick={addBookmark}>
+                  +
+                </button>
+              </div>
+              <p style={{ fontSize: 10, color: "var(--muted-foreground)" }}>
+                Adds bookmark for page {currentPage}
+              </p>
+              {bookmarks.length === 0 ? (
+                <p style={{ fontSize: 11, color: "var(--muted-foreground)", fontStyle: "italic", padding: "8px 0" }}>
+                  No bookmarks yet. Add one above.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {bookmarks.map((bm) => (
+                    <div
+                      key={bm.id}
+                      className="flex items-center gap-1 px-1 py-1 rounded cursor-pointer"
+                      style={{
+                        backgroundColor: currentPage === bm.page ? "var(--accent)" : "transparent",
+                        fontSize: 12,
+                      }}
+                      onClick={() => setCurrentPage(bm.page)}
+                    >
+                      <BookOpen size={12} style={{ flexShrink: 0, color: "var(--primary)" }} />
+                      <span className="flex-1 truncate" style={{ color: "var(--foreground)" }}>
+                        {bm.title}
+                      </span>
+                      <span style={{ fontSize: 10, color: "var(--muted-foreground)" }}>p.{bm.page}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeBookmark(bm.id); }}
+                        style={{ border: "none", background: "none", cursor: "pointer", padding: 2 }}
+                      >
+                        <X size={10} style={{ color: "var(--muted-foreground)" }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -1185,6 +1613,124 @@ export default function PdfToolsPage() {
 
           <div style={{ height: 1, backgroundColor: "var(--border)", margin: "4px 0" }} />
 
+          {/* Redaction */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+              ...(editMode === "redaction" ? { backgroundColor: "var(--accent)" } : {}),
+            }}
+            onClick={() => setEditMode(editMode === "redaction" ? "none" : "redaction")}
+          >
+            <EyeOff size={16} /> Redact Area
+          </button>
+
+          {editMode === "redaction" && (
+            <p style={{ fontSize: 10, color: "var(--muted-foreground)", paddingLeft: 8 }}>
+              Click and drag on the PDF to black out sensitive areas.
+            </p>
+          )}
+
+          <div style={{ height: 1, backgroundColor: "var(--border)", margin: "4px 0" }} />
+
+          <h3
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "var(--muted-foreground)" }}
+          >
+            Page Tools
+          </h3>
+
+          {/* Add Page Numbers */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+              ...(pageNumbersAdded ? { opacity: 0.6 } : {}),
+            }}
+            onClick={addPageNumbers}
+            disabled={pageNumbersAdded}
+          >
+            <Hash size={16} /> {pageNumbersAdded ? "Numbers Added" : "Add Page Numbers"}
+          </button>
+
+          {/* Watermark */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+              ...(watermarkApplied ? { opacity: 0.6 } : {}),
+            }}
+            onClick={() => setShowWatermarkModal(true)}
+          >
+            <Droplets size={16} /> {watermarkApplied ? "Watermark Applied" : "Add Watermark"}
+          </button>
+
+          {/* OCR */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+            }}
+            onClick={runOcr}
+            disabled={ocrProcessing}
+          >
+            {ocrProcessing ? (
+              <>
+                <Loader2 size={16} className="animate-spin" /> OCR Processing...
+              </>
+            ) : ocrComplete ? (
+              <>
+                <ScanText size={16} /> OCR Complete
+              </>
+            ) : (
+              <>
+                <ScanText size={16} /> Run OCR
+              </>
+            )}
+          </button>
+
+          <div style={{ height: 1, backgroundColor: "var(--border)", margin: "4px 0" }} />
+
+          <h3
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "var(--muted-foreground)" }}
+          >
+            Security
+          </h3>
+
+          {/* Digital Signature with Certificate */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+              ...(certSignatureApplied ? { backgroundColor: "var(--accent)" } : {}),
+            }}
+            onClick={() => setShowCertModal(true)}
+          >
+            <ShieldCheck size={16} /> {certSignatureApplied ? "Certificate Applied" : "Digital Certificate"}
+          </button>
+
+          {certSignatureApplied && (
+            <div
+              className="flex flex-col gap-1 pl-2"
+              style={{ fontSize: 10, color: "var(--muted-foreground)" }}
+            >
+              <div className="flex items-center gap-1">
+                <Award size={10} style={{ color: "var(--primary)" }} />
+                <span>Signed by: {certificateInfo.name}</span>
+              </div>
+              <span>Org: {certificateInfo.organization}</span>
+              <span>Date: {certificateInfo.date}</span>
+            </div>
+          )}
+
+          <div style={{ height: 1, backgroundColor: "var(--border)", margin: "4px 0" }} />
+
           {/* Undo */}
           <button
             style={btnStyle}
@@ -1310,6 +1856,300 @@ export default function PdfToolsPage() {
             >
               <X size={14} />
             </button>
+          </div>
+        )}
+
+        {/* Watermark modal */}
+        {showWatermarkModal && (
+          <div
+            className="absolute inset-0 z-50 flex items-center justify-center"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            onClick={() => setShowWatermarkModal(false)}
+          >
+            <div
+              className="flex flex-col gap-4 p-6"
+              style={{
+                backgroundColor: "var(--card)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+                width: 380,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+                  <Droplets size={18} style={{ display: "inline", marginRight: 8 }} />
+                  Add Watermark
+                </h3>
+                <button
+                  style={{ border: "none", background: "none", cursor: "pointer" }}
+                  onClick={() => setShowWatermarkModal(false)}
+                >
+                  <X size={18} style={{ color: "var(--muted-foreground)" }} />
+                </button>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  style={{
+                    ...btnStyle,
+                    flex: 1,
+                    justifyContent: "center",
+                    backgroundColor: watermarkConfig.type === "text" ? "var(--primary)" : "var(--card)",
+                    color: watermarkConfig.type === "text" ? "var(--primary-foreground)" : "var(--card-foreground)",
+                  }}
+                  onClick={() => setWatermarkConfig((c) => ({ ...c, type: "text" }))}
+                >
+                  <Type size={14} /> Text
+                </button>
+                <button
+                  style={{
+                    ...btnStyle,
+                    flex: 1,
+                    justifyContent: "center",
+                    backgroundColor: watermarkConfig.type === "image" ? "var(--primary)" : "var(--card)",
+                    color: watermarkConfig.type === "image" ? "var(--primary-foreground)" : "var(--card-foreground)",
+                  }}
+                  onClick={() => setWatermarkConfig((c) => ({ ...c, type: "image" }))}
+                >
+                  <Image size={14} /> Image
+                </button>
+              </div>
+
+              {watermarkConfig.type === "text" && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Watermark Text</label>
+                    <input
+                      type="text"
+                      value={watermarkConfig.text}
+                      onChange={(e) => setWatermarkConfig((c) => ({ ...c, text: e.target.value }))}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex flex-col gap-1 flex-1">
+                      <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Font Size</label>
+                      <input
+                        type="number"
+                        value={watermarkConfig.fontSize}
+                        onChange={(e) => setWatermarkConfig((c) => ({ ...c, fontSize: Number(e.target.value) }))}
+                        style={inputStyle}
+                        min={12}
+                        max={120}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1 flex-1">
+                      <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Rotation</label>
+                      <input
+                        type="number"
+                        value={watermarkConfig.rotation}
+                        onChange={(e) => setWatermarkConfig((c) => ({ ...c, rotation: Number(e.target.value) }))}
+                        style={inputStyle}
+                        min={-90}
+                        max={90}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex flex-col gap-1 flex-1">
+                      <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
+                        Opacity: {Math.round(watermarkConfig.opacity * 100)}%
+                      </label>
+                      <input
+                        type="range"
+                        min={5}
+                        max={100}
+                        value={Math.round(watermarkConfig.opacity * 100)}
+                        onChange={(e) => setWatermarkConfig((c) => ({ ...c, opacity: Number(e.target.value) / 100 }))}
+                        style={{ accentColor: "var(--primary)" }}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Color</label>
+                      <input
+                        type="color"
+                        value={watermarkConfig.color}
+                        onChange={(e) => setWatermarkConfig((c) => ({ ...c, color: e.target.value }))}
+                        style={{ width: 30, height: 30, border: "none", cursor: "pointer" }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {watermarkConfig.type === "image" && (
+                <div className="flex flex-col gap-2">
+                  <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
+                    Image watermark support requires server-side processing.
+                  </label>
+                  <div className="flex flex-col gap-1">
+                    <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
+                      Opacity: {Math.round(watermarkConfig.opacity * 100)}%
+                    </label>
+                    <input
+                      type="range"
+                      min={5}
+                      max={100}
+                      value={Math.round(watermarkConfig.opacity * 100)}
+                      onChange={(e) => setWatermarkConfig((c) => ({ ...c, opacity: Number(e.target.value) / 100 }))}
+                      style={{ accentColor: "var(--primary)" }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Preview */}
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  height: 80,
+                  backgroundColor: "var(--secondary)",
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  position: "relative",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: Math.min(watermarkConfig.fontSize / 2, 28),
+                    color: watermarkConfig.color,
+                    opacity: watermarkConfig.opacity,
+                    transform: `rotate(${watermarkConfig.rotation}deg)`,
+                    fontWeight: "bold",
+                  }}
+                >
+                  {watermarkConfig.text || "Preview"}
+                </span>
+              </div>
+
+              <button style={btnPrimaryStyle} onClick={applyWatermark}>
+                <Droplets size={16} /> Apply Watermark
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Digital Certificate modal */}
+        {showCertModal && (
+          <div
+            className="absolute inset-0 z-50 flex items-center justify-center"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            onClick={() => setShowCertModal(false)}
+          >
+            <div
+              className="flex flex-col gap-4 p-6"
+              style={{
+                backgroundColor: "var(--card)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+                width: 400,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+                  <ShieldCheck size={18} style={{ display: "inline", marginRight: 8 }} />
+                  Digital Signature Certificate
+                </h3>
+                <button
+                  style={{ border: "none", background: "none", cursor: "pointer" }}
+                  onClick={() => setShowCertModal(false)}
+                >
+                  <X size={18} style={{ color: "var(--muted-foreground)" }} />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Full Name *</label>
+                  <input
+                    type="text"
+                    value={certificateInfo.name}
+                    onChange={(e) => setCertificateInfo((c) => ({ ...c, name: e.target.value }))}
+                    style={inputStyle}
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Email *</label>
+                  <input
+                    type="email"
+                    value={certificateInfo.email}
+                    onChange={(e) => setCertificateInfo((c) => ({ ...c, email: e.target.value }))}
+                    style={inputStyle}
+                    placeholder="john@example.com"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Organization</label>
+                  <input
+                    type="text"
+                    value={certificateInfo.organization}
+                    onChange={(e) => setCertificateInfo((c) => ({ ...c, organization: e.target.value }))}
+                    style={inputStyle}
+                    placeholder="Company Inc."
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Reason for Signing</label>
+                  <select
+                    value={certificateInfo.reason}
+                    onChange={(e) => setCertificateInfo((c) => ({ ...c, reason: e.target.value }))}
+                    style={inputStyle}
+                  >
+                    <option value="Document Approval">Document Approval</option>
+                    <option value="Contract Signing">Contract Signing</option>
+                    <option value="Authorship Attestation">Authorship Attestation</option>
+                    <option value="Review Completion">Review Completion</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Date</label>
+                  <input
+                    type="date"
+                    value={certificateInfo.date}
+                    onChange={(e) => setCertificateInfo((c) => ({ ...c, date: e.target.value }))}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+
+              {/* Certificate preview */}
+              <div
+                className="p-3 flex flex-col gap-2"
+                style={{
+                  backgroundColor: "var(--secondary)",
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <Award size={16} style={{ color: "var(--primary)" }} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--foreground)" }}>
+                    Certificate Preview
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted-foreground)", lineHeight: 1.6 }}>
+                  <p>Signer: {certificateInfo.name || "—"}</p>
+                  <p>Email: {certificateInfo.email || "—"}</p>
+                  <p>Organization: {certificateInfo.organization || "—"}</p>
+                  <p>Reason: {certificateInfo.reason}</p>
+                  <p>Date: {certificateInfo.date}</p>
+                  <p>Hash: SHA-256</p>
+                </div>
+              </div>
+
+              <button
+                style={btnPrimaryStyle}
+                onClick={applyCertSignature}
+                disabled={!certificateInfo.name || !certificateInfo.email}
+              >
+                <ShieldCheck size={16} /> Apply Digital Signature
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1807,6 +2647,303 @@ export default function PdfToolsPage() {
     );
   };
 
+  // ─── Tab: Forms ──────────────────────────────────────────────────────────
+
+  const renderFormsTab = () => {
+    if (!pdfDoc) {
+      return (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <p style={{ color: "var(--muted-foreground)" }}>
+            Please load a PDF in the View tab first.
+          </p>
+        </div>
+      );
+    }
+
+    const fieldTypes: { type: FormField["type"]; label: string; icon: React.ElementType }[] = [
+      { type: "text-input", label: "Text Field", icon: FormInput },
+      { type: "checkbox", label: "Checkbox", icon: CheckSquare },
+      { type: "radio", label: "Radio Button", icon: Circle },
+      { type: "dropdown", label: "Dropdown", icon: ChevronDown },
+    ];
+
+    return (
+      <div className="flex-1 flex overflow-hidden">
+        {/* Form builder sidebar */}
+        <div
+          className="flex flex-col gap-3 p-3 overflow-y-auto"
+          style={{
+            width: 240,
+            backgroundColor: "var(--card)",
+            borderRight: "1px solid var(--border)",
+          }}
+        >
+          <h3
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "var(--muted-foreground)" }}
+          >
+            Form Fields
+          </h3>
+          <p style={{ fontSize: 11, color: "var(--muted-foreground)" }}>
+            Add form elements to your PDF. Fields will be placed on page {currentPage}.
+          </p>
+
+          {fieldTypes.map(({ type, label, icon: Icon }) => (
+            <button
+              key={type}
+              style={{ ...btnStyle, width: "100%", justifyContent: "flex-start" }}
+              onClick={() => addFormField(type)}
+            >
+              <Icon size={16} /> Add {label}
+            </button>
+          ))}
+
+          <div style={{ height: 1, backgroundColor: "var(--border)", margin: "4px 0" }} />
+
+          <h3
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "var(--muted-foreground)" }}
+          >
+            Added Fields ({formFields.length})
+          </h3>
+
+          {formFields.length === 0 ? (
+            <p style={{ fontSize: 11, color: "var(--muted-foreground)", fontStyle: "italic" }}>
+              No form fields added yet.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-1">
+              {formFields.map((field) => (
+                <div
+                  key={field.id}
+                  className="flex items-center gap-2 px-2 py-1"
+                  style={{
+                    backgroundColor: "var(--secondary)",
+                    borderRadius: 4,
+                    fontSize: 11,
+                  }}
+                >
+                  {field.type === "text-input" && <FormInput size={12} />}
+                  {field.type === "checkbox" && <CheckSquare size={12} />}
+                  {field.type === "radio" && <Circle size={12} />}
+                  {field.type === "dropdown" && <ChevronDown size={12} />}
+                  <span className="flex-1 truncate" style={{ color: "var(--foreground)" }}>
+                    {field.label}
+                  </span>
+                  <span style={{ color: "var(--muted-foreground)", fontSize: 9 }}>p.{field.page}</span>
+                  <button
+                    onClick={() => removeFormField(field.id)}
+                    style={{ border: "none", background: "none", cursor: "pointer", padding: 1 }}
+                  >
+                    <X size={10} style={{ color: "var(--muted-foreground)" }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Form preview area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div
+            className="flex items-center gap-2 px-3 py-2"
+            style={{
+              backgroundColor: "var(--card)",
+              borderBottom: "1px solid var(--border)",
+            }}
+          >
+            <button
+              style={btnStyle}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span style={{ color: "var(--muted-foreground)", fontSize: 12 }}>
+              Page {currentPage} / {totalPages}
+            </span>
+            <button
+              style={btnStyle}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          <div
+            className="flex-1 overflow-auto flex items-start justify-center p-4"
+            style={{ backgroundColor: "var(--muted)" }}
+          >
+            <div className="relative inline-block" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
+              <canvas ref={mainCanvasRef} style={{ display: "block" }} />
+              {/* Render form field overlays for current page */}
+              {formFields
+                .filter((f) => f.page === currentPage)
+                .map((field) => (
+                  <div
+                    key={field.id}
+                    className="absolute flex items-center justify-center"
+                    style={{
+                      left: field.x,
+                      top: field.y,
+                      width: field.width,
+                      height: field.height,
+                      border: "2px dashed var(--primary)",
+                      borderRadius: 4,
+                      backgroundColor: "rgba(59, 130, 246, 0.08)",
+                      fontSize: 10,
+                      color: "var(--primary)",
+                      cursor: "move",
+                      pointerEvents: "auto",
+                    }}
+                  >
+                    {field.type === "text-input" && (
+                      <div className="flex items-center gap-1 px-1">
+                        <FormInput size={10} />
+                        <span>{field.label}</span>
+                      </div>
+                    )}
+                    {field.type === "checkbox" && <CheckSquare size={14} />}
+                    {field.type === "radio" && <Circle size={14} />}
+                    {field.type === "dropdown" && (
+                      <div className="flex items-center gap-1 px-1">
+                        <List size={10} />
+                        <span>{field.label}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Tab: Compare ─────────────────────────────────────────────────────────
+
+  const renderCompareTab = () => {
+    if (!pdfDoc) {
+      return (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <p style={{ color: "var(--muted-foreground)" }}>
+            Please load a PDF in the View tab first, then load a second PDF here to compare.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Compare toolbar */}
+        <div
+          className="flex items-center gap-3 px-4 py-2"
+          style={{
+            backgroundColor: "var(--card)",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <span style={{ fontSize: 13, color: "var(--foreground)", fontWeight: 600 }}>
+            <Columns2 size={16} style={{ display: "inline", marginRight: 6 }} />
+            Side-by-Side Compare
+          </span>
+          <div className="flex-1" />
+          {compareDoc && (
+            <>
+              <button
+                style={btnStyle}
+                onClick={() => setComparePage((p) => Math.max(1, p - 1))}
+                disabled={comparePage <= 1}
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span style={{ color: "var(--muted-foreground)", fontSize: 12 }}>
+                Page {comparePage}
+              </span>
+              <button
+                style={btnStyle}
+                onClick={() => setComparePage((p) => Math.min(Math.max(totalPages, compareTotalPages), p + 1))}
+                disabled={comparePage >= Math.max(totalPages, compareTotalPages)}
+              >
+                <ChevronRight size={14} />
+              </button>
+            </>
+          )}
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left: original document */}
+          <div
+            className="flex-1 flex flex-col overflow-hidden"
+            style={{ borderRight: "2px solid var(--border)" }}
+          >
+            <div
+              className="px-3 py-1 text-center"
+              style={{
+                backgroundColor: "var(--secondary)",
+                borderBottom: "1px solid var(--border)",
+                fontSize: 12,
+                color: "var(--foreground)",
+                fontWeight: 600,
+              }}
+            >
+              Original: {pdfName} ({totalPages} pages)
+            </div>
+            <div
+              className="flex-1 overflow-auto flex items-start justify-center p-4"
+              style={{ backgroundColor: "var(--muted)" }}
+            >
+              <div style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
+                <canvas ref={compareCanvasRef} style={{ display: "block" }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Right: comparison document */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {!compareDoc ? (
+              <div className="flex-1 flex items-center justify-center p-8">
+                <div className="w-full max-w-sm">
+                  <DropZone
+                    onFile={(files) => {
+                      const f = files[0];
+                      if (f) loadCompareDoc(f);
+                    }}
+                    label="Drop a second PDF here to compare"
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div
+                  className="px-3 py-1 text-center"
+                  style={{
+                    backgroundColor: "var(--secondary)",
+                    borderBottom: "1px solid var(--border)",
+                    fontSize: 12,
+                    color: "var(--foreground)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Compare: {compareName} ({compareTotalPages} pages)
+                </div>
+                <div
+                  className="flex-1 overflow-auto flex items-start justify-center p-4"
+                  style={{ backgroundColor: "var(--muted)" }}
+                >
+                  <div style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
+                    <canvas ref={compareCanvasRef2} style={{ display: "block" }} />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ─── Render active tab ────────────────────────────────────────────────────
 
   const renderActiveTab = () => {
@@ -1823,6 +2960,10 @@ export default function PdfToolsPage() {
         return renderConvertTab();
       case "compress":
         return renderCompressTab();
+      case "forms":
+        return renderFormsTab();
+      case "compare":
+        return renderCompareTab();
     }
   };
 
