@@ -3,6 +3,7 @@
 import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { Minus, Plus, Trash2, GripVertical } from 'lucide-react';
 import { usePresentationStore, type SlideElement } from '@/store/presentation-store';
+import { SHAPE_DEFINITIONS } from '@/components/shared/shapes-icons-library';
 
 // ── Inline Table Renderer ────────────────────────────────────────────────────
 function TableElement({ el, isSelected, scale }: { el: SlideElement; isSelected: boolean; scale: number }) {
@@ -379,6 +380,54 @@ export default function SlideCanvas() {
         transform: shapeTransform.length > 0 ? shapeTransform.join(' ') : undefined,
         ...perspectiveStyle,
       };
+
+      // Check if it's an advanced shape from shapes library
+      const advancedShape = SHAPE_DEFINITIONS.find(s => s.id === el.content);
+      if (advancedShape) {
+        return (
+          <div key={el.id} className="absolute cursor-move"
+            onMouseDown={(e) => handleElementMouseDown(e, el)}
+            style={{
+              ...commonStyle, height: el.height,
+              transform: shapeTransform.length > 0 ? shapeTransform.join(' ') : undefined,
+              ...perspectiveStyle,
+            }}>
+            <svg viewBox="0 0 100 100" width={el.width} height={el.height}>
+              <path d={advancedShape.svgPath} fill={shapeColor} fillOpacity={0.8} stroke={el.style.borderColor || shapeColor} strokeWidth={2} />
+            </svg>
+            {isSelected && ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'].map((pos) => (
+              <ResizeHandle key={pos} position={pos} onResize={handleResize(el.id, el)} />
+            ))}
+          </div>
+        );
+      }
+
+      // Check if it's an icon
+      if (el.content.startsWith('icon:')) {
+        return (
+          <div key={el.id} className="absolute cursor-move flex items-center justify-center"
+            onMouseDown={(e) => handleElementMouseDown(e, el)}
+            style={{
+              ...commonStyle, height: el.height,
+              color: el.style.color || '#3b82f6',
+              fontSize: Math.min(el.width, el.height) * 0.6,
+              transform: shapeTransform.length > 0 ? shapeTransform.join(' ') : undefined,
+              ...perspectiveStyle,
+            }}>
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg viewBox="0 0 100 100" width={el.width * 0.7} height={el.height * 0.7}>
+                <circle cx="50" cy="50" r="40" fill={el.style.color || '#3b82f6'} fillOpacity={0.15} stroke={el.style.color || '#3b82f6'} strokeWidth={2} />
+                <text x="50" y="55" textAnchor="middle" dominantBaseline="middle" fill={el.style.color || '#3b82f6'} fontSize="24" fontWeight="bold">
+                  {el.content.replace('icon:', '').charAt(0).toUpperCase()}
+                </text>
+              </svg>
+            </div>
+            {isSelected && ['nw', 'ne', 'sw', 'se'].map((pos) => (
+              <ResizeHandle key={pos} position={pos} onResize={handleResize(el.id, el)} />
+            ))}
+          </div>
+        );
+      }
 
       if (el.content === 'arrow') {
         shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(0 25%, 65% 25%, 65% 0, 100% 50%, 65% 100%, 65% 75%, 0 75%)', background: shapeColor };
