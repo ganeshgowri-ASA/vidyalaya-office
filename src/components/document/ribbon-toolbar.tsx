@@ -9,9 +9,9 @@ import {
   Type, Highlighter, Heading1, Heading2, Heading3, Pilcrow,
   Sparkles, LayoutTemplate,
   Undo2, Redo2, SeparatorHorizontal, Hash, Ruler,
-  Droplets, Paintbrush, Footprints, Mail, Frame, PaintBucket,
+  Droplets, Mail, Frame, PaintBucket,
   GitBranch, MessageCircle, PanelRight, Stamp,
-  FileText as FootnoteIcon, Wand2,
+  FileText as FootnoteIcon, Wand2, Settings2, Terminal, History,
 } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
 import { ToolbarButton, ToolbarSeparator, ToolbarDropdown } from "./toolbar-button";
@@ -66,7 +66,14 @@ function ColorPicker({
   );
 }
 
-export function RibbonToolbar() {
+interface RibbonToolbarProps {
+  onPageSetup?: () => void;
+  onHeaderFooterEditor?: () => void;
+  onToggleVersionControl?: () => void;
+  onToggleDeveloper?: () => void;
+}
+
+export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersionControl, onToggleDeveloper }: RibbonToolbarProps = {}) {
   const {
     activeTab, setActiveTab,
     currentFont, setCurrentFont,
@@ -194,6 +201,7 @@ export function RibbonToolbar() {
     { key: "insert" as const, label: "Insert" },
     { key: "layout" as const, label: "Layout" },
     { key: "view" as const, label: "View" },
+    { key: "developer" as const, label: "Developer" },
   ];
 
   return (
@@ -579,8 +587,16 @@ export function RibbonToolbar() {
               <ToolbarButton icon={<Columns3 size={15} />} title="3 Columns" label="3" onClick={() => setColumns(3)} active={columns === 3} />
             </div>
             <ToolbarSeparator />
+            {/* Page Setup */}
+            {onPageSetup && (
+              <ToolbarButton icon={<Settings2 size={15} />} label="Page Setup" title="Page Setup Dialog" onClick={onPageSetup} />
+            )}
+            <ToolbarSeparator />
             {/* Header/Footer */}
             <ToolbarButton icon={<Stamp size={15} />} label="Header/Footer" title="Toggle Header & Footer" active={showHeaderFooter} onClick={toggleHeaderFooter} />
+            {onHeaderFooterEditor && (
+              <ToolbarButton icon={<Stamp size={15} />} label="Edit H/F" title="Advanced Header & Footer Editor" onClick={onHeaderFooterEditor} />
+            )}
             <ToolbarSeparator />
             {/* Page Borders */}
             <div className="relative">
@@ -649,6 +665,22 @@ export function RibbonToolbar() {
             <ToolbarButton icon={<GitBranch size={15} />} label="Track Changes" title="Toggle Track Changes" active={trackChanges} onClick={toggleTrackChanges} />
             {/* Comments */}
             <ToolbarButton icon={<MessageCircle size={15} />} label="Comments" title="Toggle Comments Sidebar" active={showComments} onClick={toggleComments} />
+            <ToolbarSeparator />
+            {/* Version Control */}
+            {onToggleVersionControl && (
+              <ToolbarButton icon={<History size={15} />} label="Versions" title="Toggle Version Control Panel" onClick={onToggleVersionControl} />
+            )}
+          </>
+        )}
+
+        {activeTab === "developer" && (
+          <>
+            {onToggleDeveloper && (
+              <ToolbarButton icon={<Terminal size={15} />} label="Developer Tools" title="Open Developer Panel" onClick={onToggleDeveloper} />
+            )}
+            <ToolbarSeparator />
+            <ToolbarButton icon={<Code size={15} />} label="Macro Editor" title="Open Macro Editor" onClick={() => onToggleDeveloper?.()} />
+            <ToolbarButton icon={<Terminal size={15} />} label="Console" title="Developer Console" onClick={() => onToggleDeveloper?.()} />
           </>
         )}
       </div>

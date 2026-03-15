@@ -12,6 +12,8 @@ import {
   ClipboardCheck,
   ChevronLeft,
   ChevronRight,
+  Settings,
+  Shield,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -24,6 +26,8 @@ const navItems = [
   { label: "PDF Tools", href: "/pdf", icon: FileDown },
   { label: "Templates", href: "/templates", icon: LayoutTemplate },
   { label: "Review & Approval", href: "/review", icon: ClipboardCheck },
+  { label: "Doc Control", href: "/doc-control", icon: Shield },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {

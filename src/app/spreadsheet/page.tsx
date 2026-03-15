@@ -14,6 +14,7 @@ import { PivotTableModal } from "@/components/spreadsheet/pivot-table-modal";
 import { DataValidationModal } from "@/components/spreadsheet/data-validation-modal";
 import { SortFilterPanel } from "@/components/spreadsheet/sort-filter-panel";
 import { exportToCSV, printSheet } from "@/components/spreadsheet/export-utils";
+import { PageSetupDialog } from "@/components/document/page-setup-dialog";
 
 export default function SpreadsheetPage() {
   const getActiveSheet = useSpreadsheetStore((s) => s.getActiveSheet);
@@ -23,6 +24,7 @@ export default function SpreadsheetPage() {
   const [showPivot, setShowPivot] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [showSortFilter, setShowSortFilter] = useState(false);
+  const [showPageSetup, setShowPageSetup] = useState(false);
 
   // Load template from localStorage if navigated from Templates page
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function SpreadsheetPage() {
         onOpenPivot={() => setShowPivot(true)}
         onOpenValidation={() => setShowValidation(true)}
         onOpenSortFilter={() => setShowSortFilter(true)}
+        onPageSetup={() => setShowPageSetup(true)}
       />
       <FormulaBar />
       <div className="flex flex-1 overflow-hidden">
@@ -84,6 +87,7 @@ export default function SpreadsheetPage() {
         open={showSortFilter}
         onClose={() => setShowSortFilter(false)}
       />
+      <PageSetupDialog open={showPageSetup} onClose={() => setShowPageSetup(false)} />
     </div>
   );
 }

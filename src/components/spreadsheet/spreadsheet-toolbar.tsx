@@ -36,6 +36,7 @@ import {
   Grid3X3,
   Columns,
   ChevronDown,
+  Settings2,
 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { colToLetter } from "./formula-engine";
@@ -199,6 +200,7 @@ export function SpreadsheetToolbar({
   onOpenValidation,
   onOpenSortFilter,
   onOpenCondFormatDialog,
+  onPageSetup,
 }: {
   onExportCSV: () => void;
   onPrint: () => void;
@@ -206,6 +208,7 @@ export function SpreadsheetToolbar({
   onOpenValidation?: () => void;
   onOpenSortFilter?: () => void;
   onOpenCondFormatDialog?: () => void;
+  onPageSetup?: () => void;
 }) {
   const setSelectionStyle = useSpreadsheetStore((s) => s.setSelectionStyle);
   const activeCell = useSpreadsheetStore((s) => s.activeCell);
@@ -807,6 +810,13 @@ export function SpreadsheetToolbar({
       <ToolBtn title="Set Print Area" onClick={handlePrintArea}>
         <Columns size={15} />
       </ToolBtn>
+
+      {/* === Page Setup === */}
+      {onPageSetup && (
+        <ToolBtn title="Page Setup" onClick={onPageSetup}>
+          <Settings2 size={15} />
+        </ToolBtn>
+      )}
 
       <div className="flex-1" />
 
