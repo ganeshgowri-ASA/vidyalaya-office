@@ -30,16 +30,32 @@ import {
   Image,
   Minimize2,
   X,
+  RotateCw,
+  GripVertical,
+  Hash,
+  Droplets,
+  EyeOff,
+  ScanText,
+  FormInput,
+  ShieldCheck,
+  BookOpen,
+  Columns2,
+  RotateCcw,
+  List,
+  Circle,
+  ChevronDown,
+  Award,
+  Move,
 } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = "view" | "edit" | "merge" | "split" | "convert" | "compress";
+type TabId = "view" | "edit" | "merge" | "split" | "convert" | "compress" | "forms" | "compare";
 
 interface Annotation {
   id: string;
-  type: "text" | "highlight" | "drawing" | "stamp" | "signature";
+  type: "text" | "highlight" | "drawing" | "stamp" | "signature" | "redaction";
   page: number;
   x: number;
   y: number;
@@ -52,6 +68,44 @@ interface Annotation {
   points?: { x: number; y: number }[];
   stamp?: string;
   signatureDataUrl?: string;
+}
+
+interface FormField {
+  id: string;
+  type: "text-input" | "checkbox" | "radio" | "dropdown";
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  options?: string[];
+  required?: boolean;
+}
+
+interface Bookmark {
+  id: string;
+  title: string;
+  page: number;
+  level: number;
+}
+
+interface WatermarkConfig {
+  type: "text" | "image";
+  text: string;
+  fontSize: number;
+  opacity: number;
+  rotation: number;
+  color: string;
+  imageDataUrl?: string;
+}
+
+interface CertificateInfo {
+  name: string;
+  email: string;
+  organization: string;
+  reason: string;
+  date: string;
 }
 
 interface MergeFile {
@@ -89,6 +143,8 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "split", label: "Split", icon: Scissors },
   { id: "convert", label: "Convert", icon: FileOutput },
   { id: "compress", label: "Compress", icon: Minimize2 },
+  { id: "forms", label: "Forms", icon: FormInput },
+  { id: "compare", label: "Compare", icon: Columns2 },
 ];
 
 // ─── Main Component ─────────────────────────────────────────────────────────

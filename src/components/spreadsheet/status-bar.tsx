@@ -28,7 +28,7 @@ export function StatusBar() {
       }
     }
 
-    if (values.length === 0) return { count: cellCount, numCount: 0, sum: 0, avg: 0 };
+    if (values.length === 0) return { count: cellCount, numCount: 0, sum: 0, avg: 0, min: 0, max: 0 };
 
     const sum = values.reduce((a, b) => a + b, 0);
     return {
@@ -36,6 +36,8 @@ export function StatusBar() {
       numCount: values.length,
       sum,
       avg: sum / values.length,
+      min: Math.min(...values),
+      max: Math.max(...values),
     };
   }, [selectionStart, selectionEnd, getCellDisplay]);
 
@@ -65,6 +67,8 @@ export function StatusBar() {
             <span>Sum: {stats.sum.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
             <span>Average: {stats.avg.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
             <span>Count: {stats.numCount}</span>
+            <span>Min: {stats.min.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+            <span>Max: {stats.max.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
           </>
         )}
         {stats && <span>Cells: {stats.count}</span>}
