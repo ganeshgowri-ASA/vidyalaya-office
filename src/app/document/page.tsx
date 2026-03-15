@@ -18,9 +18,11 @@ import { VersionControlPanel } from "@/components/document/version-control-panel
 import { DeveloperPanel } from "@/components/document/developer-tab";
 import { useDocumentStore } from "@/store/document-store";
 import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
+import { EquationEditor } from "@/components/document/equation-editor";
+import { CitationManagerModal } from "@/components/document/citation-manager";
 
 export default function DocumentPage() {
-  const { fileName, setFileName, setShowFindReplace, showComments, trackChanges, showStylesPanel, setHeaderText, setFooterText, showNavigationPane } = useDocumentStore();
+  const { fileName, setFileName, setShowFindReplace, showComments, trackChanges, showStylesPanel, setHeaderText, setFooterText, showNavigationPane, showEquationEditor, setShowEquationEditor, showCitationManager, setShowCitationManager } = useDocumentStore();
   const [showExport, setShowExport] = React.useState(false);
   const [showPageSetup, setShowPageSetup] = React.useState(false);
   const [showHeaderFooterEditor, setShowHeaderFooterEditor] = React.useState(false);
@@ -261,6 +263,21 @@ export default function DocumentPage() {
         headerConfig={headerConfig}
         footerConfig={footerConfig}
         onSave={handleHeaderFooterSave}
+      />
+      <EquationEditor
+        open={showEquationEditor}
+        onClose={() => setShowEquationEditor(false)}
+        onInsert={(html) => {
+          const editor = document.getElementById("doc-editor");
+          if (editor) {
+            editor.focus();
+            document.execCommand("insertHTML", false, html);
+          }
+        }}
+      />
+      <CitationManagerModal
+        open={showCitationManager}
+        onClose={() => setShowCitationManager(false)}
       />
     </div>
   );
