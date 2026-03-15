@@ -525,8 +525,7 @@ export function InsertTab() {
       <div className="flex flex-col items-center border-r pr-2 mr-1" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-0.5">
           <ToolbarButton icon={<Sigma size={14} />} label="Equation" title="Equation Editor" onClick={() => {
-            focusEditor();
-            execCmd("insertHTML", '<span style="font-family:Cambria Math,serif;font-size:14pt;background:#f0f0ff;padding:2px 8px;border:1px solid #ddd;border-radius:2px;" contenteditable="true">x = (-b ± √(b²-4ac)) / 2a</span>');
+            useDocumentStore.getState().setShowEquationEditor(true);
           }} />
           <div className="relative">
             <ToolbarButton icon={<span className="text-sm font-bold" style={{ color: "var(--foreground)" }}>Ω</span>} label="Symbol" title="Insert Symbol" onClick={() => setShowSpecialChars(!showSpecialChars)} />
