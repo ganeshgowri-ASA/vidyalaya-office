@@ -18,11 +18,15 @@ import {
   Eye,
   Trash2,
   Edit3,
-  GitCompare,
   CheckSquare,
   Square,
   Calendar,
   ArrowRight,
+  Bell,
+  GripVertical,
+  Columns2,
+  X,
+  Mail,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -330,6 +334,25 @@ export default function ReviewPage() {
   /* ---- Due date form state -------------------------------------- */
   const [formDueDate, setFormDueDate] = useState('');
 
+  /* ---- Notification mockup state -------------------------------- */
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  /* ---- Workflow builder state ----------------------------------- */
+  const [workflowSteps, setWorkflowSteps] = useState<string[]>(['Submit', 'Review', 'Approve', 'Publish']);
+  const [draggedStep, setDraggedStep] = useState<number | null>(null);
+
+  /* ---- Full detail modal state ---------------------------------- */
+  const [showFullDetail, setShowFullDetail] = useState(false);
+
+  /* ---- Email notification mockups ------------------------------- */
+  const [emailNotifs] = useState([
+    { id: 'en1', subject: 'Review Requested: Annual Budget Proposal 2026', from: 'Arjun Mehta', time: '2 hours ago', read: false },
+    { id: 'en2', subject: 'Document Approved: Staff Recruitment Policy', from: 'Ms. Priya Patel', time: '5 hours ago', read: false },
+    { id: 'en3', subject: 'Feedback Required: Campus Safety Audit', from: 'Mr. Vikram Singh', time: 'Yesterday', read: true },
+    { id: 'en4', subject: 'Rejection Notice: IT Infrastructure Upgrade Plan', from: 'Dr. Meena Iyer', time: '2 days ago', read: true },
+  ]);
+
   /* ---- Approve / Reject state ------------------------------------ */
   const [showApprovePanel, setShowApprovePanel] = useState(false);
   const [showRejectPanel, setShowRejectPanel] = useState(false);
@@ -593,6 +616,34 @@ export default function ReviewPage() {
     setSelectedIds(new Set());
   }
 
+  /* ---- Notification click-outside -------------------------------- */
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  /* ---- Workflow drag-and-drop ----------------------------------- */
+  function onWorkflowDragStart(idx: number) {
+    setDraggedStep(idx);
+  }
+  function onWorkflowDragOver(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    if (draggedStep === null || draggedStep === idx) return;
+    const newSteps = [...workflowSteps];
+    const [moved] = newSteps.splice(draggedStep, 1);
+    newSteps.splice(idx, 0, moved);
+    setWorkflowSteps(newSteps);
+    setDraggedStep(idx);
+  }
+  function onWorkflowDragEnd() {
+    setDraggedStep(null);
+  }
+
   /* ---- File drop ------------------------------------------------- */
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
@@ -622,26 +673,94 @@ export default function ReviewPage() {
     <div className="min-h-screen p-4 md:p-8" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
       <div className="mx-auto max-w-7xl space-y-6">
 
-        {/* ========== HEADER + ROLE TOGGLE ========== */}
+        {/* ========== HEADER + ROLE TOGGLE + NOTIFICATION BELL ========== */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Review &amp; Approval</h1>
             <p className="text-sm mt-1" style={{ color: 'var(--muted-foreground)' }}>Manage document submissions, reviews, and approvals</p>
           </div>
-          <div className="flex rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-            {(['Submitter', 'Reviewer'] as Role[]).map((r) => (
+          <div className="flex items-center gap-3">
+            {/* Email Notification Bell */}
+            <div ref={notifRef} className="relative">
               <button
-                key={r}
-                onClick={() => { setRole(r); setSelectedDocId(null); setShowApprovePanel(false); setShowRejectPanel(false); setShowRequestChanges(false); }}
-                className="px-5 py-2 text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: role === r ? 'var(--primary)' : 'var(--card)',
-                  color: role === r ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
-                }}
+                onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+                className="relative flex items-center justify-center w-10 h-10 rounded-xl border transition-colors hover:opacity-80"
+                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)', color: 'var(--card-foreground)' }}
+                title="Review notifications"
               >
-                {r}
+                <Bell size={18} />
+                {stats.pending > 0 && (
+                  <span
+                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                    style={{ backgroundColor: '#dc2626' }}
+                  >
+                    {stats.pending}
+                  </span>
+                )}
               </button>
-            ))}
+              {showNotifDropdown && (
+                <div
+                  className="absolute right-0 top-full mt-1 w-80 rounded-xl border shadow-lg z-30"
+                  style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+                >
+                  <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+                    <h4 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--card-foreground)' }}>
+                      <Mail size={14} style={{ color: 'var(--primary)' }} />
+                      Email Notifications
+                    </h4>
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: 'var(--primary)' }}>
+                      {emailNotifs.filter((n) => !n.read).length} new
+                    </span>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {emailNotifs.map((n) => (
+                      <div
+                        key={n.id}
+                        className="px-4 py-3 cursor-pointer hover:opacity-80"
+                        style={{
+                          backgroundColor: n.read ? 'transparent' : 'var(--accent)',
+                          borderColor: 'var(--border)',
+                        }}
+                      >
+                        <div className="flex items-start gap-2">
+                          {!n.read && (
+                            <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
+                          )}
+                          <div className={n.read ? 'ml-4' : ''}>
+                            <p className="text-sm font-medium" style={{ color: 'var(--card-foreground)' }}>{n.subject}</p>
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
+                              From: {n.from} &middot; {n.time}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t px-4 py-2 text-center" style={{ borderColor: 'var(--border)' }}>
+                    <button className="text-xs font-medium hover:underline" style={{ color: 'var(--primary)' }}>
+                      View All Notifications
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Role Toggle */}
+            <div className="flex rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+              {(['Submitter', 'Reviewer'] as Role[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => { setRole(r); setSelectedDocId(null); setShowApprovePanel(false); setShowRejectPanel(false); setShowRequestChanges(false); }}
+                  className="px-5 py-2 text-sm font-medium transition-colors"
+                  style={{
+                    backgroundColor: role === r ? 'var(--primary)' : 'var(--card)',
+                    color: role === r ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                  }}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -1040,7 +1159,7 @@ export default function ReviewPage() {
                   className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium border transition-opacity hover:opacity-80"
                   style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
                 >
-                  <GitCompare size={14} style={{ color: 'var(--primary)' }} />
+                  <Columns2 size={14} style={{ color: 'var(--primary)' }} />
                   {showComparison ? 'Hide Comparison' : 'Compare Versions'}
                 </button>
               </div>
@@ -1049,7 +1168,7 @@ export default function ReviewPage() {
               {showComparison && (
                 <div className="rounded-xl border p-5 space-y-3" style={cardStyle}>
                   <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--card-foreground)' }}>
-                    <GitCompare size={14} style={{ color: 'var(--primary)' }} />
+                    <Columns2 size={14} style={{ color: 'var(--primary)' }} />
                     Version Comparison
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -1090,78 +1209,117 @@ export default function ReviewPage() {
                 </div>
               )}
 
-              {/* ---- Approval Workflow Builder ---- */}
+              {/* ---- Document Preview Panel ---- */}
+              <div className="rounded-xl border p-5 space-y-3" style={cardStyle}>
+                <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--card-foreground)' }}>
+                  <Eye size={14} style={{ color: 'var(--primary)' }} />
+                  Document Preview
+                </h3>
+                <div
+                  className="rounded-lg border p-4 min-h-[120px] text-sm"
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}
+                >
+                  {selectedDoc.fileName ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                        <FileText size={14} style={{ color: 'var(--primary)' }} />
+                        <span className="font-medium">{selectedDoc.fileName}</span>
+                      </div>
+                      <div className="h-32 rounded-lg flex items-center justify-center border border-dashed" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}>
+                        <div className="text-center space-y-1">
+                          <FileText size={32} style={{ color: 'var(--muted-foreground)', margin: '0 auto' }} />
+                          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Document preview</p>
+                          <p className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>{selectedDoc.fileName}</p>
+                        </div>
+                      </div>
+                      <div className="text-xs space-y-1" style={{ color: 'var(--muted-foreground)' }}>
+                        <p><strong>Title:</strong> {selectedDoc.name}</p>
+                        <p><strong>Description:</strong> {selectedDoc.description}</p>
+                        <p><strong>Submitted:</strong> {selectedDoc.date} by {selectedDoc.submittedBy}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-20" style={{ color: 'var(--muted-foreground)' }}>
+                      <p className="text-xs">No file attached to this document</p>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowFullDetail(true)}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium border transition-opacity hover:opacity-80"
+                  style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+                >
+                  <Columns2 size={14} style={{ color: 'var(--primary)' }} />
+                  Open Full Review Panel
+                </button>
+              </div>
+
+              {/* ---- Approval Workflow Builder (Drag & Drop) ---- */}
               <div className="rounded-xl border p-5 space-y-3" style={cardStyle}>
                 <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--card-foreground)' }}>
                   <ArrowRight size={14} style={{ color: 'var(--primary)' }} />
                   Approval Workflow
                 </h3>
-                <div className="flex items-center justify-between">
-                  {(() => {
-                    const steps = [
-                      { label: 'Submit', key: 'submit' },
-                      { label: 'Review', key: 'review' },
-                      { label: 'Approve', key: 'approve' },
-                      { label: 'Publish', key: 'publish' },
-                    ];
-                    // Determine current step index based on status
+                <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                  Drag steps to reorder the approval workflow
+                </p>
+                <div className="flex items-center gap-1">
+                  {workflowSteps.map((step, idx) => {
                     let currentIdx = 0;
-                    if (selectedDoc.status === 'Submitted') currentIdx = 1;
-                    else if (selectedDoc.status === 'In Review') currentIdx = 1;
-                    else if (selectedDoc.status === 'Approved') currentIdx = 3;
+                    if (selectedDoc.status === 'Submitted' || selectedDoc.status === 'In Review') currentIdx = 1;
+                    else if (selectedDoc.status === 'Approved') currentIdx = workflowSteps.length;
                     else if (selectedDoc.status === 'Rejected') currentIdx = 1;
-                    else if (selectedDoc.status === 'Draft') currentIdx = 0;
 
-                    return steps.map((step, idx) => {
-                      let stepStatus: 'completed' | 'current' | 'pending' = 'pending';
-                      if (selectedDoc.status === 'Rejected' && idx >= 1) {
-                        stepStatus = idx === 1 ? 'current' : 'pending';
-                        if (idx === 0) stepStatus = 'completed';
-                      } else if (idx < currentIdx) {
-                        stepStatus = 'completed';
-                      } else if (idx === currentIdx) {
-                        stepStatus = 'current';
-                      }
+                    let stepStatus: 'completed' | 'current' | 'pending' = 'pending';
+                    if (selectedDoc.status === 'Rejected' && idx >= 1) {
+                      stepStatus = idx === 1 ? 'current' : 'pending';
+                      if (idx === 0) stepStatus = 'completed';
+                    } else if (idx < currentIdx) {
+                      stepStatus = 'completed';
+                    } else if (idx === currentIdx) {
+                      stepStatus = 'current';
+                    }
 
-                      const circleColor = stepStatus === 'completed' ? '#16a34a'
-                        : stepStatus === 'current' ? 'var(--primary)'
-                        : 'var(--border)';
-                      const textColor = stepStatus === 'completed' ? '#16a34a'
-                        : stepStatus === 'current' ? 'var(--primary)'
-                        : 'var(--muted-foreground)';
+                    const circleColor = stepStatus === 'completed' ? '#16a34a'
+                      : stepStatus === 'current' ? 'var(--primary)'
+                      : 'var(--border)';
 
-                      return (
-                        <React.Fragment key={step.key}>
-                          <div className="flex flex-col items-center gap-1">
+                    return (
+                      <React.Fragment key={`${step}-${idx}`}>
+                        <div
+                          draggable
+                          onDragStart={() => onWorkflowDragStart(idx)}
+                          onDragOver={(e) => onWorkflowDragOver(e, idx)}
+                          onDragEnd={onWorkflowDragEnd}
+                          className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing select-none flex-1"
+                          style={{ opacity: draggedStep === idx ? 0.5 : 1 }}
+                        >
+                          <div className="flex items-center gap-0.5">
+                            <GripVertical size={10} style={{ color: 'var(--muted-foreground)' }} />
                             <div
                               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
                               style={{
                                 backgroundColor: stepStatus === 'pending' ? 'transparent' : circleColor,
-                                border: stepStatus === 'pending' ? `2px solid var(--border)` : 'none',
+                                border: stepStatus === 'pending' ? '2px solid var(--border)' : 'none',
                                 color: stepStatus === 'pending' ? 'var(--muted-foreground)' : '#fff',
                               }}
                             >
                               {stepStatus === 'completed' ? <CheckCircle size={16} color="#fff" /> : idx + 1}
                             </div>
-                            <span className="text-[10px] font-medium" style={{ color: textColor }}>
-                              {step.label}
-                            </span>
-                            <span className="text-[9px]" style={{ color: 'var(--muted-foreground)' }}>
-                              {stepStatus === 'completed' ? 'Done' : stepStatus === 'current' ? 'Current' : 'Pending'}
-                            </span>
                           </div>
-                          {idx < steps.length - 1 && (
-                            <div
-                              className="flex-1 h-0.5 mt-[-16px]"
-                              style={{
-                                backgroundColor: idx < currentIdx ? '#16a34a' : 'var(--border)',
-                              }}
-                            />
-                          )}
-                        </React.Fragment>
-                      );
-                    });
-                  })()}
+                          <span className="text-[10px] font-medium" style={{ color: stepStatus === 'completed' ? '#16a34a' : stepStatus === 'current' ? 'var(--primary)' : 'var(--muted-foreground)' }}>
+                            {step}
+                          </span>
+                          <span className="text-[9px]" style={{ color: 'var(--muted-foreground)' }}>
+                            {stepStatus === 'completed' ? 'Done' : stepStatus === 'current' ? 'Current' : 'Pending'}
+                          </span>
+                        </div>
+                        {idx < workflowSteps.length - 1 && (
+                          <ArrowRight size={14} className="shrink-0 mt-[-12px]" style={{ color: 'var(--muted-foreground)' }} />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1448,6 +1606,207 @@ export default function ReviewPage() {
           )}
         </div>
       </div>
+
+      {/* ========== FULL REVIEW PANEL MODAL ========== */}
+      {showFullDetail && selectedDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowFullDetail(false)} />
+          <div
+            className="relative z-10 w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-xl border shadow-2xl"
+            style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', color: 'var(--card-foreground)' }}
+          >
+            {/* Modal header */}
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b px-6 py-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+              <div>
+                <h2 className="text-lg font-semibold">{selectedDoc.name}</h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
+                  Full review panel &middot; {selectedDoc.submittedBy} &middot; {selectedDoc.date}
+                </p>
+              </div>
+              <button onClick={() => setShowFullDetail(false)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--muted-foreground)' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal body - 2 column layout */}
+            <div className="grid md:grid-cols-2 gap-6 p-6">
+              {/* Left: Document preview */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Document Preview</h3>
+                  <div
+                    className="rounded-lg border p-4 min-h-[200px]"
+                    style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}
+                  >
+                    {selectedDoc.fileName ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: 'var(--border)' }}>
+                          <FileText size={16} style={{ color: 'var(--primary)' }} />
+                          <span className="text-sm font-medium">{selectedDoc.fileName}</span>
+                        </div>
+                        <div className="h-48 rounded-lg flex items-center justify-center border border-dashed" style={{ borderColor: 'var(--border)' }}>
+                          <div className="text-center space-y-2">
+                            <FileText size={40} style={{ color: 'var(--muted-foreground)', margin: '0 auto' }} />
+                            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Document Preview Area</p>
+                            <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{selectedDoc.fileName}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-48" style={{ color: 'var(--muted-foreground)' }}>
+                        <p className="text-sm">No file attached</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Document details */}
+                <div className="rounded-lg border p-4 space-y-2" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--muted-foreground)' }}>Details</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Status</span>
+                      <div className="mt-0.5">
+                        <span className="inline-block rounded-full px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: statusColor(selectedDoc.status).bg, color: statusColor(selectedDoc.status).fg }}>
+                          {selectedDoc.status}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Priority</span>
+                      <p className="text-xs font-semibold mt-0.5" style={{ color: priorityColor(selectedDoc.priority) }}>{selectedDoc.priority}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Submitted By</span>
+                      <p className="text-sm mt-0.5">{selectedDoc.submittedBy}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Date</span>
+                      <p className="text-sm mt-0.5">{selectedDoc.date}</p>
+                    </div>
+                    {selectedDoc.dueDate && (
+                      <div>
+                        <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Due Date</span>
+                        <p className="text-sm mt-0.5">{selectedDoc.dueDate}</p>
+                      </div>
+                    )}
+                  </div>
+                  {selectedDoc.assignedReviewers.length > 0 && (
+                    <div>
+                      <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Reviewers</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {selectedDoc.assignedReviewers.map((r) => (
+                          <span key={r} className="text-xs rounded-full px-2 py-0.5 border" style={{ borderColor: 'var(--border)' }}>{r}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Description</span>
+                    <p className="text-sm mt-0.5">{selectedDoc.description}</p>
+                  </div>
+                </div>
+
+                {/* Signature if approved */}
+                {selectedDoc.signature && (
+                  <div className="rounded-lg border p-4" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--muted-foreground)' }}>Approval Signature</h4>
+                    <img src={selectedDoc.signature} alt="Signature" className="rounded-lg border h-20" style={{ borderColor: 'var(--border)' }} />
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Comment thread + Version history */}
+              <div className="space-y-4">
+                {/* Comment thread */}
+                <div>
+                  <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <MessageSquare size={14} style={{ color: 'var(--primary)' }} />
+                    Comments ({selectedDoc.comments.length})
+                  </h3>
+                  <div
+                    className="rounded-lg border p-3 max-h-64 overflow-y-auto space-y-3"
+                    style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}
+                  >
+                    {selectedDoc.comments.length === 0 && (
+                      <p className="text-sm text-center py-4" style={{ color: 'var(--muted-foreground)' }}>No comments yet</p>
+                    )}
+                    {selectedDoc.comments.filter((c) => c.parentId === null).map((c) => {
+                      const replies = selectedDoc.comments.filter((r) => r.parentId === c.id);
+                      return (
+                        <div key={c.id}>
+                          <div className="flex gap-2">
+                            <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}>
+                              {c.initials}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-medium">{c.user}</span>
+                                <span className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>{c.timestamp}</span>
+                              </div>
+                              <p className="text-xs mt-0.5">{c.text}</p>
+                            </div>
+                          </div>
+                          {replies.map((r) => (
+                            <div key={r.id} className="flex gap-2 ml-9 mt-1.5">
+                              <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: 'var(--secondary)', color: 'var(--secondary-foreground)' }}>
+                                {r.initials}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-medium">{r.user}</span>
+                                  <span className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>{r.timestamp}</span>
+                                </div>
+                                <p className="text-xs mt-0.5">{r.text}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Version History Timeline */}
+                <div>
+                  <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <History size={14} style={{ color: 'var(--primary)' }} />
+                    Version History
+                  </h3>
+                  <div
+                    className="rounded-lg border p-3 max-h-64 overflow-y-auto"
+                    style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}
+                  >
+                    <div className="relative space-y-0">
+                      {selectedDoc.auditTrail.map((entry, idx) => {
+                        const Icon = auditIcon(entry.action);
+                        const color = auditColor(entry.action);
+                        const isLast = idx === selectedDoc.auditTrail.length - 1;
+                        return (
+                          <div key={entry.id} className="flex gap-2 relative pb-3">
+                            {!isLast && (
+                              <div className="absolute left-[9px] top-5 bottom-0 w-0.5" style={{ backgroundColor: 'var(--border)' }} />
+                            )}
+                            <div className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center z-10" style={{ backgroundColor: color }}>
+                              <Icon size={10} color="#fff" />
+                            </div>
+                            <div className="flex-1 min-w-0 -mt-0.5">
+                              <p className="text-xs font-medium">{entry.description}</p>
+                              <p className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>
+                                {entry.user} &middot; {entry.timestamp}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
