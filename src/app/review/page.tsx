@@ -18,6 +18,11 @@ import {
   Eye,
   Trash2,
   Edit3,
+  GitCompare,
+  CheckSquare,
+  Square,
+  Calendar,
+  ArrowRight,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -63,6 +68,7 @@ interface Document {
   signature: string | null;
   rejectionReason: string | null;
   rejectionSeverity: RejectionSeverity | null;
+  dueDate: string | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -173,6 +179,7 @@ const INITIAL_DOCUMENTS: Document[] = [
     signature: null,
     rejectionReason: null,
     rejectionSeverity: null,
+    dueDate: '2026-03-20',
   },
   {
     id: 'doc2',
@@ -196,6 +203,7 @@ const INITIAL_DOCUMENTS: Document[] = [
     signature: null,
     rejectionReason: null,
     rejectionSeverity: null,
+    dueDate: null,
   },
   {
     id: 'doc3',
@@ -222,6 +230,7 @@ const INITIAL_DOCUMENTS: Document[] = [
     signature: null,
     rejectionReason: 'Incomplete cost estimates and unrealistic timeline. Vendor quotes are missing for 4 major line items.',
     rejectionSeverity: 'Major',
+    dueDate: '2026-03-15',
   },
   {
     id: 'doc4',
@@ -241,6 +250,7 @@ const INITIAL_DOCUMENTS: Document[] = [
     signature: null,
     rejectionReason: null,
     rejectionSeverity: null,
+    dueDate: '2026-03-25',
   },
   {
     id: 'doc5',
@@ -260,6 +270,7 @@ const INITIAL_DOCUMENTS: Document[] = [
     signature: null,
     rejectionReason: null,
     rejectionSeverity: null,
+    dueDate: '2026-03-22',
   },
   {
     id: 'doc6',
@@ -278,6 +289,7 @@ const INITIAL_DOCUMENTS: Document[] = [
     signature: null,
     rejectionReason: null,
     rejectionSeverity: null,
+    dueDate: null,
   },
 ];
 
@@ -308,6 +320,15 @@ export default function ReviewPage() {
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+
+  /* ---- Bulk selection state -------------------------------------- */
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  /* ---- Comparison state ----------------------------------------- */
+  const [showComparison, setShowComparison] = useState(false);
+
+  /* ---- Due date form state -------------------------------------- */
+  const [formDueDate, setFormDueDate] = useState('');
 
   /* ---- Approve / Reject state ------------------------------------ */
   const [showApprovePanel, setShowApprovePanel] = useState(false);
@@ -379,6 +400,7 @@ export default function ReviewPage() {
       signature: null,
       rejectionReason: null,
       rejectionSeverity: null,
+      dueDate: formDueDate || null,
     };
     setDocuments((prev) => [newDoc, ...prev]);
     setFormTitle('');
@@ -386,6 +408,7 @@ export default function ReviewPage() {
     setFormPriority('Medium');
     setFormFile(null);
     setFormReviewers([]);
+    setFormDueDate('');
   }
 
   /* ---- Comments -------------------------------------------------- */
@@ -512,6 +535,62 @@ export default function ReviewPage() {
     );
     setShowRequestChanges(false);
     setRequestChangesComment('');
+  }
+
+  /* ---- Bulk actions ---------------------------------------------- */
+  function toggleSelectDoc(docId: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(docId)) next.delete(docId);
+      else next.add(docId);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === sorted.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sorted.map((d) => d.id)));
+    }
+  }
+
+  function bulkApprove() {
+    const now = new Date();
+    const ts = `${now.toISOString().slice(0, 10)} ${now.toISOString().slice(11, 16)}`;
+    const reviewer = 'Dr. Ananya Sharma';
+    setDocuments((prev) =>
+      prev.map((d) =>
+        selectedIds.has(d.id) && d.status !== 'Draft' && d.status !== 'Approved'
+          ? {
+              ...d,
+              status: 'Approved' as Status,
+              auditTrail: [...d.auditTrail, { id: uid(), action: 'approve' as const, description: `Document bulk-approved by ${reviewer}`, user: reviewer, timestamp: ts }],
+            }
+          : d
+      )
+    );
+    setSelectedIds(new Set());
+  }
+
+  function bulkReject() {
+    const now = new Date();
+    const ts = `${now.toISOString().slice(0, 10)} ${now.toISOString().slice(11, 16)}`;
+    const reviewer = 'Dr. Ananya Sharma';
+    setDocuments((prev) =>
+      prev.map((d) =>
+        selectedIds.has(d.id) && d.status !== 'Draft' && d.status !== 'Rejected'
+          ? {
+              ...d,
+              status: 'Rejected' as Status,
+              rejectionReason: 'Rejected via bulk action',
+              rejectionSeverity: 'Minor' as RejectionSeverity,
+              auditTrail: [...d.auditTrail, { id: uid(), action: 'reject' as const, description: `Document bulk-rejected by ${reviewer}`, user: reviewer, timestamp: ts }],
+            }
+          : d
+      )
+    );
+    setSelectedIds(new Set());
   }
 
   /* ---- File drop ------------------------------------------------- */
@@ -698,6 +777,21 @@ export default function ReviewPage() {
               </div>
             </div>
 
+            {/* Due Date */}
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Due Date</label>
+              <div className="flex items-center gap-2">
+                <Calendar size={16} style={{ color: 'var(--muted-foreground)' }} />
+                <input
+                  type="date"
+                  value={formDueDate}
+                  onChange={(e) => setFormDueDate(e.target.value)}
+                  className="rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
+                  style={{ ...inputStyle, '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
+                />
+              </div>
+            </div>
+
             <button
               onClick={handleSubmit}
               disabled={!formTitle.trim()}
@@ -715,6 +809,35 @@ export default function ReviewPage() {
 
           {/* ---- Review Queue Table ---- */}
           <div className={`${selectedDoc ? 'lg:col-span-3' : 'lg:col-span-5'} rounded-xl border overflow-hidden`} style={cardStyle}>
+            {/* Bulk Action Bar */}
+            {selectedIds.size > 0 && (
+              <div
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b"
+                style={{ backgroundColor: 'rgba(59,130,246,0.08)', borderColor: 'var(--border)' }}
+              >
+                <span className="text-sm font-medium" style={{ color: 'var(--primary)' }}>
+                  <CheckSquare size={14} className="inline mr-1.5 -mt-0.5" />
+                  {selectedIds.size} document{selectedIds.size > 1 ? 's' : ''} selected
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={bulkApprove}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
+                    style={{ backgroundColor: '#16a34a' }}
+                  >
+                    <CheckCircle size={12} /> Bulk Approve
+                  </button>
+                  <button
+                    onClick={bulkReject}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
+                    style={{ backgroundColor: '#dc2626' }}
+                  >
+                    <XCircle size={12} /> Bulk Reject
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b" style={{ borderColor: 'var(--border)' }}>
               <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -741,6 +864,18 @@ export default function ReviewPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: 'var(--secondary)' }}>
+                    <th className="px-4 py-3 w-10">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleSelectAll(); }}
+                        className="flex items-center justify-center"
+                        style={{ color: 'var(--secondary-foreground)' }}
+                        title={selectedIds.size === sorted.length ? 'Deselect all' : 'Select all'}
+                      >
+                        {selectedIds.size === sorted.length && sorted.length > 0
+                          ? <CheckSquare size={16} style={{ color: 'var(--primary)' }} />
+                          : <Square size={16} />}
+                      </button>
+                    </th>
                     {([
                       ['name', 'Document Name'],
                       ['submittedBy', 'Submitted By'],
@@ -782,6 +917,17 @@ export default function ReviewPage() {
                           setShowRequestChanges(false);
                         }}
                       >
+                        <td className="px-4 py-3 w-10">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleSelectDoc(doc.id); }}
+                            className="flex items-center justify-center"
+                            style={{ color: 'var(--foreground)' }}
+                          >
+                            {selectedIds.has(doc.id)
+                              ? <CheckSquare size={16} style={{ color: 'var(--primary)' }} />
+                              : <Square size={16} />}
+                          </button>
+                        </td>
                         <td className="px-4 py-3 font-medium max-w-[200px] truncate">{doc.name}</td>
                         <td className="px-4 py-3 whitespace-nowrap" style={{ color: 'var(--muted-foreground)' }}>{doc.submittedBy}</td>
                         <td className="px-4 py-3 whitespace-nowrap" style={{ color: 'var(--muted-foreground)' }}>{doc.date}</td>
@@ -814,7 +960,7 @@ export default function ReviewPage() {
                   })}
                   {sorted.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center" style={{ color: 'var(--muted-foreground)' }}>
+                      <td colSpan={7} className="px-4 py-8 text-center" style={{ color: 'var(--muted-foreground)' }}>
                         No documents match the current filter.
                       </td>
                     </tr>
@@ -841,6 +987,9 @@ export default function ReviewPage() {
                   <span className="flex items-center gap-1"><Clock size={12} /> {selectedDoc.date}</span>
                   {selectedDoc.fileName && (
                     <span className="flex items-center gap-1"><FileText size={12} /> {selectedDoc.fileName}</span>
+                  )}
+                  {selectedDoc.dueDate && (
+                    <span className="flex items-center gap-1"><Calendar size={12} /> Due: {selectedDoc.dueDate}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -884,6 +1033,136 @@ export default function ReviewPage() {
                     <img src={selectedDoc.signature} alt="Signature" className="rounded-lg border h-16" style={{ borderColor: 'var(--border)' }} />
                   </div>
                 )}
+
+                {/* Compare button */}
+                <button
+                  onClick={() => setShowComparison(!showComparison)}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium border transition-opacity hover:opacity-80"
+                  style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+                >
+                  <GitCompare size={14} style={{ color: 'var(--primary)' }} />
+                  {showComparison ? 'Hide Comparison' : 'Compare Versions'}
+                </button>
+              </div>
+
+              {/* ---- Document Comparison (side-by-side diff) ---- */}
+              {showComparison && (
+                <div className="rounded-xl border p-5 space-y-3" style={cardStyle}>
+                  <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--card-foreground)' }}>
+                    <GitCompare size={14} style={{ color: 'var(--primary)' }} />
+                    Version Comparison
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Left panel - Original */}
+                    <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>
+                      <p className="text-xs font-semibold" style={{ color: 'var(--muted-foreground)' }}>Original Version</p>
+                      <div className="text-xs space-y-1 font-mono" style={{ color: 'var(--foreground)' }}>
+                        <p>Title: {selectedDoc.name}</p>
+                        <p style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#dc2626', padding: '2px 4px', borderRadius: '2px' }}>
+                          - Budget allocation: $450,000
+                        </p>
+                        <p>Department: Operations</p>
+                        <p style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#dc2626', padding: '2px 4px', borderRadius: '2px' }}>
+                          - Timeline: 6 months
+                        </p>
+                        <p>Priority: {selectedDoc.priority}</p>
+                      </div>
+                    </div>
+                    {/* Right panel - Current */}
+                    <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>
+                      <p className="text-xs font-semibold" style={{ color: 'var(--muted-foreground)' }}>Current Version</p>
+                      <div className="text-xs space-y-1 font-mono" style={{ color: 'var(--foreground)' }}>
+                        <p>Title: {selectedDoc.name}</p>
+                        <p style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#16a34a', padding: '2px 4px', borderRadius: '2px' }}>
+                          + Budget allocation: $520,000
+                        </p>
+                        <p>Department: Operations</p>
+                        <p style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#16a34a', padding: '2px 4px', borderRadius: '2px' }}>
+                          + Timeline: 8 months
+                        </p>
+                        <p>Priority: {selectedDoc.priority}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                    2 changes detected between versions
+                  </p>
+                </div>
+              )}
+
+              {/* ---- Approval Workflow Builder ---- */}
+              <div className="rounded-xl border p-5 space-y-3" style={cardStyle}>
+                <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--card-foreground)' }}>
+                  <ArrowRight size={14} style={{ color: 'var(--primary)' }} />
+                  Approval Workflow
+                </h3>
+                <div className="flex items-center justify-between">
+                  {(() => {
+                    const steps = [
+                      { label: 'Submit', key: 'submit' },
+                      { label: 'Review', key: 'review' },
+                      { label: 'Approve', key: 'approve' },
+                      { label: 'Publish', key: 'publish' },
+                    ];
+                    // Determine current step index based on status
+                    let currentIdx = 0;
+                    if (selectedDoc.status === 'Submitted') currentIdx = 1;
+                    else if (selectedDoc.status === 'In Review') currentIdx = 1;
+                    else if (selectedDoc.status === 'Approved') currentIdx = 3;
+                    else if (selectedDoc.status === 'Rejected') currentIdx = 1;
+                    else if (selectedDoc.status === 'Draft') currentIdx = 0;
+
+                    return steps.map((step, idx) => {
+                      let stepStatus: 'completed' | 'current' | 'pending' = 'pending';
+                      if (selectedDoc.status === 'Rejected' && idx >= 1) {
+                        stepStatus = idx === 1 ? 'current' : 'pending';
+                        if (idx === 0) stepStatus = 'completed';
+                      } else if (idx < currentIdx) {
+                        stepStatus = 'completed';
+                      } else if (idx === currentIdx) {
+                        stepStatus = 'current';
+                      }
+
+                      const circleColor = stepStatus === 'completed' ? '#16a34a'
+                        : stepStatus === 'current' ? 'var(--primary)'
+                        : 'var(--border)';
+                      const textColor = stepStatus === 'completed' ? '#16a34a'
+                        : stepStatus === 'current' ? 'var(--primary)'
+                        : 'var(--muted-foreground)';
+
+                      return (
+                        <React.Fragment key={step.key}>
+                          <div className="flex flex-col items-center gap-1">
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                              style={{
+                                backgroundColor: stepStatus === 'pending' ? 'transparent' : circleColor,
+                                border: stepStatus === 'pending' ? `2px solid var(--border)` : 'none',
+                                color: stepStatus === 'pending' ? 'var(--muted-foreground)' : '#fff',
+                              }}
+                            >
+                              {stepStatus === 'completed' ? <CheckCircle size={16} color="#fff" /> : idx + 1}
+                            </div>
+                            <span className="text-[10px] font-medium" style={{ color: textColor }}>
+                              {step.label}
+                            </span>
+                            <span className="text-[9px]" style={{ color: 'var(--muted-foreground)' }}>
+                              {stepStatus === 'completed' ? 'Done' : stepStatus === 'current' ? 'Current' : 'Pending'}
+                            </span>
+                          </div>
+                          {idx < steps.length - 1 && (
+                            <div
+                              className="flex-1 h-0.5 mt-[-16px]"
+                              style={{
+                                backgroundColor: idx < currentIdx ? '#16a34a' : 'var(--border)',
+                              }}
+                            />
+                          )}
+                        </React.Fragment>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
               {/* ---- Approve / Reject Panel (Reviewer only) ---- */}

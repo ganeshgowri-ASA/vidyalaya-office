@@ -9,11 +9,14 @@ import { AIPanel } from "@/components/document/ai-panel";
 import { TemplatesModal } from "@/components/document/templates-modal";
 import { FindReplaceDialog } from "@/components/document/find-replace";
 import { PrintPreview } from "@/components/document/print-preview";
+import { CommentsSidebar } from "@/components/document/comments-sidebar";
+import { TrackChangesPanel } from "@/components/document/track-changes";
+import { StylesPanel } from "@/components/document/styles-panel";
 import { useDocumentStore } from "@/store/document-store";
 import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
 
 export default function DocumentPage() {
-  const { fileName, setFileName, setShowFindReplace } = useDocumentStore();
+  const { fileName, setFileName, setShowFindReplace, showComments, trackChanges, showStylesPanel } = useDocumentStore();
   const [showExport, setShowExport] = React.useState(false);
 
   // Keyboard shortcuts
@@ -112,13 +115,22 @@ export default function DocumentPage() {
       {/* Ribbon */}
       <RibbonToolbar />
 
+      {/* Track Changes Panel */}
+      {trackChanges && <TrackChangesPanel />}
+
       {/* Main content area */}
       <div className="relative flex flex-1 overflow-hidden">
+        {/* Styles Panel */}
+        {showStylesPanel && <StylesPanel />}
+
         {/* Editor */}
         <EditorArea />
 
         {/* Find & Replace overlay */}
         <FindReplaceDialog />
+
+        {/* Comments Sidebar */}
+        {showComments && <CommentsSidebar />}
 
         {/* AI Panel */}
         <AIPanel />

@@ -9,6 +9,9 @@ import {
   Type, Highlighter, Heading1, Heading2, Heading3, Pilcrow,
   Sparkles, LayoutTemplate,
   Undo2, Redo2, SeparatorHorizontal, Hash, Ruler,
+  Droplets, Paintbrush, Footprints, Mail, Frame, PaintBucket,
+  GitBranch, MessageCircle, PanelRight, Stamp,
+  FileText as FootnoteIcon, Wand2,
 } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
 import { ToolbarButton, ToolbarSeparator, ToolbarDropdown } from "./toolbar-button";
@@ -77,11 +80,20 @@ export function RibbonToolbar() {
     setShowTemplates,
     setShowFindReplace,
     setShowPrintPreview,
+    trackChanges, toggleTrackChanges,
+    showComments, toggleComments,
+    showStylesPanel, toggleStylesPanel,
+    showWatermark, toggleWatermark, setWatermarkText, watermarkText,
+    showHeaderFooter, toggleHeaderFooter,
   } = useDocumentStore();
 
   const [showTextColor, setShowTextColor] = useState(false);
   const [showHighlight, setShowHighlight] = useState(false);
   const [showSpecialChars, setShowSpecialChars] = useState(false);
+  const [showWatermarkMenu, setShowWatermarkMenu] = useState(false);
+  const [showWordArt, setShowWordArt] = useState(false);
+  const [showParaBorders, setShowParaBorders] = useState(false);
+  const [showPageBorders, setShowPageBorders] = useState(false);
   const textColorRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
 
@@ -299,6 +311,64 @@ export function RibbonToolbar() {
             <ToolbarButton icon={<ListOrdered size={15} />} title="Numbered List" onClick={() => runCmd("insertOrderedList")} />
             <ToolbarButton icon={<Indent size={15} />} title="Indent" onClick={() => runCmd("indent")} />
             <ToolbarButton icon={<Outdent size={15} />} title="Outdent" onClick={() => runCmd("outdent")} />
+            <ToolbarSeparator />
+
+            {/* Styles Panel */}
+            <ToolbarButton icon={<PanelRight size={15} />} label="Styles" title="Styles Panel" active={showStylesPanel} onClick={toggleStylesPanel} />
+
+            {/* Paragraph Borders & Shading */}
+            <div className="relative">
+              <ToolbarButton icon={<PaintBucket size={15} />} label="Para Borders" title="Paragraph Borders & Shading" onClick={() => setShowParaBorders(!showParaBorders)} />
+              {showParaBorders && (
+                <div
+                  className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-3 shadow-lg"
+                  style={{ backgroundColor: "var(--card)", borderColor: "var(--border)", width: 220 }}
+                >
+                  <div className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Paragraph Shading</div>
+                  <div className="grid grid-cols-4 gap-1 mb-3">
+                    {["#fff3cd", "#d1ecf1", "#d4edda", "#f8d7da", "#e2e3e5", "#cce5ff", "#fff", "transparent"].map((c) => (
+                      <button key={c} className="h-6 w-6 rounded border" style={{ backgroundColor: c, borderColor: "#ccc" }}
+                        onClick={() => {
+                          focusEditor();
+                          const sel = window.getSelection();
+                          if (sel && sel.rangeCount) {
+                            const block = sel.anchorNode?.parentElement?.closest("p, div, blockquote, li, h1, h2, h3, h4, h5, h6");
+                            if (block) (block as HTMLElement).style.backgroundColor = c;
+                          }
+                          setShowParaBorders(false);
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Paragraph Border</div>
+                  <div className="space-y-1">
+                    {[
+                      { label: "Box Border", style: "1px solid #333" },
+                      { label: "Shadow Border", style: "2px solid #666" },
+                      { label: "Dashed Border", style: "1px dashed #999" },
+                      { label: "No Border", style: "none" },
+                    ].map((b) => (
+                      <button key={b.label} className="w-full text-left text-xs px-2 py-1 rounded hover:bg-[var(--muted)]"
+                        style={{ color: "var(--foreground)" }}
+                        onClick={() => {
+                          focusEditor();
+                          const sel = window.getSelection();
+                          if (sel && sel.rangeCount) {
+                            const block = sel.anchorNode?.parentElement?.closest("p, div, blockquote, li, h1, h2, h3, h4, h5, h6");
+                            if (block) {
+                              (block as HTMLElement).style.border = b.style;
+                              (block as HTMLElement).style.padding = b.style === "none" ? "" : "8px 12px";
+                              (block as HTMLElement).style.borderRadius = "4px";
+                            }
+                          }
+                          setShowParaBorders(false);
+                        }}
+                      >{b.label}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -323,6 +393,115 @@ export function RibbonToolbar() {
               focusEditor();
               execCmd("insertHTML", '<div style="page-break-after:always;border-top:2px dashed #ccc;margin:24px 0;padding-top:4px;text-align:center;color:#999;font-size:10px;">— Page Break —</div><p></p>');
             }} />
+            <ToolbarSeparator />
+            {/* Watermark */}
+            <div className="relative">
+              <ToolbarButton icon={<Droplets size={15} />} label="Watermark" title="Insert Watermark" onClick={() => setShowWatermarkMenu(!showWatermarkMenu)} />
+              {showWatermarkMenu && (
+                <div
+                  className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-2 shadow-lg"
+                  style={{ backgroundColor: "var(--card)", borderColor: "var(--border)", width: 180 }}
+                >
+                  <div className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Watermark Text</div>
+                  {["DRAFT", "CONFIDENTIAL", "DO NOT COPY", "SAMPLE", "FINAL"].map((w) => (
+                    <button key={w} className="w-full text-left text-xs px-3 py-1.5 rounded hover:bg-[var(--muted)]"
+                      style={{ color: "var(--foreground)" }}
+                      onClick={() => { setWatermarkText(w); if (!showWatermark) toggleWatermark(); setShowWatermarkMenu(false); }}
+                    >{w}</button>
+                  ))}
+                  <hr className="my-1" style={{ borderColor: "var(--border)" }} />
+                  <button className="w-full text-left text-xs px-3 py-1.5 rounded hover:bg-[var(--muted)]"
+                    style={{ color: "var(--foreground)" }}
+                    onClick={() => {
+                      const text = prompt("Enter custom watermark:");
+                      if (text) { setWatermarkText(text); if (!showWatermark) toggleWatermark(); }
+                      setShowWatermarkMenu(false);
+                    }}
+                  >Custom Text...</button>
+                  <button className="w-full text-left text-xs px-3 py-1.5 rounded hover:bg-[var(--muted)]"
+                    style={{ color: showWatermark ? "var(--primary)" : "var(--foreground)" }}
+                    onClick={() => { toggleWatermark(); setShowWatermarkMenu(false); }}
+                  >{showWatermark ? "Remove Watermark" : "Show Watermark"}</button>
+                </div>
+              )}
+            </div>
+
+            {/* Word Art */}
+            <div className="relative">
+              <ToolbarButton icon={<Wand2 size={15} />} label="Word Art" title="Insert Word Art" onClick={() => setShowWordArt(!showWordArt)} />
+              {showWordArt && (
+                <div
+                  className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-3 shadow-lg"
+                  style={{ backgroundColor: "var(--card)", borderColor: "var(--border)", width: 260 }}
+                >
+                  <div className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Word Art Styles</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Shadow", style: "font-size:28px;font-weight:bold;color:#1565C0;text-shadow:3px 3px 6px rgba(0,0,0,0.3);" },
+                      { label: "Outline", style: "font-size:28px;font-weight:bold;color:transparent;-webkit-text-stroke:2px #E64A19;" },
+                      { label: "Glow", style: "font-size:28px;font-weight:bold;color:#F9A825;text-shadow:0 0 10px #F9A825,0 0 20px #F9A825;" },
+                      { label: "Gradient", style: "font-size:28px;font-weight:bold;background:linear-gradient(45deg,#1565C0,#E64A19);-webkit-background-clip:text;-webkit-text-fill-color:transparent;" },
+                      { label: "3D", style: "font-size:28px;font-weight:bold;color:#2E7D32;text-shadow:1px 1px 0 #1B5E20,2px 2px 0 #1B5E20,3px 3px 0 #1B5E20;" },
+                      { label: "Neon", style: "font-size:28px;font-weight:bold;color:#fff;text-shadow:0 0 5px #00f,0 0 10px #00f,0 0 20px #00f,0 0 40px #00f;" },
+                    ].map((art) => (
+                      <button key={art.label} className="p-2 rounded border text-center hover:bg-[var(--muted)]"
+                        style={{ borderColor: "var(--border)" }}
+                        onClick={() => {
+                          const text = prompt("Enter Word Art text:") || "Word Art";
+                          focusEditor();
+                          execCmd("insertHTML", `<p style="${art.style}">${text}</p><p></p>`);
+                          setShowWordArt(false);
+                        }}
+                      >
+                        <span className="text-xs" style={{ color: "var(--foreground)" }}>{art.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footnotes */}
+            <ToolbarButton icon={<FootnoteIcon size={15} />} label="Footnote" title="Insert Footnote" onClick={() => {
+              focusEditor();
+              const editor = document.getElementById("doc-editor");
+              if (!editor) return;
+              const footnotes = editor.querySelectorAll(".doc-footnote-ref");
+              const num = footnotes.length + 1;
+              execCmd("insertHTML", `<sup class="doc-footnote-ref" style="color:#1565C0;cursor:pointer;font-size:10px;">[${num}]</sup>`);
+              // Add footnote at bottom
+              let fnContainer = editor.querySelector(".doc-footnotes");
+              if (!fnContainer) {
+                const div = document.createElement("div");
+                div.className = "doc-footnotes";
+                div.style.cssText = "border-top:1px solid #ccc;margin-top:40px;padding-top:10px;font-size:10px;color:#555;";
+                div.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;">Footnotes</div>`;
+                editor.appendChild(div);
+                fnContainer = div;
+              }
+              const fnDiv = document.createElement("div");
+              fnDiv.style.cssText = "margin:2px 0;";
+              fnDiv.innerHTML = `<sup style="color:#1565C0;">[${num}]</sup> <span contenteditable="true" style="outline:none;">Enter footnote text here</span>`;
+              fnContainer.appendChild(fnDiv);
+            }} />
+
+            {/* Mail Merge */}
+            <div className="relative">
+              <ToolbarButton icon={<Mail size={15} />} label="Mail Merge" title="Insert Merge Field" onClick={() => {
+                focusEditor();
+                const fields = ["FirstName", "LastName", "Email", "Address", "City", "State", "ZipCode", "Company", "Phone"];
+                const fieldList = fields.map((f, i) => `${i + 1}. ${f}`).join("\n");
+                const choice = prompt(`Select merge field (enter number):\n${fieldList}`);
+                if (choice) {
+                  const idx = parseInt(choice) - 1;
+                  if (idx >= 0 && idx < fields.length) {
+                    execCmd("insertHTML", `<span style="background:#e8f4fd;border:1px solid #90caf9;border-radius:3px;padding:1px 6px;font-size:12px;color:#1565C0;">\u00AB${fields[idx]}\u00BB</span>`);
+                  }
+                }
+              }} />
+            </div>
+
+            <ToolbarSeparator />
             <div className="relative">
               <ToolbarButton icon={<Hash size={15} />} label="Special Characters" title="Insert Special Character" onClick={() => setShowSpecialChars(!showSpecialChars)} />
               {showSpecialChars && (
@@ -399,6 +578,44 @@ export function RibbonToolbar() {
               <ToolbarButton icon={<Columns3 size={15} />} title="2 Columns" label="2" onClick={() => setColumns(2)} active={columns === 2} />
               <ToolbarButton icon={<Columns3 size={15} />} title="3 Columns" label="3" onClick={() => setColumns(3)} active={columns === 3} />
             </div>
+            <ToolbarSeparator />
+            {/* Header/Footer */}
+            <ToolbarButton icon={<Stamp size={15} />} label="Header/Footer" title="Toggle Header & Footer" active={showHeaderFooter} onClick={toggleHeaderFooter} />
+            <ToolbarSeparator />
+            {/* Page Borders */}
+            <div className="relative">
+              <ToolbarButton icon={<Frame size={15} />} label="Page Borders" title="Page Borders" onClick={() => setShowPageBorders(!showPageBorders)} />
+              {showPageBorders && (
+                <div
+                  className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-3 shadow-lg"
+                  style={{ backgroundColor: "var(--card)", borderColor: "var(--border)", width: 200 }}
+                >
+                  <div className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Page Border Style</div>
+                  {[
+                    { label: "Simple Box", border: "2px solid #333" },
+                    { label: "Double Line", border: "4px double #333" },
+                    { label: "Shadow", border: "2px solid #333", shadow: "4px 4px 0 #999" },
+                    { label: "Dashed", border: "2px dashed #666" },
+                    { label: "Dotted", border: "3px dotted #666" },
+                    { label: "Thick", border: "4px solid #000" },
+                    { label: "Decorative", border: "3px ridge #8B4513" },
+                    { label: "None", border: "none" },
+                  ].map((b) => (
+                    <button key={b.label} className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[var(--muted)]"
+                      style={{ color: "var(--foreground)" }}
+                      onClick={() => {
+                        const page = document.querySelector(".mx-auto.shadow-lg") as HTMLElement;
+                        if (page) {
+                          page.style.border = b.border;
+                          page.style.boxShadow = (b as { shadow?: string }).shadow || "";
+                        }
+                        setShowPageBorders(false);
+                      }}
+                    >{b.label}</button>
+                  ))}
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -427,6 +644,11 @@ export function RibbonToolbar() {
             }} />
             <ToolbarSeparator />
             <ToolbarButton icon={<Printer size={15} />} label="Print Preview" title="Print Preview" onClick={() => setShowPrintPreview(true)} />
+            <ToolbarSeparator />
+            {/* Track Changes */}
+            <ToolbarButton icon={<GitBranch size={15} />} label="Track Changes" title="Toggle Track Changes" active={trackChanges} onClick={toggleTrackChanges} />
+            {/* Comments */}
+            <ToolbarButton icon={<MessageCircle size={15} />} label="Comments" title="Toggle Comments Sidebar" active={showComments} onClick={toggleComments} />
           </>
         )}
       </div>

@@ -1,16 +1,26 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Copy, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Copy, ChevronUp, ChevronDown, EyeOff } from 'lucide-react';
 import { usePresentationStore, type SlideLayout } from '@/store/presentation-store';
+import SlideContextMenu from './slide-context-menu';
 
 const LAYOUT_OPTIONS: { label: string; value: SlideLayout }[] = [
   { label: 'Title Slide', value: 'title' },
-  { label: 'Content', value: 'content' },
-  { label: 'Two Column', value: 'two-column' },
+  { label: 'Title & Content', value: 'content' },
   { label: 'Section Header', value: 'section-header' },
+  { label: 'Two Content', value: 'two-column' },
+  { label: 'Comparison', value: 'comparison' },
   { label: 'Blank', value: 'blank' },
+  { label: 'Title Only', value: 'title-only' },
+  { label: 'Picture with Caption', value: 'picture-caption' },
 ];
+
+interface ContextMenuState {
+  slideIndex: number;
+  x: number;
+  y: number;
+}
 
 export default function SlidePanel() {
   const {
@@ -24,6 +34,16 @@ export default function SlidePanel() {
   } = usePresentationStore();
 
   const [showLayoutMenu, setShowLayoutMenu] = useState(false);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+
+  const handleContextMenu = (e: React.MouseEvent, index: number) => {
+    e.preventDefault();
+    setContextMenu({
+      slideIndex: index,
+      x: e.clientX,
+      y: e.clientY,
+    });
+  };
 
   return (
     <div
@@ -77,10 +97,12 @@ export default function SlidePanel() {
           <div
             key={slide.id}
             onClick={() => setActiveSlide(index)}
+            onContextMenu={(e) => handleContextMenu(e, index)}
             className="cursor-pointer rounded overflow-hidden border-2 transition-all"
             style={{
               borderColor: index === activeSlideIndex ? 'var(--primary)' : 'var(--border)',
               aspectRatio: '16/9',
+              opacity: slide.hidden ? 0.5 : 1,
             }}
           >
             {/* Mini slide preview */}
@@ -90,6 +112,12 @@ export default function SlidePanel() {
                 background: slide.background,
               }}
             >
+              {/* Hidden indicator */}
+              {slide.hidden && (
+                <div className="absolute top-0.5 left-1">
+                  <EyeOff size={10} className="text-white/70" />
+                </div>
+              )}
               {/* Slide number */}
               <div
                 className="absolute bottom-0.5 right-1 text-white font-bold drop-shadow"
@@ -161,6 +189,16 @@ export default function SlidePanel() {
           <ChevronDown size={14} />
         </button>
       </div>
+
+      {/* Context menu */}
+      {contextMenu && (
+        <SlideContextMenu
+          slideIndex={contextMenu.slideIndex}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 }

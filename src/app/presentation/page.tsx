@@ -10,6 +10,8 @@ import SpeakerNotes from '@/components/presentation/speaker-notes';
 import TemplateModal from '@/components/presentation/template-modal';
 import AIPanel from '@/components/presentation/ai-panel';
 import PrintView from '@/components/presentation/print-view';
+import AnimationsPanel from '@/components/presentation/animations-panel';
+import SmartArtModal from '@/components/presentation/smart-art-modal';
 
 export default function PresentationPage() {
   const { setPresenterMode, presenterMode, loadTemplate } = usePresentationStore();
@@ -55,11 +57,13 @@ export default function PresentationPage() {
             <SlideCanvas />
             <SpeakerNotes />
           </div>
+          <AnimationsPanel />
           <AIPanel />
         </div>
       </div>
       <PresenterMode />
       <TemplateModal />
+      <SmartArtModal />
       <PrintView />
     </>
   );

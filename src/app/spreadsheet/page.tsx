@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSpreadsheetStore } from "@/store/spreadsheet-store";
 import { SpreadsheetToolbar } from "@/components/spreadsheet/spreadsheet-toolbar";
 import { FormulaBar } from "@/components/spreadsheet/formula-bar";
@@ -10,12 +10,19 @@ import { StatusBar } from "@/components/spreadsheet/status-bar";
 import { ChartModal } from "@/components/spreadsheet/chart-modal";
 import { TemplatesModal } from "@/components/spreadsheet/templates-modal";
 import { AiPanel } from "@/components/spreadsheet/ai-panel";
+import { PivotTableModal } from "@/components/spreadsheet/pivot-table-modal";
+import { DataValidationModal } from "@/components/spreadsheet/data-validation-modal";
+import { SortFilterPanel } from "@/components/spreadsheet/sort-filter-panel";
 import { exportToCSV, printSheet } from "@/components/spreadsheet/export-utils";
 
 export default function SpreadsheetPage() {
   const getActiveSheet = useSpreadsheetStore((s) => s.getActiveSheet);
   const getCellDisplay = useSpreadsheetStore((s) => s.getCellDisplay);
   const loadTemplate = useSpreadsheetStore((s) => s.loadTemplate);
+
+  const [showPivot, setShowPivot] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
+  const [showSortFilter, setShowSortFilter] = useState(false);
 
   // Load template from localStorage if navigated from Templates page
   useEffect(() => {
@@ -48,7 +55,13 @@ export default function SpreadsheetPage() {
       className="flex flex-col h-full -m-6"
       style={{ backgroundColor: "var(--background)" }}
     >
-      <SpreadsheetToolbar onExportCSV={handleExportCSV} onPrint={handlePrint} />
+      <SpreadsheetToolbar
+        onExportCSV={handleExportCSV}
+        onPrint={handlePrint}
+        onOpenPivot={() => setShowPivot(true)}
+        onOpenValidation={() => setShowValidation(true)}
+        onOpenSortFilter={() => setShowSortFilter(true)}
+      />
       <FormulaBar />
       <div className="flex flex-1 overflow-hidden">
         <SpreadsheetGrid />
@@ -58,6 +71,19 @@ export default function SpreadsheetPage() {
       <StatusBar />
       <ChartModal />
       <TemplatesModal />
+      <PivotTableModal open={showPivot} onClose={() => setShowPivot(false)} />
+      <DataValidationModal
+        open={showValidation}
+        onClose={() => setShowValidation(false)}
+        onApply={(rule) => {
+          // Validation rules are stored - for now just close
+          setShowValidation(false);
+        }}
+      />
+      <SortFilterPanel
+        open={showSortFilter}
+        onClose={() => setShowSortFilter(false)}
+      />
     </div>
   );
 }

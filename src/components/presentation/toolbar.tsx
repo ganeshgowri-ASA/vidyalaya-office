@@ -18,12 +18,37 @@ import {
   Star,
   Diamond,
   Grid,
+  Paintbrush,
+  Paintbrush2,
+  Layers,
+  Sparkles,
+  Lightbulb,
+  Timer,
+  Download,
+  FileText,
+  File,
+  BoxSelect,
+  RotateCcw,
+  EyeOff,
 } from 'lucide-react';
 import {
   usePresentationStore,
   GRADIENT_PRESETS,
   SOLID_COLORS,
+  PRESENTATION_THEMES,
+  type SlideLayout,
 } from '@/store/presentation-store';
+
+const LAYOUT_OPTIONS: { label: string; value: SlideLayout }[] = [
+  { label: 'Title Slide', value: 'title' },
+  { label: 'Title & Content', value: 'content' },
+  { label: 'Section Header', value: 'section-header' },
+  { label: 'Two Content', value: 'two-column' },
+  { label: 'Comparison', value: 'comparison' },
+  { label: 'Blank', value: 'blank' },
+  { label: 'Title Only', value: 'title-only' },
+  { label: 'Picture with Caption', value: 'picture-caption' },
+];
 
 export default function Toolbar() {
   const {
@@ -38,6 +63,14 @@ export default function Toolbar() {
     setShowAIPanel,
     showAIPanel,
     updateSlideTransition,
+    showAnimationsPanel,
+    setShowAnimationsPanel,
+    setShowSmartArtModal,
+    showGrid,
+    setShowGrid,
+    applyTheme,
+    currentTheme,
+    updateSlideTransitionTiming,
   } = usePresentationStore();
 
   const [showBgPicker, setShowBgPicker] = useState(false);
@@ -46,6 +79,11 @@ export default function Toolbar() {
   const [showMoreShapes, setShowMoreShapes] = useState(false);
   const [showTransitions, setShowTransitions] = useState(false);
   const [showSorterView, setShowSorterView] = useState(false);
+  const [showThemes, setShowThemes] = useState(false);
+  const [showShapeFormat, setShowShapeFormat] = useState(false);
+  const [showLayoutMenu, setShowLayoutMenu] = useState(false);
+  const [showTransitionTiming, setShowTransitionTiming] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const slide = slides[activeSlideIndex];
@@ -119,8 +157,29 @@ export default function Toolbar() {
     window.print();
   };
 
+  const handleExportPDF = () => {
+    window.print();
+    setShowExportMenu(false);
+  };
+
+  const handleExportPPTX = () => {
+    // Generate a JSON representation for download
+    const data = JSON.stringify({ slides }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'presentation.pptx.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setShowExportMenu(false);
+  };
+
   const TEXT_COLORS = ['#ffffff', '#000000', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
   const FONT_SIZES = [14, 18, 20, 24, 28, 32, 36, 44, 56, 72];
+  const SHAPE_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#a855f7', '#ec4899', '#06b6d4', '#f97316', '#ffffff', '#000000', '#6b7280', '#1e293b'];
+
+  const timing = slide?.transitionTiming;
 
   return (
     <div
@@ -131,6 +190,66 @@ export default function Toolbar() {
         color: 'var(--topbar-foreground)',
       }}
     >
+      {/* Themes dropdown */}
+      <div className="relative">
+        <button
+          onClick={() => setShowThemes(!showThemes)}
+          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--topbar-foreground)' }}
+          title="Slide themes"
+        >
+          <Paintbrush2 size={16} />
+          <span className="hidden sm:inline">{currentTheme || 'Themes'}</span>
+          <ChevronDown size={12} />
+        </button>
+        {showThemes && (
+          <div
+            className="absolute left-0 top-full mt-1 p-3 rounded shadow-xl z-50 border"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 260 }}
+          >
+            <div className="text-xs font-medium mb-2" style={{ color: 'var(--card-foreground)' }}>
+              Professional Themes
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {PRESENTATION_THEMES.map((theme) => (
+                <button
+                  key={theme.name}
+                  onClick={() => {
+                    applyTheme(theme);
+                    setShowThemes(false);
+                  }}
+                  className="rounded border overflow-hidden text-left transition-all hover:scale-105"
+                  style={{
+                    borderColor: currentTheme === theme.name ? 'var(--primary)' : 'var(--border)',
+                    borderWidth: currentTheme === theme.name ? 2 : 1,
+                  }}
+                >
+                  <div
+                    className="h-14 flex items-center justify-center p-2"
+                    style={{ background: theme.background }}
+                  >
+                    <div>
+                      <div style={{ color: theme.titleColor, fontSize: 9, fontWeight: 'bold' }}>
+                        Title
+                      </div>
+                      <div style={{ color: theme.textColor, fontSize: 7 }}>
+                        Body text
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="px-2 py-1 text-xs truncate"
+                    style={{ color: 'var(--card-foreground)', background: 'var(--card)' }}
+                  >
+                    {theme.name}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Background picker */}
       <div className="relative">
         <button
@@ -179,6 +298,42 @@ export default function Toolbar() {
                 />
               ))}
             </div>
+          </div>
+        )}
+      </div>
+
+      <div className="w-px h-6 mx-1" style={{ background: 'var(--border)' }} />
+
+      {/* Slide layouts dropdown */}
+      <div className="relative">
+        <button
+          onClick={() => setShowLayoutMenu(!showLayoutMenu)}
+          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--topbar-foreground)' }}
+          title="Insert slide with layout"
+        >
+          <Layers size={16} />
+          <span className="hidden sm:inline">Layout</span>
+          <ChevronDown size={12} />
+        </button>
+        {showLayoutMenu && (
+          <div
+            className="absolute left-0 top-full mt-1 rounded shadow-xl z-50 border py-1"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 180 }}
+          >
+            {LAYOUT_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  usePresentationStore.getState().addSlide(opt.value, activeSlideIndex);
+                  setShowLayoutMenu(false);
+                }}
+                className="w-full text-left px-3 py-1.5 text-sm hover:opacity-80 transition-opacity"
+                style={{ color: 'var(--card-foreground)' }}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -279,7 +434,186 @@ export default function Toolbar() {
         )}
       </div>
 
+      {/* SmartArt */}
+      <button
+        onClick={() => setShowSmartArtModal(true)}
+        className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+        style={{ color: 'var(--topbar-foreground)' }}
+        title="Insert SmartArt"
+      >
+        <Lightbulb size={16} />
+        <span className="hidden lg:inline">SmartArt</span>
+      </button>
+
       <div className="w-px h-6 mx-1" style={{ background: 'var(--border)' }} />
+
+      {/* Shape formatting panel */}
+      {selectedElement && selectedElement.type === 'shape' && (
+        <div className="relative">
+          <button
+            onClick={() => setShowShapeFormat(!showShapeFormat)}
+            className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--topbar-foreground)' }}
+            title="Shape formatting"
+          >
+            <Paintbrush size={16} />
+            <span className="hidden sm:inline">Format Shape</span>
+            <ChevronDown size={12} />
+          </button>
+          {showShapeFormat && (
+            <div
+              className="absolute left-0 top-full mt-1 p-3 rounded shadow-xl z-50 border"
+              style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 240 }}
+            >
+              {/* Fill color */}
+              <div className="text-xs font-medium mb-2" style={{ color: 'var(--card-foreground)' }}>
+                Fill Color
+              </div>
+              <div className="grid grid-cols-6 gap-1.5 mb-3">
+                {SHAPE_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      updateElement(activeSlideIndex, selectedElement.id, {
+                        style: { backgroundColor: c },
+                      });
+                    }}
+                    className="w-7 h-7 rounded border"
+                    style={{
+                      background: c,
+                      borderColor: selectedElement.style.backgroundColor === c ? 'var(--primary)' : 'var(--border)',
+                      borderWidth: selectedElement.style.backgroundColor === c ? 2 : 1,
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Border color */}
+              <div className="text-xs font-medium mb-2" style={{ color: 'var(--card-foreground)' }}>
+                Border Color
+              </div>
+              <div className="grid grid-cols-6 gap-1.5 mb-3">
+                {SHAPE_COLORS.map((c) => (
+                  <button
+                    key={`border-${c}`}
+                    onClick={() => {
+                      updateElement(activeSlideIndex, selectedElement.id, {
+                        style: { borderColor: c },
+                      });
+                    }}
+                    className="w-7 h-7 rounded border"
+                    style={{
+                      background: c,
+                      borderColor: selectedElement.style.borderColor === c ? 'var(--primary)' : 'var(--border)',
+                      borderWidth: selectedElement.style.borderColor === c ? 2 : 1,
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Border width */}
+              <div className="text-xs font-medium mb-2" style={{ color: 'var(--card-foreground)' }}>
+                Border Width: {selectedElement.style.borderWidth ?? 0}px
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={10}
+                step={1}
+                value={selectedElement.style.borderWidth ?? 0}
+                onChange={(e) => {
+                  updateElement(activeSlideIndex, selectedElement.id, {
+                    style: { borderWidth: parseInt(e.target.value) },
+                  });
+                }}
+                className="w-full h-1.5 rounded appearance-none cursor-pointer mb-3"
+                style={{ accentColor: 'var(--primary)' }}
+              />
+
+              {/* Shadow toggle */}
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium" style={{ color: 'var(--card-foreground)' }}>
+                  Shadow
+                </span>
+                <button
+                  onClick={() => {
+                    updateElement(activeSlideIndex, selectedElement.id, {
+                      style: { shadow: !selectedElement.style.shadow },
+                    });
+                  }}
+                  className="w-10 h-5 rounded-full transition-colors relative"
+                  style={{
+                    background: selectedElement.style.shadow ? 'var(--primary)' : 'var(--muted)',
+                  }}
+                >
+                  <div
+                    className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
+                    style={{
+                      left: selectedElement.style.shadow ? 20 : 2,
+                    }}
+                  />
+                </button>
+              </div>
+
+              {/* 3D Rotation */}
+              <div className="text-xs font-medium mb-2" style={{ color: 'var(--card-foreground)' }}>
+                3D Rotation
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs opacity-60 w-16">Rotate X:</span>
+                  <input
+                    type="range"
+                    min={-45}
+                    max={45}
+                    step={1}
+                    value={selectedElement.style.rotateX ?? 0}
+                    onChange={(e) => {
+                      updateElement(activeSlideIndex, selectedElement.id, {
+                        style: { rotateX: parseInt(e.target.value) },
+                      });
+                    }}
+                    className="flex-1 h-1.5 rounded appearance-none cursor-pointer"
+                    style={{ accentColor: 'var(--primary)' }}
+                  />
+                  <span className="text-xs opacity-60 w-8">{selectedElement.style.rotateX ?? 0}&deg;</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs opacity-60 w-16">Rotate Y:</span>
+                  <input
+                    type="range"
+                    min={-45}
+                    max={45}
+                    step={1}
+                    value={selectedElement.style.rotateY ?? 0}
+                    onChange={(e) => {
+                      updateElement(activeSlideIndex, selectedElement.id, {
+                        style: { rotateY: parseInt(e.target.value) },
+                      });
+                    }}
+                    className="flex-1 h-1.5 rounded appearance-none cursor-pointer"
+                    style={{ accentColor: 'var(--primary)' }}
+                  />
+                  <span className="text-xs opacity-60 w-8">{selectedElement.style.rotateY ?? 0}&deg;</span>
+                </div>
+                {(selectedElement.style.rotateX || selectedElement.style.rotateY) ? (
+                  <button
+                    onClick={() => {
+                      updateElement(activeSlideIndex, selectedElement.id, {
+                        style: { rotateX: 0, rotateY: 0 },
+                      });
+                    }}
+                    className="flex items-center gap-1 text-xs hover:opacity-80"
+                    style={{ color: 'var(--primary)' }}
+                  >
+                    <RotateCcw size={12} /> Reset rotation
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Transition selector */}
       <div className="relative">
@@ -317,6 +651,131 @@ export default function Toolbar() {
         )}
       </div>
 
+      {/* Transition timing */}
+      <div className="relative">
+        <button
+          onClick={() => setShowTransitionTiming(!showTransitionTiming)}
+          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--topbar-foreground)' }}
+          title="Transition timing"
+        >
+          <Timer size={14} />
+          <span className="hidden lg:inline">Timing</span>
+        </button>
+        {showTransitionTiming && (
+          <div
+            className="absolute left-0 top-full mt-1 p-3 rounded shadow-xl z-50 border"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 220 }}
+          >
+            <div className="text-xs font-medium mb-3" style={{ color: 'var(--card-foreground)' }}>
+              Transition Timing
+            </div>
+
+            {/* Auto-advance */}
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs" style={{ color: 'var(--card-foreground)' }}>
+                Auto-advance
+              </span>
+              <button
+                onClick={() => {
+                  updateSlideTransitionTiming(activeSlideIndex, {
+                    autoAdvance: !(timing?.autoAdvance ?? false),
+                  });
+                }}
+                className="w-10 h-5 rounded-full transition-colors relative"
+                style={{
+                  background: timing?.autoAdvance ? 'var(--primary)' : 'var(--muted)',
+                }}
+              >
+                <div
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
+                  style={{ left: timing?.autoAdvance ? 20 : 2 }}
+                />
+              </button>
+            </div>
+
+            {timing?.autoAdvance && (
+              <div className="mb-3">
+                <span className="text-xs opacity-60" style={{ color: 'var(--card-foreground)' }}>
+                  After {timing.autoAdvanceSeconds ?? 5} seconds
+                </span>
+                <input
+                  type="range"
+                  min={1}
+                  max={30}
+                  step={1}
+                  value={timing.autoAdvanceSeconds ?? 5}
+                  onChange={(e) => {
+                    updateSlideTransitionTiming(activeSlideIndex, {
+                      autoAdvanceSeconds: parseInt(e.target.value),
+                    });
+                  }}
+                  className="w-full h-1.5 rounded appearance-none cursor-pointer mt-1"
+                  style={{ accentColor: 'var(--primary)' }}
+                />
+              </div>
+            )}
+
+            {/* On click */}
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs" style={{ color: 'var(--card-foreground)' }}>
+                On click advance
+              </span>
+              <button
+                onClick={() => {
+                  updateSlideTransitionTiming(activeSlideIndex, {
+                    onClickAdvance: !(timing?.onClickAdvance ?? true),
+                  });
+                }}
+                className="w-10 h-5 rounded-full transition-colors relative"
+                style={{
+                  background: (timing?.onClickAdvance ?? true) ? 'var(--primary)' : 'var(--muted)',
+                }}
+              >
+                <div
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
+                  style={{ left: (timing?.onClickAdvance ?? true) ? 20 : 2 }}
+                />
+              </button>
+            </div>
+
+            {/* Loop */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs" style={{ color: 'var(--card-foreground)' }}>
+                Loop slideshow
+              </span>
+              <button
+                onClick={() => {
+                  updateSlideTransitionTiming(activeSlideIndex, {
+                    loop: !(timing?.loop ?? false),
+                  });
+                }}
+                className="w-10 h-5 rounded-full transition-colors relative"
+                style={{
+                  background: timing?.loop ? 'var(--primary)' : 'var(--muted)',
+                }}
+              >
+                <div
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
+                  style={{ left: timing?.loop ? 20 : 2 }}
+                />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Animations toggle */}
+      <button
+        onClick={() => setShowAnimationsPanel(!showAnimationsPanel)}
+        className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+        style={{ color: showAnimationsPanel ? 'var(--primary)' : 'var(--topbar-foreground)' }}
+        title="Animations panel"
+      >
+        <Sparkles size={16} />
+        <span className="hidden lg:inline">Animations</span>
+      </button>
+
       {/* Slide Sorter View */}
       <button
         onClick={() => setShowSorterView(!showSorterView)}
@@ -326,6 +785,17 @@ export default function Toolbar() {
       >
         <Grid size={16} />
         <span className="hidden sm:inline">Sorter</span>
+      </button>
+
+      {/* Grid/Guides toggle */}
+      <button
+        onClick={() => setShowGrid(!showGrid)}
+        className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+        style={{ color: showGrid ? 'var(--primary)' : 'var(--topbar-foreground)' }}
+        title="Show grid/guides"
+      >
+        <BoxSelect size={16} />
+        <span className="hidden lg:inline">Grid</span>
       </button>
 
       <div className="w-px h-6 mx-1" style={{ background: 'var(--border)' }} />
@@ -456,6 +926,41 @@ export default function Toolbar() {
         <span className="hidden md:inline">AI</span>
       </button>
 
+      {/* Export dropdown */}
+      <div className="relative">
+        <button
+          onClick={() => setShowExportMenu(!showExportMenu)}
+          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--topbar-foreground)' }}
+          title="Export"
+        >
+          <Download size={16} />
+          <span className="hidden md:inline">Export</span>
+          <ChevronDown size={12} />
+        </button>
+        {showExportMenu && (
+          <div
+            className="absolute right-0 top-full mt-1 rounded shadow-xl z-50 border py-1"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 160 }}
+          >
+            <button
+              onClick={handleExportPDF}
+              className="w-full flex items-center gap-2 text-left px-3 py-1.5 text-sm hover:opacity-80"
+              style={{ color: 'var(--card-foreground)' }}
+            >
+              <FileText size={14} /> Export to PDF
+            </button>
+            <button
+              onClick={handleExportPPTX}
+              className="w-full flex items-center gap-2 text-left px-3 py-1.5 text-sm hover:opacity-80"
+              style={{ color: 'var(--card-foreground)' }}
+            >
+              <File size={14} /> Export to PPTX
+            </button>
+          </div>
+        )}
+      </div>
+
       <button
         onClick={handlePrint}
         className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
@@ -503,12 +1008,18 @@ export default function Toolbar() {
                 style={{
                   borderColor: index === activeSlideIndex ? 'var(--primary)' : 'var(--border)',
                   aspectRatio: '16/9',
+                  opacity: s.hidden ? 0.5 : 1,
                 }}
               >
                 <div
                   className="w-full h-full relative"
                   style={{ background: s.background }}
                 >
+                  {s.hidden && (
+                    <div className="absolute top-1 left-1">
+                      <EyeOff size={12} className="text-white/60" />
+                    </div>
+                  )}
                   <div className="absolute bottom-1 right-2 text-white font-bold text-xs drop-shadow">
                     {index + 1}
                   </div>
