@@ -18,6 +18,7 @@ import { VersionControlPanel } from "@/components/document/version-control-panel
 import { DeveloperPanel } from "@/components/document/developer-tab";
 import { useDocumentStore } from "@/store/document-store";
 import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
+import { SmartArtInfographicsModal } from "@/components/document/smartart-infographics-modal";
 
 export default function DocumentPage() {
   const { fileName, setFileName, setShowFindReplace, showComments, trackChanges, showStylesPanel, setHeaderText, setFooterText, showNavigationPane } = useDocumentStore();
@@ -262,6 +263,7 @@ export default function DocumentPage() {
         footerConfig={footerConfig}
         onSave={handleHeaderFooterSave}
       />
+      <SmartArtInfographicsModal />
     </div>
   );
 }

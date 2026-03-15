@@ -3,7 +3,7 @@ import { create } from "zustand";
 export type PageSize = "a4" | "letter" | "legal" | "a5" | "b5";
 export type MarginPreset = "normal" | "narrow" | "moderate" | "wide" | "mirrored";
 export type LineSpacing = "1" | "1.15" | "1.5" | "2" | "2.5" | "3";
-export type TabKey = "home" | "insert" | "design" | "layout" | "references" | "review" | "view" | "developer";
+export type TabKey = "home" | "insert" | "design" | "layout" | "references" | "review" | "view" | "developer" | "table-design" | "image-format" | "smartart-design";
 export type ViewMode = "print" | "read" | "web" | "outline" | "draft";
 export type Orientation = "portrait" | "landscape";
 
@@ -60,6 +60,12 @@ interface DocumentState {
   currentTheme: string;
   pageColor: string;
 
+  // Contextual selection state
+  selectedTable: boolean;
+  selectedImage: boolean;
+  selectedSmartArt: boolean;
+  showSmartArtModal: boolean;
+
   setFileName: (name: string) => void;
   setActiveTab: (tab: TabKey) => void;
   toggleAI: () => void;
@@ -103,6 +109,12 @@ interface DocumentState {
   setSpacingAfter: (v: number) => void;
   setCurrentTheme: (theme: string) => void;
   setPageColor: (color: string) => void;
+
+  // Contextual selection actions
+  setSelectedTable: (v: boolean) => void;
+  setSelectedImage: (v: boolean) => void;
+  setSelectedSmartArt: (v: boolean) => void;
+  setShowSmartArtModal: (v: boolean) => void;
 }
 
 export const useDocumentStore = create<DocumentState>((set) => ({
@@ -148,6 +160,12 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   spacingAfter: 8,
   currentTheme: "Office",
   pageColor: "#ffffff",
+
+  // Contextual selection defaults
+  selectedTable: false,
+  selectedImage: false,
+  selectedSmartArt: false,
+  showSmartArtModal: false,
 
   setFileName: (name) => set({ fileName: name }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -203,4 +221,10 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   setSpacingAfter: (v) => set({ spacingAfter: v }),
   setCurrentTheme: (theme) => set({ currentTheme: theme }),
   setPageColor: (color) => set({ pageColor: color }),
+
+  // Contextual selection actions
+  setSelectedTable: (v) => set({ selectedTable: v, activeTab: v ? "table-design" : "home" }),
+  setSelectedImage: (v) => set({ selectedImage: v, activeTab: v ? "image-format" : "home" }),
+  setSelectedSmartArt: (v) => set({ selectedSmartArt: v, activeTab: v ? "smartart-design" : "home" }),
+  setShowSmartArtModal: (v) => set({ showSmartArtModal: v }),
 }));

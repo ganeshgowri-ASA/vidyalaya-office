@@ -13,6 +13,8 @@ import { LayoutTab } from "./ribbon-layout-tab";
 import { ReferencesTab } from "./ribbon-references-tab";
 import { ReviewTab } from "./ribbon-review-tab";
 import { ViewTab } from "./ribbon-view-tab";
+import { TableDesignTab } from "./ribbon-table-design-tab";
+import { ImageFormatTab } from "./ribbon-image-format-tab";
 import type { TabKey } from "@/store/document-store";
 
 interface RibbonToolbarProps {
@@ -27,9 +29,10 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
     activeTab, setActiveTab,
     toggleAI, showAI,
     setShowTemplates,
+    selectedTable, selectedImage, selectedSmartArt,
   } = useDocumentStore();
 
-  const tabs: { key: TabKey; label: string }[] = [
+  const baseTabs: { key: TabKey; label: string; contextual?: boolean; color?: string }[] = [
     { key: "home", label: "Home" },
     { key: "insert", label: "Insert" },
     { key: "design", label: "Design" },
@@ -40,6 +43,12 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
     { key: "developer", label: "Developer" },
   ];
 
+  // Add contextual tabs when elements are selected
+  const tabs = [...baseTabs];
+  if (selectedTable) tabs.push({ key: "table-design", label: "Table Design", contextual: true, color: "#70AD47" });
+  if (selectedImage) tabs.push({ key: "image-format", label: "Image Format", contextual: true, color: "#7030A0" });
+  if (selectedSmartArt) tabs.push({ key: "smartart-design", label: "SmartArt Design", contextual: true, color: "#ED7D31" });
+
   return (
     <div className="no-print flex-shrink-0 border-b" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
       {/* Tabs */}
@@ -49,9 +58,16 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
             key={t.key}
             onClick={() => setActiveTab(t.key)}
             className={`px-3 py-1.5 text-[11px] font-medium transition-colors border-b-2 ${
-              activeTab === t.key ? "border-[var(--primary)]" : "border-transparent hover:border-[var(--muted-foreground)]"
+              activeTab === t.key
+                ? t.contextual ? `border-current` : "border-[var(--primary)]"
+                : "border-transparent hover:border-[var(--muted-foreground)]"
             }`}
-            style={{ color: activeTab === t.key ? "var(--primary)" : "var(--muted-foreground)" }}
+            style={{
+              color: activeTab === t.key
+                ? (t.contextual ? t.color : "var(--primary)")
+                : (t.contextual ? t.color : "var(--muted-foreground)"),
+              fontWeight: t.contextual ? 600 : undefined,
+            }}
           >
             {t.label}
           </button>
@@ -81,6 +97,9 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
         {activeTab === "references" && <ReferencesTab />}
         {activeTab === "review" && <ReviewTab />}
         {activeTab === "view" && <ViewTab onToggleVersionControl={onToggleVersionControl} onToggleDeveloper={onToggleDeveloper} />}
+        {activeTab === "table-design" && <TableDesignTab />}
+        {activeTab === "image-format" && <ImageFormatTab />}
+        {activeTab === "smartart-design" && <ImageFormatTab />}
         {activeTab === "developer" && (
           <>
             {onToggleDeveloper && (

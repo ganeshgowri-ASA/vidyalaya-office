@@ -236,9 +236,77 @@ export function EditorArea() {
     showWatermark, watermarkText,
     orientation, viewMode, showRuler, showGridlines,
     pageColor,
+    setSelectedTable, setSelectedImage, setSelectedSmartArt,
   } = useDocumentStore();
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+
+  // Detect table/image/smartart selection for contextual ribbon tabs
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const sel = window.getSelection();
+      if (!sel || !sel.anchorNode) {
+        return;
+      }
+      let node: Node | null = sel.anchorNode;
+      let inTable = false;
+      let inImage = false;
+      let inSmartArt = false;
+      while (node) {
+        if ((node as HTMLElement).id === "doc-editor") break;
+        if (node instanceof HTMLTableElement || (node instanceof HTMLElement && (node.tagName === "TD" || node.tagName === "TH"))) inTable = true;
+        if (node instanceof HTMLImageElement) inImage = true;
+        if (node instanceof HTMLElement && node.dataset?.smartart === "true") inSmartArt = true;
+        if (node instanceof HTMLElement && node.classList?.contains("smartart-container")) inSmartArt = true;
+        node = node.parentNode;
+      }
+      setSelectedTable(inTable);
+      setSelectedImage(inImage);
+      setSelectedSmartArt(inSmartArt);
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target instanceof HTMLImageElement) {
+        // Mark image as selected
+        const editor = document.getElementById("doc-editor");
+        if (editor) {
+          editor.querySelectorAll("img").forEach(img => { img.dataset.selected = "false"; img.style.outline = ""; });
+        }
+        target.dataset.selected = "true";
+        target.style.outline = "2px solid #4472C4";
+        setSelectedImage(true);
+        setSelectedTable(false);
+        if (target.dataset.smartart === "true" || target.closest(".smartart-container")) {
+          setSelectedSmartArt(true);
+        } else {
+          setSelectedSmartArt(false);
+        }
+      } else if (target instanceof HTMLTableCellElement || target.closest("table")) {
+        setSelectedTable(true);
+        setSelectedImage(false);
+        setSelectedSmartArt(false);
+      } else {
+        // Deselect
+        const editor = document.getElementById("doc-editor");
+        if (editor) {
+          editor.querySelectorAll("img").forEach(img => { img.dataset.selected = "false"; img.style.outline = ""; });
+        }
+        setSelectedTable(false);
+        setSelectedImage(false);
+        setSelectedSmartArt(false);
+      }
+    };
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+    const editor = document.getElementById("doc-editor");
+    editor?.addEventListener("click", handleClick);
+
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      editor?.removeEventListener("click", handleClick);
+    };
+  }, [setSelectedTable, setSelectedImage, setSelectedSmartArt]);
 
   const ps = PAGE_SIZES[pageSize];
   const mg = MARGIN_PRESETS[margins];
