@@ -44,6 +44,7 @@ export function InsertTab() {
     showWatermark, toggleWatermark, setWatermarkText, watermarkText,
     toggleHeaderFooter, showHeaderFooter,
     toggleComments, showComments,
+    setShowSmartArtModal,
   } = useDocumentStore();
 
   const [showTableGrid, setShowTableGrid] = useState(false);
@@ -339,36 +340,7 @@ export function InsertTab() {
             )}
           </div>
           {/* SmartArt */}
-          <div className="relative">
-            <ToolbarButton icon={<Network size={14} />} label="SmartArt" title="SmartArt" onClick={() => setShowSmartArt(!showSmartArt)} />
-            {showSmartArt && (
-              <div className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-2 shadow-lg w-56 max-h-64 overflow-y-auto"
-                style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
-                {Array.from(new Set(SMARTART_TYPES.map((s) => s.category))).map((cat) => (
-                  <div key={cat}>
-                    <div className="text-[10px] font-medium mt-2 mb-1" style={{ color: "var(--muted-foreground)" }}>{cat}</div>
-                    {SMARTART_TYPES.filter((s) => s.category === cat).map((sa) => (
-                      <button key={sa.name} className="w-full text-left text-xs px-3 py-1.5 rounded hover:bg-[var(--muted)]"
-                        style={{ color: "var(--foreground)" }}
-                        onClick={() => {
-                          focusEditor();
-                          const html = `<div style="border:1px solid #ddd;padding:16px;margin:12px 0;background:#fafafa;text-align:center;">
-                            <div style="font-weight:bold;color:#2F5496;margin-bottom:8px;">${sa.name}</div>
-                            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-                              ${[1, 2, 3].map((i) => `<div style="padding:8px 16px;background:#4472C4;color:white;border-radius:4px;font-size:11px;" contenteditable="true">Item ${i}</div>`).join("")}
-                            </div>
-                          </div><p></p>`;
-                          execCmd("insertHTML", html);
-                          setShowSmartArt(false);
-                        }}>
-                        {sa.name}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ToolbarButton icon={<Network size={14} />} label="SmartArt" title="SmartArt & Infographics" onClick={() => setShowSmartArtModal(true)} />
           {/* Chart */}
           <div className="relative">
             <ToolbarButton icon={<BarChart3 size={14} />} label="Chart" title="Insert Chart" onClick={() => setShowAdvancedChart(!showAdvancedChart)} />

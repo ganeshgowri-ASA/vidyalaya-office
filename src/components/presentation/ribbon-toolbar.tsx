@@ -639,6 +639,52 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
                 </RibbonGroup>
               </>
             )}
+
+            {/* Image formatting when image is selected */}
+            {selectedElement && selectedElement.type === 'image' && (
+              <>
+                <RibbonDivider />
+                <RibbonGroup label="Image Effects">
+                  {(['none', 'shadow', 'rounded', 'oval', 'reflection', 'glow'] as const).map((effect) => (
+                    <button key={effect} onClick={() => {
+                      pushUndo();
+                      const styles: Record<string, string | boolean | number | undefined> = {};
+                      switch (effect) {
+                        case 'shadow': styles.shadow = true; break;
+                        case 'rounded': styles.borderRadius = '12px'; break;
+                        case 'oval': styles.borderRadius = '50%'; break;
+                        case 'glow': styles.shadow = true; styles.borderColor = '#3b82f6'; styles.borderWidth = 3; break;
+                        case 'reflection': styles.opacity = 0.9; break;
+                        default: styles.shadow = false; styles.borderRadius = '0'; styles.borderColor = undefined; styles.borderWidth = 0; styles.opacity = 1;
+                      }
+                      updateElement(activeSlideIndex, selectedElement.id, { style: styles });
+                    }}
+                      className="px-1.5 py-1 rounded text-[9px] border"
+                      style={{ borderColor: 'var(--border)', color: 'var(--topbar-foreground)' }}>
+                      {effect === 'none' ? 'Reset' : effect.charAt(0).toUpperCase() + effect.slice(1)}
+                    </button>
+                  ))}
+                </RibbonGroup>
+                <RibbonDivider />
+                <RibbonGroup label="Image Size">
+                  <RibbonButton icon={<Maximize size={14} />} label="Resize" onClick={() => {
+                    if (!selectedElement) return;
+                    const val = prompt('Enter width:', String(selectedElement.width));
+                    if (val) {
+                      pushUndo();
+                      const newW = parseInt(val);
+                      const ratio = selectedElement.height / selectedElement.width;
+                      updateElement(activeSlideIndex, selectedElement.id, { width: newW, height: Math.round(newW * ratio) });
+                    }
+                  }} small />
+                  <RibbonButton icon={<RotateCcw size={14} />} label="Rotate" onClick={() => {
+                    if (!selectedElement) return;
+                    pushUndo();
+                    updateElement(activeSlideIndex, selectedElement.id, { rotation: (selectedElement.rotation || 0) + 90 });
+                  }} small />
+                </RibbonGroup>
+              </>
+            )}
           </div>
         );
 

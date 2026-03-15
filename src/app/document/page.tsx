@@ -18,6 +18,7 @@ import { VersionControlPanel } from "@/components/document/version-control-panel
 import { DeveloperPanel } from "@/components/document/developer-tab";
 import { useDocumentStore } from "@/store/document-store";
 import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
+import { SmartArtInfographicsModal } from "@/components/document/smartart-infographics-modal";
 import { EquationEditor } from "@/components/document/equation-editor";
 import { CitationManagerModal } from "@/components/document/citation-manager";
 
@@ -264,6 +265,7 @@ export default function DocumentPage() {
         footerConfig={footerConfig}
         onSave={handleHeaderFooterSave}
       />
+      <SmartArtInfographicsModal />
       <EquationEditor
         open={showEquationEditor}
         onClose={() => setShowEquationEditor(false)}
