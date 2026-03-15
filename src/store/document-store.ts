@@ -1,8 +1,11 @@
 import { create } from "zustand";
 
-export type PageSize = "a4" | "letter" | "legal";
-export type MarginPreset = "normal" | "narrow" | "moderate" | "wide";
-export type LineSpacing = "1" | "1.15" | "1.5" | "2";
+export type PageSize = "a4" | "letter" | "legal" | "a5" | "b5";
+export type MarginPreset = "normal" | "narrow" | "moderate" | "wide" | "mirrored";
+export type LineSpacing = "1" | "1.15" | "1.5" | "2" | "2.5" | "3";
+export type TabKey = "home" | "insert" | "design" | "layout" | "references" | "review" | "view" | "developer";
+export type ViewMode = "print" | "read" | "web" | "outline" | "draft";
+export type Orientation = "portrait" | "landscape";
 
 export interface Comment {
   id: string;
@@ -15,7 +18,7 @@ export interface Comment {
 
 interface DocumentState {
   fileName: string;
-  activeTab: "home" | "insert" | "layout" | "view" | "developer";
+  activeTab: TabKey;
   showAI: boolean;
   showTemplates: boolean;
   showFindReplace: boolean;
@@ -31,7 +34,7 @@ interface DocumentState {
   currentFontSize: string;
   lastSaved: string | null;
 
-  // New state fields
+  // Track changes & collaboration
   trackChanges: boolean;
   showComments: boolean;
   showStylesPanel: boolean;
@@ -44,8 +47,21 @@ interface DocumentState {
   comments: Comment[];
   lineCount: number;
 
+  // New state for enhanced editor
+  orientation: Orientation;
+  viewMode: ViewMode;
+  showRuler: boolean;
+  showGridlines: boolean;
+  showNavigationPane: boolean;
+  indentLeft: number;
+  indentRight: number;
+  spacingBefore: number;
+  spacingAfter: number;
+  currentTheme: string;
+  pageColor: string;
+
   setFileName: (name: string) => void;
-  setActiveTab: (tab: DocumentState["activeTab"]) => void;
+  setActiveTab: (tab: TabKey) => void;
   toggleAI: () => void;
   setShowTemplates: (show: boolean) => void;
   setShowFindReplace: (show: boolean) => void;
@@ -60,7 +76,7 @@ interface DocumentState {
   setCurrentFontSize: (size: string) => void;
   setLastSaved: (time: string) => void;
 
-  // New actions
+  // Existing actions
   toggleTrackChanges: () => void;
   toggleComments: () => void;
   toggleStylesPanel: () => void;
@@ -74,6 +90,19 @@ interface DocumentState {
   resolveComment: (id: string) => void;
   deleteComment: (id: string) => void;
   addReply: (commentId: string, reply: { id: string; author: string; text: string; timestamp: string }) => void;
+
+  // New actions
+  setOrientation: (o: Orientation) => void;
+  setViewMode: (mode: ViewMode) => void;
+  toggleRuler: () => void;
+  toggleGridlines: () => void;
+  toggleNavigationPane: () => void;
+  setIndentLeft: (v: number) => void;
+  setIndentRight: (v: number) => void;
+  setSpacingBefore: (v: number) => void;
+  setSpacingAfter: (v: number) => void;
+  setCurrentTheme: (theme: string) => void;
+  setPageColor: (color: string) => void;
 }
 
 export const useDocumentStore = create<DocumentState>((set) => ({
@@ -90,11 +119,11 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   columns: 1,
   wordCount: 0,
   charCount: 0,
-  currentFont: "Arial",
+  currentFont: "Calibri",
   currentFontSize: "11",
   lastSaved: null,
 
-  // New defaults
+  // Existing defaults
   trackChanges: false,
   showComments: false,
   showStylesPanel: false,
@@ -106,6 +135,19 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   showHeaderFooter: false,
   comments: [],
   lineCount: 0,
+
+  // New defaults
+  orientation: "portrait",
+  viewMode: "print",
+  showRuler: true,
+  showGridlines: false,
+  showNavigationPane: false,
+  indentLeft: 0,
+  indentRight: 0,
+  spacingBefore: 0,
+  spacingAfter: 8,
+  currentTheme: "Office",
+  pageColor: "#ffffff",
 
   setFileName: (name) => set({ fileName: name }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -123,7 +165,7 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   setCurrentFontSize: (size) => set({ currentFontSize: size }),
   setLastSaved: (time) => set({ lastSaved: time }),
 
-  // New actions
+  // Existing actions
   toggleTrackChanges: () => set((s) => ({ trackChanges: !s.trackChanges })),
   toggleComments: () => set((s) => ({ showComments: !s.showComments })),
   toggleStylesPanel: () => set((s) => ({ showStylesPanel: !s.showStylesPanel })),
@@ -148,4 +190,17 @@ export const useDocumentStore = create<DocumentState>((set) => ({
         c.id === commentId ? { ...c, replies: [...c.replies, reply] } : c
       ),
     })),
+
+  // New actions
+  setOrientation: (o) => set({ orientation: o }),
+  setViewMode: (mode) => set({ viewMode: mode }),
+  toggleRuler: () => set((s) => ({ showRuler: !s.showRuler })),
+  toggleGridlines: () => set((s) => ({ showGridlines: !s.showGridlines })),
+  toggleNavigationPane: () => set((s) => ({ showNavigationPane: !s.showNavigationPane })),
+  setIndentLeft: (v) => set({ indentLeft: v }),
+  setIndentRight: (v) => set({ indentRight: v }),
+  setSpacingBefore: (v) => set({ spacingBefore: v }),
+  setSpacingAfter: (v) => set({ spacingAfter: v }),
+  setCurrentTheme: (theme) => set({ currentTheme: theme }),
+  setPageColor: (color) => set({ pageColor: color }),
 }));

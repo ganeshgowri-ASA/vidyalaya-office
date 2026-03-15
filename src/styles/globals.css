@@ -46,6 +46,97 @@
   }
 }
 
+/* Show paragraph marks */
+.show-paragraph-marks p::after,
+.show-paragraph-marks div:not([class])::after {
+  content: "¶";
+  color: #aaa;
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+.show-paragraph-marks br::after {
+  content: "↵";
+  color: #aaa;
+  font-size: 10px;
+}
+
+/* Document page shadow */
+.doc-page-container {
+  transition: box-shadow 0.2s ease;
+}
+
+/* Text selection in editor */
+#doc-editor ::selection {
+  background-color: rgba(68, 114, 196, 0.3);
+}
+
+/* Track changes styles */
+#doc-editor ins,
+#doc-editor .track-insert {
+  background-color: rgba(34, 197, 94, 0.2);
+  text-decoration: none;
+  border-bottom: 1px solid #22c55e;
+}
+
+#doc-editor del,
+#doc-editor .track-delete {
+  background-color: rgba(239, 68, 68, 0.1);
+  text-decoration: line-through;
+  color: #ef4444;
+}
+
+/* Resizable images */
+#doc-editor img {
+  cursor: pointer;
+  transition: outline 0.15s ease;
+}
+
+#doc-editor img:hover {
+  outline: 2px solid #4472C4;
+  outline-offset: 2px;
+}
+
+#doc-editor img:active {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Table editing hover */
+#doc-editor table td:hover,
+#doc-editor table th:hover {
+  outline: 1px dashed #4472C4;
+}
+
+/* Zoom slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary, #4472C4);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary, #4472C4);
+  cursor: pointer;
+  border: none;
+}
+
 /* Print styles */
 @media print {
   .no-print {
