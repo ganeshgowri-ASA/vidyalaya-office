@@ -1,66 +1,49 @@
 "use client";
 
-import { useSpreadsheetStore } from "@/store/spreadsheet-store";
+import { useSpreadsheetStore, type CellStyle } from "@/store/spreadsheet-store";
 import {
-  Bold,
-  Italic,
-  Underline,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Palette,
-  Type,
-  BarChart3,
-  LineChart,
-  PieChart,
-  FileSpreadsheet,
-  Download,
-  Printer,
-  MessageSquare,
-  Upload,
-  Highlighter,
-  Table2,
-  ShieldCheck,
-  ArrowUpAZ,
-  ArrowDownAZ,
-  Filter,
-  Snowflake,
-  StickyNote,
-  Bookmark,
-  Sigma,
-  DollarSign,
-  Percent,
-  Calendar,
-  Merge,
-  WrapText,
-  Grid3X3,
-  Columns,
-  ChevronDown,
-  Settings2,
+  Bold, Italic, Underline, Strikethrough,
+  AlignLeft, AlignCenter, AlignRight,
+  AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd,
+  Palette, Type, BarChart3, LineChart, PieChart,
+  FileSpreadsheet, Download, Printer, MessageSquare,
+  Upload, Highlighter, Table2, ShieldCheck,
+  Filter, Snowflake, StickyNote, Bookmark,
+  Sigma, DollarSign, Percent, Calendar,
+  Merge, WrapText, Grid3X3,
+  ChevronDown, Settings2, Scissors, Copy, ClipboardPaste,
+  Paintbrush, Undo2, Redo2,
+  ArrowUpAZ, ArrowDownAZ, Search, Eye, EyeOff,
+  Link, TextCursorInput, Hash, Calculator,
+  Rows3, Columns3, Plus, Trash2,
+  ArrowUp, ArrowDown, ChevronRight,
+  FileText, Image, Sparkles, Braces,
+  Lock, Unlock, MessageCircle,
+  Maximize2, ZoomIn, LayoutGrid,
+  PanelTop, Minus,
+  AreaChart, ScatterChart,
 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { colToLetter } from "./formula-engine";
 import { CellBordersPicker } from "./cell-borders-picker";
 
+// ─── Small reusable UI primitives ────────────────────────────────
 function ToolBtn({
-  children,
-  title,
-  active,
-  onClick,
+  children, title, active, onClick, disabled, small,
 }: {
-  children: React.ReactNode;
-  title: string;
-  active?: boolean;
-  onClick: () => void;
+  children: React.ReactNode; title: string; active?: boolean; onClick: () => void; disabled?: boolean; small?: boolean;
 }) {
   return (
     <button
       title={title}
       onClick={onClick}
-      className="p-1.5 rounded hover:opacity-80 transition-colors"
+      disabled={disabled}
+      className={`rounded hover:opacity-80 transition-colors ${small ? "p-0.5" : "p-1"}`}
       style={{
         backgroundColor: active ? "var(--primary)" : "transparent",
-        color: active ? "var(--primary-foreground)" : "var(--foreground)",
+        color: active ? "var(--primary-foreground)" : disabled ? "var(--muted-foreground)" : "var(--foreground)",
+        opacity: disabled ? 0.4 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
       }}
     >
       {children}
@@ -69,58 +52,50 @@ function ToolBtn({
 }
 
 function ColorPicker({
-  currentColor,
-  onPick,
-  icon,
-  title,
+  currentColor, onPick, icon, title,
 }: {
-  currentColor: string;
-  onPick: (c: string) => void;
-  icon: React.ReactNode;
-  title: string;
+  currentColor: string; onPick: (c: string) => void; icon: React.ReactNode; title: string;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const colors = [
-    "#ffffff", "#f3f4f6", "#fecaca", "#fed7aa", "#fef08a",
-    "#bbf7d0", "#bfdbfe", "#ddd6fe", "#fbcfe8", "#000000",
-    "#6b7280", "#ef4444", "#f97316", "#eab308", "#22c55e",
-    "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6",
+    "#ffffff", "#f3f4f6", "#fecaca", "#fed7aa", "#fef08a", "#bbf7d0",
+    "#bfdbfe", "#ddd6fe", "#fbcfe8", "#000000", "#6b7280", "#ef4444",
+    "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6", "#ec4899",
+    "#14b8a6", "#1e40af", "#991b1b", "#854d0e", "#166534", "#7c3aed",
+    "#be185d", "#0d9488", "#4338ca", "#dc2626", "#d97706", "#059669",
   ];
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative">
       <button
         title={title}
         onClick={() => setOpen(!open)}
-        className="p-1.5 rounded hover:opacity-80 flex items-center gap-0.5"
+        className="p-1 rounded hover:opacity-80 flex items-center gap-0.5"
         style={{ color: "var(--foreground)" }}
       >
         {icon}
-        <div
-          className="w-3 h-1 rounded-sm"
-          style={{ backgroundColor: currentColor || "var(--foreground)" }}
-        />
+        <div className="w-3 h-1 rounded-sm" style={{ backgroundColor: currentColor || "var(--foreground)" }} />
+        <ChevronDown size={8} />
       </button>
       {open && (
         <div
-          className="absolute top-full left-0 mt-1 p-2 rounded-lg shadow-lg border grid grid-cols-5 gap-1 z-50"
-          style={{
-            backgroundColor: "var(--card)",
-            borderColor: "var(--border)",
-          }}
+          className="absolute top-full left-0 mt-1 p-2 rounded-lg shadow-lg border grid grid-cols-6 gap-1 z-50"
+          style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
         >
           {colors.map((c) => (
             <button
               key={c}
-              className="w-5 h-5 rounded border"
+              className="w-5 h-5 rounded border hover:scale-110 transition-transform"
               style={{ backgroundColor: c, borderColor: "var(--border)" }}
-              onClick={() => {
-                onPick(c);
-                setOpen(false);
-              }}
+              onClick={() => { onPick(c); setOpen(false); }}
             />
           ))}
+          <button
+            className="col-span-6 text-[10px] text-center mt-1 py-0.5 rounded hover:bg-gray-100"
+            onClick={() => { onPick(""); setOpen(false); }}
+          >
+            No Color
+          </button>
         </div>
       )}
     </div>
@@ -128,13 +103,9 @@ function ColorPicker({
 }
 
 function DropdownBtn({
-  icon,
-  title,
-  children,
+  icon, title, children, label,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  children: (close: () => void) => React.ReactNode;
+  icon: React.ReactNode; title: string; children: (close: () => void) => React.ReactNode; label?: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -142,72 +113,100 @@ function DropdownBtn({
       <button
         title={title}
         onClick={() => setOpen(!open)}
-        className="p-1.5 rounded hover:opacity-80 transition-colors flex items-center gap-0.5"
+        className="p-1 rounded hover:opacity-80 transition-colors flex items-center gap-0.5"
         style={{ color: "var(--foreground)" }}
       >
         {icon}
-        <ChevronDown size={10} />
+        {label && <span className="text-[10px]">{label}</span>}
+        <ChevronDown size={8} />
       </button>
       {open && (
-        <div
-          className="absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg border z-50"
-          style={{
-            backgroundColor: "var(--card)",
-            borderColor: "var(--border)",
-            color: "var(--foreground)",
-            minWidth: 180,
-          }}
-        >
-          {children(() => setOpen(false))}
-        </div>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg border z-50 max-h-80 overflow-y-auto"
+            style={{
+              backgroundColor: "var(--card)", borderColor: "var(--border)",
+              color: "var(--foreground)", minWidth: 180,
+            }}
+          >
+            {children(() => setOpen(false))}
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-function DropdownItem({
-  onClick,
-  children,
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+function DropdownItem({ onClick, children, icon }: { onClick: () => void; children: React.ReactNode; icon?: React.ReactNode }) {
   return (
     <button
-      className="w-full text-left text-xs px-3 py-1.5 hover:opacity-80"
+      className="w-full text-left text-xs px-3 py-1.5 hover:opacity-80 flex items-center gap-2"
       style={{ backgroundColor: "transparent", color: "var(--foreground)" }}
       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--muted)")}
       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
       onClick={onClick}
     >
+      {icon && <span className="w-4 flex-shrink-0">{icon}</span>}
       {children}
     </button>
   );
 }
 
-const FORMATS = [
-  { value: "general", label: "General" },
-  { value: "number", label: "Number (0.00)" },
-  { value: "currency", label: "Currency ($)" },
-  { value: "percent", label: "Percentage (%)" },
-  { value: "date", label: "Date (MM/DD/YYYY)" },
-] as const;
+function DropdownDivider() {
+  return <div className="mx-2 my-1 border-t" style={{ borderColor: "var(--border)" }} />;
+}
 
+function DropdownHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
+      {children}
+    </div>
+  );
+}
+
+function RibbonGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center border-r pr-1.5 mr-1.5" style={{ borderColor: "var(--border)" }}>
+      <div className="flex items-center gap-0.5 flex-wrap">{children}</div>
+      <div className="text-[9px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>{label}</div>
+    </div>
+  );
+}
+
+const Separator = () => <div className="w-px h-5 mx-0.5" style={{ backgroundColor: "var(--border)" }} />;
+
+const NUMBER_FORMATS: { value: CellStyle["format"]; label: string }[] = [
+  { value: "general", label: "General" },
+  { value: "number", label: "Number" },
+  { value: "currency", label: "Currency" },
+  { value: "accounting", label: "Accounting" },
+  { value: "shortDate", label: "Short Date" },
+  { value: "longDate", label: "Long Date" },
+  { value: "time", label: "Time" },
+  { value: "percent", label: "Percentage" },
+  { value: "fraction", label: "Fraction" },
+  { value: "scientific", label: "Scientific" },
+  { value: "text", label: "Text" },
+];
+
+const FONT_FAMILIES = [
+  "Arial", "Calibri", "Cambria", "Comic Sans MS", "Consolas", "Courier New",
+  "Georgia", "Helvetica", "Impact", "Lucida Console", "Tahoma", "Times New Roman", "Trebuchet MS", "Verdana",
+];
+
+const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72];
+
+const RIBBON_TABS = ["Home", "Insert", "Page Layout", "Formulas", "Data", "Review", "View"];
+
+// ─── Main Toolbar Component ────────────────────────────────
 export function SpreadsheetToolbar({
-  onExportCSV,
-  onPrint,
-  onOpenPivot,
-  onOpenValidation,
-  onOpenSortFilter,
-  onOpenCondFormatDialog,
-  onPageSetup,
+  onExportCSV, onPrint, onOpenPivot, onOpenValidation, onOpenSortFilter,
+  onOpenCondFormatDialog, onPageSetup,
 }: {
-  onExportCSV: () => void;
-  onPrint: () => void;
-  onOpenPivot?: () => void;
-  onOpenValidation?: () => void;
-  onOpenSortFilter?: () => void;
-  onOpenCondFormatDialog?: () => void;
+  onExportCSV: () => void; onPrint: () => void;
+  onOpenPivot?: () => void; onOpenValidation?: () => void;
+  onOpenSortFilter?: () => void; onOpenCondFormatDialog?: () => void;
   onPageSetup?: () => void;
 }) {
   const setSelectionStyle = useSpreadsheetStore((s) => s.setSelectionStyle);
@@ -223,23 +222,54 @@ export function SpreadsheetToolbar({
   const setCellStyle = useSpreadsheetStore((s) => s.setCellStyle);
   const getCellDisplay = useSpreadsheetStore((s) => s.getCellDisplay);
   const getCellRaw = useSpreadsheetStore((s) => s.getCellRaw);
+  const activeRibbonTab = useSpreadsheetStore((s) => s.activeRibbonTab);
+  const setActiveRibbonTab = useSpreadsheetStore((s) => s.setActiveRibbonTab);
+  const clipboardCopy = useSpreadsheetStore((s) => s.clipboardCopy);
+  const clipboardCut = useSpreadsheetStore((s) => s.clipboardCut);
+  const clipboardPaste = useSpreadsheetStore((s) => s.clipboardPaste);
+  const clipboardPasteSpecial = useSpreadsheetStore((s) => s.clipboardPasteSpecial);
+  const undo = useSpreadsheetStore((s) => s.undo);
+  const redo = useSpreadsheetStore((s) => s.redo);
+  const setFrozenPanes = useSpreadsheetStore((s) => s.setFrozenPanes);
+  const toggleShowFormulas = useSpreadsheetStore((s) => s.toggleShowFormulas);
+  const toggleShowGridlines = useSpreadsheetStore((s) => s.toggleShowGridlines);
+  const toggleShowHeadings = useSpreadsheetStore((s) => s.toggleShowHeadings);
+  const showFormulas = useSpreadsheetStore((s) => s.showFormulas);
+  const showGridlines = useSpreadsheetStore((s) => s.showGridlines);
+  const showHeadings = useSpreadsheetStore((s) => s.showHeadings);
+  const setCellComment = useSpreadsheetStore((s) => s.setCellComment);
+  const setNamedRange = useSpreadsheetStore((s) => s.setNamedRange);
+  const insertRows = useSpreadsheetStore((s) => s.insertRows);
+  const deleteRows = useSpreadsheetStore((s) => s.deleteRows);
+  const insertCols = useSpreadsheetStore((s) => s.insertCols);
+  const deleteCols = useSpreadsheetStore((s) => s.deleteCols);
+  const clearRange = useSpreadsheetStore((s) => s.clearRange);
+  const zoom = useSpreadsheetStore((s) => s.zoom);
+  const setZoom = useSpreadsheetStore((s) => s.setZoom);
+  const protectedSheet = useSpreadsheetStore((s) => s.protectedSheet);
 
   const csvInputRef = useRef<HTMLInputElement>(null);
-  const [showCondFormat, setShowCondFormat] = useState(false);
-  const [wrapText, setWrapText] = useState(false);
-  const [freezeRow, setFreezeRow] = useState(false);
-  const [freezeCol, setFreezeCol] = useState(false);
 
-  const getCurrentStyle = useCallback(() => {
+  const getCurrentStyle = useCallback((): CellStyle => {
     if (!activeCell) return {};
     const sheet = getActiveSheet();
-    const key = `${String.fromCharCode(65 + activeCell.col)}${activeCell.row + 1}`;
+    const key = `${colToLetter(activeCell.col)}${activeCell.row + 1}`;
     return sheet.cells[key]?.style || {};
   }, [activeCell, getActiveSheet]);
 
   const style = getCurrentStyle();
 
-  // Import CSV handler
+  const getSelectionBounds = useCallback(() => {
+    const s = selectionStart || activeCell;
+    const e = selectionEnd || activeCell;
+    if (!s || !e) return null;
+    return {
+      minR: Math.min(s.row, e.row), maxR: Math.max(s.row, e.row),
+      minC: Math.min(s.col, e.col), maxC: Math.max(s.col, e.col),
+    };
+  }, [selectionStart, selectionEnd, activeCell]);
+
+  // ─── Import CSV ──────────────────────────────────────────
   const handleImportCSV = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -251,210 +281,150 @@ export function SpreadsheetToolbar({
         lines.forEach((line, row) => {
           const cols = line.split(",");
           cols.forEach((val, col) => {
-            if (col < 26 && row < 50) {
+            if (col < 100 && row < 200) {
               setCellValue(col, row, val.trim().replace(/^"|"$/g, ""));
             }
           });
         });
       };
       reader.readAsText(file);
-      // Reset input so the same file can be re-imported
       e.target.value = "";
     },
     [setCellValue]
   );
 
-  // Conditional formatting helpers
-  const getSelectionBounds = useCallback(() => {
-    const s = selectionStart || activeCell;
-    const e = selectionEnd || activeCell;
-    if (!s || !e) return null;
-    return {
-      minR: Math.min(s.row, e.row),
-      maxR: Math.max(s.row, e.row),
-      minC: Math.min(s.col, e.col),
-      maxC: Math.max(s.col, e.col),
-    };
-  }, [selectionStart, selectionEnd, activeCell]);
+  // ─── Conditional Formatting helpers ─────────────────────
+  const applyCondFormat = useCallback(
+    (type: "gt" | "lt" | "between" | "text" | "colorScale" | "dataBars" | "iconSets" | "eq" | "duplicates") => {
+      const bounds = getSelectionBounds();
+      if (!bounds) return;
+      const { minR, maxR, minC, maxC } = bounds;
 
-  const applyHighlightGreaterThan = useCallback(() => {
-    const bounds = getSelectionBounds();
-    if (!bounds) return;
-    const threshold = prompt("Highlight cells greater than:");
-    if (threshold === null) return;
-    const t = parseFloat(threshold);
-    if (isNaN(t)) return;
-    for (let r = bounds.minR; r <= bounds.maxR; r++) {
-      for (let c = bounds.minC; c <= bounds.maxC; c++) {
-        const val = parseFloat(getCellDisplay(c, r));
-        if (!isNaN(val) && val > t) {
-          setCellStyle(c, r, { bgColor: "#bbf7d0" });
+      if (type === "gt" || type === "lt" || type === "eq") {
+        const label = type === "gt" ? "greater than" : type === "lt" ? "less than" : "equal to";
+        const threshold = prompt(`Highlight cells ${label}:`);
+        if (threshold === null) return;
+        const t = parseFloat(threshold);
+        if (isNaN(t)) return;
+        const color = type === "gt" ? "#bbf7d0" : type === "lt" ? "#fecaca" : "#bfdbfe";
+        for (let r = minR; r <= maxR; r++) {
+          for (let c = minC; c <= maxC; c++) {
+            const val = parseFloat(getCellDisplay(c, r));
+            if (!isNaN(val)) {
+              const match = type === "gt" ? val > t : type === "lt" ? val < t : val === t;
+              if (match) setCellStyle(c, r, { bgColor: color });
+            }
+          }
+        }
+      } else if (type === "between") {
+        const minStr = prompt("Minimum:"); if (minStr === null) return;
+        const maxStr = prompt("Maximum:"); if (maxStr === null) return;
+        const minVal = parseFloat(minStr); const maxVal = parseFloat(maxStr);
+        if (isNaN(minVal) || isNaN(maxVal)) return;
+        for (let r = minR; r <= maxR; r++) {
+          for (let c = minC; c <= maxC; c++) {
+            const val = parseFloat(getCellDisplay(c, r));
+            if (!isNaN(val) && val >= minVal && val <= maxVal) setCellStyle(c, r, { bgColor: "#fef08a" });
+          }
+        }
+      } else if (type === "text") {
+        const text = prompt("Highlight cells containing text:");
+        if (!text) return;
+        const lower = text.toLowerCase();
+        for (let r = minR; r <= maxR; r++) {
+          for (let c = minC; c <= maxC; c++) {
+            if (getCellDisplay(c, r).toLowerCase().includes(lower)) setCellStyle(c, r, { bgColor: "#bfdbfe" });
+          }
+        }
+      } else if (type === "duplicates") {
+        const values = new Map<string, { col: number; row: number }[]>();
+        for (let r = minR; r <= maxR; r++) {
+          for (let c = minC; c <= maxC; c++) {
+            const v = getCellDisplay(c, r);
+            if (v) { values.set(v, [...(values.get(v) || []), { col: c, row: r }]); }
+          }
+        }
+        values.forEach((cells) => {
+          if (cells.length > 1) cells.forEach(({ col, row }) => setCellStyle(col, row, { bgColor: "#fecaca" }));
+        });
+      } else if (type === "colorScale") {
+        const vals: { col: number; row: number; val: number }[] = [];
+        for (let r = minR; r <= maxR; r++) {
+          for (let c = minC; c <= maxC; c++) {
+            const val = parseFloat(getCellDisplay(c, r));
+            if (!isNaN(val)) vals.push({ col: c, row: r, val });
+          }
+        }
+        if (vals.length === 0) return;
+        const min = Math.min(...vals.map((v) => v.val));
+        const max = Math.max(...vals.map((v) => v.val));
+        const range = max - min || 1;
+        for (const { col, row, val } of vals) {
+          const ratio = (val - min) / range;
+          const r = Math.round(255 * (1 - ratio));
+          const g = Math.round(255 * ratio);
+          setCellStyle(col, row, { bgColor: `rgb(${r},${g},100)` });
+        }
+      } else if (type === "dataBars") {
+        const vals: { col: number; row: number; val: number }[] = [];
+        for (let r = minR; r <= maxR; r++) {
+          for (let c = minC; c <= maxC; c++) {
+            const val = parseFloat(getCellDisplay(c, r));
+            if (!isNaN(val)) vals.push({ col: c, row: r, val });
+          }
+        }
+        if (vals.length === 0) return;
+        const max = Math.max(...vals.map((v) => v.val));
+        for (const { col, row, val } of vals) {
+          const ratio = max > 0 ? val / max : 0;
+          const intensity = Math.round(200 + 55 * (1 - ratio));
+          setCellStyle(col, row, { bgColor: `rgb(${intensity},${intensity},255)` });
+        }
+      } else if (type === "iconSets") {
+        const vals: { col: number; row: number; val: number }[] = [];
+        for (let r = minR; r <= maxR; r++) {
+          for (let c = minC; c <= maxC; c++) {
+            const val = parseFloat(getCellDisplay(c, r));
+            if (!isNaN(val)) vals.push({ col: c, row: r, val });
+          }
+        }
+        if (vals.length === 0) return;
+        const sorted = [...vals].sort((a, b) => a.val - b.val);
+        const third = Math.floor(sorted.length / 3);
+        const lowT = sorted[third]?.val ?? 0;
+        const highT = sorted[third * 2]?.val ?? 0;
+        for (const { col, row, val } of vals) {
+          if (val <= lowT) setCellStyle(col, row, { bgColor: "#fecaca" });
+          else if (val >= highT) setCellStyle(col, row, { bgColor: "#bbf7d0" });
+          else setCellStyle(col, row, { bgColor: "#fef08a" });
         }
       }
-    }
-  }, [getSelectionBounds, getCellDisplay, setCellStyle]);
+    },
+    [getSelectionBounds, getCellDisplay, setCellStyle]
+  );
 
-  const applyHighlightLessThan = useCallback(() => {
-    const bounds = getSelectionBounds();
-    if (!bounds) return;
-    const threshold = prompt("Highlight cells less than:");
-    if (threshold === null) return;
-    const t = parseFloat(threshold);
-    if (isNaN(t)) return;
-    for (let r = bounds.minR; r <= bounds.maxR; r++) {
-      for (let c = bounds.minC; c <= bounds.maxC; c++) {
-        const val = parseFloat(getCellDisplay(c, r));
-        if (!isNaN(val) && val < t) {
-          setCellStyle(c, r, { bgColor: "#fecaca" });
-        }
-      }
-    }
-  }, [getSelectionBounds, getCellDisplay, setCellStyle]);
-
-  const applyHighlightBetween = useCallback(() => {
-    const bounds = getSelectionBounds();
-    if (!bounds) return;
-    const minStr = prompt("Highlight cells between - Minimum:");
-    if (minStr === null) return;
-    const maxStr = prompt("Highlight cells between - Maximum:");
-    if (maxStr === null) return;
-    const minVal = parseFloat(minStr);
-    const maxVal = parseFloat(maxStr);
-    if (isNaN(minVal) || isNaN(maxVal)) return;
-    for (let r = bounds.minR; r <= bounds.maxR; r++) {
-      for (let c = bounds.minC; c <= bounds.maxC; c++) {
-        const val = parseFloat(getCellDisplay(c, r));
-        if (!isNaN(val) && val >= minVal && val <= maxVal) {
-          setCellStyle(c, r, { bgColor: "#fef08a" });
-        }
-      }
-    }
-  }, [getSelectionBounds, getCellDisplay, setCellStyle]);
-
-  const applyHighlightTextContains = useCallback(() => {
-    const bounds = getSelectionBounds();
-    if (!bounds) return;
-    const text = prompt("Highlight cells containing text:");
-    if (!text) return;
-    const lower = text.toLowerCase();
-    for (let r = bounds.minR; r <= bounds.maxR; r++) {
-      for (let c = bounds.minC; c <= bounds.maxC; c++) {
-        const val = getCellDisplay(c, r).toLowerCase();
-        if (val.includes(lower)) {
-          setCellStyle(c, r, { bgColor: "#bfdbfe" });
-        }
-      }
-    }
-  }, [getSelectionBounds, getCellDisplay, setCellStyle]);
-
-  const applyColorScale = useCallback(() => {
-    const bounds = getSelectionBounds();
-    if (!bounds) return;
-    const values: { col: number; row: number; val: number }[] = [];
-    for (let r = bounds.minR; r <= bounds.maxR; r++) {
-      for (let c = bounds.minC; c <= bounds.maxC; c++) {
-        const val = parseFloat(getCellDisplay(c, r));
-        if (!isNaN(val)) {
-          values.push({ col: c, row: r, val });
-        }
-      }
-    }
-    if (values.length === 0) return;
-    const min = Math.min(...values.map((v) => v.val));
-    const max = Math.max(...values.map((v) => v.val));
-    const range = max - min || 1;
-    for (const { col, row, val } of values) {
-      const ratio = (val - min) / range;
-      const r = Math.round(255 * (1 - ratio));
-      const g = Math.round(255 * ratio);
-      const color = `rgb(${r},${g},100)`;
-      setCellStyle(col, row, { bgColor: color });
-    }
-  }, [getSelectionBounds, getCellDisplay, setCellStyle]);
-
-  const applyDataBars = useCallback(() => {
-    const bounds = getSelectionBounds();
-    if (!bounds) return;
-    const values: { col: number; row: number; val: number }[] = [];
-    for (let r = bounds.minR; r <= bounds.maxR; r++) {
-      for (let c = bounds.minC; c <= bounds.maxC; c++) {
-        const val = parseFloat(getCellDisplay(c, r));
-        if (!isNaN(val)) {
-          values.push({ col: c, row: r, val });
-        }
-      }
-    }
-    if (values.length === 0) return;
-    const max = Math.max(...values.map((v) => v.val));
-    for (const { col, row, val } of values) {
-      const ratio = max > 0 ? val / max : 0;
-      const intensity = Math.round(200 + 55 * (1 - ratio));
-      setCellStyle(col, row, { bgColor: `rgb(${intensity},${intensity},255)` });
-    }
-  }, [getSelectionBounds, getCellDisplay, setCellStyle]);
-
-  const applyIconSets = useCallback(() => {
-    const bounds = getSelectionBounds();
-    if (!bounds) return;
-    const values: { col: number; row: number; val: number; display: string }[] = [];
-    for (let r = bounds.minR; r <= bounds.maxR; r++) {
-      for (let c = bounds.minC; c <= bounds.maxC; c++) {
-        const display = getCellDisplay(c, r);
-        const val = parseFloat(display);
-        if (!isNaN(val)) {
-          values.push({ col: c, row: r, val, display });
-        }
-      }
-    }
-    if (values.length === 0) return;
-    const sorted = [...values].sort((a, b) => a.val - b.val);
-    const third = Math.floor(sorted.length / 3);
-    const lowThreshold = sorted[third]?.val ?? 0;
-    const highThreshold = sorted[third * 2]?.val ?? 0;
-    for (const { col, row, val } of values) {
-      if (val <= lowThreshold) {
-        setCellStyle(col, row, { bgColor: "#fecaca" }); // red - low
-      } else if (val >= highThreshold) {
-        setCellStyle(col, row, { bgColor: "#bbf7d0" }); // green - high
-      } else {
-        setCellStyle(col, row, { bgColor: "#fef08a" }); // yellow - mid
-      }
-    }
-  }, [getSelectionBounds, getCellDisplay, setCellStyle]);
-
-  // Auto-sum helper
+  // ─── Auto-sum ───────────────────────────────────────────
   const handleAutoSum = useCallback(
     (fn: string) => {
       if (!activeCell) return;
-      // Find the contiguous range above the active cell
       const col = activeCell.col;
       const row = activeCell.row;
       let startRow = row - 1;
-      while (startRow >= 0) {
-        const val = getCellDisplay(col, startRow);
-        if (val === "") break;
-        startRow--;
-      }
+      while (startRow >= 0 && getCellDisplay(col, startRow) !== "") startRow--;
       startRow++;
       if (startRow >= row) return;
       const colLetter = colToLetter(col);
-      const formula = `=${fn}(${colLetter}${startRow + 1}:${colLetter}${row})`;
-      setCellValue(col, row, formula);
+      setCellValue(col, row, `=${fn}(${colLetter}${startRow + 1}:${colLetter}${row})`);
     },
     [activeCell, getCellDisplay, setCellValue]
   );
 
-  // Merge & center
+  // ─── Merge ──────────────────────────────────────────────
   const handleMerge = useCallback(
     (type: "all" | "rows" | "unmerge") => {
       const bounds = getSelectionBounds();
       if (!bounds) return;
-      if (type === "unmerge") {
-        // Clear merge flag -- just leave cells as is
-        return;
-      }
-      // For "all": take value from top-left cell and clear others
-      const topLeftVal = getCellDisplay(bounds.minC, bounds.minR);
+      if (type === "unmerge") return;
       for (let r = bounds.minR; r <= bounds.maxR; r++) {
         for (let c = bounds.minC; c <= bounds.maxC; c++) {
           if (r === bounds.minR && c === bounds.minC) {
@@ -465,374 +435,566 @@ export function SpreadsheetToolbar({
         }
       }
     },
-    [getSelectionBounds, getCellDisplay, setCellStyle, setCellValue]
+    [getSelectionBounds, setCellStyle, setCellValue]
   );
 
-  // Add note/comment
-  const handleAddNote = useCallback(() => {
-    if (!activeCell) return;
-    const note = prompt("Enter note for this cell:");
-    if (note === null) return;
-    // Store the note as a comment indicator using an existing pattern
-    const currentRaw = getCellRaw(activeCell.col, activeCell.row);
-    // We'll mark cells with notes by adding a bgColor indicator
-    if (note) {
-      setCellStyle(activeCell.col, activeCell.row, { bgColor: "#fef9c3" });
-    }
-  }, [activeCell, getCellRaw, setCellStyle]);
+  // ─── Tab content renderers ─────────────────────────────
 
-  // Freeze panes
-  const handleFreeze = useCallback(
-    (type: "row" | "col" | "both" | "none") => {
-      switch (type) {
-        case "row":
-          setFreezeRow(true);
-          setFreezeCol(false);
-          break;
-        case "col":
-          setFreezeRow(false);
-          setFreezeCol(true);
-          break;
-        case "both":
-          setFreezeRow(true);
-          setFreezeCol(true);
-          break;
-        case "none":
-          setFreezeRow(false);
-          setFreezeCol(false);
-          break;
-      }
-    },
-    []
+  const renderHomeTab = () => (
+    <div className="flex items-start gap-0.5 flex-wrap">
+      {/* Clipboard */}
+      <RibbonGroup label="Clipboard">
+        <ToolBtn title="Cut (Ctrl+X)" onClick={clipboardCut}><Scissors size={14} /></ToolBtn>
+        <ToolBtn title="Copy (Ctrl+C)" onClick={clipboardCopy}><Copy size={14} /></ToolBtn>
+        <ToolBtn title="Paste (Ctrl+V)" onClick={clipboardPaste}><ClipboardPaste size={14} /></ToolBtn>
+        <DropdownBtn icon={<ClipboardPaste size={14} />} title="Paste Special">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { clipboardPasteSpecial("values"); close(); }}>Paste Values</DropdownItem>
+              <DropdownItem onClick={() => { clipboardPasteSpecial("formulas"); close(); }}>Paste Formulas</DropdownItem>
+              <DropdownItem onClick={() => { clipboardPasteSpecial("formats"); close(); }}>Paste Formats</DropdownItem>
+              <DropdownItem onClick={() => { clipboardPasteSpecial("transpose"); close(); }}>Transpose</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <ToolBtn title="Format Painter" onClick={() => {}}><Paintbrush size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      {/* Font */}
+      <RibbonGroup label="Font">
+        <select
+          className="text-[10px] rounded px-0.5 py-0.5 border outline-none h-5"
+          style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)", width: 80 }}
+          value={style.fontFamily || "Calibri"}
+          onChange={(e) => setSelectionStyle({ fontFamily: e.target.value })}
+        >
+          {FONT_FAMILIES.map((f) => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+        </select>
+        <select
+          className="text-[10px] rounded px-0.5 py-0.5 border outline-none h-5 w-10"
+          style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+          value={style.fontSize || 11}
+          onChange={(e) => setSelectionStyle({ fontSize: parseInt(e.target.value) })}
+        >
+          {FONT_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <Separator />
+        <ToolBtn title="Bold (Ctrl+B)" active={style.bold} onClick={() => setSelectionStyle({ bold: !style.bold })}><Bold size={14} /></ToolBtn>
+        <ToolBtn title="Italic (Ctrl+I)" active={style.italic} onClick={() => setSelectionStyle({ italic: !style.italic })}><Italic size={14} /></ToolBtn>
+        <ToolBtn title="Underline (Ctrl+U)" active={style.underline} onClick={() => setSelectionStyle({ underline: !style.underline })}><Underline size={14} /></ToolBtn>
+        <ToolBtn title="Strikethrough" active={style.strikethrough} onClick={() => setSelectionStyle({ strikethrough: !style.strikethrough })}><Strikethrough size={14} /></ToolBtn>
+        <Separator />
+        <CellBordersPicker />
+        <ColorPicker currentColor={style.bgColor || ""} onPick={(c) => setSelectionStyle({ bgColor: c || undefined })} icon={<Palette size={14} />} title="Fill Color" />
+        <ColorPicker currentColor={style.textColor || ""} onPick={(c) => setSelectionStyle({ textColor: c || undefined })} icon={<Type size={14} />} title="Font Color" />
+      </RibbonGroup>
+
+      {/* Alignment */}
+      <RibbonGroup label="Alignment">
+        <ToolBtn title="Align Top" active={style.verticalAlign === "top"} onClick={() => setSelectionStyle({ verticalAlign: "top" })}><AlignVerticalJustifyStart size={14} /></ToolBtn>
+        <ToolBtn title="Align Middle" active={style.verticalAlign === "middle"} onClick={() => setSelectionStyle({ verticalAlign: "middle" })}><AlignVerticalJustifyCenter size={14} /></ToolBtn>
+        <ToolBtn title="Align Bottom" active={style.verticalAlign === "bottom"} onClick={() => setSelectionStyle({ verticalAlign: "bottom" })}><AlignVerticalJustifyEnd size={14} /></ToolBtn>
+        <Separator />
+        <ToolBtn title="Align Left" active={style.align === "left"} onClick={() => setSelectionStyle({ align: "left" })}><AlignLeft size={14} /></ToolBtn>
+        <ToolBtn title="Center" active={style.align === "center"} onClick={() => setSelectionStyle({ align: "center" })}><AlignCenter size={14} /></ToolBtn>
+        <ToolBtn title="Align Right" active={style.align === "right"} onClick={() => setSelectionStyle({ align: "right" })}><AlignRight size={14} /></ToolBtn>
+        <Separator />
+        <ToolBtn title="Wrap Text" active={style.wrapText} onClick={() => setSelectionStyle({ wrapText: !style.wrapText })}><WrapText size={14} /></ToolBtn>
+        <DropdownBtn icon={<Merge size={14} />} title="Merge & Center">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { handleMerge("all"); close(); }}>Merge & Center</DropdownItem>
+              <DropdownItem onClick={() => { handleMerge("rows"); close(); }}>Merge Across</DropdownItem>
+              <DropdownItem onClick={() => { handleMerge("unmerge"); close(); }}>Unmerge Cells</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+      </RibbonGroup>
+
+      {/* Number */}
+      <RibbonGroup label="Number">
+        <select
+          className="text-[10px] rounded px-0.5 py-0.5 border outline-none h-5"
+          style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)", width: 90 }}
+          value={style.format || "general"}
+          onChange={(e) => setSelectionStyle({ format: e.target.value as CellStyle["format"] })}
+        >
+          {NUMBER_FORMATS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+        </select>
+        <ToolBtn title="Currency" active={style.format === "currency"} onClick={() => setSelectionStyle({ format: "currency" })}><DollarSign size={14} /></ToolBtn>
+        <ToolBtn title="Percent" active={style.format === "percent"} onClick={() => setSelectionStyle({ format: "percent" })}><Percent size={14} /></ToolBtn>
+        <ToolBtn title="Comma Style" onClick={() => setSelectionStyle({ format: "number" })}><Hash size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      {/* Styles */}
+      <RibbonGroup label="Styles">
+        <DropdownBtn icon={<Highlighter size={14} />} title="Conditional Formatting" label="Cond...">
+          {(close) => (
+            <>
+              <DropdownHeader>Highlight Cells Rules</DropdownHeader>
+              <DropdownItem onClick={() => { applyCondFormat("gt"); close(); }}>Greater Than...</DropdownItem>
+              <DropdownItem onClick={() => { applyCondFormat("lt"); close(); }}>Less Than...</DropdownItem>
+              <DropdownItem onClick={() => { applyCondFormat("between"); close(); }}>Between...</DropdownItem>
+              <DropdownItem onClick={() => { applyCondFormat("eq"); close(); }}>Equal To...</DropdownItem>
+              <DropdownItem onClick={() => { applyCondFormat("text"); close(); }}>Text Contains...</DropdownItem>
+              <DropdownItem onClick={() => { applyCondFormat("duplicates"); close(); }}>Duplicate Values</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Color Scales & Bars</DropdownHeader>
+              <DropdownItem onClick={() => { applyCondFormat("colorScale"); close(); }}>Color Scale</DropdownItem>
+              <DropdownItem onClick={() => { applyCondFormat("dataBars"); close(); }}>Data Bars</DropdownItem>
+              <DropdownItem onClick={() => { applyCondFormat("iconSets"); close(); }}>Icon Sets</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+      </RibbonGroup>
+
+      {/* Cells */}
+      <RibbonGroup label="Cells">
+        <DropdownBtn icon={<Plus size={14} />} title="Insert">
+          {(close) => (
+            <>
+              <DropdownItem icon={<Rows3 size={12} />} onClick={() => { if (activeCell) insertRows(activeCell.row, 1); close(); }}>Insert Row</DropdownItem>
+              <DropdownItem icon={<Columns3 size={12} />} onClick={() => { if (activeCell) insertCols(activeCell.col, 1); close(); }}>Insert Column</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<Trash2 size={14} />} title="Delete">
+          {(close) => (
+            <>
+              <DropdownItem icon={<Rows3 size={12} />} onClick={() => { if (activeCell) deleteRows(activeCell.row, 1); close(); }}>Delete Row</DropdownItem>
+              <DropdownItem icon={<Columns3 size={12} />} onClick={() => { if (activeCell) deleteCols(activeCell.col, 1); close(); }}>Delete Column</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+      </RibbonGroup>
+
+      {/* Editing */}
+      <RibbonGroup label="Editing">
+        <DropdownBtn icon={<Sigma size={14} />} title="AutoSum">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { handleAutoSum("SUM"); close(); }}>Sum</DropdownItem>
+              <DropdownItem onClick={() => { handleAutoSum("AVERAGE"); close(); }}>Average</DropdownItem>
+              <DropdownItem onClick={() => { handleAutoSum("COUNT"); close(); }}>Count Numbers</DropdownItem>
+              <DropdownItem onClick={() => { handleAutoSum("MAX"); close(); }}>Max</DropdownItem>
+              <DropdownItem onClick={() => { handleAutoSum("MIN"); close(); }}>Min</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<ArrowDown size={14} />} title="Fill">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { close(); }}>Fill Down</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Fill Right</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Fill Up</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Fill Left</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<Trash2 size={14} />} title="Clear">
+          {(close) => {
+            const bounds = getSelectionBounds();
+            return (
+              <>
+                <DropdownItem onClick={() => { if (bounds) clearRange(bounds.minC, bounds.minR, bounds.maxC, bounds.maxR, "all"); close(); }}>Clear All</DropdownItem>
+                <DropdownItem onClick={() => { if (bounds) clearRange(bounds.minC, bounds.minR, bounds.maxC, bounds.maxR, "formats"); close(); }}>Clear Formats</DropdownItem>
+                <DropdownItem onClick={() => { if (bounds) clearRange(bounds.minC, bounds.minR, bounds.maxC, bounds.maxR, "contents"); close(); }}>Clear Contents</DropdownItem>
+                <DropdownItem onClick={() => { if (bounds) clearRange(bounds.minC, bounds.minR, bounds.maxC, bounds.maxR, "comments"); close(); }}>Clear Comments</DropdownItem>
+              </>
+            );
+          }}
+        </DropdownBtn>
+        <ToolBtn title="Sort & Filter" onClick={() => onOpenSortFilter?.()}><Filter size={14} /></ToolBtn>
+        <ToolBtn title="Find & Select" onClick={() => {
+          const text = prompt("Find:");
+          if (!text) return;
+          const sheet = getActiveSheet();
+          for (const [key, cell] of Object.entries(sheet.cells)) {
+            if (cell.raw.toLowerCase().includes(text.toLowerCase())) {
+              const match = key.match(/^([A-Z]+)(\d+)$/);
+              if (match) {
+                const col = match[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+                const row = parseInt(match[2]) - 1;
+                useSpreadsheetStore.getState().setActiveCell(col, row);
+                break;
+              }
+            }
+          }
+        }}><Search size={14} /></ToolBtn>
+      </RibbonGroup>
+    </div>
   );
 
-  // Wrap text toggle
-  const handleWrapText = useCallback(() => {
-    const newWrap = !wrapText;
-    setWrapText(newWrap);
-    setSelectionStyle({ wrapText: newWrap } as Record<string, unknown>);
-  }, [wrapText, setSelectionStyle]);
+  const renderInsertTab = () => (
+    <div className="flex items-start gap-0.5 flex-wrap">
+      <RibbonGroup label="Tables">
+        <ToolBtn title="PivotTable" onClick={() => onOpenPivot?.()}><Table2 size={14} /></ToolBtn>
+        <ToolBtn title="Table" onClick={() => {}}><Grid3X3 size={14} /></ToolBtn>
+      </RibbonGroup>
 
-  // Print area
-  const handlePrintArea = useCallback(() => {
-    const bounds = getSelectionBounds();
-    if (!bounds) {
-      alert("Select a range of cells to set as print area.");
-      return;
-    }
-    const range = `${colToLetter(bounds.minC)}${bounds.minR + 1}:${colToLetter(bounds.maxC)}${bounds.maxR + 1}`;
-    alert(`Print area set to: ${range}`);
-  }, [getSelectionBounds]);
+      <RibbonGroup label="Charts">
+        <ToolBtn title="Column Chart" onClick={() => openChartModal("bar")}><BarChart3 size={14} /></ToolBtn>
+        <ToolBtn title="Line Chart" onClick={() => openChartModal("line")}><LineChart size={14} /></ToolBtn>
+        <ToolBtn title="Pie Chart" onClick={() => openChartModal("pie")}><PieChart size={14} /></ToolBtn>
+        <ToolBtn title="Scatter Chart" onClick={() => openChartModal("scatter")}><ScatterChart size={14} /></ToolBtn>
+        <ToolBtn title="Area Chart" onClick={() => openChartModal("area")}><AreaChart size={14} /></ToolBtn>
+        <ToolBtn title="Doughnut" onClick={() => openChartModal("doughnut")}><PieChart size={14} /></ToolBtn>
+      </RibbonGroup>
 
-  // Named ranges
-  const handleNamedRange = useCallback(() => {
-    const bounds = getSelectionBounds();
-    if (!bounds) {
-      alert("Select a range of cells first.");
-      return;
-    }
-    const name = prompt("Enter a name for this range:");
-    if (!name) return;
-    const range = `${colToLetter(bounds.minC)}${bounds.minR + 1}:${colToLetter(bounds.maxC)}${bounds.maxR + 1}`;
-    alert(`Named range "${name}" defined as ${range}`);
-  }, [getSelectionBounds]);
+      <RibbonGroup label="Sparklines">
+        <ToolBtn title="Line Sparkline" onClick={() => {}}><LineChart size={14} /></ToolBtn>
+        <ToolBtn title="Column Sparkline" onClick={() => {}}><BarChart3 size={14} /></ToolBtn>
+      </RibbonGroup>
 
-  const Separator = () => (
-    <div className="w-px h-5 mx-1" style={{ backgroundColor: "var(--border)" }} />
+      <RibbonGroup label="Links">
+        <ToolBtn title="Hyperlink" onClick={() => {
+          if (!activeCell) return;
+          const url = prompt("Enter URL:");
+          if (url) setCellValue(activeCell.col, activeCell.row, url);
+        }}><Link size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Text">
+        <ToolBtn title="Text Box" onClick={() => {}}><TextCursorInput size={14} /></ToolBtn>
+        <ToolBtn title="Header & Footer" onClick={() => {}}><PanelTop size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Symbols">
+        <ToolBtn title="Equation" onClick={() => {}}><Braces size={14} /></ToolBtn>
+        <ToolBtn title="Symbol" onClick={() => {
+          if (!activeCell) return;
+          const sym = prompt("Enter symbol character:");
+          if (sym) setCellValue(activeCell.col, activeCell.row, sym);
+        }}><Sparkles size={14} /></ToolBtn>
+      </RibbonGroup>
+    </div>
   );
+
+  const renderPageLayoutTab = () => (
+    <div className="flex items-start gap-0.5 flex-wrap">
+      <RibbonGroup label="Page Setup">
+        <ToolBtn title="Margins" onClick={() => onPageSetup?.()}><Settings2 size={14} /></ToolBtn>
+        <ToolBtn title="Orientation" onClick={() => onPageSetup?.()}><FileText size={14} /></ToolBtn>
+        <ToolBtn title="Size" onClick={() => onPageSetup?.()}><Maximize2 size={14} /></ToolBtn>
+        <DropdownBtn icon={<Printer size={14} />} title="Print Area">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => {
+                const bounds = getSelectionBounds();
+                if (bounds) alert(`Print area set: ${colToLetter(bounds.minC)}${bounds.minR + 1}:${colToLetter(bounds.maxC)}${bounds.maxR + 1}`);
+                close();
+              }}>Set Print Area</DropdownItem>
+              <DropdownItem onClick={() => { alert("Print area cleared"); close(); }}>Clear Print Area</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <ToolBtn title="Print Titles" onClick={() => onPageSetup?.()}><Rows3 size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Sheet Options">
+        <div className="flex flex-col gap-0.5">
+          <label className="flex items-center gap-1 text-[10px]" style={{ color: "var(--foreground)" }}>
+            <input type="checkbox" checked={showGridlines} onChange={toggleShowGridlines} className="w-3 h-3" />
+            Gridlines
+          </label>
+          <label className="flex items-center gap-1 text-[10px]" style={{ color: "var(--foreground)" }}>
+            <input type="checkbox" checked={showHeadings} onChange={toggleShowHeadings} className="w-3 h-3" />
+            Headings
+          </label>
+        </div>
+      </RibbonGroup>
+    </div>
+  );
+
+  const renderFormulasTab = () => (
+    <div className="flex items-start gap-0.5 flex-wrap">
+      <RibbonGroup label="Function Library">
+        <ToolBtn title="Insert Function" onClick={() => {
+          if (!activeCell) return;
+          const fn = prompt("Enter function name (e.g. SUM, AVERAGE, IF):");
+          if (fn) setCellValue(activeCell.col, activeCell.row, `=${fn.toUpperCase()}()`);
+        }}><Calculator size={14} /></ToolBtn>
+        <DropdownBtn icon={<Sigma size={14} />} title="AutoSum">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { handleAutoSum("SUM"); close(); }}>SUM</DropdownItem>
+              <DropdownItem onClick={() => { handleAutoSum("AVERAGE"); close(); }}>AVERAGE</DropdownItem>
+              <DropdownItem onClick={() => { handleAutoSum("COUNT"); close(); }}>COUNT</DropdownItem>
+              <DropdownItem onClick={() => { handleAutoSum("MAX"); close(); }}>MAX</DropdownItem>
+              <DropdownItem onClick={() => { handleAutoSum("MIN"); close(); }}>MIN</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<DollarSign size={14} />} title="Financial">
+          {(close) => (
+            <>
+              {["PMT", "FV", "PV", "NPV", "IRR"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<Braces size={14} />} title="Logical">
+          {(close) => (
+            <>
+              {["IF", "AND", "OR", "NOT", "IFS", "SWITCH", "IFERROR"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<Type size={14} />} title="Text">
+          {(close) => (
+            <>
+              {["CONCATENATE", "LEFT", "RIGHT", "MID", "LEN", "TRIM", "UPPER", "LOWER", "PROPER", "SUBSTITUTE"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<Calendar size={14} />} title="Date & Time">
+          {(close) => (
+            <>
+              {["TODAY", "NOW", "DATE", "YEAR", "MONTH", "DAY", "HOUR", "MINUTE"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<Search size={14} />} title="Lookup & Reference">
+          {(close) => (
+            <>
+              {["VLOOKUP", "HLOOKUP", "INDEX", "MATCH", "XLOOKUP", "OFFSET"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<Hash size={14} />} title="Math & Trig">
+          {(close) => (
+            <>
+              {["SUM", "SUMIF", "SUMIFS", "ROUND", "ABS", "INT", "MOD", "POWER", "SQRT", "RAND"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+            </>
+          )}
+        </DropdownBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Defined Names">
+        <ToolBtn title="Name Manager" onClick={() => {
+          const names = useSpreadsheetStore.getState().namedRanges;
+          const list = Object.entries(names).map(([n, r]) => `${n}: ${r}`).join("\n");
+          alert(list || "No named ranges defined.");
+        }}><Bookmark size={14} /></ToolBtn>
+        <ToolBtn title="Define Name" onClick={() => {
+          const bounds = getSelectionBounds();
+          if (!bounds) { alert("Select a range first."); return; }
+          const name = prompt("Enter name:");
+          if (name) setNamedRange(name, `${colToLetter(bounds.minC)}${bounds.minR + 1}:${colToLetter(bounds.maxC)}${bounds.maxR + 1}`);
+        }}><Plus size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Formula Auditing">
+        <ToolBtn title="Show Formulas" active={showFormulas} onClick={toggleShowFormulas}><Eye size={14} /></ToolBtn>
+      </RibbonGroup>
+    </div>
+  );
+
+  const renderDataTab = () => (
+    <div className="flex items-start gap-0.5 flex-wrap">
+      <RibbonGroup label="Get & Transform">
+        <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
+        <ToolBtn title="From Text/CSV" onClick={() => csvInputRef.current?.click()}><Upload size={14} /></ToolBtn>
+        <ToolBtn title="From Web" onClick={() => {}}><Link size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Sort & Filter">
+        <ToolBtn title="Sort A to Z" onClick={() => {
+          if (!activeCell) return;
+          const col = activeCell.col;
+          const sheet = getActiveSheet();
+          const data: { row: number; values: string[] }[] = [];
+          for (let r = 0; r < 200; r++) {
+            const key = `${colToLetter(col)}${r + 1}`;
+            if (sheet.cells[key]?.raw) {
+              const rowValues: string[] = [];
+              for (let c = 0; c < 52; c++) {
+                const k = `${colToLetter(c)}${r + 1}`;
+                rowValues.push(sheet.cells[k]?.raw || "");
+              }
+              data.push({ row: r, values: rowValues });
+            }
+          }
+          data.sort((a, b) => a.values[col].localeCompare(b.values[col]));
+          const startRow = data[0]?.row ?? 0;
+          data.forEach((d, i) => d.values.forEach((v, c) => setCellValue(c, startRow + i, v)));
+        }}><ArrowUpAZ size={14} /></ToolBtn>
+        <ToolBtn title="Sort Z to A" onClick={() => {
+          if (!activeCell) return;
+          const col = activeCell.col;
+          const sheet = getActiveSheet();
+          const data: { row: number; values: string[] }[] = [];
+          for (let r = 0; r < 200; r++) {
+            const key = `${colToLetter(col)}${r + 1}`;
+            if (sheet.cells[key]?.raw) {
+              const rowValues: string[] = [];
+              for (let c = 0; c < 52; c++) {
+                const k = `${colToLetter(c)}${r + 1}`;
+                rowValues.push(sheet.cells[k]?.raw || "");
+              }
+              data.push({ row: r, values: rowValues });
+            }
+          }
+          data.sort((a, b) => b.values[col].localeCompare(a.values[col]));
+          const startRow = data[0]?.row ?? 0;
+          data.forEach((d, i) => d.values.forEach((v, c) => setCellValue(c, startRow + i, v)));
+        }}><ArrowDownAZ size={14} /></ToolBtn>
+        <ToolBtn title="Filter" onClick={() => onOpenSortFilter?.()}><Filter size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Data Tools">
+        <ToolBtn title="Data Validation" onClick={() => onOpenValidation?.()}><ShieldCheck size={14} /></ToolBtn>
+        <ToolBtn title="Remove Duplicates" onClick={() => {
+          const bounds = getSelectionBounds();
+          if (!bounds) return;
+          const seen = new Set<string>();
+          let removed = 0;
+          for (let r = bounds.minR; r <= bounds.maxR; r++) {
+            const key = getCellDisplay(bounds.minC, r);
+            if (seen.has(key)) {
+              for (let c = bounds.minC; c <= bounds.maxC; c++) setCellValue(c, r, "");
+              removed++;
+            } else {
+              seen.add(key);
+            }
+          }
+          alert(`${removed} duplicate(s) removed.`);
+        }}><Minus size={14} /></ToolBtn>
+      </RibbonGroup>
+    </div>
+  );
+
+  const renderReviewTab = () => (
+    <div className="flex items-start gap-0.5 flex-wrap">
+      <RibbonGroup label="Comments">
+        <ToolBtn title="New Comment" onClick={() => {
+          if (!activeCell) return;
+          const text = prompt("Enter comment:");
+          if (text) setCellComment(activeCell.col, activeCell.row, { text, author: "User", date: new Date().toISOString() });
+        }}><MessageCircle size={14} /></ToolBtn>
+        <ToolBtn title="Delete Comment" onClick={() => {
+          if (activeCell) setCellComment(activeCell.col, activeCell.row, undefined);
+        }}><Trash2 size={14} /></ToolBtn>
+        <ToolBtn title="Show All Comments" onClick={() => {
+          const sheet = getActiveSheet();
+          const comments: string[] = [];
+          for (const [key, cell] of Object.entries(sheet.cells)) {
+            if (cell.comment) comments.push(`${key}: ${cell.comment.text} (by ${cell.comment.author})`);
+          }
+          alert(comments.length ? comments.join("\n") : "No comments.");
+        }}><Eye size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Protect">
+        <ToolBtn title="Protect Sheet" active={protectedSheet} onClick={() => {
+          useSpreadsheetStore.setState({ protectedSheet: !protectedSheet });
+        }}><Lock size={14} /></ToolBtn>
+      </RibbonGroup>
+    </div>
+  );
+
+  const renderViewTab = () => (
+    <div className="flex items-start gap-0.5 flex-wrap">
+      <RibbonGroup label="Show">
+        <label className="flex items-center gap-1 text-[10px]" style={{ color: "var(--foreground)" }}>
+          <input type="checkbox" checked={showFormulas} onChange={toggleShowFormulas} className="w-3 h-3" />
+          Formula Bar
+        </label>
+        <label className="flex items-center gap-1 text-[10px]" style={{ color: "var(--foreground)" }}>
+          <input type="checkbox" checked={showGridlines} onChange={toggleShowGridlines} className="w-3 h-3" />
+          Gridlines
+        </label>
+        <label className="flex items-center gap-1 text-[10px]" style={{ color: "var(--foreground)" }}>
+          <input type="checkbox" checked={showHeadings} onChange={toggleShowHeadings} className="w-3 h-3" />
+          Headings
+        </label>
+      </RibbonGroup>
+
+      <RibbonGroup label="Zoom">
+        <ToolBtn title="Zoom In" onClick={() => setZoom(zoom + 10)}><ZoomIn size={14} /></ToolBtn>
+        <span className="text-[10px] px-1" style={{ color: "var(--foreground)" }}>{zoom}%</span>
+        <ToolBtn title="Zoom Out" onClick={() => setZoom(zoom - 10)}><Minus size={14} /></ToolBtn>
+        <ToolBtn title="100%" onClick={() => setZoom(100)}><Maximize2 size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Window">
+        <DropdownBtn icon={<Snowflake size={14} />} title="Freeze Panes">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { setFrozenPanes(1, 0); close(); }}>Freeze Top Row</DropdownItem>
+              <DropdownItem onClick={() => { setFrozenPanes(0, 1); close(); }}>Freeze First Column</DropdownItem>
+              <DropdownItem onClick={() => {
+                if (activeCell) setFrozenPanes(activeCell.row, activeCell.col);
+                close();
+              }}>Freeze Panes</DropdownItem>
+              <DropdownItem onClick={() => { setFrozenPanes(0, 0); close(); }}>Unfreeze Panes</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+      </RibbonGroup>
+    </div>
+  );
+
+  const renderTabContent = () => {
+    switch (activeRibbonTab) {
+      case "Home": return renderHomeTab();
+      case "Insert": return renderInsertTab();
+      case "Page Layout": return renderPageLayoutTab();
+      case "Formulas": return renderFormulasTab();
+      case "Data": return renderDataTab();
+      case "Review": return renderReviewTab();
+      case "View": return renderViewTab();
+      default: return renderHomeTab();
+    }
+  };
 
   return (
-    <div
-      className="flex items-center gap-1 border-b px-2 py-1 flex-wrap"
-      style={{
-        borderColor: "var(--border)",
-        backgroundColor: "var(--card)",
-      }}
-    >
-      {/* === Font formatting === */}
-      <ToolBtn title="Bold" active={style.bold} onClick={() => setSelectionStyle({ bold: !style.bold })}>
-        <Bold size={15} />
-      </ToolBtn>
-      <ToolBtn title="Italic" active={style.italic} onClick={() => setSelectionStyle({ italic: !style.italic })}>
-        <Italic size={15} />
-      </ToolBtn>
-      <ToolBtn title="Underline" active={style.underline} onClick={() => setSelectionStyle({ underline: !style.underline })}>
-        <Underline size={15} />
-      </ToolBtn>
-
-      <Separator />
-
-      {/* === Alignment === */}
-      <ToolBtn title="Align Left" active={style.align === "left"} onClick={() => setSelectionStyle({ align: "left" })}>
-        <AlignLeft size={15} />
-      </ToolBtn>
-      <ToolBtn title="Align Center" active={style.align === "center"} onClick={() => setSelectionStyle({ align: "center" })}>
-        <AlignCenter size={15} />
-      </ToolBtn>
-      <ToolBtn title="Align Right" active={style.align === "right"} onClick={() => setSelectionStyle({ align: "right" })}>
-        <AlignRight size={15} />
-      </ToolBtn>
-
-      {/* Wrap Text */}
-      <ToolBtn title="Wrap Text" active={wrapText} onClick={handleWrapText}>
-        <WrapText size={15} />
-      </ToolBtn>
-
-      {/* Merge & Center */}
-      <DropdownBtn icon={<Merge size={15} />} title="Merge & Center">
-        {(close) => (
-          <>
-            <DropdownItem onClick={() => { handleMerge("all"); close(); }}>
-              Merge All
-            </DropdownItem>
-            <DropdownItem onClick={() => { handleMerge("rows"); close(); }}>
-              Merge Rows
-            </DropdownItem>
-            <DropdownItem onClick={() => { handleMerge("unmerge"); close(); }}>
-              Unmerge
-            </DropdownItem>
-          </>
-        )}
-      </DropdownBtn>
-
-      <Separator />
-
-      {/* === Colors === */}
-      <ColorPicker
-        currentColor={style.bgColor || ""}
-        onPick={(c) => setSelectionStyle({ bgColor: c })}
-        icon={<Palette size={15} />}
-        title="Background Color"
-      />
-      <ColorPicker
-        currentColor={style.textColor || ""}
-        onPick={(c) => setSelectionStyle({ textColor: c })}
-        icon={<Type size={15} />}
-        title="Text Color"
-      />
-
-      {/* Cell Borders */}
-      <CellBordersPicker />
-
-      <Separator />
-
-      {/* === Number format dropdown === */}
-      <select
-        className="text-xs rounded px-1 py-1 border outline-none"
-        style={{
-          backgroundColor: "var(--background)",
-          borderColor: "var(--border)",
-          color: "var(--foreground)",
-        }}
-        value={style.format || "general"}
-        onChange={(e) =>
-          setSelectionStyle({
-            format: e.target.value as "general" | "number" | "currency" | "percent" | "date",
-          })
-        }
-      >
-        {FORMATS.map((f) => (
-          <option key={f.value} value={f.value}>
-            {f.label}
-          </option>
-        ))}
-      </select>
-
-      {/* Quick format buttons: Currency, Percentage, Date */}
-      <ToolBtn title="Currency Format" active={style.format === "currency"} onClick={() => setSelectionStyle({ format: "currency" })}>
-        <DollarSign size={15} />
-      </ToolBtn>
-      <ToolBtn title="Percentage Format" active={style.format === "percent"} onClick={() => setSelectionStyle({ format: "percent" })}>
-        <Percent size={15} />
-      </ToolBtn>
-      <ToolBtn title="Date Format" active={style.format === "date"} onClick={() => setSelectionStyle({ format: "date" })}>
-        <Calendar size={15} />
-      </ToolBtn>
-
-      <Separator />
-
-      {/* === Auto-sum === */}
-      <DropdownBtn icon={<Sigma size={15} />} title="Auto Sum">
-        {(close) => (
-          <>
-            <DropdownItem onClick={() => { handleAutoSum("SUM"); close(); }}>SUM</DropdownItem>
-            <DropdownItem onClick={() => { handleAutoSum("AVERAGE"); close(); }}>AVERAGE</DropdownItem>
-            <DropdownItem onClick={() => { handleAutoSum("COUNT"); close(); }}>COUNT</DropdownItem>
-            <DropdownItem onClick={() => { handleAutoSum("MAX"); close(); }}>MAX</DropdownItem>
-            <DropdownItem onClick={() => { handleAutoSum("MIN"); close(); }}>MIN</DropdownItem>
-          </>
-        )}
-      </DropdownBtn>
-
-      <Separator />
-
-      {/* === Sort & Filter === */}
-      <ToolBtn title="Sort & Filter" onClick={() => onOpenSortFilter?.()}>
-        <Filter size={15} />
-      </ToolBtn>
-
-      {/* === Conditional Formatting (enhanced) === */}
-      <div className="relative">
-        <ToolBtn
-          title="Conditional Formatting"
-          onClick={() => setShowCondFormat(!showCondFormat)}
-        >
-          <Highlighter size={15} />
-        </ToolBtn>
-        {showCondFormat && (
-          <div
-            className="absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg border z-50"
-            style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
-              color: "var(--foreground)",
-              minWidth: 220,
-            }}
-          >
-            <div
-              className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
-              style={{ color: "var(--muted-foreground)" }}
-            >
-              Highlight Cells Rules
-            </div>
-            <DropdownItem onClick={() => { applyHighlightGreaterThan(); setShowCondFormat(false); }}>
-              Greater Than...
-            </DropdownItem>
-            <DropdownItem onClick={() => { applyHighlightLessThan(); setShowCondFormat(false); }}>
-              Less Than...
-            </DropdownItem>
-            <DropdownItem onClick={() => { applyHighlightBetween(); setShowCondFormat(false); }}>
-              Between...
-            </DropdownItem>
-            <DropdownItem onClick={() => { applyHighlightTextContains(); setShowCondFormat(false); }}>
-              Text Contains...
-            </DropdownItem>
-            <div
-              className="mx-2 my-1 border-t"
-              style={{ borderColor: "var(--border)" }}
-            />
-            <div
-              className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
-              style={{ color: "var(--muted-foreground)" }}
-            >
-              Color Scales & Bars
-            </div>
-            <DropdownItem onClick={() => { applyColorScale(); setShowCondFormat(false); }}>
-              Color Scale (Red to Green)
-            </DropdownItem>
-            <DropdownItem onClick={() => { applyDataBars(); setShowCondFormat(false); }}>
-              Data Bars
-            </DropdownItem>
-            <DropdownItem onClick={() => { applyIconSets(); setShowCondFormat(false); }}>
-              Icon Sets (3-color)
-            </DropdownItem>
-          </div>
-        )}
+    <div style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }} className="border-b">
+      {/* Quick access toolbar */}
+      <div className="flex items-center gap-0.5 px-2 py-0.5 border-b" style={{ borderColor: "var(--border)" }}>
+        <ToolBtn title="Undo (Ctrl+Z)" onClick={undo} small><Undo2 size={13} /></ToolBtn>
+        <ToolBtn title="Redo (Ctrl+Y)" onClick={redo} small><Redo2 size={13} /></ToolBtn>
+        <Separator />
+        <ToolBtn title="Export CSV" onClick={onExportCSV} small><Download size={13} /></ToolBtn>
+        <ToolBtn title="Print" onClick={onPrint} small><Printer size={13} /></ToolBtn>
+        <div className="flex-1" />
+        <ToolBtn title="Templates" onClick={openTemplatesModal} small><FileSpreadsheet size={13} /></ToolBtn>
+        <ToolBtn title="AI Assistant" active={showAiPanel} onClick={toggleAiPanel} small><MessageSquare size={13} /></ToolBtn>
       </div>
 
-      <Separator />
+      {/* Ribbon tabs */}
+      <div className="flex items-center px-2 gap-0" style={{ borderBottom: "1px solid var(--border)" }}>
+        {RIBBON_TABS.map((tab) => (
+          <button
+            key={tab}
+            className="px-3 py-1 text-xs font-medium transition-colors relative"
+            style={{
+              color: activeRibbonTab === tab ? "var(--primary)" : "var(--muted-foreground)",
+              backgroundColor: activeRibbonTab === tab ? "var(--background)" : "transparent",
+              borderBottom: activeRibbonTab === tab ? "2px solid var(--primary)" : "2px solid transparent",
+            }}
+            onClick={() => setActiveRibbonTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
 
-      {/* === Data tools === */}
-      <ToolBtn title="Pivot Table" onClick={() => onOpenPivot?.()}>
-        <Table2 size={15} />
-      </ToolBtn>
-      <ToolBtn title="Data Validation" onClick={() => onOpenValidation?.()}>
-        <ShieldCheck size={15} />
-      </ToolBtn>
-
-      <Separator />
-
-      {/* === Freeze Panes === */}
-      <DropdownBtn icon={<Snowflake size={15} />} title="Freeze Panes">
-        {(close) => (
-          <>
-            <DropdownItem onClick={() => { handleFreeze("row"); close(); }}>
-              Freeze First Row
-            </DropdownItem>
-            <DropdownItem onClick={() => { handleFreeze("col"); close(); }}>
-              Freeze First Column
-            </DropdownItem>
-            <DropdownItem onClick={() => { handleFreeze("both"); close(); }}>
-              Freeze Row & Column
-            </DropdownItem>
-            <DropdownItem onClick={() => { handleFreeze("none"); close(); }}>
-              Unfreeze
-            </DropdownItem>
-          </>
-        )}
-      </DropdownBtn>
-
-      {/* === Cell Notes === */}
-      <ToolBtn title="Add Note" onClick={handleAddNote}>
-        <StickyNote size={15} />
-      </ToolBtn>
-
-      {/* === Named Ranges === */}
-      <ToolBtn title="Named Ranges" onClick={handleNamedRange}>
-        <Bookmark size={15} />
-      </ToolBtn>
-
-      <Separator />
-
-      {/* === Charts === */}
-      <ToolBtn title="Bar Chart" onClick={() => openChartModal("bar")}>
-        <BarChart3 size={15} />
-      </ToolBtn>
-      <ToolBtn title="Line Chart" onClick={() => openChartModal("line")}>
-        <LineChart size={15} />
-      </ToolBtn>
-      <ToolBtn title="Pie Chart" onClick={() => openChartModal("pie")}>
-        <PieChart size={15} />
-      </ToolBtn>
-
-      <Separator />
-
-      {/* === Templates === */}
-      <ToolBtn title="Templates" onClick={openTemplatesModal}>
-        <FileSpreadsheet size={15} />
-      </ToolBtn>
-
-      <Separator />
-
-      {/* === Import CSV === */}
-      <input
-        ref={csvInputRef}
-        type="file"
-        accept=".csv"
-        className="hidden"
-        onChange={handleImportCSV}
-      />
-      <ToolBtn title="Import CSV" onClick={() => csvInputRef.current?.click()}>
-        <Upload size={15} />
-      </ToolBtn>
-
-      {/* === Print Area === */}
-      <ToolBtn title="Set Print Area" onClick={handlePrintArea}>
-        <Columns size={15} />
-      </ToolBtn>
-
-      {/* === Page Setup === */}
-      {onPageSetup && (
-        <ToolBtn title="Page Setup" onClick={onPageSetup}>
-          <Settings2 size={15} />
-        </ToolBtn>
-      )}
-
-      <div className="flex-1" />
-
-      {/* === Export / Print === */}
-      <ToolBtn title="Export CSV" onClick={onExportCSV}>
-        <Download size={15} />
-      </ToolBtn>
-      <ToolBtn title="Print" onClick={onPrint}>
-        <Printer size={15} />
-      </ToolBtn>
-
-      <Separator />
-
-      <ToolBtn title="AI Assistant" active={showAiPanel} onClick={toggleAiPanel}>
-        <MessageSquare size={15} />
-      </ToolBtn>
+      {/* Tab content */}
+      <div className="px-2 py-1 overflow-x-auto">
+        {renderTabContent()}
+      </div>
     </div>
   );
 }

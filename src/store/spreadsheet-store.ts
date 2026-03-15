@@ -5,15 +5,33 @@ export interface CellStyle {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
+  strikethrough?: boolean;
   align?: "left" | "center" | "right";
+  verticalAlign?: "top" | "middle" | "bottom";
+  wrapText?: boolean;
+  textRotation?: number;
   bgColor?: string;
   textColor?: string;
-  format?: "general" | "number" | "currency" | "percent" | "date";
+  fontFamily?: string;
+  fontSize?: number;
+  format?: "general" | "number" | "currency" | "accounting" | "percent" | "date" | "shortDate" | "longDate" | "time" | "fraction" | "scientific" | "text";
+  borderTop?: string;
+  borderBottom?: string;
+  borderLeft?: string;
+  borderRight?: string;
+  indent?: number;
+}
+
+export interface CellComment {
+  text: string;
+  author: string;
+  date: string;
 }
 
 export interface CellData {
   raw: string;
   style: CellStyle;
+  comment?: CellComment;
 }
 
 export interface Sheet {
@@ -21,6 +39,13 @@ export interface Sheet {
   name: string;
   cells: Record<string, CellData>;
   colWidths: Record<number, number>;
+  rowHeights: Record<number, number>;
+  tabColor?: string;
+  hidden?: boolean;
+  frozenRows?: number;
+  frozenCols?: number;
+  showGridlines?: boolean;
+  showHeadings?: boolean;
 }
 
 export interface SpreadsheetState {
@@ -33,8 +58,20 @@ export interface SpreadsheetState {
   editValue: string;
   showAiPanel: boolean;
   showChartModal: boolean;
-  chartType: "bar" | "line" | "pie";
+  chartType: "bar" | "line" | "pie" | "scatter" | "area" | "doughnut";
   showTemplatesModal: boolean;
+  activeRibbonTab: string;
+  clipboard: { cells: Record<string, CellData>; startCol: number; startRow: number; endCol: number; endRow: number; cut?: boolean } | null;
+  zoom: number;
+  editMode: "Ready" | "Edit" | "Enter";
+  showFormulas: boolean;
+  showGridlines: boolean;
+  showHeadings: boolean;
+  undoStack: Record<string, CellData>[];
+  redoStack: Record<string, CellData>[];
+  namedRanges: Record<string, string>;
+  comments: Record<string, CellComment>;
+  protectedSheet: boolean;
 
   // Actions
   setActiveCell: (col: number, row: number) => void;
@@ -50,8 +87,10 @@ export interface SpreadsheetState {
   setCellStyle: (col: number, row: number, style: Partial<CellStyle>) => void;
   setSelectionStyle: (style: Partial<CellStyle>) => void;
   setColWidth: (col: number, width: number) => void;
+  setRowHeight: (row: number, height: number) => void;
   getCellRaw: (col: number, row: number) => string;
   getCellDisplay: (col: number, row: number) => string;
+  getCellData: (col: number, row: number) => CellData | undefined;
   getActiveSheet: () => Sheet;
 
   // Sheet actions
@@ -59,20 +98,62 @@ export interface SpreadsheetState {
   deleteSheet: (id: string) => void;
   renameSheet: (id: string, name: string) => void;
   setActiveSheet: (id: string) => void;
+  setSheetTabColor: (id: string, color: string) => void;
+  duplicateSheet: (id: string) => void;
+  moveSheet: (id: string, direction: "left" | "right") => void;
+  hideSheet: (id: string) => void;
+  unhideSheet: (id: string) => void;
+  setFrozenPanes: (rows: number, cols: number) => void;
 
   // Modal toggles
   toggleAiPanel: () => void;
-  openChartModal: (type: "bar" | "line" | "pie") => void;
+  openChartModal: (type: "bar" | "line" | "pie" | "scatter" | "area" | "doughnut") => void;
   closeChartModal: () => void;
   openTemplatesModal: () => void;
   closeTemplatesModal: () => void;
 
+  // Ribbon
+  setActiveRibbonTab: (tab: string) => void;
+
+  // Clipboard
+  clipboardCopy: () => void;
+  clipboardCut: () => void;
+  clipboardPaste: () => void;
+  clipboardPasteSpecial: (type: "values" | "formulas" | "formats" | "transpose") => void;
+
+  // Zoom
+  setZoom: (zoom: number) => void;
+
+  // View toggles
+  toggleShowFormulas: () => void;
+  toggleShowGridlines: () => void;
+  toggleShowHeadings: () => void;
+
+  // Comments
+  setCellComment: (col: number, row: number, comment: CellComment | undefined) => void;
+
+  // Named ranges
+  setNamedRange: (name: string, range: string) => void;
+  deleteNamedRange: (name: string) => void;
+
+  // Undo/Redo
+  undo: () => void;
+  redo: () => void;
+  pushUndo: () => void;
+
   // Template loading
   loadTemplate: (cells: Record<string, CellData>) => void;
+
+  // Bulk operations
+  clearRange: (startCol: number, startRow: number, endCol: number, endRow: number, type: "all" | "formats" | "contents" | "comments") => void;
+  insertRows: (row: number, count: number) => void;
+  deleteRows: (row: number, count: number) => void;
+  insertCols: (col: number, count: number) => void;
+  deleteCols: (col: number, count: number) => void;
 }
 
 function makeSheet(id: string, name: string): Sheet {
-  return { id, name, cells: {}, colWidths: {} };
+  return { id, name, cells: {}, colWidths: {}, rowHeights: {}, showGridlines: true, showHeadings: true };
 }
 
 function cellKey(col: number, row: number): string {
@@ -105,13 +186,17 @@ function formatValue(value: string | number, format?: string): string {
   if (typeof value === "string") return value;
   switch (format) {
     case "number":
-      return value.toFixed(2);
+      return value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     case "currency":
       return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    case "accounting":
+      return value < 0
+        ? `($${Math.abs(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
+        : `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     case "percent":
       return `${(value * 100).toFixed(1)}%`;
-    case "date": {
-      // Treat value as serial date number (days since 1900-01-01)
+    case "date":
+    case "shortDate": {
       const epoch = new Date(1900, 0, 1);
       const date = new Date(epoch.getTime() + (value - 1) * 86400000);
       const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -119,6 +204,33 @@ function formatValue(value: string | number, format?: string): string {
       const yyyy = date.getFullYear();
       return `${mm}/${dd}/${yyyy}`;
     }
+    case "longDate": {
+      const epoch = new Date(1900, 0, 1);
+      const date = new Date(epoch.getTime() + (value - 1) * 86400000);
+      return date.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+    }
+    case "time": {
+      const fraction = value - Math.floor(value);
+      const totalMinutes = Math.round(fraction * 24 * 60);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const h12 = hours % 12 || 12;
+      return `${h12}:${String(minutes).padStart(2, "0")} ${ampm}`;
+    }
+    case "fraction": {
+      const whole = Math.floor(value);
+      const frac = value - whole;
+      if (frac === 0) return String(whole);
+      // Simple fraction approximation
+      const denom = 8;
+      const numer = Math.round(frac * denom);
+      return whole ? `${whole} ${numer}/${denom}` : `${numer}/${denom}`;
+    }
+    case "scientific":
+      return value.toExponential(2);
+    case "text":
+      return String(value);
     default:
       return Number.isInteger(value) ? String(value) : value.toFixed(2);
   }
@@ -138,6 +250,18 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
     showChartModal: false,
     chartType: "bar",
     showTemplatesModal: false,
+    activeRibbonTab: "Home",
+    clipboard: null,
+    zoom: 100,
+    editMode: "Ready",
+    showFormulas: false,
+    showGridlines: true,
+    showHeadings: true,
+    undoStack: [],
+    redoStack: [],
+    namedRanges: {},
+    comments: {},
+    protectedSheet: false,
 
     getActiveSheet: () => {
       const state = get();
@@ -145,7 +269,7 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
     },
 
     setActiveCell: (col, row) =>
-      set({ activeCell: { col, row }, selectionStart: { col, row }, selectionEnd: { col, row } }),
+      set({ activeCell: { col, row }, selectionStart: { col, row }, selectionEnd: { col, row }, editMode: "Ready" }),
 
     setSelection: (start, end) => set({ selectionStart: start, selectionEnd: end }),
 
@@ -153,7 +277,7 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
       const sheet = get().getActiveSheet();
       const key = cellKey(col, row);
       const raw = sheet.cells[key]?.raw || "";
-      set({ editingCell: { col, row }, editValue: raw });
+      set({ editingCell: { col, row }, editValue: raw, editMode: "Edit" });
     },
 
     setEditValue: (value) => set({ editValue: value }),
@@ -162,11 +286,12 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
       const state = get();
       if (!state.editingCell) return;
       const { col, row } = state.editingCell;
+      get().pushUndo();
       get().setCellValue(col, row, state.editValue);
-      set({ editingCell: null, editValue: "" });
+      set({ editingCell: null, editValue: "", editMode: "Ready" });
     },
 
-    cancelEdit: () => set({ editingCell: null, editValue: "" }),
+    cancelEdit: () => set({ editingCell: null, editValue: "", editMode: "Ready" }),
 
     setCellValue: (col, row, value) => {
       const state = get();
@@ -175,7 +300,7 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
       const existing = sheet.cells[key];
       const newCells = {
         ...sheet.cells,
-        [key]: { raw: value, style: existing?.style || {} },
+        [key]: { raw: value, style: existing?.style || {}, comment: existing?.comment },
       };
       set({
         sheets: state.sheets.map((s) =>
@@ -226,7 +351,19 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
       set({
         sheets: state.sheets.map((s) =>
           s.id === sheet.id
-            ? { ...s, colWidths: { ...s.colWidths, [col]: Math.max(40, width) } }
+            ? { ...s, colWidths: { ...s.colWidths, [col]: Math.max(30, width) } }
+            : s
+        ),
+      });
+    },
+
+    setRowHeight: (row, height) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id
+            ? { ...s, rowHeights: { ...s.rowHeights, [row]: Math.max(16, height) } }
             : s
         ),
       });
@@ -239,11 +376,22 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
     },
 
     getCellDisplay: (col, row) => {
-      const sheet = get().getActiveSheet();
+      const state = get();
+      const sheet = state.getActiveSheet();
+      if (state.showFormulas) {
+        const key = cellKey(col, row);
+        return sheet.cells[key]?.raw || "";
+      }
       const val = getComputedValue(sheet.cells, col, row);
       const key = cellKey(col, row);
       const format = sheet.cells[key]?.style?.format;
       return formatValue(val, format);
+    },
+
+    getCellData: (col, row) => {
+      const sheet = get().getActiveSheet();
+      const key = cellKey(col, row);
+      return sheet.cells[key];
     },
 
     addSheet: () => {
@@ -274,11 +422,261 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
 
     setActiveSheet: (id) => set({ activeSheetId: id, editingCell: null }),
 
+    setSheetTabColor: (id, color) =>
+      set({
+        sheets: get().sheets.map((s) => (s.id === id ? { ...s, tabColor: color } : s)),
+      }),
+
+    duplicateSheet: (id) => {
+      const state = get();
+      const source = state.sheets.find((s) => s.id === id);
+      if (!source) return;
+      const newId = `sheet${Date.now()}`;
+      const newSheet: Sheet = {
+        ...source,
+        id: newId,
+        name: `${source.name} (Copy)`,
+        cells: { ...source.cells },
+        colWidths: { ...source.colWidths },
+        rowHeights: { ...source.rowHeights },
+      };
+      const idx = state.sheets.findIndex((s) => s.id === id);
+      const newSheets = [...state.sheets];
+      newSheets.splice(idx + 1, 0, newSheet);
+      set({ sheets: newSheets, activeSheetId: newId });
+    },
+
+    moveSheet: (id, direction) => {
+      const state = get();
+      const idx = state.sheets.findIndex((s) => s.id === id);
+      if (idx === -1) return;
+      const newIdx = direction === "left" ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= state.sheets.length) return;
+      const newSheets = [...state.sheets];
+      [newSheets[idx], newSheets[newIdx]] = [newSheets[newIdx], newSheets[idx]];
+      set({ sheets: newSheets });
+    },
+
+    hideSheet: (id) => {
+      const state = get();
+      const visibleSheets = state.sheets.filter((s) => !s.hidden);
+      if (visibleSheets.length <= 1) return;
+      set({
+        sheets: state.sheets.map((s) => (s.id === id ? { ...s, hidden: true } : s)),
+        activeSheetId: state.activeSheetId === id
+          ? (visibleSheets.find((s) => s.id !== id)?.id || state.activeSheetId)
+          : state.activeSheetId,
+      });
+    },
+
+    unhideSheet: (id) =>
+      set({
+        sheets: get().sheets.map((s) => (s.id === id ? { ...s, hidden: false } : s)),
+      }),
+
+    setFrozenPanes: (rows, cols) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, frozenRows: rows, frozenCols: cols } : s
+        ),
+      });
+    },
+
     toggleAiPanel: () => set({ showAiPanel: !get().showAiPanel }),
     openChartModal: (type) => set({ showChartModal: true, chartType: type }),
     closeChartModal: () => set({ showChartModal: false }),
     openTemplatesModal: () => set({ showTemplatesModal: true }),
     closeTemplatesModal: () => set({ showTemplatesModal: false }),
+
+    setActiveRibbonTab: (tab) => set({ activeRibbonTab: tab }),
+
+    clipboardCopy: () => {
+      const state = get();
+      const { selectionStart, selectionEnd, activeCell } = state;
+      const s = selectionStart || activeCell;
+      const e = selectionEnd || activeCell;
+      if (!s || !e) return;
+      const minC = Math.min(s.col, e.col);
+      const maxC = Math.max(s.col, e.col);
+      const minR = Math.min(s.row, e.row);
+      const maxR = Math.max(s.row, e.row);
+      const sheet = state.getActiveSheet();
+      const cells: Record<string, CellData> = {};
+      for (let r = minR; r <= maxR; r++) {
+        for (let c = minC; c <= maxC; c++) {
+          const key = cellKey(c, r);
+          if (sheet.cells[key]) cells[key] = { ...sheet.cells[key] };
+        }
+      }
+      set({ clipboard: { cells, startCol: minC, startRow: minR, endCol: maxC, endRow: maxR } });
+    },
+
+    clipboardCut: () => {
+      get().clipboardCopy();
+      set((state) => ({ clipboard: state.clipboard ? { ...state.clipboard, cut: true } : null }));
+    },
+
+    clipboardPaste: () => {
+      const state = get();
+      if (!state.clipboard || !state.activeCell) return;
+      const { clipboard, activeCell } = state;
+      const colOffset = activeCell.col - clipboard.startCol;
+      const rowOffset = activeCell.row - clipboard.startRow;
+      get().pushUndo();
+      const sheet = state.getActiveSheet();
+      const newCells = { ...sheet.cells };
+      for (const [key, data] of Object.entries(clipboard.cells)) {
+        const match = key.match(/^([A-Z]+)(\d+)$/);
+        if (!match) continue;
+        const origCol = match[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+        const origRow = parseInt(match[2]) - 1;
+        const newKey = cellKey(origCol + colOffset, origRow + rowOffset);
+        newCells[newKey] = { ...data };
+      }
+      if (clipboard.cut) {
+        for (const key of Object.keys(clipboard.cells)) {
+          if (!newCells[key] || Object.keys(clipboard.cells).includes(key)) {
+            const match = key.match(/^([A-Z]+)(\d+)$/);
+            if (match) {
+              const origCol = match[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+              const origRow = parseInt(match[2]) - 1;
+              const movedKey = cellKey(origCol + colOffset, origRow + rowOffset);
+              if (movedKey !== key) {
+                newCells[key] = { raw: "", style: {} };
+              }
+            }
+          }
+        }
+        set({ clipboard: null });
+      }
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: newCells } : s
+        ),
+      });
+    },
+
+    clipboardPasteSpecial: (type) => {
+      const state = get();
+      if (!state.clipboard || !state.activeCell) return;
+      const { clipboard, activeCell } = state;
+      const colOffset = activeCell.col - clipboard.startCol;
+      const rowOffset = activeCell.row - clipboard.startRow;
+      get().pushUndo();
+      const sheet = state.getActiveSheet();
+      const newCells = { ...sheet.cells };
+
+      if (type === "transpose") {
+        const width = clipboard.endCol - clipboard.startCol;
+        const height = clipboard.endRow - clipboard.startRow;
+        for (const [key, data] of Object.entries(clipboard.cells)) {
+          const match = key.match(/^([A-Z]+)(\d+)$/);
+          if (!match) continue;
+          const origCol = match[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+          const origRow = parseInt(match[2]) - 1;
+          const relCol = origCol - clipboard.startCol;
+          const relRow = origRow - clipboard.startRow;
+          const newKey = cellKey(activeCell.col + relRow, activeCell.row + relCol);
+          newCells[newKey] = { ...data };
+        }
+      } else {
+        for (const [key, data] of Object.entries(clipboard.cells)) {
+          const match = key.match(/^([A-Z]+)(\d+)$/);
+          if (!match) continue;
+          const origCol = match[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+          const origRow = parseInt(match[2]) - 1;
+          const newKey = cellKey(origCol + colOffset, origRow + rowOffset);
+          const existing = newCells[newKey] || { raw: "", style: {} };
+          switch (type) {
+            case "values": {
+              const val = getComputedValue(sheet.cells, origCol, origRow);
+              newCells[newKey] = { ...existing, raw: String(val) };
+              break;
+            }
+            case "formulas":
+              newCells[newKey] = { ...existing, raw: data.raw };
+              break;
+            case "formats":
+              newCells[newKey] = { ...existing, style: { ...data.style } };
+              break;
+          }
+        }
+      }
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: newCells } : s
+        ),
+      });
+    },
+
+    setZoom: (zoom) => set({ zoom: Math.max(25, Math.min(400, zoom)) }),
+
+    toggleShowFormulas: () => set({ showFormulas: !get().showFormulas }),
+    toggleShowGridlines: () => set({ showGridlines: !get().showGridlines }),
+    toggleShowHeadings: () => set({ showHeadings: !get().showHeadings }),
+
+    setCellComment: (col, row, comment) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      const key = cellKey(col, row);
+      const existing = sheet.cells[key] || { raw: "", style: {} };
+      const newCells = {
+        ...sheet.cells,
+        [key]: { ...existing, comment },
+      };
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: newCells } : s
+        ),
+      });
+    },
+
+    setNamedRange: (name, range) =>
+      set({ namedRanges: { ...get().namedRanges, [name]: range } }),
+
+    deleteNamedRange: (name) => {
+      const { [name]: _, ...rest } = get().namedRanges;
+      set({ namedRanges: rest });
+    },
+
+    pushUndo: () => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      set({
+        undoStack: [...state.undoStack.slice(-49), { ...sheet.cells }],
+        redoStack: [],
+      });
+    },
+
+    undo: () => {
+      const state = get();
+      if (state.undoStack.length === 0) return;
+      const sheet = state.getActiveSheet();
+      const prev = state.undoStack[state.undoStack.length - 1];
+      set({
+        undoStack: state.undoStack.slice(0, -1),
+        redoStack: [...state.redoStack, { ...sheet.cells }],
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: prev } : s
+        ),
+      });
+    },
+
+    redo: () => {
+      const state = get();
+      if (state.redoStack.length === 0) return;
+      const sheet = state.getActiveSheet();
+      const next = state.redoStack[state.redoStack.length - 1];
+      set({
+        redoStack: state.redoStack.slice(0, -1),
+        undoStack: [...state.undoStack, { ...sheet.cells }],
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: next } : s
+        ),
+      });
+    },
 
     loadTemplate: (cells) => {
       const state = get();
@@ -288,6 +686,129 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
           s.id === sheet.id ? { ...s, cells } : s
         ),
         showTemplatesModal: false,
+      });
+    },
+
+    clearRange: (startCol, startRow, endCol, endRow, type) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      get().pushUndo();
+      const newCells = { ...sheet.cells };
+      for (let r = startRow; r <= endRow; r++) {
+        for (let c = startCol; c <= endCol; c++) {
+          const key = cellKey(c, r);
+          const cell = newCells[key];
+          if (!cell) continue;
+          switch (type) {
+            case "all":
+              delete newCells[key];
+              break;
+            case "contents":
+              newCells[key] = { ...cell, raw: "" };
+              break;
+            case "formats":
+              newCells[key] = { ...cell, style: {} };
+              break;
+            case "comments":
+              newCells[key] = { ...cell, comment: undefined };
+              break;
+          }
+        }
+      }
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: newCells } : s
+        ),
+      });
+    },
+
+    insertRows: (row, count) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      get().pushUndo();
+      const newCells: Record<string, CellData> = {};
+      for (const [key, data] of Object.entries(sheet.cells)) {
+        const match = key.match(/^([A-Z]+)(\d+)$/);
+        if (!match) { newCells[key] = data; continue; }
+        const r = parseInt(match[2]) - 1;
+        if (r >= row) {
+          newCells[`${match[1]}${r + count + 1}`] = data;
+        } else {
+          newCells[key] = data;
+        }
+      }
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: newCells } : s
+        ),
+      });
+    },
+
+    deleteRows: (row, count) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      get().pushUndo();
+      const newCells: Record<string, CellData> = {};
+      for (const [key, data] of Object.entries(sheet.cells)) {
+        const match = key.match(/^([A-Z]+)(\d+)$/);
+        if (!match) { newCells[key] = data; continue; }
+        const r = parseInt(match[2]) - 1;
+        if (r >= row && r < row + count) continue;
+        if (r >= row + count) {
+          newCells[`${match[1]}${r - count + 1}`] = data;
+        } else {
+          newCells[key] = data;
+        }
+      }
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: newCells } : s
+        ),
+      });
+    },
+
+    insertCols: (col, count) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      get().pushUndo();
+      const newCells: Record<string, CellData> = {};
+      for (const [key, data] of Object.entries(sheet.cells)) {
+        const match = key.match(/^([A-Z]+)(\d+)$/);
+        if (!match) { newCells[key] = data; continue; }
+        const c = match[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+        if (c >= col) {
+          newCells[`${colToLetter(c + count)}${match[2]}`] = data;
+        } else {
+          newCells[key] = data;
+        }
+      }
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: newCells } : s
+        ),
+      });
+    },
+
+    deleteCols: (col, count) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      get().pushUndo();
+      const newCells: Record<string, CellData> = {};
+      for (const [key, data] of Object.entries(sheet.cells)) {
+        const match = key.match(/^([A-Z]+)(\d+)$/);
+        if (!match) { newCells[key] = data; continue; }
+        const c = match[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+        if (c >= col && c < col + count) continue;
+        if (c >= col + count) {
+          newCells[`${colToLetter(c - count)}${match[2]}`] = data;
+        } else {
+          newCells[key] = data;
+        }
+      }
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: newCells } : s
+        ),
       });
     },
   };

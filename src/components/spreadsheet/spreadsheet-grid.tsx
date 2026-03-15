@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useRef, useEffect, useState } from "react";
-import { useSpreadsheetStore } from "@/store/spreadsheet-store";
+import { useSpreadsheetStore, type CellStyle, type CellComment } from "@/store/spreadsheet-store";
 import { colToLetter } from "./formula-engine";
 
-const ROWS = 50;
-const COLS = 26;
-const DEFAULT_COL_WIDTH = 100;
-const ROW_HEIGHT = 28;
+const ROWS = 100;
+const COLS = 52; // A-AZ
+const DEFAULT_COL_WIDTH = 80;
+const DEFAULT_ROW_HEIGHT = 24;
 
 interface ContextMenuState {
   visible: boolean;
@@ -31,33 +31,63 @@ export function SpreadsheetGrid() {
   const cancelEdit = useSpreadsheetStore((s) => s.cancelEdit);
   const getCellDisplay = useSpreadsheetStore((s) => s.getCellDisplay);
   const getCellRaw = useSpreadsheetStore((s) => s.getCellRaw);
+  const getCellData = useSpreadsheetStore((s) => s.getCellData);
   const getActiveSheet = useSpreadsheetStore((s) => s.getActiveSheet);
   const setColWidth = useSpreadsheetStore((s) => s.setColWidth);
+  const setRowHeight = useSpreadsheetStore((s) => s.setRowHeight);
   const setCellValue = useSpreadsheetStore((s) => s.setCellValue);
+  const setCellStyle = useSpreadsheetStore((s) => s.setCellStyle);
+  const clipboardCopy = useSpreadsheetStore((s) => s.clipboardCopy);
+  const clipboardCut = useSpreadsheetStore((s) => s.clipboardCut);
+  const clipboardPaste = useSpreadsheetStore((s) => s.clipboardPaste);
+  const clipboardPasteSpecial = useSpreadsheetStore((s) => s.clipboardPasteSpecial);
+  const pushUndo = useSpreadsheetStore((s) => s.pushUndo);
+  const undo = useSpreadsheetStore((s) => s.undo);
+  const redo = useSpreadsheetStore((s) => s.redo);
+  const insertRows = useSpreadsheetStore((s) => s.insertRows);
+  const deleteRows = useSpreadsheetStore((s) => s.deleteRows);
+  const insertCols = useSpreadsheetStore((s) => s.insertCols);
+  const deleteCols = useSpreadsheetStore((s) => s.deleteCols);
+  const clearRange = useSpreadsheetStore((s) => s.clearRange);
+  const setCellComment = useSpreadsheetStore((s) => s.setCellComment);
+  const setNamedRange = useSpreadsheetStore((s) => s.setNamedRange);
+  const zoom = useSpreadsheetStore((s) => s.zoom);
+  const showGridlines = useSpreadsheetStore((s) => s.showGridlines);
+  const showHeadings = useSpreadsheetStore((s) => s.showHeadings);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [resizingCol, setResizingCol] = useState<number | null>(null);
+  const [resizingRow, setResizingRow] = useState<number | null>(null);
   const resizeStartX = useRef(0);
+  const resizeStartY = useRef(0);
   const resizeStartW = useRef(0);
+  const resizeStartH = useRef(0);
 
-  // Context menu state
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false, x: 0, y: 0, col: 0, row: 0,
   });
-  const [clipboard, setClipboard] = useState<{ value: string; style: Record<string, unknown> } | null>(null);
 
   // Auto-fill drag state
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [autoFillTarget, setAutoFillTarget] = useState<{ col: number; row: number } | null>(null);
   const autoFillStart = useRef<{ col: number; row: number } | null>(null);
 
+  // Tooltip for comments
+  const [hoveredComment, setHoveredComment] = useState<{ x: number; y: number; comment: CellComment } | null>(null);
+
   const sheet = getActiveSheet();
+  const scale = zoom / 100;
 
   const getColWidth = useCallback(
     (col: number) => sheet.colWidths[col] || DEFAULT_COL_WIDTH,
     [sheet.colWidths]
+  );
+
+  const getRowHeight = useCallback(
+    (row: number) => sheet.rowHeights?.[row] || DEFAULT_ROW_HEIGHT,
+    [sheet.rowHeights]
   );
 
   const isInSelection = useCallback(
@@ -73,28 +103,23 @@ export function SpreadsheetGrid() {
   );
 
   const isActive = useCallback(
-    (col: number, row: number) =>
-      activeCell?.col === col && activeCell?.row === row,
+    (col: number, row: number) => activeCell?.col === col && activeCell?.row === row,
     [activeCell]
   );
 
   const isEditing = useCallback(
-    (col: number, row: number) =>
-      editingCell?.col === col && editingCell?.row === row,
+    (col: number, row: number) => editingCell?.col === col && editingCell?.row === row,
     [editingCell]
   );
 
   useEffect(() => {
-    if (editingCell && inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (editingCell && inputRef.current) inputRef.current.focus();
   }, [editingCell]);
 
-  // Column resize handlers
-  const handleResizeStart = useCallback(
+  // Column resize
+  const handleResizeColStart = useCallback(
     (col: number, e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); e.stopPropagation();
       setResizingCol(col);
       resizeStartX.current = e.clientX;
       resizeStartW.current = getColWidth(col);
@@ -111,11 +136,44 @@ export function SpreadsheetGrid() {
     const handleUp = () => setResizingCol(null);
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleUp);
-    };
+    return () => { window.removeEventListener("mousemove", handleMove); window.removeEventListener("mouseup", handleUp); };
   }, [resizingCol, setColWidth]);
+
+  // Row resize
+  const handleResizeRowStart = useCallback(
+    (row: number, e: React.MouseEvent) => {
+      e.preventDefault(); e.stopPropagation();
+      setResizingRow(row);
+      resizeStartY.current = e.clientY;
+      resizeStartH.current = getRowHeight(row);
+    },
+    [getRowHeight]
+  );
+
+  useEffect(() => {
+    if (resizingRow === null) return;
+    const handleMove = (e: MouseEvent) => {
+      const delta = e.clientY - resizeStartY.current;
+      setRowHeight(resizingRow, resizeStartH.current + delta);
+    };
+    const handleUp = () => setResizingRow(null);
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => { window.removeEventListener("mousemove", handleMove); window.removeEventListener("mouseup", handleUp); };
+  }, [resizingRow, setRowHeight]);
+
+  // Double-click column header to auto-fit
+  const handleAutoFitCol = useCallback(
+    (col: number) => {
+      let maxWidth = 40;
+      for (let r = 0; r < ROWS; r++) {
+        const display = getCellDisplay(col, r);
+        if (display) maxWidth = Math.max(maxWidth, display.length * 8 + 16);
+      }
+      setColWidth(col, Math.min(maxWidth, 300));
+    },
+    [getCellDisplay, setColWidth]
+  );
 
   // Selection drag
   useEffect(() => {
@@ -127,8 +185,12 @@ export function SpreadsheetGrid() {
 
   const handleCellMouseDown = useCallback(
     (col: number, row: number, e: React.MouseEvent) => {
+      if (e.button === 2) return; // right click handled by context menu
       if (e.shiftKey && activeCell) {
         setSelection(activeCell, { col, row });
+      } else if (e.ctrlKey || e.metaKey) {
+        // For ctrl-click, extend selection
+        setSelection(activeCell || { col, row }, { col, row });
       } else {
         setActiveCell(col, row);
         setIsDragging(true);
@@ -142,33 +204,46 @@ export function SpreadsheetGrid() {
       if (isDragging && activeCell) {
         setSelection(activeCell, { col, row });
       }
+      // Check for comment
+      const cellData = getCellData(col, row);
+      if (cellData?.comment) {
+        setHoveredComment(null); // Will be set by mouse position
+      }
     },
-    [isDragging, activeCell, setSelection]
+    [isDragging, activeCell, setSelection, getCellData]
   );
 
   const handleCellDoubleClick = useCallback(
-    (col: number, row: number) => {
-      startEditing(col, row);
-    },
+    (col: number, row: number) => startEditing(col, row),
     [startEditing]
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      // Global keyboard shortcuts
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); undo(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === "y") { e.preventDefault(); redo(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === "c") { e.preventDefault(); clipboardCopy(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === "x") { e.preventDefault(); clipboardCut(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === "v") { e.preventDefault(); clipboardPaste(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === "b") { e.preventDefault(); useSpreadsheetStore.getState().setSelectionStyle({ bold: !useSpreadsheetStore.getState().getCellData(activeCell?.col || 0, activeCell?.row || 0)?.style?.bold }); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === "i") { e.preventDefault(); useSpreadsheetStore.getState().setSelectionStyle({ italic: !useSpreadsheetStore.getState().getCellData(activeCell?.col || 0, activeCell?.row || 0)?.style?.italic }); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === "u") { e.preventDefault(); useSpreadsheetStore.getState().setSelectionStyle({ underline: !useSpreadsheetStore.getState().getCellData(activeCell?.col || 0, activeCell?.row || 0)?.style?.underline }); return; }
+
       if (!activeCell) return;
 
       if (editingCell) {
         if (e.key === "Enter") {
           e.preventDefault();
           commitEdit();
-          if (activeCell.row < ROWS - 1) {
-            setActiveCell(activeCell.col, activeCell.row + 1);
-          }
+          if (activeCell.row < ROWS - 1) setActiveCell(activeCell.col, activeCell.row + 1);
         } else if (e.key === "Tab") {
           e.preventDefault();
           commitEdit();
-          if (activeCell.col < COLS - 1) {
-            setActiveCell(activeCell.col + 1, activeCell.row);
+          if (e.shiftKey) {
+            if (activeCell.col > 0) setActiveCell(activeCell.col - 1, activeCell.row);
+          } else {
+            if (activeCell.col < COLS - 1) setActiveCell(activeCell.col + 1, activeCell.row);
           }
         } else if (e.key === "Escape") {
           cancelEdit();
@@ -176,38 +251,76 @@ export function SpreadsheetGrid() {
         return;
       }
 
-      // Navigation
       switch (e.key) {
         case "ArrowUp":
           e.preventDefault();
-          if (activeCell.row > 0) setActiveCell(activeCell.col, activeCell.row - 1);
+          if (e.shiftKey) { setSelection(selectionStart || activeCell, { col: activeCell.col, row: Math.max(0, activeCell.row - 1) }); setActiveCell(activeCell.col, Math.max(0, activeCell.row - 1)); }
+          else if (activeCell.row > 0) setActiveCell(activeCell.col, activeCell.row - 1);
           break;
         case "ArrowDown":
           e.preventDefault();
-          if (activeCell.row < ROWS - 1) setActiveCell(activeCell.col, activeCell.row + 1);
+          if (e.shiftKey) { setSelection(selectionStart || activeCell, { col: activeCell.col, row: Math.min(ROWS - 1, activeCell.row + 1) }); setActiveCell(activeCell.col, Math.min(ROWS - 1, activeCell.row + 1)); }
+          else if (activeCell.row < ROWS - 1) setActiveCell(activeCell.col, activeCell.row + 1);
           break;
         case "ArrowLeft":
           e.preventDefault();
-          if (activeCell.col > 0) setActiveCell(activeCell.col - 1, activeCell.row);
+          if (e.shiftKey) { setSelection(selectionStart || activeCell, { col: Math.max(0, activeCell.col - 1), row: activeCell.row }); setActiveCell(Math.max(0, activeCell.col - 1), activeCell.row); }
+          else if (activeCell.col > 0) setActiveCell(activeCell.col - 1, activeCell.row);
           break;
         case "ArrowRight":
           e.preventDefault();
-          if (activeCell.col < COLS - 1) setActiveCell(activeCell.col + 1, activeCell.row);
+          if (e.shiftKey) { setSelection(selectionStart || activeCell, { col: Math.min(COLS - 1, activeCell.col + 1), row: activeCell.row }); setActiveCell(Math.min(COLS - 1, activeCell.col + 1), activeCell.row); }
+          else if (activeCell.col < COLS - 1) setActiveCell(activeCell.col + 1, activeCell.row);
           break;
         case "Tab":
           e.preventDefault();
-          if (activeCell.col < COLS - 1) setActiveCell(activeCell.col + 1, activeCell.row);
+          if (e.shiftKey) { if (activeCell.col > 0) setActiveCell(activeCell.col - 1, activeCell.row); }
+          else { if (activeCell.col < COLS - 1) setActiveCell(activeCell.col + 1, activeCell.row); }
           break;
         case "Enter":
           e.preventDefault();
           startEditing(activeCell.col, activeCell.row);
           break;
+        case "F2":
+          e.preventDefault();
+          startEditing(activeCell.col, activeCell.row);
+          break;
         case "Delete":
+          e.preventDefault();
+          if (selectionStart && selectionEnd) {
+            const minR = Math.min(selectionStart.row, selectionEnd.row);
+            const maxR = Math.max(selectionStart.row, selectionEnd.row);
+            const minC = Math.min(selectionStart.col, selectionEnd.col);
+            const maxC = Math.max(selectionStart.col, selectionEnd.col);
+            pushUndo();
+            clearRange(minC, minR, maxC, maxR, "contents");
+          } else {
+            pushUndo();
+            setCellValue(activeCell.col, activeCell.row, "");
+          }
+          break;
         case "Backspace":
           e.preventDefault();
-          useSpreadsheetStore
-            .getState()
-            .setCellValue(activeCell.col, activeCell.row, "");
+          pushUndo();
+          setCellValue(activeCell.col, activeCell.row, "");
+          break;
+        case "Home":
+          e.preventDefault();
+          if (e.ctrlKey || e.metaKey) setActiveCell(0, 0);
+          else setActiveCell(0, activeCell.row);
+          break;
+        case "End":
+          e.preventDefault();
+          if (e.ctrlKey || e.metaKey) setActiveCell(COLS - 1, ROWS - 1);
+          else setActiveCell(COLS - 1, activeCell.row);
+          break;
+        case "PageDown":
+          e.preventDefault();
+          setActiveCell(activeCell.col, Math.min(ROWS - 1, activeCell.row + 20));
+          break;
+        case "PageUp":
+          e.preventDefault();
+          setActiveCell(activeCell.col, Math.max(0, activeCell.row - 20));
           break;
         default:
           if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
@@ -217,18 +330,18 @@ export function SpreadsheetGrid() {
           break;
       }
     },
-    [activeCell, editingCell, commitEdit, cancelEdit, setActiveCell, startEditing, setEditValue]
+    [activeCell, editingCell, commitEdit, cancelEdit, setActiveCell, startEditing, setEditValue, selectionStart, selectionEnd, undo, redo, clipboardCopy, clipboardCut, clipboardPaste, pushUndo, setCellValue, clearRange, setSelection]
   );
 
   const getCellStyle = useCallback(
-    (col: number, row: number) => {
+    (col: number, row: number): CellStyle => {
       const key = `${colToLetter(col)}${row + 1}`;
       return sheet.cells[key]?.style || {};
     },
     [sheet.cells]
   );
 
-  // Context menu handler
+  // Context menu
   const handleContextMenu = useCallback(
     (col: number, row: number, e: React.MouseEvent) => {
       e.preventDefault();
@@ -238,7 +351,6 @@ export function SpreadsheetGrid() {
     [setActiveCell]
   );
 
-  // Close context menu on outside click
   useEffect(() => {
     if (!contextMenu.visible) return;
     const close = () => setContextMenu((prev) => ({ ...prev, visible: false }));
@@ -246,156 +358,10 @@ export function SpreadsheetGrid() {
     return () => window.removeEventListener("click", close);
   }, [contextMenu.visible]);
 
-  const insertRowAbove = useCallback(
-    (row: number) => {
-      // Shift all rows at and below `row` down by 1
-      for (let r = ROWS - 1; r > row; r--) {
-        for (let c = 0; c < COLS; c++) {
-          const srcRaw = getCellRaw(c, r - 1);
-          setCellValue(c, r, srcRaw);
-        }
-      }
-      // Clear the inserted row
-      for (let c = 0; c < COLS; c++) {
-        setCellValue(c, row, "");
-      }
-    },
-    [getCellRaw, setCellValue]
-  );
-
-  const insertRowBelow = useCallback(
-    (row: number) => {
-      for (let r = ROWS - 1; r > row + 1; r--) {
-        for (let c = 0; c < COLS; c++) {
-          const srcRaw = getCellRaw(c, r - 1);
-          setCellValue(c, r, srcRaw);
-        }
-      }
-      for (let c = 0; c < COLS; c++) {
-        setCellValue(c, row + 1, "");
-      }
-    },
-    [getCellRaw, setCellValue]
-  );
-
-  const insertColLeft = useCallback(
-    (col: number) => {
-      for (let c = COLS - 1; c > col; c--) {
-        for (let r = 0; r < ROWS; r++) {
-          const srcRaw = getCellRaw(c - 1, r);
-          setCellValue(c, r, srcRaw);
-        }
-      }
-      for (let r = 0; r < ROWS; r++) {
-        setCellValue(col, r, "");
-      }
-    },
-    [getCellRaw, setCellValue]
-  );
-
-  const insertColRight = useCallback(
-    (col: number) => {
-      for (let c = COLS - 1; c > col + 1; c--) {
-        for (let r = 0; r < ROWS; r++) {
-          const srcRaw = getCellRaw(c - 1, r);
-          setCellValue(c, r, srcRaw);
-        }
-      }
-      for (let r = 0; r < ROWS; r++) {
-        setCellValue(col + 1, r, "");
-      }
-    },
-    [getCellRaw, setCellValue]
-  );
-
-  const deleteRow = useCallback(
-    (row: number) => {
-      for (let r = row; r < ROWS - 1; r++) {
-        for (let c = 0; c < COLS; c++) {
-          const srcRaw = getCellRaw(c, r + 1);
-          setCellValue(c, r, srcRaw);
-        }
-      }
-      for (let c = 0; c < COLS; c++) {
-        setCellValue(c, ROWS - 1, "");
-      }
-    },
-    [getCellRaw, setCellValue]
-  );
-
-  const deleteCol = useCallback(
-    (col: number) => {
-      for (let c = col; c < COLS - 1; c++) {
-        for (let r = 0; r < ROWS; r++) {
-          const srcRaw = getCellRaw(c + 1, r);
-          setCellValue(c, r, srcRaw);
-        }
-      }
-      for (let r = 0; r < ROWS; r++) {
-        setCellValue(COLS - 1, r, "");
-      }
-    },
-    [getCellRaw, setCellValue]
-  );
-
-  const copyCell = useCallback(
-    (col: number, row: number) => {
-      const raw = getCellRaw(col, row);
-      const style = getCellStyle(col, row);
-      setClipboard({ value: raw, style: style as Record<string, unknown> });
-    },
-    [getCellRaw, getCellStyle]
-  );
-
-  const pasteCell = useCallback(
-    (col: number, row: number) => {
-      if (!clipboard) return;
-      setCellValue(col, row, clipboard.value);
-    },
-    [clipboard, setCellValue]
-  );
-
-  const sortColumn = useCallback(
-    (col: number, ascending: boolean) => {
-      // Collect all non-empty rows for this column
-      const data: { row: number; values: string[] }[] = [];
-      for (let r = 0; r < ROWS; r++) {
-        const raw = getCellRaw(col, r);
-        if (raw !== "") {
-          const rowValues: string[] = [];
-          for (let c = 0; c < COLS; c++) {
-            rowValues.push(getCellRaw(c, r));
-          }
-          data.push({ row: r, values: rowValues });
-        }
-      }
-      if (data.length === 0) return;
-      const startRow = data[0].row;
-      data.sort((a, b) => {
-        const va = a.values[col];
-        const vb = b.values[col];
-        const na = parseFloat(va);
-        const nb = parseFloat(vb);
-        if (!isNaN(na) && !isNaN(nb)) {
-          return ascending ? na - nb : nb - na;
-        }
-        return ascending ? va.localeCompare(vb) : vb.localeCompare(va);
-      });
-      // Write sorted data back
-      for (let i = 0; i < data.length; i++) {
-        for (let c = 0; c < COLS; c++) {
-          setCellValue(c, startRow + i, data[i].values[c]);
-        }
-      }
-    },
-    [getCellRaw, setCellValue]
-  );
-
   // Auto-fill handlers
   const handleAutoFillStart = useCallback(
     (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); e.stopPropagation();
       if (!activeCell) return;
       setIsAutoFilling(true);
       autoFillStart.current = { col: activeCell.col, row: activeCell.row };
@@ -406,16 +372,14 @@ export function SpreadsheetGrid() {
   useEffect(() => {
     if (!isAutoFilling) return;
     const handleMove = (e: MouseEvent) => {
-      const grid = gridRef.current;
-      if (!grid || !autoFillStart.current) return;
-      // Find which cell the mouse is over
       const elements = document.elementsFromPoint(e.clientX, e.clientY);
       for (const el of elements) {
         const td = el.closest("td[data-col][data-row]");
         if (td) {
-          const col = parseInt(td.getAttribute("data-col")!, 10);
-          const row = parseInt(td.getAttribute("data-row")!, 10);
-          setAutoFillTarget({ col, row });
+          setAutoFillTarget({
+            col: parseInt(td.getAttribute("data-col")!, 10),
+            row: parseInt(td.getAttribute("data-row")!, 10),
+          });
           break;
         }
       }
@@ -426,27 +390,18 @@ export function SpreadsheetGrid() {
         const startRow = autoFillStart.current.row;
         const raw = getCellRaw(startCol, startRow);
         const num = parseFloat(raw);
-        const isNumber = !isNaN(num) && raw !== "";
+        const isNumber = !isNaN(num) && raw !== "" && !raw.startsWith("=");
 
+        pushUndo();
         if (autoFillTarget.col === startCol) {
-          // Vertical fill
           const dir = autoFillTarget.row > startRow ? 1 : -1;
           for (let r = startRow + dir; dir > 0 ? r <= autoFillTarget.row : r >= autoFillTarget.row; r += dir) {
-            if (isNumber && !raw.startsWith("=")) {
-              setCellValue(startCol, r, String(num + (r - startRow)));
-            } else {
-              setCellValue(startCol, r, raw);
-            }
+            setCellValue(startCol, r, isNumber ? String(num + (r - startRow)) : raw);
           }
         } else if (autoFillTarget.row === startRow) {
-          // Horizontal fill
           const dir = autoFillTarget.col > startCol ? 1 : -1;
           for (let c = startCol + dir; dir > 0 ? c <= autoFillTarget.col : c >= autoFillTarget.col; c += dir) {
-            if (isNumber && !raw.startsWith("=")) {
-              setCellValue(c, startRow, String(num + (c - startCol)));
-            } else {
-              setCellValue(c, startRow, raw);
-            }
+            setCellValue(c, startRow, isNumber ? String(num + (c - startCol)) : raw);
           }
         }
       }
@@ -456,11 +411,91 @@ export function SpreadsheetGrid() {
     };
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleUp);
-    };
-  }, [isAutoFilling, autoFillTarget, getCellRaw, setCellValue]);
+    return () => { window.removeEventListener("mousemove", handleMove); window.removeEventListener("mouseup", handleUp); };
+  }, [isAutoFilling, autoFillTarget, getCellRaw, setCellValue, pushUndo]);
+
+  // Frozen panes
+  const frozenRows = sheet.frozenRows || 0;
+  const frozenCols = sheet.frozenCols || 0;
+
+  const contextMenuItems = [
+    { label: "Cut", action: () => clipboardCut(), shortcut: "Ctrl+X" },
+    { label: "Copy", action: () => clipboardCopy(), shortcut: "Ctrl+C" },
+    { label: "Paste", action: () => clipboardPaste(), shortcut: "Ctrl+V" },
+    { label: "---" },
+    { label: "Paste Special", submenu: true, action: () => {} },
+    { label: "---" },
+    { label: "Insert Row Above", action: () => insertRows(contextMenu.row, 1) },
+    { label: "Insert Row Below", action: () => insertRows(contextMenu.row + 1, 1) },
+    { label: "Insert Column Left", action: () => insertCols(contextMenu.col, 1) },
+    { label: "Insert Column Right", action: () => insertCols(contextMenu.col + 1, 1) },
+    { label: "---" },
+    { label: "Delete Row", action: () => deleteRows(contextMenu.row, 1) },
+    { label: "Delete Column", action: () => deleteCols(contextMenu.col, 1) },
+    { label: "Clear Contents", action: () => {
+      const s = selectionStart || activeCell;
+      const e = selectionEnd || activeCell;
+      if (s && e) clearRange(Math.min(s.col, e.col), Math.min(s.row, e.row), Math.max(s.col, e.col), Math.max(s.row, e.row), "contents");
+    }},
+    { label: "---" },
+    { label: "Sort A\u2192Z", action: () => {
+      const col = contextMenu.col;
+      const data: { row: number; values: string[] }[] = [];
+      for (let r = 0; r < ROWS; r++) {
+        const raw = getCellRaw(col, r);
+        if (raw !== "") {
+          const rowValues: string[] = [];
+          for (let c = 0; c < COLS; c++) rowValues.push(getCellRaw(c, r));
+          data.push({ row: r, values: rowValues });
+        }
+      }
+      if (data.length === 0) return;
+      const startRow = data[0].row;
+      data.sort((a, b) => a.values[col].localeCompare(b.values[col]));
+      pushUndo();
+      data.forEach((d, i) => d.values.forEach((v, c) => setCellValue(c, startRow + i, v)));
+    }},
+    { label: "Sort Z\u2192A", action: () => {
+      const col = contextMenu.col;
+      const data: { row: number; values: string[] }[] = [];
+      for (let r = 0; r < ROWS; r++) {
+        const raw = getCellRaw(col, r);
+        if (raw !== "") {
+          const rowValues: string[] = [];
+          for (let c = 0; c < COLS; c++) rowValues.push(getCellRaw(c, r));
+          data.push({ row: r, values: rowValues });
+        }
+      }
+      if (data.length === 0) return;
+      const startRow = data[0].row;
+      data.sort((a, b) => b.values[col].localeCompare(a.values[col]));
+      pushUndo();
+      data.forEach((d, i) => d.values.forEach((v, c) => setCellValue(c, startRow + i, v)));
+    }},
+    { label: "---" },
+    { label: "Add Comment", action: () => {
+      const text = prompt("Enter comment:");
+      if (text) setCellComment(contextMenu.col, contextMenu.row, { text, author: "User", date: new Date().toISOString() });
+    }},
+    { label: "Column Width...", action: () => {
+      const w = prompt("Column width:", String(getColWidth(contextMenu.col)));
+      if (w) setColWidth(contextMenu.col, parseInt(w));
+    }},
+    { label: "Row Height...", action: () => {
+      const h = prompt("Row height:", String(getRowHeight(contextMenu.row)));
+      if (h) setRowHeight(contextMenu.row, parseInt(h));
+    }},
+    { label: "Define Name...", action: () => {
+      const bounds = selectionStart && selectionEnd ? {
+        minC: Math.min(selectionStart.col, selectionEnd.col),
+        maxC: Math.max(selectionStart.col, selectionEnd.col),
+        minR: Math.min(selectionStart.row, selectionEnd.row),
+        maxR: Math.max(selectionStart.row, selectionEnd.row),
+      } : { minC: contextMenu.col, maxC: contextMenu.col, minR: contextMenu.row, maxR: contextMenu.row };
+      const name = prompt("Name:");
+      if (name) setNamedRange(name, `${colToLetter(bounds.minC)}${bounds.minR + 1}:${colToLetter(bounds.maxC)}${bounds.maxR + 1}`);
+    }},
+  ];
 
   return (
     <div
@@ -470,202 +505,228 @@ export function SpreadsheetGrid() {
       onKeyDown={handleKeyDown}
       style={{ backgroundColor: "var(--background)" }}
     >
-      <table
-        className="border-collapse"
-        style={{ borderColor: "var(--border)" }}
-      >
-        <thead>
-          <tr>
-            {/* Row number header corner */}
-            <th
-              className="sticky top-0 left-0 z-20 border text-xs font-medium"
-              style={{
-                width: 40,
-                minWidth: 40,
-                backgroundColor: "var(--muted)",
-                borderColor: "var(--border)",
-                color: "var(--muted-foreground)",
-              }}
-            />
-            {Array.from({ length: COLS }, (_, c) => (
-              <th
-                key={c}
-                className="sticky top-0 z-10 border text-xs font-medium select-none relative"
-                style={{
-                  width: getColWidth(c),
-                  minWidth: getColWidth(c),
-                  maxWidth: getColWidth(c),
-                  height: ROW_HEIGHT,
-                  backgroundColor: "var(--muted)",
-                  borderColor: "var(--border)",
-                  color: "var(--muted-foreground)",
-                }}
-              >
-                {colToLetter(c)}
-                {/* Resize handle */}
-                <div
-                  className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-400"
-                  onMouseDown={(e) => handleResizeStart(c, e)}
+      <div style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}>
+        <table
+          className="border-collapse"
+          style={{ borderColor: showGridlines ? "var(--border)" : "transparent" }}
+        >
+          <thead>
+            <tr>
+              {showHeadings && (
+                <th
+                  className="sticky top-0 left-0 z-20 text-xs font-medium select-none"
+                  style={{
+                    width: 40, minWidth: 40, height: DEFAULT_ROW_HEIGHT,
+                    backgroundColor: "var(--muted)", color: "var(--muted-foreground)",
+                    border: showGridlines ? "1px solid var(--border)" : "none",
+                  }}
                 />
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: ROWS }, (_, r) => (
-            <tr key={r}>
-              <td
-                className="sticky left-0 z-10 border text-xs text-center font-medium select-none"
-                style={{
-                  width: 40,
-                  minWidth: 40,
-                  height: ROW_HEIGHT,
-                  backgroundColor: "var(--muted)",
-                  borderColor: "var(--border)",
-                  color: "var(--muted-foreground)",
-                }}
-              >
-                {r + 1}
-              </td>
-              {Array.from({ length: COLS }, (_, c) => {
-                const active = isActive(c, r);
-                const editing = isEditing(c, r);
-                const selected = isInSelection(c, r);
-                const cellStyle = getCellStyle(c, r);
-
-                return (
-                  <td
-                    key={c}
-                    data-col={c}
-                    data-row={r}
-                    className="border text-sm font-mono relative"
-                    style={{
-                      width: getColWidth(c),
-                      minWidth: getColWidth(c),
-                      maxWidth: getColWidth(c),
-                      height: ROW_HEIGHT,
-                      padding: 0,
-                      borderColor: "var(--border)",
-                      backgroundColor: selected && !active
-                        ? "rgba(59,130,246,0.1)"
-                        : cellStyle.bgColor || "var(--background)",
-                      outline: active ? "2px solid #3b82f6" : "none",
-                      outlineOffset: "-1px",
-                      zIndex: active ? 5 : undefined,
-                    }}
-                    onMouseDown={(e) => handleCellMouseDown(c, r, e)}
-                    onMouseEnter={() => handleCellMouseEnter(c, r)}
-                    onDoubleClick={() => handleCellDoubleClick(c, r)}
-                    onContextMenu={(e) => handleContextMenu(c, r, e)}
-                  >
-                    {editing ? (
-                      <input
-                        ref={inputRef}
-                        className="w-full h-full px-1 text-sm font-mono outline-none border-none"
-                        style={{
-                          backgroundColor: "var(--background)",
-                          color: "var(--foreground)",
-                        }}
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            commitEdit();
-                            if (r < ROWS - 1) setActiveCell(c, r + 1);
-                          } else if (e.key === "Tab") {
-                            e.preventDefault();
-                            commitEdit();
-                            if (c < COLS - 1) setActiveCell(c + 1, r);
-                          } else if (e.key === "Escape") {
-                            cancelEdit();
-                          }
-                        }}
-                        onBlur={() => commitEdit()}
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full px-1 flex items-center overflow-hidden whitespace-nowrap text-ellipsis"
-                        style={{
-                          fontWeight: cellStyle.bold ? 700 : 400,
-                          fontStyle: cellStyle.italic ? "italic" : "normal",
-                          textDecoration: cellStyle.underline
-                            ? "underline"
-                            : "none",
-                          textAlign: cellStyle.align || "left",
-                          justifyContent:
-                            cellStyle.align === "center"
-                              ? "center"
-                              : cellStyle.align === "right"
-                                ? "flex-end"
-                                : "flex-start",
-                          color: cellStyle.textColor || "var(--foreground)",
-                        }}
-                      >
-                        {getCellDisplay(c, r)}
-                      </div>
-                    )}
-                    {/* Auto-fill drag handle */}
-                    {active && !editing && (
-                      <div
-                        className="absolute w-2 h-2 cursor-crosshair"
-                        style={{
-                          bottom: -3,
-                          right: -3,
-                          backgroundColor: "#3b82f6",
-                          border: "1px solid white",
-                          zIndex: 10,
-                        }}
-                        onMouseDown={handleAutoFillStart}
-                      />
-                    )}
-                  </td>
-                );
-              })}
+              )}
+              {Array.from({ length: COLS }, (_, c) => (
+                <th
+                  key={c}
+                  className="sticky top-0 z-10 text-xs font-medium select-none relative"
+                  style={{
+                    width: getColWidth(c), minWidth: getColWidth(c), maxWidth: getColWidth(c),
+                    height: DEFAULT_ROW_HEIGHT,
+                    backgroundColor: activeCell?.col === c ? "rgba(59,130,246,0.15)" : "var(--muted)",
+                    color: "var(--muted-foreground)",
+                    border: showGridlines ? "1px solid var(--border)" : "none",
+                  }}
+                  onClick={() => {
+                    // Select entire column
+                    setActiveCell(c, 0);
+                    setSelection({ col: c, row: 0 }, { col: c, row: ROWS - 1 });
+                  }}
+                >
+                  {colToLetter(c)}
+                  <div
+                    className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-blue-400"
+                    onMouseDown={(e) => handleResizeColStart(c, e)}
+                    onDoubleClick={(e) => { e.stopPropagation(); handleAutoFitCol(c); }}
+                  />
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {Array.from({ length: ROWS }, (_, r) => (
+              <tr key={r}>
+                {showHeadings && (
+                  <td
+                    className="sticky left-0 z-10 text-xs text-center font-medium select-none relative"
+                    style={{
+                      width: 40, minWidth: 40, height: getRowHeight(r),
+                      backgroundColor: activeCell?.row === r ? "rgba(59,130,246,0.15)" : "var(--muted)",
+                      color: "var(--muted-foreground)",
+                      border: showGridlines ? "1px solid var(--border)" : "none",
+                    }}
+                    onClick={() => {
+                      setActiveCell(0, r);
+                      setSelection({ col: 0, row: r }, { col: COLS - 1, row: r });
+                    }}
+                  >
+                    {r + 1}
+                    <div
+                      className="absolute bottom-0 left-0 w-full h-1 cursor-row-resize hover:bg-blue-400"
+                      onMouseDown={(e) => handleResizeRowStart(r, e)}
+                    />
+                  </td>
+                )}
+                {Array.from({ length: COLS }, (_, c) => {
+                  const active = isActive(c, r);
+                  const editing = isEditing(c, r);
+                  const selected = isInSelection(c, r);
+                  const cellStyle = getCellStyle(c, r);
+                  const cellData = getCellData(c, r);
+                  const hasComment = !!cellData?.comment;
+                  const isFrozenBorderRight = frozenCols > 0 && c === frozenCols - 1;
+                  const isFrozenBorderBottom = frozenRows > 0 && r === frozenRows - 1;
+
+                  return (
+                    <td
+                      key={c}
+                      data-col={c}
+                      data-row={r}
+                      className="text-sm relative"
+                      style={{
+                        width: getColWidth(c), minWidth: getColWidth(c), maxWidth: getColWidth(c),
+                        height: getRowHeight(r), padding: 0,
+                        border: showGridlines ? "1px solid var(--border)" : "1px solid transparent",
+                        backgroundColor: selected && !active
+                          ? "rgba(59,130,246,0.1)"
+                          : cellStyle.bgColor || "var(--background)",
+                        outline: active ? "2px solid #3b82f6" : "none",
+                        outlineOffset: "-1px",
+                        zIndex: active ? 5 : undefined,
+                        borderRight: isFrozenBorderRight ? "2px solid #94a3b8" : undefined,
+                        borderBottom: isFrozenBorderBottom ? "2px solid #94a3b8" : undefined,
+                        position: (c < frozenCols || r < frozenRows) ? "sticky" : undefined,
+                        left: c < frozenCols && showHeadings ? 40 : c < frozenCols ? 0 : undefined,
+                        top: r < frozenRows ? DEFAULT_ROW_HEIGHT : undefined,
+                      }}
+                      onMouseDown={(e) => handleCellMouseDown(c, r, e)}
+                      onMouseEnter={() => handleCellMouseEnter(c, r)}
+                      onDoubleClick={() => handleCellDoubleClick(c, r)}
+                      onContextMenu={(e) => handleContextMenu(c, r, e)}
+                    >
+                      {/* Comment indicator */}
+                      {hasComment && (
+                        <div
+                          className="absolute top-0 right-0 w-0 h-0"
+                          style={{
+                            borderLeft: "6px solid transparent",
+                            borderTop: "6px solid #ef4444",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (cellData?.comment) {
+                              setHoveredComment({
+                                x: e.clientX, y: e.clientY,
+                                comment: cellData.comment,
+                              });
+                            }
+                          }}
+                          onMouseLeave={() => setHoveredComment(null)}
+                        />
+                      )}
+
+                      {editing ? (
+                        <input
+                          ref={inputRef}
+                          className="w-full h-full px-1 text-sm outline-none border-none"
+                          style={{
+                            backgroundColor: "var(--background)", color: "var(--foreground)",
+                            fontFamily: cellStyle.fontFamily || "inherit",
+                            fontSize: cellStyle.fontSize ? `${cellStyle.fontSize}px` : "inherit",
+                          }}
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") { e.preventDefault(); commitEdit(); if (r < ROWS - 1) setActiveCell(c, r + 1); }
+                            else if (e.key === "Tab") { e.preventDefault(); commitEdit(); if (e.shiftKey) { if (c > 0) setActiveCell(c - 1, r); } else { if (c < COLS - 1) setActiveCell(c + 1, r); } }
+                            else if (e.key === "Escape") cancelEdit();
+                          }}
+                          onBlur={() => commitEdit()}
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full px-1 flex items-center overflow-hidden"
+                          style={{
+                            fontWeight: cellStyle.bold ? 700 : 400,
+                            fontStyle: cellStyle.italic ? "italic" : "normal",
+                            textDecoration: [
+                              cellStyle.underline ? "underline" : "",
+                              cellStyle.strikethrough ? "line-through" : "",
+                            ].filter(Boolean).join(" ") || "none",
+                            textAlign: cellStyle.align || "left",
+                            justifyContent: cellStyle.align === "center" ? "center" : cellStyle.align === "right" ? "flex-end" : "flex-start",
+                            alignItems: cellStyle.verticalAlign === "top" ? "flex-start" : cellStyle.verticalAlign === "bottom" ? "flex-end" : "center",
+                            color: cellStyle.textColor || "var(--foreground)",
+                            fontFamily: cellStyle.fontFamily || "inherit",
+                            fontSize: cellStyle.fontSize ? `${cellStyle.fontSize}px` : "inherit",
+                            whiteSpace: cellStyle.wrapText ? "pre-wrap" : "nowrap",
+                            textOverflow: cellStyle.wrapText ? "clip" : "ellipsis",
+                          }}
+                        >
+                          {getCellDisplay(c, r)}
+                        </div>
+                      )}
+
+                      {/* Auto-fill drag handle */}
+                      {active && !editing && (
+                        <div
+                          className="absolute w-2 h-2 cursor-crosshair"
+                          style={{
+                            bottom: -3, right: -3,
+                            backgroundColor: "#3b82f6",
+                            border: "1px solid white",
+                            zIndex: 10,
+                          }}
+                          onMouseDown={handleAutoFillStart}
+                        />
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Comment tooltip */}
+      {hoveredComment && (
+        <div
+          className="fixed z-50 p-2 rounded shadow-lg border text-xs max-w-xs"
+          style={{
+            left: hoveredComment.x + 10, top: hoveredComment.y + 10,
+            backgroundColor: "#fef9c3", borderColor: "#d97706", color: "#000",
+          }}
+        >
+          <div className="font-semibold">{hoveredComment.comment.author}</div>
+          <div className="text-[10px] mb-1" style={{ color: "#666" }}>{new Date(hoveredComment.comment.date).toLocaleDateString()}</div>
+          <div>{hoveredComment.comment.text}</div>
+        </div>
+      )}
 
       {/* Context Menu */}
       {contextMenu.visible && (
         <div
-          className="fixed rounded shadow-lg border py-1 z-50 text-sm"
+          className="fixed rounded shadow-lg border py-1 z-50 text-xs"
           style={{
-            left: contextMenu.x,
-            top: contextMenu.y,
-            backgroundColor: "var(--card)",
-            borderColor: "var(--border)",
-            color: "var(--foreground)",
-            minWidth: 180,
+            left: contextMenu.x, top: contextMenu.y,
+            backgroundColor: "var(--card)", borderColor: "var(--border)",
+            color: "var(--foreground)", minWidth: 200, maxHeight: 400, overflowY: "auto",
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {[
-            { label: "Insert Row Above", action: () => insertRowAbove(contextMenu.row) },
-            { label: "Insert Row Below", action: () => insertRowBelow(contextMenu.row) },
-            { label: "Insert Column Left", action: () => insertColLeft(contextMenu.col) },
-            { label: "Insert Column Right", action: () => insertColRight(contextMenu.col) },
-            { label: "---" },
-            { label: "Delete Row", action: () => deleteRow(contextMenu.row) },
-            { label: "Delete Column", action: () => deleteCol(contextMenu.col) },
-            { label: "---" },
-            { label: "Copy", action: () => copyCell(contextMenu.col, contextMenu.row) },
-            { label: "Paste", action: () => pasteCell(contextMenu.col, contextMenu.row) },
-            { label: "---" },
-            { label: "Sort A\u2192Z", action: () => sortColumn(contextMenu.col, true) },
-            { label: "Sort Z\u2192A", action: () => sortColumn(contextMenu.col, false) },
-          ].map((item, i) =>
+          {contextMenuItems.map((item, i) =>
             item.label === "---" ? (
-              <div
-                key={i}
-                className="my-1 border-t"
-                style={{ borderColor: "var(--border)" }}
-              />
+              <div key={i} className="my-1 border-t" style={{ borderColor: "var(--border)" }} />
             ) : (
               <button
                 key={i}
-                className="w-full text-left px-3 py-1.5 hover:opacity-80 transition-colors"
+                className="w-full text-left px-3 py-1.5 hover:opacity-80 transition-colors flex items-center justify-between"
                 style={{ backgroundColor: "transparent", color: "var(--foreground)" }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--muted)")}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
@@ -674,7 +735,8 @@ export function SpreadsheetGrid() {
                   setContextMenu((prev) => ({ ...prev, visible: false }));
                 }}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {item.shortcut && <span className="text-[10px] ml-4" style={{ color: "var(--muted-foreground)" }}>{item.shortcut}</span>}
               </button>
             )
           )}
