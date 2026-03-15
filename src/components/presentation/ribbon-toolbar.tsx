@@ -12,8 +12,13 @@ import {
   BarChart3, Plus, Minus, Maximize, Monitor,
   Ruler, Eye, EyeOff, ArrowUp, ArrowDown,
   Rows3, PanelTop, SlidersHorizontal, Columns3,
-  PenTool, Triangle, Hexagon,
+  PenTool, Triangle, Hexagon, Smile, Shapes,
 } from 'lucide-react';
+import {
+  ShapePicker, IconPicker,
+  type ShapeDefinition, type IconDefinition,
+} from '@/components/shared/shapes-icons-library';
+import { CHART_CATEGORIES } from '@/components/shared/chart-types';
 import {
   usePresentationStore,
   GRADIENT_PRESETS,
@@ -126,6 +131,9 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showThemes, setShowThemes] = useState(false);
   const [showTransitionTiming, setShowTransitionTiming] = useState(false);
+  const [showAdvShapes, setShowAdvShapes] = useState(false);
+  const [showAdvIcons, setShowAdvIcons] = useState(false);
+  const [showAdvCharts, setShowAdvCharts] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const slide = slides[activeSlideIndex];
@@ -177,6 +185,50 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
       tableData: { rows: 4, cols: 3, cells, headerRow: true },
       style: { fontSize: 14, color: '#000000' },
     });
+  };
+
+  const handleAddAdvancedShape = (shape: ShapeDefinition) => {
+    pushUndo();
+    addElement(activeSlideIndex, {
+      type: 'shape', x: 250, y: 150, width: 150, height: 150,
+      content: shape.id,
+      style: {
+        backgroundColor: '#3b82f6',
+        borderRadius: '0',
+      },
+    });
+    setShowAdvShapes(false);
+  };
+
+  const handleAddIcon = (icon: IconDefinition) => {
+    pushUndo();
+    addElement(activeSlideIndex, {
+      type: 'shape', x: 350, y: 200, width: 80, height: 80,
+      content: `icon:${icon.id}`,
+      style: {
+        backgroundColor: 'transparent',
+        color: '#3b82f6',
+      },
+    });
+    setShowAdvIcons(false);
+  };
+
+  const handleAddAdvancedChart = (chartType: string, chartLabel: string) => {
+    pushUndo();
+    addElement(activeSlideIndex, {
+      type: 'chart', x: 150, y: 100, width: 400, height: 300,
+      content: 'chart',
+      chartData: {
+        chartType: chartType as 'bar' | 'line' | 'pie' | 'doughnut',
+        labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+        datasets: [
+          { label: 'Series 1', data: [30, 50, 40, 60], color: '#3b82f6' },
+          { label: 'Series 2', data: [20, 35, 45, 50], color: '#ef4444' },
+        ],
+      },
+      style: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    });
+    setShowAdvCharts(false);
   };
 
   const handleAddChart = (chartType: 'bar' | 'line' | 'pie' | 'doughnut') => {
@@ -442,22 +494,21 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
               <RibbonButton icon={<Diamond size={16} />} onClick={() => handleAddShape('diamond')} title="Diamond" small />
               <RibbonButton icon={<Hexagon size={16} />} onClick={() => handleAddShape('hexagon')} title="Hexagon" small />
               <div className="relative">
-                <RibbonButton icon={<ChevronDown size={14} />} onClick={() => setShowMoreShapes(!showMoreShapes)} title="More Shapes" small />
-                {showMoreShapes && (
-                  <div className="absolute left-0 top-full mt-1 rounded shadow-xl z-50 border py-1"
-                    style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 160 }}>
-                    {[
-                      { name: 'callout', label: 'Callout', icon: <MessageSquare size={14} /> },
-                      { name: 'line', label: 'Line', icon: <PenTool size={14} /> },
-                      { name: 'pentagon', label: 'Pentagon', icon: <Hexagon size={14} /> },
-                    ].map((s) => (
-                      <button key={s.name}
-                        onClick={() => { handleAddShape(s.name); setShowMoreShapes(false); }}
-                        className="w-full text-left px-3 py-1.5 text-sm hover:opacity-80 flex items-center gap-2"
-                        style={{ color: 'var(--card-foreground)' }}>
-                        {s.icon} {s.label}
-                      </button>
-                    ))}
+                <RibbonButton icon={<Shapes size={14} />} onClick={() => setShowAdvShapes(!showAdvShapes)} title="All Shapes" small />
+                {showAdvShapes && (
+                  <div className="absolute left-0 top-full mt-1 z-50">
+                    <ShapePicker onSelectShape={handleAddAdvancedShape} onClose={() => setShowAdvShapes(false)} />
+                  </div>
+                )}
+              </div>
+            </RibbonGroup>
+            <RibbonDivider />
+            <RibbonGroup label="Icons">
+              <div className="relative">
+                <RibbonButton icon={<Smile size={18} />} label="Icons" onClick={() => setShowAdvIcons(!showAdvIcons)} />
+                {showAdvIcons && (
+                  <div className="absolute left-0 top-full mt-1 z-50">
+                    <IconPicker onSelectIcon={handleAddIcon} onClose={() => setShowAdvIcons(false)} />
                   </div>
                 )}
               </div>
@@ -473,6 +524,30 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
               <RibbonButton icon={<BarChart3 size={16} />} label="Bar" onClick={() => handleAddChart('bar')} small />
               <RibbonButton icon={<SlidersHorizontal size={16} />} label="Line" onClick={() => handleAddChart('line')} small />
               <RibbonButton icon={<PanelTop size={16} />} label="Pie" onClick={() => handleAddChart('pie')} small />
+              <div className="relative">
+                <RibbonButton icon={<ChevronDown size={14} />} onClick={() => setShowAdvCharts(!showAdvCharts)} title="More Charts" small />
+                {showAdvCharts && (
+                  <div className="absolute right-0 top-full mt-1 rounded shadow-xl z-50 border p-2 max-h-80 overflow-y-auto"
+                    style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 260 }}>
+                    <div className="text-[10px] font-medium mb-1" style={{ color: 'var(--card-foreground)' }}>Advanced Charts</div>
+                    {Object.entries(CHART_CATEGORIES).map(([key, category]) => (
+                      <div key={key}>
+                        <div className="text-[9px] font-semibold mt-1.5 mb-0.5 opacity-60">{category.label}</div>
+                        <div className="grid grid-cols-2 gap-0.5">
+                          {category.types.map(ct => (
+                            <button key={ct.type}
+                              onClick={() => handleAddAdvancedChart(ct.type, ct.label)}
+                              className="text-left text-[10px] px-2 py-1 rounded hover:opacity-80"
+                              style={{ color: 'var(--card-foreground)' }}>
+                              {ct.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </RibbonGroup>
             <RibbonDivider />
 
