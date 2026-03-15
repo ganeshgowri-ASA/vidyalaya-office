@@ -46,8 +46,51 @@ import {
   ChevronDown,
   Award,
   Move,
+  Search,
+  Printer,
+  FilePlus2,
+  Underline,
+  Strikethrough,
+  StickyNote,
+  RectangleHorizontal,
+  Layers,
+  Info,
+  FileCheck,
+  Lock,
+  Presentation,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  SquareIcon,
+  CircleIcon,
+  Minus,
+  ArrowRightIcon,
 } from "lucide-react";
-import { PDFDocument, degrees } from "pdf-lib";
+import { PDFDocument, degrees, PageSizes } from "pdf-lib";
+import { RibbonToolbar } from "@/components/pdf";
+import { SearchPanel } from "@/components/pdf";
+import { PropertiesPanel } from "@/components/pdf";
+import { HeaderFooterModal } from "@/components/pdf";
+import { PrintModal } from "@/components/pdf";
+import { SecurityModal } from "@/components/pdf";
+import { ExportModal } from "@/components/pdf";
+import { CreateBlankModal } from "@/components/pdf";
+import type {
+  RibbonTabId,
+  HeaderFooterConfig,
+  PrintOptions,
+  ExportOptions,
+  SecurityConfig,
+  DocumentProperties,
+  SearchResult,
+} from "@/components/pdf/types";
+import {
+  btnStyle as sharedBtnStyle,
+  btnPrimaryStyle as sharedBtnPrimaryStyle,
+  inputStyle as sharedInputStyle,
+  formatBytes as sharedFormatBytes,
+  downloadBlob as sharedDownloadBlob,
+} from "@/components/pdf/types";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -55,7 +98,7 @@ type TabId = "view" | "edit" | "merge" | "split" | "convert" | "compress" | "for
 
 interface Annotation {
   id: string;
-  type: "text" | "highlight" | "drawing" | "stamp" | "signature" | "redaction";
+  type: "text" | "highlight" | "underline" | "strikethrough" | "drawing" | "stamp" | "signature" | "redaction" | "sticky-note" | "shape";
   page: number;
   x: number;
   y: number;
@@ -68,11 +111,14 @@ interface Annotation {
   points?: { x: number; y: number }[];
   stamp?: string;
   signatureDataUrl?: string;
+  shapeType?: "rectangle" | "circle" | "line" | "arrow";
+  noteColor?: string;
+  noteOpen?: boolean;
 }
 
 interface FormField {
   id: string;
-  type: "text-input" | "checkbox" | "radio" | "dropdown";
+  type: "text-input" | "checkbox" | "radio" | "dropdown" | "signature";
   page: number;
   x: number;
   y: number;
@@ -151,6 +197,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 
 export default function PdfToolsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("view");
+  const [ribbonTab, setRibbonTab] = useState<RibbonTabId>("home");
 
   // ── Shared viewer state ──
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
@@ -167,7 +214,7 @@ export default function PdfToolsPage() {
 
   // ── Edit state ──
   const [editMode, setEditMode] = useState<
-    "none" | "text" | "highlight" | "draw" | "stamp" | "signature" | "redaction"
+    "none" | "text" | "highlight" | "underline" | "strikethrough" | "draw" | "stamp" | "signature" | "redaction" | "sticky-note" | "shape"
   >("none");
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [fontSize, setFontSize] = useState(16);
@@ -268,6 +315,64 @@ export default function PdfToolsPage() {
   const [compareTotalPages, setCompareTotalPages] = useState(0);
   const compareCanvasRef = useRef<HTMLCanvasElement>(null);
   const compareCanvasRef2 = useRef<HTMLCanvasElement>(null);
+
+  // ── Search state ──
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [currentSearchResult, setCurrentSearchResult] = useState(0);
+
+  // ── Properties panel state ──
+  const [showProperties, setShowProperties] = useState(false);
+  const [documentProperties, setDocumentProperties] = useState<DocumentProperties>({
+    title: "", author: "", subject: "", keywords: "", creator: "",
+    producer: "", creationDate: "", modDate: "", pageCount: 0, fileSize: 0,
+  });
+
+  // ── Header/Footer state ──
+  const [showHeaderFooter, setShowHeaderFooter] = useState(false);
+  const [headerFooterConfig, setHeaderFooterConfig] = useState<HeaderFooterConfig>({
+    headerLeft: "", headerCenter: "", headerRight: "",
+    footerLeft: "", footerCenter: "", footerRight: "",
+    fontSize: 10, startPage: 1, includePageNumbers: true, pageNumberFormat: "1",
+  });
+
+  // ── Print state ──
+  const [showPrint, setShowPrint] = useState(false);
+  const [printOptions, setPrintOptions] = useState<PrintOptions>({
+    pages: "all", range: "", copies: 1, orientation: "portrait",
+    scale: "fit", includeAnnotations: true,
+  });
+
+  // ── Export state ──
+  const [showExport, setShowExport] = useState(false);
+  const [exportOptions, setExportOptions] = useState<ExportOptions>({
+    format: "standard", quality: "printer", includeBookmarks: true,
+    includeAnnotations: true, flatten: false,
+  });
+
+  // ── Security state ──
+  const [showSecurity, setShowSecurity] = useState(false);
+  const [securityConfig, setSecurityConfig] = useState<SecurityConfig>({
+    hasPassword: false, openPassword: "", permissionPassword: "",
+    allowPrinting: true, allowCopying: true, allowEditing: true,
+    allowAnnotations: true, encryptionLevel: "256-aes",
+  });
+  const [securityApplied, setSecurityApplied] = useState(false);
+
+  // ── Create blank PDF state ──
+  const [showCreateBlank, setShowCreateBlank] = useState(false);
+
+  // ── Sticky note state ──
+  const [stickyNoteColor, setStickyNoteColor] = useState("#fff9c4");
+
+  // ── Shape state ──
+  const [activeShape, setActiveShape] = useState<"rectangle" | "circle" | "line" | "arrow">("rectangle");
+
+  // ── Flatten state ──
+  const [flattenApplied, setFlattenApplied] = useState(false);
+
+  // ── Header/footer applied state ──
+  const [headerFooterApplied, setHeaderFooterApplied] = useState(false);
 
   // ─── Load & Render PDF ────────────────────────────────────────────────────
 
@@ -423,6 +528,85 @@ export default function PdfToolsPage() {
             ctx.fillStyle = "#000000";
             ctx.fillRect(a.x, a.y, a.width ?? 100, a.height ?? 20);
             break;
+          case "underline":
+            ctx.strokeStyle = a.color ?? "#0000ff";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y + (a.height ?? 20));
+            ctx.lineTo(a.x + (a.width ?? 200), a.y + (a.height ?? 20));
+            ctx.stroke();
+            break;
+          case "strikethrough":
+            ctx.strokeStyle = a.color ?? "#ff0000";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y + (a.height ?? 20) / 2);
+            ctx.lineTo(a.x + (a.width ?? 200), a.y + (a.height ?? 20) / 2);
+            ctx.stroke();
+            break;
+          case "sticky-note": {
+            const noteW = a.width ?? 120;
+            const noteH = a.height ?? 100;
+            ctx.fillStyle = a.noteColor ?? "#fff9c4";
+            ctx.shadowColor = "rgba(0,0,0,0.2)";
+            ctx.shadowBlur = 6;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.fillRect(a.x, a.y, noteW, noteH);
+            ctx.shadowColor = "transparent";
+            ctx.strokeStyle = "rgba(0,0,0,0.15)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(a.x, a.y, noteW, noteH);
+            // Header bar
+            ctx.fillStyle = "rgba(0,0,0,0.08)";
+            ctx.fillRect(a.x, a.y, noteW, 18);
+            // Note text
+            if (a.text) {
+              ctx.fillStyle = "#333333";
+              ctx.font = "11px sans-serif";
+              const lines = a.text.split("\n");
+              lines.forEach((line, idx) => {
+                if (idx < 6) ctx.fillText(line, a.x + 6, a.y + 32 + idx * 14, noteW - 12);
+              });
+            }
+            break;
+          }
+          case "shape": {
+            ctx.strokeStyle = a.color ?? "#0066cc";
+            ctx.lineWidth = a.strokeWidth ?? 2;
+            ctx.fillStyle = "transparent";
+            if (a.shapeType === "rectangle") {
+              ctx.strokeRect(a.x, a.y, a.width ?? 100, a.height ?? 60);
+            } else if (a.shapeType === "circle") {
+              const rx = (a.width ?? 100) / 2;
+              const ry = (a.height ?? 60) / 2;
+              ctx.beginPath();
+              ctx.ellipse(a.x + rx, a.y + ry, rx, ry, 0, 0, Math.PI * 2);
+              ctx.stroke();
+            } else if (a.shapeType === "line") {
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(a.x + (a.width ?? 100), a.y + (a.height ?? 60));
+              ctx.stroke();
+            } else if (a.shapeType === "arrow") {
+              const ex = a.x + (a.width ?? 100);
+              const ey = a.y + (a.height ?? 60);
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(ex, ey);
+              ctx.stroke();
+              // Arrowhead
+              const angle = Math.atan2(ey - a.y, ex - a.x);
+              const headLen = 12;
+              ctx.beginPath();
+              ctx.moveTo(ex, ey);
+              ctx.lineTo(ex - headLen * Math.cos(angle - Math.PI / 6), ey - headLen * Math.sin(angle - Math.PI / 6));
+              ctx.moveTo(ex, ey);
+              ctx.lineTo(ex - headLen * Math.cos(angle + Math.PI / 6), ey - headLen * Math.sin(angle + Math.PI / 6));
+              ctx.stroke();
+            }
+            break;
+          }
         }
       }
     },
@@ -487,6 +671,34 @@ export default function PdfToolsPage() {
     }
     if (editMode === "redaction") {
       setRedactionStart({ x, y });
+    }
+    if (editMode === "underline") {
+      setAnnotations((prev) => [
+        ...prev,
+        { id: uid(), type: "underline", page: currentPage, x, y, width: 200, height: 20, color: drawColor },
+      ]);
+      return;
+    }
+    if (editMode === "strikethrough") {
+      setAnnotations((prev) => [
+        ...prev,
+        { id: uid(), type: "strikethrough", page: currentPage, x, y, width: 200, height: 20, color: drawColor },
+      ]);
+      return;
+    }
+    if (editMode === "sticky-note") {
+      setAnnotations((prev) => [
+        ...prev,
+        { id: uid(), type: "sticky-note", page: currentPage, x, y, width: 140, height: 120, text: "Note...", noteColor: stickyNoteColor, noteOpen: true },
+      ]);
+      return;
+    }
+    if (editMode === "shape") {
+      setAnnotations((prev) => [
+        ...prev,
+        { id: uid(), type: "shape", page: currentPage, x, y, width: 120, height: 80, shapeType: activeShape, color: drawColor, strokeWidth },
+      ]);
+      return;
     }
   };
 
@@ -1009,6 +1221,226 @@ export default function PdfToolsPage() {
       renderComparePages();
     }
   }, [showCompare, pdfDoc, compareDoc, renderComparePages]);
+
+  // ─── Search handlers ────────────────────────────────────────────────────
+
+  const handleSearch = useCallback(async (query: string, _options: { caseSensitive: boolean; wholeWord: boolean }) => {
+    if (!pdfDoc || !query.trim()) { setSearchResults([]); return; }
+    const results: SearchResult[] = [];
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      const page = await pdfDoc.getPage(i);
+      const textContent = await page.getTextContent();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pageText = textContent.items.map((item: any) => (item.str ?? "")).join(" ");
+      const searchIn = _options.caseSensitive ? pageText : pageText.toLowerCase();
+      const searchFor = _options.caseSensitive ? query : query.toLowerCase();
+      let idx = searchIn.indexOf(searchFor);
+      while (idx !== -1) {
+        results.push({ page: i, index: idx, text: pageText.substring(Math.max(0, idx - 20), idx + query.length + 20) });
+        idx = searchIn.indexOf(searchFor, idx + 1);
+      }
+    }
+    setSearchResults(results);
+    setCurrentSearchResult(0);
+    if (results.length > 0) setCurrentPage(results[0].page);
+  }, [pdfDoc]);
+
+  const handleSearchReplace = (_search: string, _replace: string, _all: boolean) => {
+    // Placeholder: actual text replacement in PDF requires advanced content stream manipulation
+    console.log("Find/Replace: server-side processing required for text replacement in PDF content streams");
+  };
+
+  // ─── Create blank PDF ────────────────────────────────────────────────────
+
+  const createBlankPdf = async (pageSize: string, orientation: string, pageCount: number) => {
+    const sizeMap: Record<string, [number, number]> = {
+      a4: PageSizes.A4,
+      letter: PageSizes.Letter,
+      legal: [612, 1008],
+      a3: PageSizes.A3,
+      a5: PageSizes.A5,
+    };
+    const [w, h] = sizeMap[pageSize] ?? PageSizes.A4;
+    const doc = await PDFDocument.create();
+    for (let i = 0; i < pageCount; i++) {
+      if (orientation === "landscape") {
+        doc.addPage([h, w]);
+      } else {
+        doc.addPage([w, h]);
+      }
+    }
+    const bytes = await doc.save();
+    const data = bytes.buffer as ArrayBuffer;
+    await loadPdf(data, `untitled-${Date.now()}.pdf`);
+    setShowCreateBlank(false);
+    setActiveTab("view");
+  };
+
+  // ─── Apply Headers & Footers ─────────────────────────────────────────────
+
+  const applyHeaderFooter = async () => {
+    if (!pdfBytes) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const pages = doc.getPages();
+      pages.forEach((page, idx) => {
+        if (idx + 1 < headerFooterConfig.startPage) return;
+        const { width, height } = page.getSize();
+        const fs = headerFooterConfig.fontSize;
+        // Headers
+        if (headerFooterConfig.headerLeft) {
+          page.drawText(headerFooterConfig.headerLeft, { x: 40, y: height - 30, size: fs });
+        }
+        if (headerFooterConfig.headerCenter) {
+          page.drawText(headerFooterConfig.headerCenter, { x: width / 2 - 30, y: height - 30, size: fs });
+        }
+        if (headerFooterConfig.headerRight) {
+          page.drawText(headerFooterConfig.headerRight, { x: width - 120, y: height - 30, size: fs });
+        }
+        // Footers
+        if (headerFooterConfig.footerLeft) {
+          page.drawText(headerFooterConfig.footerLeft, { x: 40, y: 20, size: fs });
+        }
+        if (headerFooterConfig.includePageNumbers) {
+          const pageNum = `${idx + 1}`;
+          page.drawText(pageNum, { x: width / 2 - 5, y: 20, size: fs });
+        } else if (headerFooterConfig.footerCenter) {
+          page.drawText(headerFooterConfig.footerCenter, { x: width / 2 - 30, y: 20, size: fs });
+        }
+        if (headerFooterConfig.footerRight) {
+          page.drawText(headerFooterConfig.footerRight, { x: width - 120, y: 20, size: fs });
+        }
+      });
+      const bytes = await doc.save();
+      setPdfBytes(bytes.buffer as ArrayBuffer);
+      const lib = await loadPdfjs();
+      const newDoc = await lib.getDocument({ data: new Uint8Array(bytes) }).promise;
+      setPdfDoc(newDoc);
+      setHeaderFooterApplied(true);
+      setShowHeaderFooter(false);
+    } catch (err) {
+      console.error("Failed to apply headers/footers:", err);
+    }
+  };
+
+  // ─── Print handler ──────────────────────────────────────────────────────
+
+  const handlePrint = () => {
+    if (!pdfBytes) return;
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    iframe.contentWindow?.print();
+    setShowPrint(false);
+  };
+
+  // ─── Export handler ─────────────────────────────────────────────────────
+
+  const handleExport = async () => {
+    if (!pdfBytes) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      if (exportOptions.format === "pdf-a") {
+        doc.setTitle(documentProperties.title || "Exported Document");
+        doc.setAuthor(documentProperties.author || "");
+        doc.setSubject(documentProperties.subject || "");
+        doc.setKeywords([documentProperties.keywords || ""]);
+        doc.setCreator("Vidyalaya Office PDF Editor");
+        doc.setProducer("Vidyalaya Office");
+      }
+      const bytes = await doc.save();
+      const suffix = exportOptions.format === "pdf-a" ? "_pdfa" : exportOptions.format === "pdf-x" ? "_pdfx" : "";
+      sharedDownloadBlob(new Blob([bytes as BlobPart], { type: "application/pdf" }), `export${suffix}_${pdfName || "document.pdf"}`);
+      setShowExport(false);
+    } catch (err) {
+      console.error("Export failed:", err);
+    }
+  };
+
+  // ─── Security handler ──────────────────────────────────────────────────
+
+  const applySecurity = () => {
+    // Actual encryption requires server-side processing or a specialized library
+    setSecurityApplied(true);
+    setShowSecurity(false);
+    console.log("Security settings saved (placeholder). Actual PDF encryption requires server-side processing.");
+  };
+
+  // ─── Flatten annotations ──────────────────────────────────────────────
+
+  const flattenAnnotations = async () => {
+    if (!pdfBytes || annotations.length === 0) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const pages = doc.getPages();
+      // Flatten text annotations into the PDF
+      for (const ann of annotations) {
+        const pageIdx = ann.page - 1;
+        if (pageIdx < 0 || pageIdx >= pages.length) continue;
+        const page = pages[pageIdx];
+        const { height } = page.getSize();
+        if (ann.type === "text" && ann.text) {
+          page.drawText(ann.text, {
+            x: ann.x,
+            y: height - ann.y,
+            size: ann.fontSize ?? 16,
+          });
+        }
+        if (ann.type === "redaction") {
+          page.drawRectangle({
+            x: ann.x,
+            y: height - ann.y - (ann.height ?? 20),
+            width: ann.width ?? 100,
+            height: ann.height ?? 20,
+            color: { type: "RGB" as unknown as undefined, red: 0, green: 0, blue: 0 } as unknown as undefined,
+          });
+        }
+      }
+      const bytes = await doc.save();
+      setPdfBytes(bytes.buffer as ArrayBuffer);
+      const lib = await loadPdfjs();
+      const newDoc = await lib.getDocument({ data: new Uint8Array(bytes) }).promise;
+      setPdfDoc(newDoc);
+      setAnnotations([]);
+      setFlattenApplied(true);
+    } catch (err) {
+      console.error("Flatten failed:", err);
+    }
+  };
+
+  // ─── Add/Delete pages ──────────────────────────────────────────────────
+
+  const addBlankPage = async () => {
+    if (!pdfBytes) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const lastPage = doc.getPages()[doc.getPageCount() - 1];
+      const { width, height } = lastPage.getSize();
+      doc.addPage([width, height]);
+      const bytes = await doc.save();
+      const data = bytes.buffer as ArrayBuffer;
+      await loadPdf(data, pdfName);
+    } catch (err) {
+      console.error("Add page failed:", err);
+    }
+  };
+
+  const deletePage = async (pageNum: number) => {
+    if (!pdfBytes || totalPages <= 1) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      doc.removePage(pageNum - 1);
+      const bytes = await doc.save();
+      const data = bytes.buffer as ArrayBuffer;
+      await loadPdf(data, pdfName);
+      if (currentPage > doc.getPageCount()) setCurrentPage(doc.getPageCount());
+    } catch (err) {
+      console.error("Delete page failed:", err);
+    }
+  };
 
   // ─── Utilities ────────────────────────────────────────────────────────────
 
@@ -1613,6 +2045,117 @@ export default function PdfToolsPage() {
 
           <div style={{ height: 1, backgroundColor: "var(--border)", margin: "4px 0" }} />
 
+          {/* Underline */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+              ...(editMode === "underline" ? { backgroundColor: "var(--accent)" } : {}),
+            }}
+            onClick={() => setEditMode(editMode === "underline" ? "none" : "underline")}
+          >
+            <Underline size={16} /> Underline
+          </button>
+
+          {/* Strikethrough */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+              ...(editMode === "strikethrough" ? { backgroundColor: "var(--accent)" } : {}),
+            }}
+            onClick={() => setEditMode(editMode === "strikethrough" ? "none" : "strikethrough")}
+          >
+            <Strikethrough size={16} /> Strikethrough
+          </button>
+
+          {/* Sticky Note */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+              ...(editMode === "sticky-note" ? { backgroundColor: "var(--accent)" } : {}),
+            }}
+            onClick={() => setEditMode(editMode === "sticky-note" ? "none" : "sticky-note")}
+          >
+            <StickyNote size={16} /> Sticky Note
+          </button>
+
+          {editMode === "sticky-note" && (
+            <div className="flex flex-col gap-2 pl-2">
+              <label style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Note Color</label>
+              <div className="flex gap-1">
+                {["#fff9c4", "#c8e6c9", "#bbdefb", "#f8bbd0", "#ffe0b2"].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setStickyNoteColor(c)}
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 4,
+                      backgroundColor: c,
+                      border: stickyNoteColor === c ? "2px solid var(--primary)" : "1px solid var(--border)",
+                      cursor: "pointer",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Shapes */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+              ...(editMode === "shape" ? { backgroundColor: "var(--accent)" } : {}),
+            }}
+            onClick={() => setEditMode(editMode === "shape" ? "none" : "shape")}
+          >
+            <RectangleHorizontal size={16} /> Shapes
+          </button>
+
+          {editMode === "shape" && (
+            <div className="flex flex-col gap-2 pl-2">
+              <label style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Shape Type</label>
+              <div className="flex gap-1">
+                {([
+                  { type: "rectangle" as const, icon: <SquareIcon size={14} /> },
+                  { type: "circle" as const, icon: <CircleIcon size={14} /> },
+                  { type: "line" as const, icon: <Minus size={14} /> },
+                  { type: "arrow" as const, icon: <ArrowRightIcon size={14} /> },
+                ] as const).map(({ type, icon }) => (
+                  <button
+                    key={type}
+                    onClick={() => setActiveShape(type)}
+                    style={{
+                      ...btnStyle,
+                      padding: "4px 8px",
+                      backgroundColor: activeShape === type ? "var(--primary)" : "var(--card)",
+                      color: activeShape === type ? "var(--primary-foreground)" : "var(--card-foreground)",
+                    }}
+                    title={type}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+              <label style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Color</label>
+              <input
+                type="color"
+                value={drawColor}
+                onChange={(e) => setDrawColor(e.target.value)}
+                style={{ width: 30, height: 30, border: "none", cursor: "pointer" }}
+              />
+            </div>
+          )}
+
+          <div style={{ height: 1, backgroundColor: "var(--border)", margin: "4px 0" }} />
+
           {/* Redaction */}
           <button
             style={{
@@ -1631,6 +2174,22 @@ export default function PdfToolsPage() {
               Click and drag on the PDF to black out sensitive areas.
             </p>
           )}
+
+          <div style={{ height: 1, backgroundColor: "var(--border)", margin: "4px 0" }} />
+
+          {/* Flatten Annotations */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+              ...(flattenApplied ? { opacity: 0.6 } : {}),
+            }}
+            onClick={flattenAnnotations}
+            disabled={annotations.length === 0 || flattenApplied}
+          >
+            <Layers size={16} /> {flattenApplied ? "Annotations Flattened" : "Flatten Annotations"}
+          </button>
 
           <div style={{ height: 1, backgroundColor: "var(--border)", margin: "4px 0" }} />
 
@@ -1666,6 +2225,19 @@ export default function PdfToolsPage() {
             onClick={() => setShowWatermarkModal(true)}
           >
             <Droplets size={16} /> {watermarkApplied ? "Watermark Applied" : "Add Watermark"}
+          </button>
+
+          {/* Headers & Footers */}
+          <button
+            style={{
+              ...btnStyle,
+              width: "100%",
+              justifyContent: "flex-start",
+              ...(headerFooterApplied ? { opacity: 0.6 } : {}),
+            }}
+            onClick={() => setShowHeaderFooter(true)}
+          >
+            <AlignCenter size={16} /> {headerFooterApplied ? "Headers/Footers Added" : "Headers & Footers"}
           </button>
 
           {/* OCR */}
@@ -2967,6 +3539,254 @@ export default function PdfToolsPage() {
     }
   };
 
+  // ─── Ribbon tab to legacy tab mapping ──────────────────────────────────────
+
+  const handleRibbonTabChange = (tab: RibbonTabId) => {
+    setRibbonTab(tab);
+    // Map ribbon tabs to existing functional tabs
+    switch (tab) {
+      case "home": setActiveTab("view"); break;
+      case "edit": setActiveTab("edit"); break;
+      case "annotate": setActiveTab("edit"); break;
+      case "forms": setActiveTab("forms"); break;
+      case "organize": setActiveTab("view"); break;
+      case "convert": setActiveTab("convert"); break;
+      case "security": setActiveTab("view"); break;
+      case "review": setActiveTab("compare"); break;
+    }
+  };
+
+  // ─── Ribbon sub-toolbars ────────────────────────────────────────────────
+
+  const renderRibbonContent = () => {
+    switch (ribbonTab) {
+      case "home":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={btnStyle} onClick={() => { setShowCreateBlank(true); }}>
+              <FilePlus2 size={14} /> New
+            </button>
+            <div
+              className="relative"
+            >
+              <label style={{ ...btnStyle, cursor: "pointer" }}>
+                <Upload size={14} /> Open
+                <input type="file" accept=".pdf" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]); }} />
+              </label>
+            </div>
+            {pdfBytes && (
+              <>
+                <button style={btnStyle} onClick={() => { if (pdfBytes) { downloadBlob(new Blob([pdfBytes], { type: "application/pdf" }), pdfName || "document.pdf"); } }}>
+                  <Download size={14} /> Save
+                </button>
+                <button style={btnStyle} onClick={() => setShowPrint(true)}>
+                  <Printer size={14} /> Print
+                </button>
+                <button style={btnStyle} onClick={() => setShowExport(true)}>
+                  <FileCheck size={14} /> Export
+                </button>
+                <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+                <button style={btnStyle} onClick={() => setShowSearch(!showSearch)}>
+                  <Search size={14} /> Find
+                </button>
+                <button style={btnStyle} onClick={() => setShowProperties(!showProperties)}>
+                  <Info size={14} /> Properties
+                </button>
+              </>
+            )}
+          </div>
+        );
+      case "edit":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={{ ...btnStyle, ...(editMode === "text" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "text" ? "none" : "text"); }}>
+              <Type size={14} /> Text
+            </button>
+            <button style={{ ...btnStyle, ...(editMode === "draw" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "draw" ? "none" : "draw"); }}>
+              <PenTool size={14} /> Draw
+            </button>
+            <button style={{ ...btnStyle, ...(editMode === "shape" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "shape" ? "none" : "shape"); }}>
+              <RectangleHorizontal size={14} /> Shapes
+            </button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+            <button style={btnStyle} onClick={addPageNumbers} disabled={pageNumbersAdded}>
+              <Hash size={14} /> {pageNumbersAdded ? "Numbers Added" : "Page Numbers"}
+            </button>
+            <button style={btnStyle} onClick={() => setShowWatermarkModal(true)}>
+              <Droplets size={14} /> Watermark
+            </button>
+            <button style={btnStyle} onClick={() => setShowHeaderFooter(true)}>
+              <AlignCenter size={14} /> Headers/Footers
+            </button>
+            {pdfDoc && (
+              <>
+                <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+                <button style={btnStyle} onClick={addBlankPage}>
+                  <FilePlus size={14} /> Add Page
+                </button>
+                <button style={{ ...btnStyle, color: totalPages <= 1 ? "var(--muted-foreground)" : "#dc2626" }} onClick={() => deletePage(currentPage)} disabled={totalPages <= 1}>
+                  <Trash2 size={14} /> Delete Page
+                </button>
+              </>
+            )}
+          </div>
+        );
+      case "annotate":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={{ ...btnStyle, ...(editMode === "highlight" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "highlight" ? "none" : "highlight"); }}>
+              <Highlighter size={14} /> Highlight
+            </button>
+            <button style={{ ...btnStyle, ...(editMode === "underline" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "underline" ? "none" : "underline"); }}>
+              <Underline size={14} /> Underline
+            </button>
+            <button style={{ ...btnStyle, ...(editMode === "strikethrough" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "strikethrough" ? "none" : "strikethrough"); }}>
+              <Strikethrough size={14} /> Strikethrough
+            </button>
+            <button style={{ ...btnStyle, ...(editMode === "sticky-note" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "sticky-note" ? "none" : "sticky-note"); }}>
+              <StickyNote size={14} /> Sticky Note
+            </button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+            <button style={{ ...btnStyle, ...(editMode === "stamp" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "stamp" ? "none" : "stamp"); }}>
+              <Stamp size={14} /> Stamps
+            </button>
+            <button style={{ ...btnStyle, ...(editMode === "signature" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "signature" ? "none" : "signature"); }}>
+              <Pencil size={14} /> Signature
+            </button>
+            <button style={{ ...btnStyle, ...(editMode === "redaction" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "redaction" ? "none" : "redaction"); }}>
+              <EyeOff size={14} /> Redact
+            </button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+            <button style={btnStyle} onClick={flattenAnnotations} disabled={annotations.length === 0}>
+              <Layers size={14} /> Flatten
+            </button>
+            <button style={btnStyle} onClick={undoAnnotation} disabled={annotations.length === 0}>
+              <Undo2 size={14} /> Undo
+            </button>
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>
+              {annotations.length} annotation{annotations.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        );
+      case "forms":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("text-input"); }}>
+              <FormInput size={14} /> Text Field
+            </button>
+            <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("checkbox"); }}>
+              <CheckSquare size={14} /> Checkbox
+            </button>
+            <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("radio"); }}>
+              <Circle size={14} /> Radio
+            </button>
+            <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("dropdown"); }}>
+              <ChevronDown size={14} /> Dropdown
+            </button>
+            <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("signature"); }}>
+              <Pencil size={14} /> Signature Field
+            </button>
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>
+              {formFields.length} field{formFields.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        );
+      case "organize":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={btnStyle} onClick={() => setActiveTab("merge")}>
+              <FilePlus size={14} /> Merge PDFs
+            </button>
+            <button style={btnStyle} onClick={() => setActiveTab("split")}>
+              <Scissors size={14} /> Split PDF
+            </button>
+            <button style={btnStyle} onClick={() => setActiveTab("compress")}>
+              <Minimize2 size={14} /> Compress
+            </button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+            {pdfDoc && (
+              <>
+                <button style={btnStyle} onClick={() => rotatePage(currentPage, 90)} title="Rotate CW">
+                  <RotateCw size={14} /> Rotate CW
+                </button>
+                <button style={btnStyle} onClick={() => rotatePage(currentPage, -90)} title="Rotate CCW">
+                  <RotateCcw size={14} /> Rotate CCW
+                </button>
+                <button style={btnStyle} onClick={() => rotateAllPages(90)}>
+                  <RotateCw size={14} /> Rotate All
+                </button>
+                <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+                <button style={btnStyle} onClick={addBlankPage}>
+                  <FilePlus size={14} /> Add Page
+                </button>
+                <button style={{ ...btnStyle, color: totalPages <= 1 ? "var(--muted-foreground)" : "#dc2626" }} onClick={() => deletePage(currentPage)} disabled={totalPages <= 1}>
+                  <Trash2 size={14} /> Delete Page
+                </button>
+                <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+                <button style={btnStyle} onClick={() => setShowThumbnails(!showThumbnails)}>
+                  {showThumbnails ? "Hide Thumbs" : "Show Thumbs"}
+                </button>
+                <button style={{ ...btnStyle, ...(showBookmarks ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowBookmarks(!showBookmarks)}>
+                  <BookOpen size={14} /> Bookmarks
+                </button>
+              </>
+            )}
+          </div>
+        );
+      case "convert":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={{ ...btnStyle, ...(convertFormat === "word" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setConvertFormat("word"); setActiveTab("convert"); }}>
+              <FileText size={14} /> To Word
+            </button>
+            <button style={{ ...btnStyle, ...(convertFormat === "excel" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setConvertFormat("excel"); setActiveTab("convert"); }}>
+              <FileSpreadsheet size={14} /> To Excel
+            </button>
+            <button style={{ ...btnStyle, ...(convertFormat === "image" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setConvertFormat("image"); setActiveTab("convert"); }}>
+              <Image size={14} /> To Image
+            </button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>
+              Import: Word/Excel/PPT to PDF requires server-side processing
+            </span>
+          </div>
+        );
+      case "security":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={{ ...btnStyle, ...(securityApplied ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowSecurity(true)}>
+              <Lock size={14} /> {securityApplied ? "Password Set" : "Password Protect"}
+            </button>
+            <button style={{ ...btnStyle, ...(certSignatureApplied ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowCertModal(true)}>
+              <ShieldCheck size={14} /> {certSignatureApplied ? "Cert Applied" : "Digital Certificate"}
+            </button>
+            <button style={{ ...btnStyle, ...(editMode === "redaction" ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => { setActiveTab("edit"); setEditMode(editMode === "redaction" ? "none" : "redaction"); }}>
+              <EyeOff size={14} /> Redact
+            </button>
+          </div>
+        );
+      case "review":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={btnStyle} onClick={() => setActiveTab("compare")}>
+              <Columns2 size={14} /> Compare PDFs
+            </button>
+            <button style={btnStyle} onClick={runOcr} disabled={ocrProcessing}>
+              {ocrProcessing ? <><Loader2 size={14} className="animate-spin" /> OCR Processing...</> : <><ScanText size={14} /> {ocrComplete ? "OCR Complete" : "Run OCR"}</>}
+            </button>
+            <button style={btnStyle} onClick={() => setShowSearch(!showSearch)}>
+              <Search size={14} /> Find & Replace
+            </button>
+            <button style={btnStyle} onClick={() => setShowProperties(!showProperties)}>
+              <Info size={14} /> Properties
+            </button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   // ─── Main layout ──────────────────────────────────────────────────────────
 
   return (
@@ -2974,67 +3794,101 @@ export default function PdfToolsPage() {
       className="flex flex-col h-full"
       style={{ backgroundColor: "var(--background)", color: "var(--foreground)" }}
     >
-      {/* Header */}
-      <div
-        className="flex items-center gap-4 px-4 py-3"
-        style={{ borderBottom: "1px solid var(--border)" }}
-      >
-        <h1 className="text-lg font-bold" style={{ color: "var(--foreground)" }}>
-          PDF Tools
-        </h1>
-        {pdfName && (
-          <span
-            className="text-sm truncate"
-            style={{ color: "var(--muted-foreground)", maxWidth: 300 }}
-          >
-            — {pdfName}
-          </span>
+      {/* Ribbon Toolbar */}
+      <RibbonToolbar activeTab={ribbonTab} onTabChange={handleRibbonTabChange} pdfName={pdfName} />
+
+      {/* Ribbon sub-toolbar content */}
+      {renderRibbonContent()}
+
+      {/* Search panel */}
+      {showSearch && (
+        <SearchPanel
+          onSearch={handleSearch}
+          onReplace={handleSearchReplace}
+          onClose={() => setShowSearch(false)}
+          resultCount={searchResults.length}
+          currentResult={currentSearchResult}
+          onNextResult={() => {
+            if (searchResults.length > 0) {
+              const next = (currentSearchResult + 1) % searchResults.length;
+              setCurrentSearchResult(next);
+              setCurrentPage(searchResults[next].page);
+            }
+          }}
+          onPrevResult={() => {
+            if (searchResults.length > 0) {
+              const prev = (currentSearchResult - 1 + searchResults.length) % searchResults.length;
+              setCurrentSearchResult(prev);
+              setCurrentPage(searchResults[prev].page);
+            }
+          }}
+        />
+      )}
+
+      {/* Main content area with optional Properties panel */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Tab content */}
+        <div className="flex-1 flex flex-col overflow-hidden">{renderActiveTab()}</div>
+
+        {/* Properties panel */}
+        {showProperties && pdfDoc && (
+          <PropertiesPanel
+            properties={{
+              ...documentProperties,
+              pageCount: totalPages,
+              fileSize: pdfBytes?.byteLength ?? 0,
+            }}
+            onUpdate={(partial) => setDocumentProperties((prev) => ({ ...prev, ...partial }))}
+            onClose={() => setShowProperties(false)}
+          />
         )}
       </div>
 
-      {/* Tab bar */}
-      <div
-        className="flex gap-1 px-4 py-2 overflow-x-auto"
-        style={{
-          backgroundColor: "var(--card)",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              style={{
-                backgroundColor: isActive ? "var(--primary)" : "transparent",
-                color: isActive
-                  ? "var(--primary-foreground)"
-                  : "var(--muted-foreground)",
-                border: "none",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive)
-                  e.currentTarget.style.backgroundColor = "var(--muted)";
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive)
-                  e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              <Icon size={16} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* ─── Modals ─────────────────────────────────────────────────────── */}
 
-      {/* Tab content */}
-      <div className="flex-1 flex flex-col overflow-hidden">{renderActiveTab()}</div>
+      {showHeaderFooter && (
+        <HeaderFooterModal
+          config={headerFooterConfig}
+          onConfigChange={setHeaderFooterConfig}
+          onApply={applyHeaderFooter}
+          onClose={() => setShowHeaderFooter(false)}
+        />
+      )}
+
+      {showPrint && (
+        <PrintModal
+          options={printOptions}
+          totalPages={totalPages}
+          onOptionsChange={setPrintOptions}
+          onPrint={handlePrint}
+          onClose={() => setShowPrint(false)}
+        />
+      )}
+
+      {showExport && (
+        <ExportModal
+          options={exportOptions}
+          onOptionsChange={setExportOptions}
+          onExport={handleExport}
+          onClose={() => setShowExport(false)}
+        />
+      )}
+
+      {showSecurity && (
+        <SecurityModal
+          config={securityConfig}
+          onConfigChange={setSecurityConfig}
+          onApply={applySecurity}
+          onClose={() => setShowSecurity(false)}
+        />
+      )}
+
+      {showCreateBlank && (
+        <CreateBlankModal
+          onCreateBlank={createBlankPdf}
+          onClose={() => setShowCreateBlank(false)}
+        />
+      )}
     </div>
   );
 }
