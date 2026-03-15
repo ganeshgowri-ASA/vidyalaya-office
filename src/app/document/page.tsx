@@ -3,7 +3,7 @@
 import React, { useEffect, useCallback } from "react";
 import { Download, FileText, FileType2 } from "lucide-react";
 import { RibbonToolbar } from "@/components/document/ribbon-toolbar";
-import { EditorArea } from "@/components/document/editor-area";
+import { EditorArea, getEditorContent } from "@/components/document/editor-area";
 import { StatusBar } from "@/components/document/status-bar";
 import { AIPanel } from "@/components/document/ai-panel";
 import { TemplatesModal } from "@/components/document/templates-modal";
@@ -12,12 +12,22 @@ import { PrintPreview } from "@/components/document/print-preview";
 import { CommentsSidebar } from "@/components/document/comments-sidebar";
 import { TrackChangesPanel } from "@/components/document/track-changes";
 import { StylesPanel } from "@/components/document/styles-panel";
+import { PageSetupDialog } from "@/components/document/page-setup-dialog";
+import { HeaderFooterEditor } from "@/components/document/header-footer-editor";
+import { VersionControlPanel } from "@/components/document/version-control-panel";
+import { DeveloperPanel } from "@/components/document/developer-tab";
 import { useDocumentStore } from "@/store/document-store";
 import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
 
 export default function DocumentPage() {
-  const { fileName, setFileName, setShowFindReplace, showComments, trackChanges, showStylesPanel } = useDocumentStore();
+  const { fileName, setFileName, setShowFindReplace, showComments, trackChanges, showStylesPanel, setHeaderText, setFooterText } = useDocumentStore();
   const [showExport, setShowExport] = React.useState(false);
+  const [showPageSetup, setShowPageSetup] = React.useState(false);
+  const [showHeaderFooterEditor, setShowHeaderFooterEditor] = React.useState(false);
+  const [showVersionControl, setShowVersionControl] = React.useState(false);
+  const [showDeveloper, setShowDeveloper] = React.useState(false);
+  const [headerConfig, setHeaderConfig] = React.useState({ left: "", center: "", right: "" });
+  const [footerConfig, setFooterConfig] = React.useState({ left: "", center: "", right: "" });
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -49,6 +59,18 @@ export default function DocumentPage() {
     window.print();
     setShowExport(false);
   }, []);
+
+  const handleHeaderFooterSave = (header: { left: string; center: string; right: string }, footer: { left: string; center: string; right: string }) => {
+    setHeaderConfig(header);
+    setFooterConfig(footer);
+    setHeaderText(header.center || header.left || header.right);
+    setFooterText(footer.center || footer.left || footer.right);
+  };
+
+  const handleVersionRestore = (content: string) => {
+    const editor = document.getElementById("doc-editor");
+    if (editor) editor.innerHTML = content;
+  };
 
   return (
     <div className="flex h-[calc(100vh-48px)] flex-col" style={{ backgroundColor: "var(--background)" }}>
@@ -113,10 +135,18 @@ export default function DocumentPage() {
       </div>
 
       {/* Ribbon */}
-      <RibbonToolbar />
+      <RibbonToolbar
+        onPageSetup={() => setShowPageSetup(true)}
+        onHeaderFooterEditor={() => setShowHeaderFooterEditor(true)}
+        onToggleVersionControl={() => setShowVersionControl(!showVersionControl)}
+        onToggleDeveloper={() => setShowDeveloper(!showDeveloper)}
+      />
 
       {/* Track Changes Panel */}
       {trackChanges && <TrackChangesPanel />}
+
+      {/* Developer Panel */}
+      {showDeveloper && <DeveloperPanel visible={showDeveloper} onClose={() => setShowDeveloper(false)} />}
 
       {/* Main content area */}
       <div className="relative flex flex-1 overflow-hidden">
@@ -132,6 +162,15 @@ export default function DocumentPage() {
         {/* Comments Sidebar */}
         {showComments && <CommentsSidebar />}
 
+        {/* Version Control */}
+        <VersionControlPanel
+          visible={showVersionControl}
+          onClose={() => setShowVersionControl(false)}
+          currentContent={typeof window !== "undefined" ? getEditorContent() : ""}
+          onRestore={handleVersionRestore}
+          documentName={fileName}
+        />
+
         {/* AI Panel */}
         <AIPanel />
       </div>
@@ -142,6 +181,14 @@ export default function DocumentPage() {
       {/* Modals */}
       <TemplatesModal />
       <PrintPreview />
+      <PageSetupDialog open={showPageSetup} onClose={() => setShowPageSetup(false)} />
+      <HeaderFooterEditor
+        open={showHeaderFooterEditor}
+        onClose={() => setShowHeaderFooterEditor(false)}
+        headerConfig={headerConfig}
+        footerConfig={footerConfig}
+        onSave={handleHeaderFooterSave}
+      />
     </div>
   );
 }

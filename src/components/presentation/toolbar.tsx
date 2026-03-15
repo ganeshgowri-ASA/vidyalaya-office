@@ -30,6 +30,7 @@ import {
   BoxSelect,
   RotateCcw,
   EyeOff,
+  Settings2,
 } from 'lucide-react';
 import {
   usePresentationStore,
@@ -50,7 +51,7 @@ const LAYOUT_OPTIONS: { label: string; value: SlideLayout }[] = [
   { label: 'Picture with Caption', value: 'picture-caption' },
 ];
 
-export default function Toolbar() {
+export default function Toolbar({ onPageSetup }: { onPageSetup?: () => void } = {}) {
   const {
     slides,
     activeSlideIndex,
@@ -969,6 +970,17 @@ export default function Toolbar() {
       >
         <Printer size={16} />
       </button>
+
+      {onPageSetup && (
+        <button
+          onClick={onPageSetup}
+          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--topbar-foreground)' }}
+          title="Page Setup"
+        >
+          <Settings2 size={16} />
+        </button>
+      )}
 
       <button
         onClick={() => setPresenterMode(true)}

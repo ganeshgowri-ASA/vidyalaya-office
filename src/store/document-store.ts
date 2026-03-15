@@ -15,7 +15,7 @@ export interface Comment {
 
 interface DocumentState {
   fileName: string;
-  activeTab: "home" | "insert" | "layout" | "view";
+  activeTab: "home" | "insert" | "layout" | "view" | "developer";
   showAI: boolean;
   showTemplates: boolean;
   showFindReplace: boolean;
