@@ -20,7 +20,7 @@ import { useDocumentStore } from "@/store/document-store";
 import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
 
 export default function DocumentPage() {
-  const { fileName, setFileName, setShowFindReplace, showComments, trackChanges, showStylesPanel, setHeaderText, setFooterText } = useDocumentStore();
+  const { fileName, setFileName, setShowFindReplace, showComments, trackChanges, showStylesPanel, setHeaderText, setFooterText, showNavigationPane } = useDocumentStore();
   const [showExport, setShowExport] = React.useState(false);
   const [showPageSetup, setShowPageSetup] = React.useState(false);
   const [showHeaderFooterEditor, setShowHeaderFooterEditor] = React.useState(false);
@@ -32,13 +32,83 @@ export default function DocumentPage() {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === "p") {
-        e.preventDefault();
-        window.print();
-      }
-      if (e.ctrlKey && e.key === "f") {
-        e.preventDefault();
-        setShowFindReplace(true);
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case "p":
+            e.preventDefault();
+            window.print();
+            break;
+          case "f":
+            e.preventDefault();
+            setShowFindReplace(true);
+            break;
+          case "h":
+            if (e.ctrlKey) {
+              e.preventDefault();
+              setShowFindReplace(true);
+            }
+            break;
+          case "s":
+            e.preventDefault();
+            // Trigger save
+            const editor = document.getElementById("doc-editor");
+            if (editor) {
+              localStorage.setItem("vidyalaya-doc-content", editor.innerHTML);
+              useDocumentStore.getState().setLastSaved(new Date().toLocaleTimeString());
+            }
+            break;
+          case "b":
+            // Bold - handled by browser contentEditable
+            break;
+          case "i":
+            // Italic - handled by browser contentEditable
+            break;
+          case "u":
+            // Underline - handled by browser contentEditable
+            break;
+          case "z":
+            // Undo - handled by browser contentEditable
+            break;
+          case "y":
+            // Redo - handled by browser contentEditable
+            break;
+          case "a":
+            // Select All - handled by browser contentEditable
+            break;
+          case "c":
+            // Copy - handled by browser contentEditable
+            break;
+          case "v":
+            // Paste - handled by browser contentEditable
+            break;
+          case "x":
+            // Cut - handled by browser contentEditable
+            break;
+          case "e":
+            e.preventDefault();
+            document.execCommand("justifyCenter");
+            break;
+          case "l":
+            e.preventDefault();
+            document.execCommand("justifyLeft");
+            break;
+          case "r":
+            e.preventDefault();
+            document.execCommand("justifyRight");
+            break;
+          case "j":
+            e.preventDefault();
+            document.execCommand("justifyFull");
+            break;
+          case "1":
+            e.preventDefault();
+            useDocumentStore.getState().setLineSpacing("1");
+            break;
+          case "2":
+            e.preventDefault();
+            useDocumentStore.getState().setLineSpacing("2");
+            break;
+        }
       }
     };
     window.addEventListener("keydown", handler);
@@ -76,7 +146,7 @@ export default function DocumentPage() {
     <div className="flex h-[calc(100vh-48px)] flex-col" style={{ backgroundColor: "var(--background)" }}>
       {/* Document title bar */}
       <div
-        className="no-print flex items-center justify-between border-b px-4 py-2"
+        className="no-print flex items-center justify-between border-b px-4 py-1.5"
         style={{ borderColor: "var(--border)", backgroundColor: "var(--card)" }}
       >
         <div className="flex items-center gap-2">
@@ -150,6 +220,9 @@ export default function DocumentPage() {
 
       {/* Main content area */}
       <div className="relative flex flex-1 overflow-hidden">
+        {/* Navigation Pane */}
+        {showNavigationPane && <NavigationPane />}
+
         {/* Styles Panel */}
         {showStylesPanel && <StylesPanel />}
 
@@ -189,6 +262,70 @@ export default function DocumentPage() {
         footerConfig={footerConfig}
         onSave={handleHeaderFooterSave}
       />
+    </div>
+  );
+}
+
+// Navigation Pane component
+function NavigationPane() {
+  const [headings, setHeadings] = React.useState<{ text: string; level: number; id: string }[]>([]);
+
+  React.useEffect(() => {
+    const updateHeadings = () => {
+      const editor = document.getElementById("doc-editor");
+      if (!editor) return;
+      const hs = editor.querySelectorAll("h1, h2, h3, h4, h5, h6");
+      const result: { text: string; level: number; id: string }[] = [];
+      hs.forEach((h, i) => {
+        const id = `nav-heading-${i}`;
+        h.id = id;
+        result.push({
+          text: h.textContent || "",
+          level: parseInt(h.tagName[1]),
+          id,
+        });
+      });
+      setHeadings(result);
+    };
+
+    updateHeadings();
+    const interval = setInterval(updateHeadings, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div
+      className="w-56 border-r overflow-y-auto flex-shrink-0"
+      style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
+    >
+      <div className="px-3 py-2 border-b text-xs font-medium" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>
+        Navigation
+      </div>
+      <div className="p-2">
+        {headings.length === 0 ? (
+          <p className="text-[10px] px-2 py-4 text-center" style={{ color: "var(--muted-foreground)" }}>
+            No headings found. Add headings (H1-H6) to navigate your document.
+          </p>
+        ) : (
+          headings.map((h) => (
+            <button
+              key={h.id}
+              className="w-full text-left text-[11px] px-2 py-1 rounded hover:bg-[var(--muted)] block truncate"
+              style={{
+                color: "var(--foreground)",
+                paddingLeft: (h.level - 1) * 12 + 8 + "px",
+                fontWeight: h.level <= 2 ? 600 : 400,
+              }}
+              onClick={() => {
+                const el = document.getElementById(h.id);
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              {h.text}
+            </button>
+          ))
+        )}
+      </div>
     </div>
   );
 }
