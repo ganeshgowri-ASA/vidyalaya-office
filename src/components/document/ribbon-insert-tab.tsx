@@ -8,6 +8,7 @@ import {
   Shapes, BarChart3, Network, ImageIcon, Video,
   Stamp, ChevronDown, Calendar, Sigma, Globe,
   TextCursorInput, Pen, Puzzle, SquareStack, Layers,
+  Smile,
 } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
 import { ToolbarButton, ToolbarSeparator } from "./toolbar-button";
@@ -16,6 +17,11 @@ import {
   CHART_TYPES, WORDART_STYLES, COVER_PAGE_DESIGNS,
   HEADER_GALLERY, FOOTER_GALLERY,
 } from "./constants";
+import {
+  ShapePicker, IconPicker, SHAPE_DEFINITIONS,
+  type ShapeDefinition, type IconDefinition,
+} from "@/components/shared/shapes-icons-library";
+import { CHART_CATEGORIES, type AdvancedChartType } from "@/components/shared/chart-types";
 
 function execCmd(command: string, value?: string) {
   document.execCommand(command, false, value);
@@ -55,6 +61,9 @@ export function InsertTab() {
   const [showTextBox, setShowTextBox] = useState(false);
   const [showDropCap, setShowDropCap] = useState(false);
   const [tableHover, setTableHover] = useState({ row: 0, col: 0 });
+  const [showAdvancedShapes, setShowAdvancedShapes] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [showAdvancedChart, setShowAdvancedChart] = useState(false);
 
   const insertTable = useCallback((rows: number, cols: number) => {
     focusEditor();
@@ -156,6 +165,44 @@ export function InsertTab() {
     execCmd("insertHTML", svg + "<p></p>");
     setShowShapes(false);
   };
+
+  const insertAdvancedShape = useCallback((shape: ShapeDefinition) => {
+    focusEditor();
+    const color = "#4472C4";
+    const svgHtml = `<div style="display:inline-block;margin:12px auto;text-align:center;">
+      <svg viewBox="0 0 100 100" width="150" height="120" style="display:block;margin:0 auto;">
+        <path d="${shape.svgPath}" fill="${color}" fill-opacity="0.3" stroke="${color}" stroke-width="2" />
+        ${shape.allowText ? `<text x="50" y="52" text-anchor="middle" dominant-baseline="middle" fill="${color}" font-size="10">Text</text>` : ''}
+      </svg>
+      <div style="font-size:9px;color:#666;margin-top:2px;">${shape.name}</div>
+    </div><p></p>`;
+    execCmd("insertHTML", svgHtml);
+    setShowAdvancedShapes(false);
+  }, []);
+
+  const insertIcon = useCallback((icon: IconDefinition) => {
+    focusEditor();
+    // Insert as a styled span placeholder
+    execCmd("insertHTML", `<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:#4472C4;color:white;border-radius:4px;font-size:14px;vertical-align:middle;margin:0 4px;" title="${icon.name}">⬡</span>`);
+    setShowIconPicker(false);
+  }, []);
+
+  const insertAdvancedChart = useCallback((chartType: string, chartLabel: string) => {
+    focusEditor();
+    const barColors = ['#4472C4', '#ED7D31', '#70AD47', '#FFC000', '#5B9BD5'];
+    const chartHtml = `<div style="border:1px solid #ddd;padding:16px;margin:12px 0;background:#fafafa;text-align:center;border-radius:8px;">
+      <div style="font-weight:bold;margin-bottom:8px;color:#2F5496;font-size:13px;">${chartLabel}</div>
+      <div style="font-size:10px;color:#888;margin-bottom:8px;">Chart Type: ${chartType}</div>
+      <div style="display:flex;align-items:flex-end;justify-content:center;gap:6px;height:100px;padding:8px;">
+        ${[55, 75, 40, 85, 65, 50, 70].map((h, i) =>
+          `<div style="width:24px;height:${h}%;background:${barColors[i % barColors.length]};border-radius:2px 2px 0 0;"></div>`
+        ).join('')}
+      </div>
+      <div style="font-size:9px;color:#888;margin-top:4px;">Sample visualization - ${chartLabel}</div>
+    </div><p></p>`;
+    execCmd("insertHTML", chartHtml);
+    setShowAdvancedChart(false);
+  }, []);
 
   const insertChart = (chartType: string) => {
     focusEditor();
@@ -276,25 +323,19 @@ export function InsertTab() {
           }} />
           {/* Shapes */}
           <div className="relative">
-            <ToolbarButton icon={<Shapes size={14} />} label="Shapes" title="Shapes" onClick={() => setShowShapes(!showShapes)} />
-            {showShapes && (
-              <div className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-2 shadow-lg w-64 max-h-80 overflow-y-auto"
-                style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
-                {Array.from(new Set(SHAPES_GALLERY.map((s) => s.category))).map((cat) => (
-                  <div key={cat}>
-                    <div className="text-[10px] font-medium mt-2 mb-1" style={{ color: "var(--muted-foreground)" }}>{cat}</div>
-                    <div className="grid grid-cols-6 gap-1">
-                      {SHAPES_GALLERY.filter((s) => s.category === cat).map((shape) => (
-                        <button key={shape.name} className="w-8 h-8 rounded border flex items-center justify-center hover:bg-[var(--muted)] cursor-pointer"
-                          style={{ borderColor: "var(--border)" }}
-                          title={shape.name}
-                          onClick={() => insertShape(shape.name)}>
-                          <span className="text-[9px]" style={{ color: "var(--foreground)" }}>{shape.name.charAt(0)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+            <ToolbarButton icon={<Shapes size={14} />} label="Shapes" title="Shapes" onClick={() => setShowAdvancedShapes(!showAdvancedShapes)} />
+            {showAdvancedShapes && (
+              <div className="absolute top-full left-0 z-50 mt-1">
+                <ShapePicker onSelectShape={insertAdvancedShape} onClose={() => setShowAdvancedShapes(false)} />
+              </div>
+            )}
+          </div>
+          {/* Icons */}
+          <div className="relative">
+            <ToolbarButton icon={<Smile size={14} />} label="Icons" title="Icons Library" onClick={() => setShowIconPicker(!showIconPicker)} />
+            {showIconPicker && (
+              <div className="absolute top-full left-0 z-50 mt-1">
+                <IconPicker onSelectIcon={insertIcon} onClose={() => setShowIconPicker(false)} />
               </div>
             )}
           </div>
@@ -302,17 +343,34 @@ export function InsertTab() {
           <ToolbarButton icon={<Network size={14} />} label="SmartArt" title="SmartArt & Infographics" onClick={() => setShowSmartArtModal(true)} />
           {/* Chart */}
           <div className="relative">
-            <ToolbarButton icon={<BarChart3 size={14} />} label="Chart" title="Insert Chart" onClick={() => setShowChart(!showChart)} />
-            {showChart && (
-              <div className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-2 shadow-lg w-48 max-h-72 overflow-y-auto"
+            <ToolbarButton icon={<BarChart3 size={14} />} label="Chart" title="Insert Chart" onClick={() => setShowAdvancedChart(!showAdvancedChart)} />
+            {showAdvancedChart && (
+              <div className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-2 shadow-lg w-72 max-h-96 overflow-y-auto"
                 style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
                 <div className="text-[10px] font-medium mb-1" style={{ color: "var(--muted-foreground)" }}>Chart Types</div>
+                {/* Basic charts */}
                 {CHART_TYPES.map((ct) => (
                   <button key={ct.name} className="w-full text-left text-xs px-3 py-1.5 rounded hover:bg-[var(--muted)]"
                     style={{ color: "var(--foreground)" }}
                     onClick={() => insertChart(ct.name)}>
                     {ct.name}
                   </button>
+                ))}
+                <hr className="my-1.5" style={{ borderColor: "var(--border)" }} />
+                <div className="text-[10px] font-medium mb-1" style={{ color: "var(--muted-foreground)" }}>Advanced Charts</div>
+                {Object.entries(CHART_CATEGORIES).map(([key, category]) => (
+                  <div key={key}>
+                    <div className="text-[9px] font-semibold mt-1.5 mb-0.5 px-2" style={{ color: "var(--muted-foreground)" }}>{category.label}</div>
+                    <div className="grid grid-cols-2 gap-0.5">
+                      {category.types.map(ct => (
+                        <button key={ct.type} className="text-left text-[10px] px-2 py-1 rounded hover:bg-[var(--muted)]"
+                          style={{ color: "var(--foreground)" }}
+                          onClick={() => insertAdvancedChart(ct.type, ct.label)}>
+                          {ct.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -497,8 +555,7 @@ export function InsertTab() {
       <div className="flex flex-col items-center border-r pr-2 mr-1" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-0.5">
           <ToolbarButton icon={<Sigma size={14} />} label="Equation" title="Equation Editor" onClick={() => {
-            focusEditor();
-            execCmd("insertHTML", '<span style="font-family:Cambria Math,serif;font-size:14pt;background:#f0f0ff;padding:2px 8px;border:1px solid #ddd;border-radius:2px;" contenteditable="true">x = (-b ± √(b²-4ac)) / 2a</span>');
+            useDocumentStore.getState().setShowEquationEditor(true);
           }} />
           <div className="relative">
             <ToolbarButton icon={<span className="text-sm font-bold" style={{ color: "var(--foreground)" }}>Ω</span>} label="Symbol" title="Insert Symbol" onClick={() => setShowSpecialChars(!showSpecialChars)} />

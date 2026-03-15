@@ -1,5 +1,24 @@
 import { create } from "zustand";
 
+export type CitationStyle = "APA" | "MLA" | "Chicago" | "IEEE" | "Harvard";
+
+export interface Citation {
+  id: string;
+  type: "journal" | "book" | "conference" | "website" | "thesis" | "other";
+  title: string;
+  authors: string;
+  year: string;
+  journal?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  doi?: string;
+  url?: string;
+  publisher?: string;
+  edition?: string;
+  accessed?: string;
+}
+
 export type PageSize = "a4" | "letter" | "legal" | "a5" | "b5";
 export type MarginPreset = "normal" | "narrow" | "moderate" | "wide" | "mirrored";
 export type LineSpacing = "1" | "1.15" | "1.5" | "2" | "2.5" | "3";
@@ -65,6 +84,14 @@ interface DocumentState {
   selectedImage: boolean;
   selectedSmartArt: boolean;
   showSmartArtModal: boolean;
+  // Equation editor
+  showEquationEditor: boolean;
+  equationCount: number;
+
+  // Citation manager
+  showCitationManager: boolean;
+  citations: Citation[];
+  citationStyle: CitationStyle;
 
   setFileName: (name: string) => void;
   setActiveTab: (tab: TabKey) => void;
@@ -115,6 +142,18 @@ interface DocumentState {
   setSelectedImage: (v: boolean) => void;
   setSelectedSmartArt: (v: boolean) => void;
   setShowSmartArtModal: (v: boolean) => void;
+  // Equation editor
+  toggleEquationEditor: () => void;
+  setShowEquationEditor: (show: boolean) => void;
+  incrementEquationCount: () => void;
+
+  // Citation manager
+  toggleCitationManager: () => void;
+  setShowCitationManager: (show: boolean) => void;
+  addCitation: (citation: Citation) => void;
+  removeCitation: (id: string) => void;
+  updateCitation: (id: string, citation: Partial<Citation>) => void;
+  setCitationStyle: (style: CitationStyle) => void;
 }
 
 export const useDocumentStore = create<DocumentState>((set) => ({
@@ -166,6 +205,14 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   selectedImage: false,
   selectedSmartArt: false,
   showSmartArtModal: false,
+  // Equation editor
+  showEquationEditor: false,
+  equationCount: 0,
+
+  // Citation manager
+  showCitationManager: false,
+  citations: [],
+  citationStyle: "APA",
 
   setFileName: (name) => set({ fileName: name }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -227,4 +274,18 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   setSelectedImage: (v) => set({ selectedImage: v, activeTab: v ? "image-format" : "home" }),
   setSelectedSmartArt: (v) => set({ selectedSmartArt: v, activeTab: v ? "smartart-design" : "home" }),
   setShowSmartArtModal: (v) => set({ showSmartArtModal: v }),
+  // Equation editor
+  toggleEquationEditor: () => set((s) => ({ showEquationEditor: !s.showEquationEditor })),
+  setShowEquationEditor: (show) => set({ showEquationEditor: show }),
+  incrementEquationCount: () => set((s) => ({ equationCount: s.equationCount + 1 })),
+
+  // Citation manager
+  toggleCitationManager: () => set((s) => ({ showCitationManager: !s.showCitationManager })),
+  setShowCitationManager: (show) => set({ showCitationManager: show }),
+  addCitation: (citation) => set((s) => ({ citations: [...s.citations, citation] })),
+  removeCitation: (id) => set((s) => ({ citations: s.citations.filter((c) => c.id !== id) })),
+  updateCitation: (id, updates) => set((s) => ({
+    citations: s.citations.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+  })),
+  setCitationStyle: (style) => set({ citationStyle: style }),
 }));
