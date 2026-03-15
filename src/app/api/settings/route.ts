@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma, isDbConnected } from "@/lib/db";
+import { getDb, isDbConfigured } from "@/lib/db";
 
 export async function GET() {
-  if (!isDbConnected() || !prisma) {
+  if (!isDbConfigured()) {
     return NextResponse.json({ fallback: true, settings: null });
   }
   try {
+    const prisma = await getDb();
+    if (!prisma) return NextResponse.json({ fallback: true, settings: null });
     const settings = await prisma.userSettings.findFirst();
     return NextResponse.json({ settings });
   } catch {
@@ -14,10 +16,12 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  if (!isDbConnected() || !prisma) {
+  if (!isDbConfigured()) {
     return NextResponse.json({ fallback: true });
   }
   try {
+    const prisma = await getDb();
+    if (!prisma) return NextResponse.json({ fallback: true });
     const body = await req.json();
     const userId = body.userId || "default";
     const settings = await prisma.userSettings.upsert({

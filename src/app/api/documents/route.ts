@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma, isDbConnected } from "@/lib/db";
+import { getDb, isDbConfigured } from "@/lib/db";
 
 export async function GET() {
-  if (!isDbConnected() || !prisma) {
+  if (!isDbConfigured()) {
     return NextResponse.json({ fallback: true, documents: [] });
   }
   try {
+    const prisma = await getDb();
+    if (!prisma) return NextResponse.json({ fallback: true, documents: [] });
     const documents = await prisma.document.findMany({
       where: { deletedAt: null },
       orderBy: { updatedAt: "desc" },
@@ -18,10 +20,12 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isDbConnected() || !prisma) {
+  if (!isDbConfigured()) {
     return NextResponse.json({ fallback: true, message: "No database connection" }, { status: 200 });
   }
   try {
+    const prisma = await getDb();
+    if (!prisma) return NextResponse.json({ fallback: true, message: "No database connection" }, { status: 200 });
     const body = await req.json();
     const count = await prisma.document.count();
     const year = new Date().getFullYear();
