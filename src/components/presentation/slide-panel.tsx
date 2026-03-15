@@ -8,6 +8,7 @@ const LAYOUT_OPTIONS: { label: string; value: SlideLayout }[] = [
   { label: 'Title Slide', value: 'title' },
   { label: 'Content', value: 'content' },
   { label: 'Two Column', value: 'two-column' },
+  { label: 'Section Header', value: 'section-header' },
   { label: 'Blank', value: 'blank' },
 ];
 

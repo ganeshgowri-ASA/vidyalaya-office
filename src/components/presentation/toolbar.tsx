@@ -13,6 +13,11 @@ import {
   LayoutTemplate,
   MessageSquare,
   Printer,
+  ChevronDown,
+  ArrowRight,
+  Star,
+  Diamond,
+  Grid,
 } from 'lucide-react';
 import {
   usePresentationStore,
@@ -32,11 +37,15 @@ export default function Toolbar() {
     setShowTemplateModal,
     setShowAIPanel,
     showAIPanel,
+    updateSlideTransition,
   } = usePresentationStore();
 
   const [showBgPicker, setShowBgPicker] = useState(false);
   const [showFontSize, setShowFontSize] = useState(false);
   const [showTextColor, setShowTextColor] = useState(false);
+  const [showMoreShapes, setShowMoreShapes] = useState(false);
+  const [showTransitions, setShowTransitions] = useState(false);
+  const [showSorterView, setShowSorterView] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const slide = slides[activeSlideIndex];
@@ -73,7 +82,7 @@ export default function Toolbar() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleAddShape = (shape: 'rect' | 'circle') => {
+  const handleAddShape = (shape: 'rect' | 'circle' | 'arrow' | 'star' | 'diamond' | 'callout') => {
     addElement(activeSlideIndex, {
       type: 'shape',
       x: 300,
@@ -83,7 +92,7 @@ export default function Toolbar() {
       content: shape,
       style: {
         backgroundColor: '#3b82f6',
-        borderRadius: shape === 'circle' ? '50%' : '0',
+        borderRadius: shape === 'circle' ? '50%' : shape === 'callout' ? '8px' : '0',
       },
     });
   };
@@ -221,6 +230,102 @@ export default function Toolbar() {
         title="Add circle"
       >
         <Circle size={16} />
+      </button>
+
+      {/* More Shapes dropdown */}
+      <div className="relative">
+        <button
+          onClick={() => setShowMoreShapes(!showMoreShapes)}
+          className="flex items-center gap-0.5 p-1.5 rounded hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--topbar-foreground)' }}
+          title="More shapes"
+        >
+          <ChevronDown size={14} />
+        </button>
+        {showMoreShapes && (
+          <div
+            className="absolute left-0 top-full mt-1 rounded shadow-xl z-50 border py-1"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 160 }}
+          >
+            <button
+              onClick={() => { handleAddShape('arrow'); setShowMoreShapes(false); }}
+              className="w-full text-left px-3 py-1.5 text-sm hover:opacity-80 flex items-center gap-2"
+              style={{ color: 'var(--card-foreground)' }}
+            >
+              <ArrowRight size={14} /> Arrow Right
+            </button>
+            <button
+              onClick={() => { handleAddShape('star'); setShowMoreShapes(false); }}
+              className="w-full text-left px-3 py-1.5 text-sm hover:opacity-80 flex items-center gap-2"
+              style={{ color: 'var(--card-foreground)' }}
+            >
+              <Star size={14} /> Star
+            </button>
+            <button
+              onClick={() => { handleAddShape('callout'); setShowMoreShapes(false); }}
+              className="w-full text-left px-3 py-1.5 text-sm hover:opacity-80 flex items-center gap-2"
+              style={{ color: 'var(--card-foreground)' }}
+            >
+              <MessageSquare size={14} /> Callout
+            </button>
+            <button
+              onClick={() => { handleAddShape('diamond'); setShowMoreShapes(false); }}
+              className="w-full text-left px-3 py-1.5 text-sm hover:opacity-80 flex items-center gap-2"
+              style={{ color: 'var(--card-foreground)' }}
+            >
+              <Diamond size={14} /> Diamond
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="w-px h-6 mx-1" style={{ background: 'var(--border)' }} />
+
+      {/* Transition selector */}
+      <div className="relative">
+        <button
+          onClick={() => setShowTransitions(!showTransitions)}
+          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--topbar-foreground)' }}
+          title="Slide transition"
+        >
+          <Play size={14} />
+          <span className="hidden sm:inline">{slide?.transition && slide.transition !== 'none' ? slide.transition.charAt(0).toUpperCase() + slide.transition.slice(1) : 'Transition'}</span>
+        </button>
+        {showTransitions && (
+          <div
+            className="absolute left-0 top-full mt-1 rounded shadow-xl z-50 border py-1"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', width: 120 }}
+          >
+            {(['none', 'fade', 'slide', 'zoom'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => {
+                  updateSlideTransition(activeSlideIndex, t);
+                  setShowTransitions(false);
+                }}
+                className="w-full text-left px-3 py-1.5 text-sm hover:opacity-80"
+                style={{
+                  color: 'var(--card-foreground)',
+                  fontWeight: slide?.transition === t || (!slide?.transition && t === 'none') ? 'bold' : 'normal',
+                }}
+              >
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Slide Sorter View */}
+      <button
+        onClick={() => setShowSorterView(!showSorterView)}
+        className="flex items-center gap-1 px-2 py-1.5 rounded text-xs hover:opacity-80 transition-opacity"
+        style={{ color: showSorterView ? 'var(--primary)' : 'var(--topbar-foreground)' }}
+        title="Slide sorter view"
+      >
+        <Grid size={16} />
+        <span className="hidden sm:inline">Sorter</span>
       </button>
 
       <div className="w-px h-6 mx-1" style={{ background: 'var(--border)' }} />
@@ -369,6 +474,50 @@ export default function Toolbar() {
         <Play size={16} />
         <span className="hidden sm:inline">Present</span>
       </button>
+
+      {/* Slide Sorter View overlay */}
+      {showSorterView && (
+        <div
+          className="fixed inset-0 z-[999] overflow-auto p-8"
+          style={{ background: 'var(--background)', color: 'var(--foreground)' }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold">Slide Sorter</h2>
+            <button
+              onClick={() => setShowSorterView(false)}
+              className="px-3 py-1.5 rounded text-sm font-medium"
+              style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+            >
+              Close
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {slides.map((s, index) => (
+              <div
+                key={s.id}
+                onClick={() => {
+                  usePresentationStore.getState().setActiveSlide(index);
+                  setShowSorterView(false);
+                }}
+                className="cursor-pointer rounded overflow-hidden border-2 transition-all hover:scale-105"
+                style={{
+                  borderColor: index === activeSlideIndex ? 'var(--primary)' : 'var(--border)',
+                  aspectRatio: '16/9',
+                }}
+              >
+                <div
+                  className="w-full h-full relative"
+                  style={{ background: s.background }}
+                >
+                  <div className="absolute bottom-1 right-2 text-white font-bold text-xs drop-shadow">
+                    {index + 1}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,8 +17,11 @@ import {
   Download,
   Printer,
   MessageSquare,
+  Upload,
+  Highlighter,
 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
+import { colToLetter } from "./formula-engine";
 
 function ToolBtn({
   children,
@@ -110,6 +113,7 @@ const FORMATS = [
   { value: "number", label: "Number (0.00)" },
   { value: "currency", label: "Currency ($)" },
   { value: "percent", label: "Percentage (%)" },
+  { value: "date", label: "Date (MM/DD/YYYY)" },
 ] as const;
 
 export function SpreadsheetToolbar({
@@ -121,11 +125,19 @@ export function SpreadsheetToolbar({
 }) {
   const setSelectionStyle = useSpreadsheetStore((s) => s.setSelectionStyle);
   const activeCell = useSpreadsheetStore((s) => s.activeCell);
+  const selectionStart = useSpreadsheetStore((s) => s.selectionStart);
+  const selectionEnd = useSpreadsheetStore((s) => s.selectionEnd);
   const getActiveSheet = useSpreadsheetStore((s) => s.getActiveSheet);
   const openChartModal = useSpreadsheetStore((s) => s.openChartModal);
   const openTemplatesModal = useSpreadsheetStore((s) => s.openTemplatesModal);
   const toggleAiPanel = useSpreadsheetStore((s) => s.toggleAiPanel);
   const showAiPanel = useSpreadsheetStore((s) => s.showAiPanel);
+  const setCellValue = useSpreadsheetStore((s) => s.setCellValue);
+  const setCellStyle = useSpreadsheetStore((s) => s.setCellStyle);
+  const getCellDisplay = useSpreadsheetStore((s) => s.getCellDisplay);
+
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const [showCondFormat, setShowCondFormat] = useState(false);
 
   const getCurrentStyle = useCallback(() => {
     if (!activeCell) return {};
@@ -135,6 +147,105 @@ export function SpreadsheetToolbar({
   }, [activeCell, getActiveSheet]);
 
   const style = getCurrentStyle();
+
+  // Import CSV handler
+  const handleImportCSV = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r?\n/);
+        lines.forEach((line, row) => {
+          const cols = line.split(",");
+          cols.forEach((val, col) => {
+            if (col < 26 && row < 50) {
+              setCellValue(col, row, val.trim().replace(/^"|"$/g, ""));
+            }
+          });
+        });
+      };
+      reader.readAsText(file);
+      // Reset input so the same file can be re-imported
+      e.target.value = "";
+    },
+    [setCellValue]
+  );
+
+  // Conditional formatting helpers
+  const getSelectionBounds = useCallback(() => {
+    const s = selectionStart || activeCell;
+    const e = selectionEnd || activeCell;
+    if (!s || !e) return null;
+    return {
+      minR: Math.min(s.row, e.row),
+      maxR: Math.max(s.row, e.row),
+      minC: Math.min(s.col, e.col),
+      maxC: Math.max(s.col, e.col),
+    };
+  }, [selectionStart, selectionEnd, activeCell]);
+
+  const applyHighlightGreaterThan = useCallback(() => {
+    const bounds = getSelectionBounds();
+    if (!bounds) return;
+    const threshold = prompt("Highlight cells greater than:");
+    if (threshold === null) return;
+    const t = parseFloat(threshold);
+    if (isNaN(t)) return;
+    for (let r = bounds.minR; r <= bounds.maxR; r++) {
+      for (let c = bounds.minC; c <= bounds.maxC; c++) {
+        const val = parseFloat(getCellDisplay(c, r));
+        if (!isNaN(val) && val > t) {
+          setCellStyle(c, r, { bgColor: "#bbf7d0" });
+        }
+      }
+    }
+  }, [getSelectionBounds, getCellDisplay, setCellStyle]);
+
+  const applyHighlightLessThan = useCallback(() => {
+    const bounds = getSelectionBounds();
+    if (!bounds) return;
+    const threshold = prompt("Highlight cells less than:");
+    if (threshold === null) return;
+    const t = parseFloat(threshold);
+    if (isNaN(t)) return;
+    for (let r = bounds.minR; r <= bounds.maxR; r++) {
+      for (let c = bounds.minC; c <= bounds.maxC; c++) {
+        const val = parseFloat(getCellDisplay(c, r));
+        if (!isNaN(val) && val < t) {
+          setCellStyle(c, r, { bgColor: "#fecaca" });
+        }
+      }
+    }
+  }, [getSelectionBounds, getCellDisplay, setCellStyle]);
+
+  const applyColorScale = useCallback(() => {
+    const bounds = getSelectionBounds();
+    if (!bounds) return;
+    // Collect all numeric values and find min/max
+    const values: { col: number; row: number; val: number }[] = [];
+    for (let r = bounds.minR; r <= bounds.maxR; r++) {
+      for (let c = bounds.minC; c <= bounds.maxC; c++) {
+        const val = parseFloat(getCellDisplay(c, r));
+        if (!isNaN(val)) {
+          values.push({ col: c, row: r, val });
+        }
+      }
+    }
+    if (values.length === 0) return;
+    const min = Math.min(...values.map((v) => v.val));
+    const max = Math.max(...values.map((v) => v.val));
+    const range = max - min || 1;
+    for (const { col, row, val } of values) {
+      const ratio = (val - min) / range;
+      // Red (low) -> Green (high)
+      const r = Math.round(255 * (1 - ratio));
+      const g = Math.round(255 * ratio);
+      const color = `rgb(${r},${g},100)`;
+      setCellStyle(col, row, { bgColor: color });
+    }
+  }, [getSelectionBounds, getCellDisplay, setCellStyle]);
 
   return (
     <div
@@ -197,7 +308,7 @@ export function SpreadsheetToolbar({
         value={style.format || "general"}
         onChange={(e) =>
           setSelectionStyle({
-            format: e.target.value as "general" | "number" | "currency" | "percent",
+            format: e.target.value as "general" | "number" | "currency" | "percent" | "date",
           })
         }
       >
@@ -227,6 +338,78 @@ export function SpreadsheetToolbar({
       <ToolBtn title="Templates" onClick={openTemplatesModal}>
         <FileSpreadsheet size={15} />
       </ToolBtn>
+
+      <div className="w-px h-5 mx-1" style={{ backgroundColor: "var(--border)" }} />
+
+      {/* Import CSV */}
+      <input
+        ref={csvInputRef}
+        type="file"
+        accept=".csv"
+        className="hidden"
+        onChange={handleImportCSV}
+      />
+      <ToolBtn title="Import CSV" onClick={() => csvInputRef.current?.click()}>
+        <Upload size={15} />
+      </ToolBtn>
+
+      {/* Conditional Formatting */}
+      <div className="relative">
+        <ToolBtn
+          title="Conditional Formatting"
+          onClick={() => setShowCondFormat(!showCondFormat)}
+        >
+          <Highlighter size={15} />
+        </ToolBtn>
+        {showCondFormat && (
+          <div
+            className="absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg border z-50"
+            style={{
+              backgroundColor: "var(--card)",
+              borderColor: "var(--border)",
+              color: "var(--foreground)",
+              minWidth: 200,
+            }}
+          >
+            <button
+              className="w-full text-left text-xs px-3 py-1.5 hover:opacity-80"
+              style={{ backgroundColor: "transparent", color: "var(--foreground)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--muted)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              onClick={() => {
+                applyHighlightGreaterThan();
+                setShowCondFormat(false);
+              }}
+            >
+              Highlight cells &gt; value
+            </button>
+            <button
+              className="w-full text-left text-xs px-3 py-1.5 hover:opacity-80"
+              style={{ backgroundColor: "transparent", color: "var(--foreground)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--muted)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              onClick={() => {
+                applyHighlightLessThan();
+                setShowCondFormat(false);
+              }}
+            >
+              Highlight cells &lt; value
+            </button>
+            <button
+              className="w-full text-left text-xs px-3 py-1.5 hover:opacity-80"
+              style={{ backgroundColor: "transparent", color: "var(--foreground)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--muted)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              onClick={() => {
+                applyColorScale();
+                setShowCondFormat(false);
+              }}
+            >
+              Color scale (red → green)
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="flex-1" />
 

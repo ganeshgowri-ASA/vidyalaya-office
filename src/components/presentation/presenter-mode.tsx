@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { usePresentationStore } from '@/store/presentation-store';
 
 export default function PresenterMode() {
@@ -13,6 +13,44 @@ export default function PresenterMode() {
   } = usePresentationStore();
 
   const slide = slides[activeSlideIndex];
+  const [transitioning, setTransitioning] = useState(false);
+  const [transitionStyle, setTransitionStyle] = useState<React.CSSProperties>({});
+  const prevSlideIndex = useRef(activeSlideIndex);
+
+  useEffect(() => {
+    if (prevSlideIndex.current !== activeSlideIndex && presenterMode) {
+      const transitionType = slide?.transition || 'none';
+      if (transitionType !== 'none') {
+        setTransitioning(true);
+        // Set initial state
+        const initial: React.CSSProperties = { transition: 'none' };
+        if (transitionType === 'fade') {
+          initial.opacity = 0;
+        } else if (transitionType === 'slide') {
+          initial.transform = 'translateX(100%)';
+          initial.opacity = 1;
+        } else if (transitionType === 'zoom') {
+          initial.transform = 'scale(0.5)';
+          initial.opacity = 0;
+        }
+        setTransitionStyle(initial);
+
+        // Trigger transition on next frame
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const final: React.CSSProperties = {
+              transition: 'all 500ms ease-in-out',
+              opacity: 1,
+              transform: 'translateX(0) scale(1)',
+            };
+            setTransitionStyle(final);
+            setTimeout(() => setTransitioning(false), 500);
+          });
+        });
+      }
+    }
+    prevSlideIndex.current = activeSlideIndex;
+  }, [activeSlideIndex, presenterMode, slide?.transition]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -55,6 +93,7 @@ export default function PresenterMode() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          ...transitionStyle,
         }}
       >
         {/* Scale content to fit viewport */}
@@ -88,18 +127,36 @@ export default function PresenterMode() {
               );
             }
             if (el.type === 'shape') {
+              const shapeColor = el.style.backgroundColor || '#3b82f6';
+              let shapeStyle: React.CSSProperties = {
+                left: el.x,
+                top: el.y,
+                width: el.width,
+                height: el.height,
+                backgroundColor: shapeColor,
+                borderRadius: el.style.borderRadius || '0',
+              };
+
+              if (el.content === 'arrow') {
+                shapeStyle = { ...shapeStyle, backgroundColor: 'transparent', clipPath: 'polygon(0 25%, 65% 25%, 65% 0, 100% 50%, 65% 100%, 65% 75%, 0 75%)', background: shapeColor };
+              } else if (el.content === 'star') {
+                shapeStyle = { ...shapeStyle, backgroundColor: 'transparent', clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)', background: shapeColor };
+              } else if (el.content === 'diamond') {
+                shapeStyle = { ...shapeStyle, transform: 'rotate(45deg)', borderRadius: '0' };
+              } else if (el.content === 'callout') {
+                return (
+                  <div key={el.id} className="absolute" style={{ left: el.x, top: el.y, width: el.width, height: el.height }}>
+                    <div style={{ width: '100%', height: 'calc(100% - 10px)', backgroundColor: shapeColor, borderRadius: 8 }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 20, width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `10px solid ${shapeColor}` }} />
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={el.id}
                   className="absolute"
-                  style={{
-                    left: el.x,
-                    top: el.y,
-                    width: el.width,
-                    height: el.height,
-                    backgroundColor: el.style.backgroundColor,
-                    borderRadius: el.style.borderRadius,
-                  }}
+                  style={shapeStyle}
                 />
               );
             }

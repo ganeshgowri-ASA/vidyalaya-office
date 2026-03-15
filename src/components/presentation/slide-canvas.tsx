@@ -75,6 +75,81 @@ export default function SlideCanvas() {
           }
 
           if (el.type === 'shape') {
+            const shapeColor = el.style.backgroundColor || '#3b82f6';
+            let shapeStyle: React.CSSProperties = {
+              left: el.x,
+              top: el.y,
+              width: el.width,
+              height: el.height,
+              backgroundColor: shapeColor,
+              borderRadius: el.style.borderRadius || '0',
+              outline: isSelected ? '2px solid #3b82f6' : 'none',
+              outlineOffset: 2,
+            };
+
+            if (el.content === 'arrow') {
+              shapeStyle = {
+                ...shapeStyle,
+                backgroundColor: 'transparent',
+                clipPath: 'polygon(0 25%, 65% 25%, 65% 0, 100% 50%, 65% 100%, 65% 75%, 0 75%)',
+                background: shapeColor,
+              };
+            } else if (el.content === 'star') {
+              shapeStyle = {
+                ...shapeStyle,
+                backgroundColor: 'transparent',
+                clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+                background: shapeColor,
+              };
+            } else if (el.content === 'diamond') {
+              shapeStyle = {
+                ...shapeStyle,
+                transform: 'rotate(45deg)',
+                borderRadius: '0',
+              };
+            } else if (el.content === 'callout') {
+              // Callout is rendered with a child pointer
+              return (
+                <div
+                  key={el.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectElement(el.id);
+                  }}
+                  className="absolute cursor-pointer"
+                  style={{
+                    left: el.x,
+                    top: el.y,
+                    width: el.width,
+                    height: el.height,
+                    outline: isSelected ? '2px solid #3b82f6' : 'none',
+                    outlineOffset: 2,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '100%',
+                      height: 'calc(100% - 10px)',
+                      backgroundColor: shapeColor,
+                      borderRadius: 8,
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 20,
+                      width: 0,
+                      height: 0,
+                      borderLeft: '8px solid transparent',
+                      borderRight: '8px solid transparent',
+                      borderTop: `10px solid ${shapeColor}`,
+                    }}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div
                 key={el.id}
@@ -83,16 +158,7 @@ export default function SlideCanvas() {
                   selectElement(el.id);
                 }}
                 className="absolute cursor-pointer"
-                style={{
-                  left: el.x,
-                  top: el.y,
-                  width: el.width,
-                  height: el.height,
-                  backgroundColor: el.style.backgroundColor || '#3b82f6',
-                  borderRadius: el.style.borderRadius || '0',
-                  outline: isSelected ? '2px solid #3b82f6' : 'none',
-                  outlineOffset: 2,
-                }}
+                style={shapeStyle}
               />
             );
           }

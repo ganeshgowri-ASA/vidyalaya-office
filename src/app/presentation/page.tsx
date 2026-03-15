@@ -12,7 +12,23 @@ import AIPanel from '@/components/presentation/ai-panel';
 import PrintView from '@/components/presentation/print-view';
 
 export default function PresentationPage() {
-  const { setPresenterMode, presenterMode } = usePresentationStore();
+  const { setPresenterMode, presenterMode, loadTemplate } = usePresentationStore();
+
+  // Load template from localStorage if navigated from Templates page
+  useEffect(() => {
+    const templateData = localStorage.getItem('vidyalaya-ppt-template');
+    if (templateData) {
+      try {
+        const slides = JSON.parse(templateData);
+        if (Array.isArray(slides) && slides.length > 0) {
+          loadTemplate(slides);
+        }
+      } catch (e) {
+        console.error('Failed to load PPT template:', e);
+      }
+      localStorage.removeItem('vidyalaya-ppt-template');
+    }
+  }, [loadTemplate]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {

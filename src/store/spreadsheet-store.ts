@@ -8,7 +8,7 @@ export interface CellStyle {
   align?: "left" | "center" | "right";
   bgColor?: string;
   textColor?: string;
-  format?: "general" | "number" | "currency" | "percent";
+  format?: "general" | "number" | "currency" | "percent" | "date";
 }
 
 export interface CellData {
@@ -110,6 +110,15 @@ function formatValue(value: string | number, format?: string): string {
       return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     case "percent":
       return `${(value * 100).toFixed(1)}%`;
+    case "date": {
+      // Treat value as serial date number (days since 1900-01-01)
+      const epoch = new Date(1900, 0, 1);
+      const date = new Date(epoch.getTime() + (value - 1) * 86400000);
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      const yyyy = date.getFullYear();
+      return `${mm}/${dd}/${yyyy}`;
+    }
     default:
       return Number.isInteger(value) ? String(value) : value.toFixed(2);
   }

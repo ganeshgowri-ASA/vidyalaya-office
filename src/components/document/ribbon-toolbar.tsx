@@ -8,6 +8,7 @@ import {
   Columns3, Search, Printer, ZoomIn, ZoomOut,
   Type, Highlighter, Heading1, Heading2, Heading3, Pilcrow,
   Sparkles, LayoutTemplate,
+  Undo2, Redo2, SeparatorHorizontal, Hash, Ruler,
 } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
 import { ToolbarButton, ToolbarSeparator, ToolbarDropdown } from "./toolbar-button";
@@ -80,6 +81,7 @@ export function RibbonToolbar() {
 
   const [showTextColor, setShowTextColor] = useState(false);
   const [showHighlight, setShowHighlight] = useState(false);
+  const [showSpecialChars, setShowSpecialChars] = useState(false);
   const textColorRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
 
@@ -218,6 +220,11 @@ export function RibbonToolbar() {
       <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 min-h-[44px]">
         {activeTab === "home" && (
           <>
+            {/* Undo/Redo */}
+            <ToolbarButton icon={<Undo2 size={15} />} title="Undo (Ctrl+Z)" onClick={() => runCmd("undo")} />
+            <ToolbarButton icon={<Redo2 size={15} />} title="Redo (Ctrl+Y)" onClick={() => runCmd("redo")} />
+            <ToolbarSeparator />
+
             {/* Font */}
             <ToolbarDropdown
               value={currentFont}
@@ -311,6 +318,38 @@ export function RibbonToolbar() {
             <ToolbarButton icon={<Minus size={15} />} label="Horizontal Rule" title="Insert Horizontal Rule" onClick={() => runCmd("insertHorizontalRule")} />
             <ToolbarButton icon={<Link size={15} />} label="Link" title="Insert Link" onClick={insertLink} />
             <ToolbarButton icon={<BookOpen size={15} />} label="Table of Contents" title="Insert Table of Contents" onClick={insertTOC} />
+            <ToolbarSeparator />
+            <ToolbarButton icon={<SeparatorHorizontal size={15} />} label="Page Break" title="Insert Page Break" onClick={() => {
+              focusEditor();
+              execCmd("insertHTML", '<div style="page-break-after:always;border-top:2px dashed #ccc;margin:24px 0;padding-top:4px;text-align:center;color:#999;font-size:10px;">— Page Break —</div><p></p>');
+            }} />
+            <div className="relative">
+              <ToolbarButton icon={<Hash size={15} />} label="Special Characters" title="Insert Special Character" onClick={() => setShowSpecialChars(!showSpecialChars)} />
+              {showSpecialChars && (
+                <div
+                  className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-3 shadow-lg"
+                  style={{ backgroundColor: "var(--card)", borderColor: "var(--border)", width: 240 }}
+                >
+                  <div className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Special Characters</div>
+                  <div className="grid grid-cols-8 gap-1">
+                    {["©","®","™","°","±","×","÷","√","∞","≠","≤","≥","←","→","↑","↓","•","…","€","£","¥","§","¶","†","‡","—","–","«","»","¿","¡","µ"].map((ch) => (
+                      <button
+                        key={ch}
+                        className="w-7 h-7 rounded text-sm hover:bg-[var(--muted)] flex items-center justify-center"
+                        style={{ color: "var(--foreground)" }}
+                        onClick={() => {
+                          focusEditor();
+                          execCmd("insertText", ch);
+                          setShowSpecialChars(false);
+                        }}
+                      >
+                        {ch}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -381,7 +420,12 @@ export function RibbonToolbar() {
               />
             </div>
             <ToolbarSeparator />
-            <ToolbarButton icon={<Search size={15} />} label="Find & Replace" title="Find & Replace" onClick={() => setShowFindReplace(true)} />
+            <ToolbarButton icon={<Search size={15} />} label="Find & Replace" title="Find & Replace (Ctrl+F)" onClick={() => setShowFindReplace(true)} />
+            <ToolbarButton icon={<Ruler size={15} />} label="Ruler" title="Toggle Ruler" onClick={() => {
+              const ruler = document.getElementById("doc-ruler");
+              if (ruler) ruler.style.display = ruler.style.display === "none" ? "flex" : "none";
+            }} />
+            <ToolbarSeparator />
             <ToolbarButton icon={<Printer size={15} />} label="Print Preview" title="Print Preview" onClick={() => setShowPrintPreview(true)} />
           </>
         )}

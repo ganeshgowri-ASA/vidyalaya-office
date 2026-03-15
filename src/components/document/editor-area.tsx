@@ -57,10 +57,31 @@ export function EditorArea() {
 
   return (
     <div
-      className="flex-1 overflow-auto py-8 print-full-width"
+      className="flex-1 overflow-auto print-full-width"
       style={{ backgroundColor: "#e8e8e8" }}
       id="doc-editor-wrapper"
     >
+      {/* Ruler */}
+      <div
+        id="doc-ruler"
+        className="sticky top-0 z-10 flex items-end justify-center"
+        style={{ backgroundColor: "#e8e8e8", height: 24 }}
+      >
+        <div
+          className="flex items-end"
+          style={{ width: ps.width, transform: `scale(${zoom / 100})`, transformOrigin: "top center" }}
+        >
+          {Array.from({ length: 22 }, (_, i) => (
+            <div key={i} className="flex items-end" style={{ width: "1cm" }}>
+              <div style={{ width: 1, height: i % 2 === 0 ? 10 : 6, backgroundColor: "#999" }} />
+              {i % 2 === 0 && (
+                <span style={{ fontSize: 8, color: "#666", marginLeft: 1, lineHeight: 1 }}>{i / 2}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="py-4" />
       <div
         className="mx-auto shadow-lg print-full-width"
         style={{
