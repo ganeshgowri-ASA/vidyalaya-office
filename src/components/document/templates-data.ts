@@ -1874,5 +1874,712 @@ Response (201 Created):
 <p style="margin-top:20px;"><strong>Additional Comments or Suggestions:</strong></p>
 <div style="border:1px solid #ddd;min-height:100px;padding:10px;margin-top:10px;"></div>
 <p style="margin-top:20px;color:#666;font-style:italic;">Scale: 1 = Strongly Disagree, 2 = Disagree, 3 = Neutral, 4 = Agree, 5 = Strongly Agree</p>`,
+,  {
+    id: "springer-journal",
+    name: "Springer Journal Paper",
+    icon: "📘",
+    description: "Springer/Nature journal format with structured abstract, data availability, and author contributions.",
+    content: `<h1 style="text-align:center;font-size:24px;font-family:Times New Roman,serif;color:#0070C0;">Machine Learning-Based Prediction of Protein Folding Dynamics<br/>Using Graph Neural Networks and Molecular Simulations</h1>
+<p style="text-align:center;font-size:12px;margin-top:8px;">Alexander M. Thompson<sup>1</sup> &middot; Wei Chen<sup>2</sup> &middot; Maria Rodriguez-Santos<sup>1,3</sup> &middot; Kenji Yamamoto<sup>2</sup></p>
+<p style="text-align:center;font-size:10px;color:#666;"><sup>1</sup>Department of Computational Biology, ETH Zurich, 8093 Zurich, Switzerland<br/><sup>2</sup>Institute of Molecular Science, University of Tokyo, Tokyo 113-0033, Japan<br/><sup>3</sup>Swiss Institute of Bioinformatics, 1015 Lausanne, Switzerland</p>
+<p style="text-align:center;font-size:10px;color:#666;">Received: 15 January 2026 / Accepted: 28 February 2026 / Published online: 10 March 2026</p>
+<p style="text-align:center;font-size:10px;color:#0070C0;">Correspondence: a.thompson@ethz.ch</p>
+<hr style="border:2px solid #0070C0;margin:16px 0 8px 0;"/>
+<h2 style="font-size:16px;color:#0070C0;font-family:Times New Roman,serif;">Abstract</h2>
+<p style="text-align:justify;font-size:12px;">Predicting protein folding dynamics remains one of the grand challenges in computational biology. While AlphaFold and related deep learning methods have achieved remarkable success in static structure prediction, capturing the temporal dynamics of protein folding pathways requires fundamentally different approaches. Here, we present FoldGNN, a graph neural network framework that predicts protein folding trajectories by learning from molecular dynamics simulations. Our model represents proteins as dynamic graphs where nodes correspond to residues and edges encode both covalent bonds and non-covalent interactions that evolve over time. We train FoldGNN on a dataset of 2,847 molecular dynamics trajectories spanning 156 protein families, totaling over 450 microseconds of simulation time. The model achieves a temporal root-mean-square deviation (RMSD) correlation of 0.94 with ground-truth molecular dynamics trajectories, while reducing computational cost by four orders of magnitude. We demonstrate that FoldGNN accurately predicts folding intermediates, identifies rate-limiting steps, and captures the effects of point mutations on folding pathways. Our framework enables rapid screening of protein variants for stability and foldability, with applications in protein engineering and drug design.</p>
+<p style="font-size:11px;"><strong>Keywords:</strong> protein folding &middot; graph neural networks &middot; molecular dynamics &middot; deep learning &middot; computational biology &middot; protein engineering</p>
+<hr style="border:1px solid #ddd;"/>
+<h2 style="font-size:16px;color:#0070C0;">1 Introduction</h2>
+<p style="text-align:justify;">The protein folding problem has captivated researchers for over half a century since Anfinsen's landmark experiments demonstrated that the amino acid sequence of a protein contains all the information necessary to determine its three-dimensional structure [1]. Recent breakthroughs in deep learning, most notably AlphaFold2 [2] and RoseTTAFold [3], have essentially solved the static structure prediction problem, achieving experimental-level accuracy for most single-domain proteins. However, predicting the dynamic process by which proteins fold—the folding pathway, intermediates, and kinetics—remains an outstanding challenge with profound implications for understanding protein misfolding diseases, designing de novo proteins, and engineering enzymes with desired properties [4].</p>
+<p style="text-align:justify;">Molecular dynamics (MD) simulations provide atomistic detail about protein folding but are computationally prohibitive for most proteins of biological interest. State-of-the-art simulations using specialized hardware such as Anton-3 can reach millisecond timescales [5], but the folding of many proteins occurs on seconds-to-minutes timescales. Enhanced sampling methods including replica exchange molecular dynamics (REMD) [6], metadynamics [7], and adaptive sampling [8] have extended the accessible timescales but introduce their own biases and limitations. Machine learning approaches offer a promising path forward by learning the essential physics from existing simulation data and enabling rapid predictions for new sequences [9, 10].</p>
+<p style="text-align:justify;">In this work, we introduce FoldGNN, a graph neural network architecture specifically designed for predicting protein folding dynamics. Unlike existing approaches that treat proteins as sequences or point clouds, FoldGNN represents proteins as evolving graphs that capture the formation and breaking of contacts during folding. Our key contributions are: (1) a temporal graph neural network architecture that models the evolution of protein contact networks during folding; (2) a multi-scale training strategy that captures both local secondary structure formation and global tertiary contacts; and (3) extensive validation demonstrating state-of-the-art accuracy in predicting folding pathways, intermediates, and kinetics across diverse protein families.</p>
+<h2 style="font-size:16px;color:#0070C0;">2 Background and Related Work</h2>
+<p style="text-align:justify;">Early computational approaches to protein folding relied on physics-based energy functions combined with conformational search algorithms, including simulated annealing [11], genetic algorithms [12], and Monte Carlo methods [13]. The CASP (Critical Assessment of protein Structure Prediction) competition series has tracked progress in this field since 1994, with AlphaFold2's remarkable performance in CASP14 representing a paradigm shift toward deep learning approaches [2]. However, these methods primarily predict the folded structure without providing information about the folding pathway.</p>
+<p style="text-align:justify;">Graph neural networks (GNNs) have emerged as powerful tools for molecular property prediction [14, 15]. Recent work has applied GNNs to protein structure prediction [16], protein-protein interaction prediction [17], and enzyme function annotation [18]. For molecular dynamics, graph-based approaches have been used to learn coarse-grained force fields [19] and predict simulation trajectories [20]. Our work builds on these foundations by developing a temporal GNN architecture specifically tailored to capture the non-equilibrium dynamics of protein folding.</p>
+<h2 style="font-size:16px;color:#0070C0;">3 Methods</h2>
+<h3 style="color:#0070C0;">3.1 Graph Representation of Protein Dynamics</h3>
+<p style="text-align:justify;">We represent a protein conformation at time t as a graph G(t) = (V, E(t)), where the node set V corresponds to the C-alpha atoms of the protein backbone (one node per residue) and the edge set E(t) captures pairwise interactions that evolve during folding. Each node v_i is associated with a feature vector x_i encoding the amino acid type (one-hot), backbone dihedral angles (phi, psi), solvent accessibility, and secondary structure propensity. Edges are dynamically constructed based on a distance cutoff of 10 Angstroms between C-alpha atoms, with edge features encoding the pairwise distance, relative orientation, and sequence separation between residues.</p>
+<h3 style="color:#0070C0;">3.2 Temporal Graph Neural Network Architecture</h3>
+<p style="text-align:justify;">FoldGNN consists of three main components: (1) a spatial message-passing module that aggregates information from neighboring residues at each time step, (2) a temporal attention module that captures correlations across folding time steps, and (3) a prediction head that outputs updated coordinates and contact probabilities. The spatial module employs 6 layers of Graph Attention Networks (GAT) with multi-head attention (8 heads) and hidden dimension of 256. The temporal module uses a transformer encoder with 4 layers and causal masking to maintain the temporal ordering of folding events. The model is trained end-to-end using a composite loss function that combines coordinate RMSD loss, contact map cross-entropy loss, and a physics-informed regularization term based on bond length and angle constraints.</p>
+<h3 style="color:#0070C0;">3.3 Training Dataset</h3>
+<p style="text-align:justify;">We curated a training dataset from three sources: (1) the D.E. Shaw Research Anton trajectories [5], comprising 25 long-timescale folding simulations; (2) our own enhanced sampling simulations of 120 proteins from the SCOP database; and (3) the Folding@home consortium dataset, filtered for reversible folding events. The combined dataset contains 2,847 folding trajectories spanning 156 protein families and representing over 450 microseconds of aggregate simulation time. We split the data by protein family (80/10/10 train/validation/test) to evaluate generalization to unseen proteins.</p>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#0070C0;color:white;"><th style="border:1px solid #ddd;padding:8px;text-align:left;">Dataset Source</th><th style="border:1px solid #ddd;padding:8px;text-align:center;">Proteins</th><th style="border:1px solid #ddd;padding:8px;text-align:center;">Trajectories</th><th style="border:1px solid #ddd;padding:8px;text-align:center;">Sim. Time</th><th style="border:1px solid #ddd;padding:8px;text-align:center;">Avg. Length (aa)</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">Anton trajectories</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">25</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">142</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">380 us</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">86</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Enhanced sampling (ours)</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">120</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">1,840</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">55 us</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">124</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Folding@home</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">48</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">865</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">18 us</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">95</td></tr>
+<tr style="font-weight:bold;background:#e3f2fd;"><td style="border:1px solid #ddd;padding:6px;">Total</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">156</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">2,847</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">453 us</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">108</td></tr>
+</tbody>
+</table>
+<h2 style="font-size:16px;color:#0070C0;">4 Results</h2>
+<h3 style="color:#0070C0;">4.1 Folding Trajectory Prediction Accuracy</h3>
+<p style="text-align:justify;">Table 2 compares FoldGNN against baseline methods on the test set of 16 protein families. Our model achieves a mean temporal RMSD correlation of 0.94, significantly outperforming the recurrent neural network baseline (0.78) and the variational autoencoder approach (0.82). Importantly, FoldGNN maintains high accuracy for proteins up to 200 residues in length, while baseline methods show degraded performance beyond 150 residues.</p>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#f0f0f0;"><th style="border:1px solid #ddd;padding:6px;text-align:left;">Method</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">RMSD Corr.</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Contact F1</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Folding Rate (r)</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Speedup</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">Full MD Simulation</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">1.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">1.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">1.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">1x</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">RNN-based [20]</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.78</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.71</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.65</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">5,000x</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">VAE-MD [21]</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.82</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.76</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.72</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">8,000x</td></tr>
+<tr style="font-weight:bold;background:#e3f2fd;"><td style="border:1px solid #ddd;padding:6px;">FoldGNN (Ours)</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.94</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.91</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.89</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">10,000x</td></tr>
+</tbody>
+</table>
+<h3 style="color:#0070C0;">4.2 Identification of Folding Intermediates</h3>
+<p style="text-align:justify;">A key strength of FoldGNN is its ability to identify metastable folding intermediates. On the villin headpiece (HP35), our model correctly identifies the two known intermediate states: the partially folded state with helices 1 and 2 formed but helix 3 unstructured, and the near-native state with all three helices formed but non-native tertiary contacts. The predicted populations of these intermediates (32% and 18%, respectively) agree well with experimental measurements from single-molecule FRET studies (35% and 15%) [22].</p>
+<h3 style="color:#0070C0;">4.3 Mutation Effect Predictions</h3>
+<p style="text-align:justify;">We evaluated FoldGNN's ability to predict the effects of point mutations on folding kinetics using a benchmark set of 84 mutations across 12 proteins with experimental folding rate data. Our model achieves a Pearson correlation of 0.87 between predicted and experimental changes in folding rates (delta-ln(k_f)), compared to 0.62 for FoldX and 0.71 for Rosetta. This demonstrates the model's utility for protein engineering applications where understanding mutational effects on folding is critical.</p>
+<h2 style="font-size:16px;color:#0070C0;">5 Discussion</h2>
+<p style="text-align:justify;">FoldGNN represents a significant advance in computational prediction of protein folding dynamics. By combining graph neural network architectures with temporal modeling, our framework captures the essential physics of protein folding while achieving computational speedups of four orders of magnitude over conventional molecular dynamics. The model's ability to predict folding intermediates and mutation effects makes it a valuable tool for protein engineering and drug design. However, several limitations remain: the model's accuracy decreases for proteins larger than 200 residues, multi-domain proteins pose additional challenges, and the current framework does not account for the effects of chaperones or post-translational modifications. Future work will address these limitations through multi-scale modeling approaches and integration with experimental data from cryo-EM and NMR spectroscopy.</p>
+<h2 style="font-size:16px;color:#0070C0;">6 Conclusion</h2>
+<p style="text-align:justify;">We have presented FoldGNN, a temporal graph neural network framework for predicting protein folding dynamics. Our model achieves a temporal RMSD correlation of 0.94 with ground-truth molecular dynamics trajectories while reducing computational cost by 10,000-fold. FoldGNN accurately predicts folding intermediates, identifies rate-limiting steps, and captures mutation effects on folding pathways. The framework enables rapid screening of protein variants for stability and foldability, with broad applications in biotechnology and medicine. All code and trained models are available at https://github.com/example/foldgnn under the MIT license.</p>
+<h2 style="font-size:14px;color:#0070C0;">Data Availability</h2>
+<p style="font-size:11px;">The molecular dynamics trajectory data used in this study are available from the corresponding sources cited in Section 3.3. Processed training data and trained model weights are deposited in Zenodo (doi: 10.5281/zenodo.XXXXXXX). Source code is available at https://github.com/example/foldgnn.</p>
+<h2 style="font-size:14px;color:#0070C0;">Author Contributions</h2>
+<p style="font-size:11px;">A.M.T. conceived the project, designed the model architecture, and wrote the manuscript. W.C. performed the molecular dynamics simulations and curated the training dataset. M.R.-S. developed the temporal attention module and conducted the mutation analysis experiments. K.Y. contributed to the graph representation framework and reviewed the manuscript. All authors approved the final version.</p>
+<h2 style="font-size:14px;color:#0070C0;">Competing Interests</h2>
+<p style="font-size:11px;">The authors declare no competing interests.</p>
+<h2 style="font-size:14px;color:#0070C0;">Acknowledgements</h2>
+<p style="font-size:11px;">This work was supported by the Swiss National Science Foundation (grant 310030_192622), the Japan Society for the Promotion of Science (KAKENHI 21H04868), and an ETH Research Grant. Computational resources were provided by the Swiss National Supercomputing Centre (CSCS). We thank the Folding@home consortium for making their trajectory data publicly available.</p>
+<h2 style="font-size:14px;color:#0070C0;">References</h2>
+<p style="font-size:10px;">[1] Anfinsen, C.B. (1973). Principles that govern the folding of protein chains. Science, 181(4096), 223-230.</p>
+<p style="font-size:10px;">[2] Jumper, J. et al. (2021). Highly accurate protein structure prediction with AlphaFold. Nature, 596, 583-589.</p>
+<p style="font-size:10px;">[3] Baek, M. et al. (2021). Accurate prediction of protein structures and interactions using a three-track neural network. Science, 373(6557), 871-876.</p>
+<p style="font-size:10px;">[4] Dill, K.A. & MacCallum, J.L. (2012). The protein-folding problem, 50 years on. Science, 338(6110), 1042-1046.</p>
+<p style="font-size:10px;">[5] Lindorff-Larsen, K. et al. (2011). How fast-folding proteins fold. Science, 334(6055), 517-520.</p>
+<p style="font-size:10px;">[6] Sugita, Y. & Okamoto, Y. (1999). Replica-exchange molecular dynamics method for protein folding. Chemical Physics Letters, 314, 141-151.</p>
+<p style="font-size:10px;">[7] Laio, A. & Parrinello, M. (2002). Escaping free-energy minima. PNAS, 99(20), 12562-12566.</p>
+<p style="font-size:10px;">[8] Husic, B.E. & Pande, V.S. (2018). Markov state models: From an art to a science. JACS, 140(7), 2386-2396.</p>
+<p style="font-size:10px;">[9] Noe, F. et al. (2019). Boltzmann generators: Sampling equilibrium states of many-body systems with deep learning. Science, 365(6457), eaaw1147.</p>
+<p style="font-size:10px;">[10] Wang, J. et al. (2019). Machine learning of coarse-grained molecular dynamics force fields. ACS Central Science, 5(5), 755-767.</p>
+<p style="font-size:10px;">[11] Kirkpatrick, S. et al. (1983). Optimization by simulated annealing. Science, 220(4598), 671-680.</p>
+<p style="font-size:10px;">[12] Unger, R. & Moult, J. (1993). Genetic algorithms for protein folding simulations. JMB, 231(1), 75-81.</p>
+<p style="font-size:10px;">[13] Li, Z. & Scheraga, H.A. (1987). Monte Carlo-minimization approach to the multiple-minima problem in protein folding. PNAS, 84(19), 6611-6615.</p>
+<p style="font-size:10px;">[14] Gilmer, J. et al. (2017). Neural message passing for quantum chemistry. ICML, 1263-1272.</p>
+<p style="font-size:10px;">[15] Schutt, K.T. et al. (2018). SchNet - A deep learning architecture for molecules and materials. JCP, 148(24), 241722.</p>
+<p style="font-size:10px;">[16] Ingraham, J. et al. (2019). Generative models for graph-based protein design. NeurIPS.</p>`,
+  },
+  {
+    id: "wiley-journal",
+    name: "Wiley Journal Paper",
+    icon: "📗",
+    description: "Wiley journal format with literature review, mixed-methods methodology, and practical implications.",
+    content: `<h1 style="text-align:center;font-size:22px;font-family:Georgia,serif;color:#006D6F;">Impact of Digital Transformation on Organizational Performance:<br/>A Mixed-Methods Study Across Manufacturing Enterprises</h1>
+<p style="text-align:center;font-size:12px;margin-top:8px;"><strong>Sarah J. Mitchell</strong><sup>1</sup> | <strong>David R. Okonkwo</strong><sup>2</sup> | <strong>Elena Petrov</strong><sup>1</sup> | <strong>Carlos A. Mendoza</strong><sup>3</sup></p>
+<p style="text-align:center;font-size:10px;color:#666;"><sup>1</sup>School of Business, University of Manchester, Manchester M13 9PL, UK<br/><sup>2</sup>Department of Information Systems, MIT Sloan School of Management, Cambridge, MA 02142, USA<br/><sup>3</sup>Faculty of Economics, Universidad Autonoma de Madrid, 28049 Madrid, Spain</p>
+<p style="text-align:center;font-size:10px;color:#006D6F;">Correspondence: Sarah J. Mitchell, s.mitchell@manchester.ac.uk</p>
+<p style="text-align:center;font-size:10px;color:#888;">Published in <em>Journal of Management Studies</em> | DOI: 10.1111/joms.2026.00XXX</p>
+<hr style="border:2px solid #006D6F;margin:16px 0;"/>
+<h2 style="font-size:15px;color:#006D6F;">Abstract</h2>
+<p style="text-align:justify;font-size:12px;font-style:italic;">This study examines the relationship between digital transformation maturity and organizational performance in manufacturing enterprises through a sequential mixed-methods design. In Phase 1, we analyze survey data from 423 manufacturing firms across 12 countries using structural equation modeling (SEM) to test hypothesized relationships between digital transformation dimensions (technology infrastructure, digital culture, data-driven decision-making, and ecosystem connectivity) and performance outcomes (operational efficiency, innovation capacity, customer satisfaction, and financial performance). In Phase 2, we conduct in-depth case studies of 18 firms representing high, medium, and low digital maturity levels to understand the mechanisms through which digital transformation affects performance. Our quantitative results reveal that digital culture (beta=0.42, p&lt;0.001) and data-driven decision-making (beta=0.38, p&lt;0.001) are the strongest predictors of overall performance improvement, while technology infrastructure alone shows a weak direct effect (beta=0.11, p=0.04). Qualitative findings identify three critical mechanisms: organizational learning acceleration, boundary-spanning collaboration, and adaptive capability development. We contribute to digital transformation theory by demonstrating that human and organizational factors mediate the relationship between technology investment and performance outcomes, challenging the techno-deterministic perspective prevalent in practitioner literature.</p>
+<p style="font-size:11px;"><strong>Keywords:</strong> digital transformation, organizational performance, mixed methods, manufacturing, digital culture, Industry 4.0</p>
+<hr style="border:1px solid #ddd;"/>
+<h2 style="font-size:15px;color:#006D6F;">1. Introduction</h2>
+<p style="text-align:justify;">Digital transformation has emerged as a strategic imperative for manufacturing enterprises seeking to maintain competitiveness in an increasingly technology-driven global economy. Industry reports estimate that global spending on digital transformation will exceed $3.4 trillion by 2026, with manufacturing representing the largest single sector of investment (IDC, 2025). Despite this massive expenditure, evidence on the relationship between digital transformation and organizational performance remains equivocal. Some studies report significant positive effects on productivity and innovation (Vial, 2019; Warner & Wager, 2019), while others find limited or even negative returns, particularly in the short to medium term (Gebauer et al., 2020).</p>
+<p style="text-align:justify;">This inconsistency in findings can be attributed to at least three factors. First, digital transformation is a multi-dimensional construct that encompasses technology, processes, culture, and business models, yet most studies focus on a single dimension (Verhoef et al., 2021). Second, the mechanisms through which digital transformation affects performance are poorly understood, with quantitative studies establishing correlations without explaining causal pathways (Hanelt et al., 2021). Third, contextual factors such as firm size, industry sub-sector, and national innovation systems likely moderate the transformation-performance relationship (Li et al., 2022). Our study addresses these gaps through a comprehensive mixed-methods design that combines broad quantitative analysis with deep qualitative investigation.</p>
+<h2 style="font-size:15px;color:#006D6F;">2. Literature Review</h2>
+<h3 style="color:#006D6F;">2.1 Conceptualizing Digital Transformation</h3>
+<p style="text-align:justify;">We adopt Vial's (2019) definition of digital transformation as "a process that aims to improve an entity by triggering significant changes to its properties through combinations of information, computing, communication, and connectivity technologies." Building on the digital maturity models of Kane et al. (2017) and Westerman et al. (2014), we conceptualize digital transformation maturity across four dimensions: (1) Technology Infrastructure, encompassing IoT deployment, cloud computing adoption, AI/ML capabilities, and cybersecurity readiness; (2) Digital Culture, including digital mindset, experimentation tolerance, cross-functional collaboration, and digital talent development; (3) Data-Driven Decision-Making, comprising data governance, analytics capabilities, real-time monitoring, and evidence-based management practices; and (4) Ecosystem Connectivity, reflecting platform integration, supply chain digitization, customer digital engagement, and open innovation partnerships.</p>
+<h3 style="color:#006D6F;">2.2 Theoretical Framework</h3>
+<p style="text-align:justify;">We draw on three complementary theoretical perspectives to develop our hypotheses. Dynamic capabilities theory (Teece, 2007) suggests that digital transformation enhances firms' ability to sense opportunities, seize them through resource reconfiguration, and transform organizational routines. The technology-organization-environment (TOE) framework (Tornatzky & Fleischer, 1990) highlights the interplay between technological factors, organizational characteristics, and environmental pressures in shaping technology adoption outcomes. Finally, organizational learning theory (Argyris & Schon, 1978) provides insights into how digital technologies enable both exploitative and explorative learning processes.</p>
+<h2 style="font-size:15px;color:#006D6F;">3. Methodology</h2>
+<h3 style="color:#006D6F;">3.1 Research Design</h3>
+<p style="text-align:justify;">We employ a sequential explanatory mixed-methods design (Creswell & Plano Clark, 2018) consisting of two phases. Phase 1 involves a quantitative survey of manufacturing firms to test hypothesized relationships between digital transformation dimensions and performance outcomes. Phase 2 uses qualitative case studies to explain the mechanisms underlying the quantitative findings.</p>
+<h3 style="color:#006D6F;">3.2 Phase 1: Quantitative Survey</h3>
+<p style="text-align:justify;">We surveyed Chief Digital Officers (CDOs), Chief Information Officers (CIOs), and senior technology leaders at manufacturing firms with annual revenue exceeding $50 million. The survey instrument was developed through three rounds of expert panel review and pilot testing with 35 firms. We obtained 423 usable responses from firms across 12 countries (response rate: 28.4%). Our measurement model includes 48 items across eight latent constructs, all of which demonstrate acceptable reliability (Cronbach's alpha > 0.80) and convergent validity (AVE > 0.50).</p>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#006D6F;color:white;"><th style="border:1px solid #ddd;padding:8px;">Variable</th><th style="border:1px solid #ddd;padding:8px;text-align:center;">Items</th><th style="border:1px solid #ddd;padding:8px;text-align:center;">Alpha</th><th style="border:1px solid #ddd;padding:8px;text-align:center;">CR</th><th style="border:1px solid #ddd;padding:8px;text-align:center;">AVE</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">Technology Infrastructure</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">8</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.89</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.91</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.56</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Digital Culture</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">7</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.92</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.93</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.65</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Data-Driven Decision-Making</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">6</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.87</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.90</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.60</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Ecosystem Connectivity</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">5</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.84</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.88</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.59</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Operational Efficiency</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">6</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.88</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.90</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.60</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Innovation Capacity</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">5</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.85</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.89</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.62</td></tr>
+</tbody>
+</table>
+<h2 style="font-size:15px;color:#006D6F;">4. Findings</h2>
+<h3 style="color:#006D6F;">4.1 Quantitative Results</h3>
+<p style="text-align:justify;">The structural equation model demonstrates good fit (chi-square/df=1.84, CFI=0.96, RMSEA=0.044, SRMR=0.038). Table 3 presents the path coefficients and significance levels. Digital Culture exhibits the strongest effect on overall performance (beta=0.42, p&lt;0.001), followed by Data-Driven Decision-Making (beta=0.38, p&lt;0.001) and Ecosystem Connectivity (beta=0.24, p&lt;0.001). Technology Infrastructure shows a significant but modest direct effect (beta=0.11, p=0.04), suggesting that technology investment alone is insufficient for performance improvement.</p>
+<h3 style="color:#006D6F;">4.2 Qualitative Insights</h3>
+<p style="text-align:justify;">Our case studies reveal three key mechanisms. First, <strong>organizational learning acceleration</strong>: digitally mature firms create feedback loops where operational data informs strategic decisions rapidly. Second, <strong>boundary-spanning collaboration</strong>: digital platforms dissolve departmental silos and enable cross-functional innovation. Third, <strong>adaptive capability development</strong>: firms with strong digital cultures develop organizational agility that enables rapid response to market changes and disruptions.</p>
+<h2 style="font-size:15px;color:#006D6F;">5. Discussion and Implications</h2>
+<p style="text-align:justify;">Our findings challenge the techno-deterministic perspective that dominates much of the digital transformation discourse. While technology infrastructure is a necessary enabler, our results demonstrate that organizational and human factors—particularly digital culture and data-driven decision-making practices—are far more important predictors of performance improvement. This has significant implications for both theory and practice. For theory, it suggests that digital transformation research should shift focus from technology adoption to organizational capability development. For practice, it implies that firms should invest as heavily in cultural change, talent development, and data governance as they do in technology platforms.</p>
+<h2 style="font-size:15px;color:#006D6F;">6. Limitations and Future Research</h2>
+<p style="text-align:justify;">This study has several limitations. First, the cross-sectional design limits causal inference; longitudinal studies tracking firms over 3-5 years of transformation would strengthen causal claims. Second, our sample is biased toward firms with revenue exceeding $50M, limiting generalizability to SMEs. Third, the subjective nature of survey-based performance measurement could be supplemented with objective financial data. Future research should explore industry-specific moderators, examine the role of regulatory environments, and investigate the long-term sustainability of digital transformation benefits.</p>
+<h2 style="font-size:15px;color:#006D6F;">7. Conclusion</h2>
+<p style="text-align:justify;">This study provides robust evidence that digital transformation improves organizational performance in manufacturing, but the effect is primarily mediated by cultural and organizational factors rather than technology alone. Firms that invest in building digital culture, data-driven decision-making capabilities, and ecosystem connectivity achieve significantly better performance outcomes than those focusing solely on technology infrastructure. Our mixed-methods approach provides both statistical generalizability and rich mechanistic understanding, offering a comprehensive picture of how digital transformation creates value in manufacturing enterprises.</p>
+<h2 style="font-size:14px;color:#006D6F;">References</h2>
+<p style="font-size:10px;">Argyris, C. & Schon, D.A. (1978). Organizational Learning: A Theory of Action Perspective. Addison-Wesley.</p>
+<p style="font-size:10px;">Creswell, J.W. & Plano Clark, V.L. (2018). Designing and Conducting Mixed Methods Research (3rd ed.). Sage.</p>
+<p style="font-size:10px;">Gebauer, H. et al. (2020). Digital transformation of industries. Academy of Management Discoveries, 6(3), 390-415.</p>
+<p style="font-size:10px;">Hanelt, A. et al. (2021). A systematic review of the literature on digital transformation. Journal of Management Studies, 58(5), 1159-1197.</p>
+<p style="font-size:10px;">Kane, G.C. et al. (2017). Achieving digital maturity. MIT Sloan Management Review, 59(1), 1-29.</p>
+<p style="font-size:10px;">Li, L. et al. (2022). Digital transformation by SME entrepreneurs: A capability perspective. Information Systems Journal, 32(3), 541-576.</p>
+<p style="font-size:10px;">Teece, D.J. (2007). Explicating dynamic capabilities: The nature and microfoundations of (sustainable) enterprise performance. Strategic Management Journal, 28(13), 1319-1350.</p>
+<p style="font-size:10px;">Tornatzky, L.G. & Fleischer, M. (1990). The Processes of Technological Innovation. Lexington Books.</p>
+<p style="font-size:10px;">Verhoef, P.C. et al. (2021). Digital transformation: A multidisciplinary reflection and research agenda. Journal of Business Research, 122, 889-901.</p>
+<p style="font-size:10px;">Vial, G. (2019). Understanding digital transformation: A review and a research agenda. Journal of Strategic Information Systems, 28(2), 118-144.</p>
+<p style="font-size:10px;">Warner, K.S.R. & Wager, M. (2019). Building dynamic capabilities for digital transformation. Long Range Planning, 52(3), 326-349.</p>
+<p style="font-size:10px;">Westerman, G. et al. (2014). Leading Digital: Turning Technology into Business Transformation. Harvard Business Review Press.</p>`,
+  },
+  {
+    id: "sciencedirect-paper",
+    name: "ScienceDirect / Elsevier Paper",
+    icon: "📙",
+    description: "Elsevier journal format with highlights, graphical abstract placeholder, and CRediT author statement.",
+    content: `<h1 style="text-align:center;font-size:22px;font-family:Times New Roman,serif;">Sustainable Nanomaterials for Next-Generation Energy Storage Systems:<br/>A Comprehensive Review of MXene-Based Supercapacitor Electrodes</h1>
+<p style="text-align:center;font-size:12px;margin-top:8px;">Priya Sharma<sup>a</sup>, Liang Zhang<sup>b</sup>, Fatima Al-Rashid<sup>c</sup>, Giovanni Rossi<sup>a,d</sup></p>
+<p style="text-align:center;font-size:10px;color:#666;"><sup>a</sup>Department of Materials Science, Indian Institute of Technology Bombay, Mumbai 400076, India<br/><sup>b</sup>State Key Laboratory of Advanced Ceramics, Tsinghua University, Beijing 100084, China<br/><sup>c</sup>King Abdullah University of Science and Technology (KAUST), Thuwal 23955, Saudi Arabia<br/><sup>d</sup>Istituto Italiano di Tecnologia, Genova 16163, Italy</p>
+<hr style="border:2px solid #EF6C00;margin:16px 0;"/>
+<div style="background:#FFF3E0;border-left:4px solid #EF6C00;padding:16px;margin:16px 0;">
+<h3 style="color:#EF6C00;margin-top:0;">Highlights</h3>
+<ul style="font-size:12px;">
+<li>Comprehensive review of 340+ publications on MXene-based supercapacitor electrodes (2019-2025)</li>
+<li>Ti3C2Tx MXene achieves volumetric capacitance of 1,500 F/cm3 — highest among 2D materials</li>
+<li>Surface functionalization strategies improve cycling stability to >98% retention over 50,000 cycles</li>
+<li>MXene-polymer composites enable flexible, wearable energy storage with energy density >45 Wh/kg</li>
+<li>Sustainability analysis shows MXene synthesis carbon footprint can be reduced 60% via green etching</li>
+</ul>
+</div>
+<div style="border:2px dashed #EF6C00;padding:40px;text-align:center;margin:16px 0;color:#EF6C00;">
+<p style="font-size:14px;"><strong>Graphical Abstract</strong></p>
+<p style="font-size:11px;">[Schematic illustration of MXene synthesis, electrode fabrication, and supercapacitor assembly]</p>
+</div>
+<h2 style="font-size:15px;color:#EF6C00;">Abstract</h2>
+<p style="text-align:justify;font-size:12px;">The urgent need for sustainable energy storage solutions has driven intensive research into advanced electrode materials that combine high performance with environmental compatibility. MXenes, a family of two-dimensional transition metal carbides, nitrides, and carbonitrides, have emerged as exceptionally promising candidates for supercapacitor electrodes due to their metallic conductivity (>10,000 S/cm), hydrophilic surfaces, tunable interlayer spacing, and rich surface chemistry. This comprehensive review analyzes over 340 publications from 2019 to 2025, systematically evaluating the progress in MXene-based supercapacitor electrode development across four dimensions: synthesis methodology, surface functionalization, composite architectures, and device integration. We critically assess the electrochemical performance metrics, including specific capacitance (up to 1,500 F/cm3 volumetric), rate capability, cycling stability (>98% retention over 50,000 cycles), and energy density (up to 45 Wh/kg in asymmetric configurations). Furthermore, we present the first comprehensive sustainability analysis of MXene electrode production, comparing the environmental footprint of conventional HF etching versus emerging green synthesis routes. We identify key challenges including scalability, long-term stability in aqueous electrolytes, and the need for standardized testing protocols, and propose a research roadmap for translating laboratory advances into commercially viable energy storage technologies.</p>
+<p style="font-size:11px;"><strong>Keywords:</strong> MXene; supercapacitor; energy storage; nanomaterials; sustainability; 2D materials; electrode</p>
+<hr style="border:1px solid #ddd;"/>
+<h2 style="font-size:15px;color:#EF6C00;">1. Introduction</h2>
+<p style="text-align:justify;">The global transition toward renewable energy sources and electric transportation demands energy storage systems that are simultaneously high-performance, cost-effective, safe, and environmentally sustainable. Supercapacitors (electrochemical capacitors) occupy a critical niche between batteries and conventional capacitors, offering high power density (>10 kW/kg), rapid charge-discharge capability (<1 second), and exceptional cycle life (>100,000 cycles). However, the energy density of current supercapacitors (5-15 Wh/kg) remains significantly lower than lithium-ion batteries (150-250 Wh/kg), limiting their application in energy-intensive scenarios [1, 2]. Bridging this energy density gap while maintaining the inherent advantages of supercapacitors requires the development of advanced electrode materials with higher specific capacitance and wider operating voltage windows.</p>
+<p style="text-align:justify;">MXenes, first reported by Naguib et al. in 2011 [3], are produced by selective etching of A-layer atoms from MAX phase precursors (where M is an early transition metal, A is a group IIIA or IVA element, and X is carbon and/or nitrogen). The resulting 2D materials possess a unique combination of properties ideally suited for energy storage: metallic electronic conductivity exceeding 10,000 S/cm (comparable to multilayer graphene), hydrophilic surfaces decorated with functional groups (-OH, -O, -F) that facilitate ion intercalation, tunable interlayer spacing from 9 to 25 Angstroms, and high density (3.2-4.5 g/cm3) that translates to exceptional volumetric performance metrics [4, 5].</p>
+<h2 style="font-size:15px;color:#EF6C00;">2. MXene Synthesis and Processing</h2>
+<h3 style="color:#EF6C00;">2.1 Conventional Etching Methods</h3>
+<p style="text-align:justify;">The most widely used synthesis route involves etching MAX phases in concentrated hydrofluoric acid (HF) or in situ HF-generating solutions (LiF/HCl). While effective, these methods raise significant safety and environmental concerns. Table 1 summarizes the key synthesis parameters and their effects on the resulting MXene properties.</p>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#EF6C00;color:white;"><th style="border:1px solid #ddd;padding:6px;text-align:left;">Method</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Etchant</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Temp (C)</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Time (h)</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Yield (%)</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Conductivity (S/cm)</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">HF etching</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">48% HF</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">25</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">24</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">80</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">4,600</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">MILD (LiF/HCl)</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">LiF + 6M HCl</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">35</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">24</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">85</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">15,100</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Electrochemical</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">NH4Cl (aq)</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">25</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">5</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">60</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">8,200</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Molten salt</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">ZnCl2</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">550</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">6</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">70</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">12,400</td></tr>
+</tbody>
+</table>
+<h2 style="font-size:15px;color:#EF6C00;">3. Electrochemical Performance</h2>
+<p style="text-align:justify;">The electrochemical performance of MXene-based supercapacitor electrodes has improved dramatically over the past five years. Gravimetric capacitance values have increased from approximately 250 F/g in early reports to over 700 F/g in optimized systems, while volumetric capacitance has reached 1,500 F/cm3 — the highest value reported for any electrode material. These improvements are attributed to optimization of interlayer spacing, surface functionalization, and electrode architecture.</p>
+<h2 style="font-size:15px;color:#EF6C00;">4. Composite Architectures</h2>
+<p style="text-align:justify;">MXene-polymer composites, particularly MXene/PEDOT:PSS and MXene/polyaniline systems, combine the conductivity and capacitance of MXenes with the flexibility and pseudocapacitive contribution of conducting polymers. These composites achieve energy densities up to 45 Wh/kg in asymmetric configurations while maintaining mechanical flexibility suitable for wearable applications. MXene-carbon composites (MXene/CNT, MXene/graphene) address the restacking problem by introducing spacers between MXene sheets, improving ion accessibility and rate capability.</p>
+<h2 style="font-size:15px;color:#EF6C00;">5. Sustainability Analysis</h2>
+<p style="text-align:justify;">We present the first comprehensive life cycle assessment (LCA) of MXene electrode production, comparing four synthesis routes across six environmental impact categories. Our analysis shows that replacing HF etching with electrochemical methods reduces the carbon footprint by 60% and eliminates hazardous fluoride waste streams. However, the energy intensity of MAX phase synthesis remains a significant contributor to overall environmental impact, suggesting that precursor optimization should be a priority for sustainable scale-up.</p>
+<h2 style="font-size:15px;color:#EF6C00;">6. Conclusions and Outlook</h2>
+<p style="text-align:justify;">MXene-based supercapacitor electrodes have demonstrated exceptional electrochemical performance that surpasses most competing 2D materials. Key challenges for commercialization include: (1) scaling up MXene synthesis to kilogram quantities while maintaining quality and reducing cost; (2) improving long-term oxidation stability, particularly in aqueous electrolytes; (3) developing standardized testing protocols for fair comparison across studies; and (4) integrating MXene electrodes into practical device architectures. Addressing these challenges will require interdisciplinary collaboration across materials science, electrochemistry, chemical engineering, and sustainability science.</p>
+<h2 style="font-size:14px;color:#EF6C00;">CRediT Author Statement</h2>
+<p style="font-size:11px;"><strong>Priya Sharma:</strong> Conceptualization, Methodology, Writing - Original Draft, Supervision. <strong>Liang Zhang:</strong> Data Curation, Formal Analysis, Visualization. <strong>Fatima Al-Rashid:</strong> Investigation, Writing - Review & Editing. <strong>Giovanni Rossi:</strong> Resources, Funding Acquisition, Writing - Review & Editing.</p>
+<h2 style="font-size:14px;color:#EF6C00;">Declaration of Competing Interest</h2>
+<p style="font-size:11px;">The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.</p>
+<h2 style="font-size:14px;color:#EF6C00;">Acknowledgments</h2>
+<p style="font-size:11px;">This work was supported by the Department of Science and Technology, Government of India (DST/TMD/MES/2019/198), the National Natural Science Foundation of China (52072197), and KAUST Baseline Research Fund (BAS/1/1413). P.S. acknowledges the Prime Minister's Research Fellowship (PMRF) for doctoral support.</p>
+<h2 style="font-size:14px;color:#EF6C00;">References</h2>
+<p style="font-size:10px;">[1] P. Simon, Y. Gogotsi, Nature Materials 19 (2020) 1151-1163.</p>
+<p style="font-size:10px;">[2] Y. Shao et al., Chemical Reviews 118 (2018) 9233-9280.</p>
+<p style="font-size:10px;">[3] M. Naguib et al., Advanced Materials 23 (2011) 4248-4253.</p>
+<p style="font-size:10px;">[4] B. Anasori, M.R. Lukatskaya, Y. Gogotsi, Nature Reviews Materials 2 (2017) 16098.</p>
+<p style="font-size:10px;">[5] M.R. Lukatskaya et al., Nature Energy 2 (2017) 17105.</p>`,
+  },
+  {
+    id: "spie-paper",
+    name: "SPIE Conference Paper",
+    icon: "🔭",
+    description: "SPIE proceedings format with paper number, experimental setup, and optical systems analysis.",
+    content: `<p style="text-align:center;font-size:10px;color:#B71C1C;">Proc. SPIE 13245, Adaptive Optics Systems IX, 132450A (2026); doi: 10.1117/12.2676XXX</p>
+<h1 style="text-align:center;font-size:20px;font-family:Times New Roman,serif;">Advanced Adaptive Optics Systems for Extremely Large Telescopes:<br/>Real-Time Wavefront Sensing Using Deep Learning Architectures</h1>
+<p style="text-align:center;font-size:12px;margin-top:8px;">James L. Parker<sup>a</sup>, Yuki Tanaka<sup>b</sup>, Astrid Eriksen<sup>c</sup>, Raj Krishnamurthy<sup>a</sup></p>
+<p style="text-align:center;font-size:10px;color:#666;"><sup>a</sup>W.M. Keck Observatory, 65-1120 Mamalahoa Hwy, Kamuela, HI 96743, USA<br/><sup>b</sup>National Astronomical Observatory of Japan, 2-21-1 Osawa, Mitaka, Tokyo 181-8588, Japan<br/><sup>c</sup>European Southern Observatory, Karl-Schwarzschild-Str. 2, 85748 Garching, Germany</p>
+<hr style="border:2px solid #B71C1C;margin:16px 0;"/>
+<h2 style="font-size:14px;color:#B71C1C;">ABSTRACT</h2>
+<p style="text-align:justify;font-size:12px;">We present a deep learning-based wavefront sensing system for adaptive optics (AO) that achieves sub-millisecond latency and diffraction-limited performance on 8-meter class telescopes. Our system replaces the conventional wavefront reconstructor with a convolutional neural network (CNN) trained on 2.4 million Shack-Hartmann sensor images paired with deformable mirror (DM) commands. The network achieves residual wavefront error of 45 nm RMS under median seeing conditions (r0 = 15 cm at 500 nm), representing a 35% improvement over the standard least-squares reconstructor. On-sky testing at the W.M. Keck Observatory over 12 nights demonstrates consistent Strehl ratio improvements of 8-15% in K-band (2.2 um) across a range of guide star magnitudes (R = 8-14 mag) and seeing conditions (0.5" - 1.2"). We also present preliminary simulations for the Thirty Meter Telescope (TMT) multi-conjugate AO system, showing that our approach scales to systems with &gt;5,000 actuators while maintaining the required 1 kHz control bandwidth. The system has been integrated into the Keck AO real-time controller and is available for regular science observations.</p>
+<p style="font-size:11px;"><strong>Keywords:</strong> adaptive optics, wavefront sensing, deep learning, deformable mirror, Shack-Hartmann, extremely large telescopes, real-time control</p>
+<hr style="border:1px solid #ddd;"/>
+<h2 style="font-size:14px;color:#B71C1C;">1. INTRODUCTION</h2>
+<p style="text-align:justify;">Adaptive optics systems are essential for achieving diffraction-limited imaging from ground-based telescopes by correcting the wavefront distortions introduced by atmospheric turbulence. Current AO systems on 8-10 meter class telescopes typically employ Shack-Hartmann wavefront sensors (SH-WFS) paired with deformable mirrors controlled by linear reconstructors derived from the system interaction matrix [1]. While these systems have enabled transformative science in fields ranging from exoplanet detection to galactic center dynamics, several limitations restrict their performance: linear reconstructors assume small wavefront errors and fail gracefully under strong turbulence; non-common-path aberrations between the WFS and science paths introduce static errors; and the computational latency of wavefront reconstruction contributes to temporal error, particularly for high-order systems with thousands of actuators [2].</p>
+<p style="text-align:justify;">The next generation of extremely large telescopes (ELTs) — the European ELT (39 m), TMT (30 m), and GMT (25 m) — will require AO systems with 5,000-10,000 actuators operating at control bandwidths of 1-3 kHz. The computational requirements for real-time wavefront reconstruction scale as O(n^2) for the standard matrix-vector multiply approach, making current architectures inadequate for ELT-scale systems without significant hardware acceleration [3]. Deep learning approaches offer potential solutions by learning non-linear mappings from sensor data to mirror commands with fixed-time inference regardless of system order, while simultaneously capturing non-linearities and non-common-path effects that are invisible to linear reconstructors.</p>
+<h2 style="font-size:14px;color:#B71C1C;">2. SYSTEM ARCHITECTURE</h2>
+<h3 style="color:#B71C1C;">2.1 Neural Network Wavefront Reconstructor</h3>
+<p style="text-align:justify;">Our CNN architecture takes as input the 32x32 subaperture slope measurements from the Keck SH-WFS (2,048 values: 1,024 x-slopes and 1,024 y-slopes) and outputs the 349 actuator commands for the Xinetics deformable mirror. The network consists of 8 convolutional layers with residual connections, batch normalization, and GELU activations, followed by 2 fully connected layers. The total parameter count is 1.2 million, enabling inference in 0.3 ms on an NVIDIA A100 GPU, well within the required 1 ms control loop latency.</p>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#B71C1C;color:white;"><th style="border:1px solid #ddd;padding:6px;">Parameter</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Value</th><th style="border:1px solid #ddd;padding:6px;">Description</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">Subapertures</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">32 x 32</td><td style="border:1px solid #ddd;padding:6px;">SH-WFS grid configuration</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">DM Actuators</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">349</td><td style="border:1px solid #ddd;padding:6px;">Xinetics DM active actuators</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Control Rate</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">1,000 Hz</td><td style="border:1px solid #ddd;padding:6px;">AO loop bandwidth</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Inference Latency</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.3 ms</td><td style="border:1px solid #ddd;padding:6px;">GPU inference time (A100)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Training Samples</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">2.4M</td><td style="border:1px solid #ddd;padding:6px;">SH-WFS/DM paired measurements</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Network Parameters</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">1.2M</td><td style="border:1px solid #ddd;padding:6px;">Total trainable weights</td></tr>
+</tbody>
+</table>
+<h2 style="font-size:14px;color:#B71C1C;">3. ON-SKY RESULTS</h2>
+<p style="text-align:justify;">We tested the deep learning wavefront reconstructor during 12 engineering nights at the Keck II telescope between September and November 2025. The system was operated in parallel with the standard least-squares reconstructor, enabling direct A/B comparison under identical atmospheric conditions. Figure 3 shows the measured Strehl ratio in K-band for both reconstructors as a function of natural seeing.</p>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#f0f0f0;"><th style="border:1px solid #ddd;padding:6px;">Seeing (")</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Strehl (Standard)</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Strehl (DL-WFS)</th><th style="border:1px solid #ddd;padding:6px;text-align:center;">Improvement</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">0.5</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.72</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.82</td><td style="border:1px solid #ddd;padding:6px;text-align:center;color:green;">+14%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">0.7</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.58</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.67</td><td style="border:1px solid #ddd;padding:6px;text-align:center;color:green;">+15%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">1.0</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.38</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.44</td><td style="border:1px solid #ddd;padding:6px;text-align:center;color:green;">+16%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">1.2</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.25</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0.29</td><td style="border:1px solid #ddd;padding:6px;text-align:center;color:green;">+16%</td></tr>
+</tbody>
+</table>
+<h2 style="font-size:14px;color:#B71C1C;">4. TMT SIMULATIONS</h2>
+<p style="text-align:justify;">We conducted end-to-end Monte Carlo simulations of the TMT NFIRAOS multi-conjugate AO system with our deep learning wavefront reconstructor. The simulated system includes two deformable mirrors (63x63 and 76x76 actuators, totaling 9,725 active actuators), six laser guide star wavefront sensors, and three natural guide star wavefront sensors. Our CNN architecture scales to this system with 8.5 million parameters and achieves inference latency of 0.8 ms on dual A100 GPUs, meeting the 1 ms latency requirement for the 800 Hz control loop. The simulated sky coverage at the Galactic pole is 65% (for Strehl > 0.5 in K-band), compared to 55% for the baseline minimum-variance reconstructor.</p>
+<h2 style="font-size:14px;color:#B71C1C;">5. CONCLUSION</h2>
+<p style="text-align:justify;">We have demonstrated that deep learning-based wavefront sensing provides significant performance improvements for astronomical adaptive optics systems. On-sky testing at the Keck Observatory shows consistent 8-15% Strehl ratio improvements across a range of conditions, while simulations confirm scalability to ELT-class systems. The system is now available for regular science observations at Keck and we are working with the TMT project to integrate our approach into the NFIRAOS real-time controller design.</p>
+<h2 style="font-size:14px;color:#B71C1C;">ACKNOWLEDGMENTS</h2>
+<p style="font-size:11px;">This work was supported by the National Science Foundation (AST-2408XXX), the Gordon and Betty Moore Foundation, and KAKENHI grant 23H01XXX. The W.M. Keck Observatory is operated as a scientific partnership among Caltech, the University of California, and NASA.</p>
+<h2 style="font-size:14px;color:#B71C1C;">REFERENCES</h2>
+<p style="font-size:10px;">[1] Guyon, O., "Limits of adaptive optics for high-contrast imaging," Astrophys. J. 629, 592-614 (2005).</p>
+<p style="font-size:10px;">[2] Roddier, F., [Adaptive Optics in Astronomy], Cambridge University Press (1999).</p>
+<p style="font-size:10px;">[3] Ellerbroek, B.L. et al., "First light adaptive optics systems and components for the Thirty Meter Telescope," Proc. SPIE 12185, 1218502 (2022).</p>
+<p style="font-size:10px;">[4] Swanson, R. et al., "Wavefront reconstruction and prediction with convolutional neural networks," Proc. SPIE 10703, 107031F (2018).</p>`,
+  },
+  {
+    id: "research-proposal",
+    name: "Research Proposal",
+    icon: "📝",
+    description: "Comprehensive research proposal with budget justification, timeline, methodology, and broader impacts.",
+    content: `<div style="text-align:center;padding:60px 0;border:3px solid #2E7D32;">
+<p style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:4px;">Research Proposal</p>
+<h1 style="font-size:28px;color:#2E7D32;margin:16px 0;">Developing AI-Powered Climate Change Adaptation<br/>Strategies for Coastal Communities</h1>
+<hr style="border:1px solid #2E7D32;width:60%;margin:16px auto;"/>
+<p style="font-size:13px;"><strong>Principal Investigator:</strong> Dr. Amara Osei-Mensah</p>
+<p style="font-size:12px;">Department of Environmental Science and Policy<br/>University of California, Santa Cruz<br/>amara.osei@ucsc.edu | (831) 459-XXXX</p>
+<p style="font-size:12px;margin-top:16px;"><strong>Co-Principal Investigators:</strong></p>
+<p style="font-size:11px;">Dr. Hiroshi Nakamura (Computer Science, Stanford University)<br/>Dr. Isabel Cortez (Civil Engineering, Oregon State University)</p>
+<p style="font-size:12px;margin-top:16px;"><strong>Requested Funding:</strong> $1,850,000 over 3 years<br/><strong>Proposed Start Date:</strong> September 1, 2026</p>
+</div>
+<h2 style="color:#2E7D32;margin-top:32px;">Table of Contents</h2>
+<ol>
+<li>Executive Summary</li>
+<li>Introduction and Background</li>
+<li>Research Questions and Objectives</li>
+<li>Literature Review</li>
+<li>Methodology</li>
+<li>Timeline and Milestones</li>
+<li>Budget and Justification</li>
+<li>Expected Outcomes and Significance</li>
+<li>Broader Impacts</li>
+<li>Data Management Plan</li>
+<li>References</li>
+</ol>
+<hr style="border:1px solid #ddd;margin:24px 0;"/>
+<h2 style="color:#2E7D32;">1. Executive Summary</h2>
+<p style="text-align:justify;">Coastal communities worldwide face accelerating threats from sea-level rise, intensifying storm surges, and chronic flooding that affect over 680 million people globally. Current adaptation planning relies on static projections and generalized strategies that fail to account for the complex interactions between environmental, socioeconomic, and infrastructure systems at the local level. This proposal develops an AI-powered decision support system (CoastAdapt-AI) that integrates high-resolution climate projections, real-time sensor data, community vulnerability assessments, and economic modeling to generate dynamic, equity-centered adaptation strategies for coastal communities. We will develop and validate the system in three demographically diverse pilot communities along the U.S. Pacific and Atlantic coasts, engaging directly with community stakeholders throughout the research process.</p>
+<h2 style="color:#2E7D32;">2. Introduction and Background</h2>
+<p style="text-align:justify;">The Intergovernmental Panel on Climate Change (IPCC) Sixth Assessment Report projects global mean sea level rise of 0.43-0.84 meters by 2100 under moderate emission scenarios, with substantially higher rise possible under high-emission pathways or accelerated ice sheet dynamics (IPCC, 2021). However, these global projections mask significant regional variation: relative sea level rise along the U.S. Atlantic coast exceeds the global average by 2-4x due to land subsidence and ocean circulation changes (Sweet et al., 2022). Compound flooding events—where storm surge, rainfall, and high tides coincide—are projected to increase in frequency by 3-10x by mid-century, transforming what are currently rare extreme events into regular occurrences.</p>
+<p style="text-align:justify;">Despite growing awareness of these risks, coastal adaptation planning faces three critical gaps. First, the mismatch between the spatial resolution of global climate models (50-100 km) and the scale at which adaptation decisions are made (neighborhood to city level) limits the actionability of current projections. Second, existing tools do not adequately capture the dynamic interactions between physical hazards and socioeconomic vulnerability, leading to adaptation strategies that may exacerbate existing inequities. Third, the complexity of optimization across multiple objectives (cost, equity, environmental impact, feasibility) overwhelms traditional planning approaches, resulting in piecemeal rather than integrated adaptation strategies.</p>
+<h2 style="color:#2E7D32;">3. Research Questions and Objectives</h2>
+<p style="text-align:justify;">This research addresses three primary questions:</p>
+<ol>
+<li><strong>RQ1:</strong> How can machine learning techniques improve the spatial downscaling of coastal flood projections from global climate models to neighborhood-scale resolution (&lt;100m)?</li>
+<li><strong>RQ2:</strong> What AI-driven approaches can effectively integrate physical hazard data with socioeconomic vulnerability indicators to generate equity-centered adaptation recommendations?</li>
+<li><strong>RQ3:</strong> How do community engagement processes affect the adoption and perceived legitimacy of AI-generated adaptation strategies?</li>
+</ol>
+<h2 style="color:#2E7D32;">4. Literature Review</h2>
+<p style="text-align:justify;">The application of AI to climate adaptation is an emerging field at the intersection of climate science, computer science, and urban planning. Recent work by Rolnick et al. (2023) provides a comprehensive taxonomy of machine learning applications for climate change, identifying coastal adaptation as a high-priority area with significant research gaps. In the domain of flood modeling, physics-informed neural networks (PINNs) have shown promise for rapid flood inundation mapping (Bentivoglio et al., 2022), while graph neural networks have been applied to model interconnected infrastructure systems under climate stress (Zhu et al., 2024). Our work builds on these foundations by integrating multiple AI techniques within a community-centered decision support framework.</p>
+<h2 style="color:#2E7D32;">5. Methodology</h2>
+<h3 style="color:#2E7D32;">5.1 AI Downscaling Model</h3>
+<p style="text-align:justify;">We will develop a hybrid physics-ML downscaling model that combines the GAN-based statistical downscaling approach of Vandal et al. (2017) with physics-based constraints from the ADCIRC coastal hydrodynamic model. The model will be trained on 40 years of historical tide gauge, satellite altimetry, and reanalysis data to generate 100m-resolution flood projections conditioned on CMIP6 global climate scenarios.</p>
+<h3 style="color:#2E7D32;">5.2 Vulnerability Integration Framework</h3>
+<p style="text-align:justify;">We will develop a multi-criteria vulnerability index that combines Census-derived socioeconomic indicators, infrastructure condition data, ecosystem service valuations, and community-identified priorities using a participatory analytic hierarchy process (AHP). This index will be integrated with the physical hazard projections through a Bayesian network model that captures conditional dependencies between hazard exposure, sensitivity, and adaptive capacity.</p>
+<h3 style="color:#2E7D32;">5.3 Optimization Engine</h3>
+<p style="text-align:justify;">The adaptation strategy optimization will employ a multi-objective evolutionary algorithm (NSGA-III) that simultaneously optimizes for: (1) risk reduction across all community zones, (2) implementation cost, (3) distributional equity (measured using the Gini coefficient of residual risk), and (4) environmental co-benefits. The algorithm will generate Pareto-optimal portfolios of adaptation measures drawn from a library of 45 intervention types including nature-based solutions, infrastructure hardening, managed retreat, and policy interventions.</p>
+<h2 style="color:#2E7D32;">6. Timeline and Milestones</h2>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#2E7D32;color:white;"><th style="border:1px solid #ddd;padding:8px;">Phase</th><th style="border:1px solid #ddd;padding:8px;">Activity</th><th style="border:1px solid #ddd;padding:8px;">Timeline</th><th style="border:1px solid #ddd;padding:8px;">Milestone</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;" rowspan="3">Year 1</td><td style="border:1px solid #ddd;padding:6px;">AI downscaling model development</td><td style="border:1px solid #ddd;padding:6px;">Sep 2026 - Feb 2027</td><td style="border:1px solid #ddd;padding:6px;">Model validation against historical floods</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Community engagement in pilot sites</td><td style="border:1px solid #ddd;padding:6px;">Oct 2026 - Mar 2027</td><td style="border:1px solid #ddd;padding:6px;">Vulnerability priorities identified</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Sensor network deployment</td><td style="border:1px solid #ddd;padding:6px;">Jan 2027 - Jun 2027</td><td style="border:1px solid #ddd;padding:6px;">Real-time data pipeline operational</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;" rowspan="3">Year 2</td><td style="border:1px solid #ddd;padding:6px;">Vulnerability integration framework</td><td style="border:1px solid #ddd;padding:6px;">Jul 2027 - Dec 2027</td><td style="border:1px solid #ddd;padding:6px;">Bayesian network model validated</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Optimization engine development</td><td style="border:1px solid #ddd;padding:6px;">Oct 2027 - Apr 2028</td><td style="border:1px solid #ddd;padding:6px;">Pareto-optimal strategies generated</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Community workshop series (3 sites)</td><td style="border:1px solid #ddd;padding:6px;">Jan 2028 - Jun 2028</td><td style="border:1px solid #ddd;padding:6px;">Strategy co-development completed</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;" rowspan="2">Year 3</td><td style="border:1px solid #ddd;padding:6px;">Platform integration and testing</td><td style="border:1px solid #ddd;padding:6px;">Jul 2028 - Dec 2028</td><td style="border:1px solid #ddd;padding:6px;">CoastAdapt-AI platform deployed</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Evaluation and dissemination</td><td style="border:1px solid #ddd;padding:6px;">Jan 2029 - Aug 2029</td><td style="border:1px solid #ddd;padding:6px;">Publications, open-source release</td></tr>
+</tbody>
+</table>
+<h2 style="color:#2E7D32;">7. Budget and Justification</h2>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#2E7D32;color:white;"><th style="border:1px solid #ddd;padding:8px;text-align:left;">Category</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">Year 1</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">Year 2</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">Year 3</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">Total</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">Senior Personnel (PI + 2 Co-PIs)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$180,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$185,400</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$190,960</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$556,360</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Postdoctoral Researchers (2)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$130,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$133,900</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$137,920</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$401,820</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Graduate Students (3)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$120,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$123,600</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$127,300</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$370,900</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Equipment (sensors, computing)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$120,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$40,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$15,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$175,000</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Travel & Community Engagement</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$35,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$55,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$40,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$130,000</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Cloud Computing & Data Storage</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$45,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$50,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$35,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$130,000</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Indirect Costs (54%)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$28,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$28,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$29,920</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$85,920</td></tr>
+<tr style="font-weight:bold;background:#e8f5e9;"><td style="border:1px solid #ddd;padding:6px;">TOTAL</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$658,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$615,900</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$576,100</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$1,850,000</td></tr>
+</tbody>
+</table>
+<h2 style="color:#2E7D32;">8. Expected Outcomes and Significance</h2>
+<p style="text-align:justify;">This research will produce: (1) a validated AI downscaling model for coastal flood projections at 100m resolution; (2) a novel equity-centered vulnerability integration framework; (3) an open-source decision support platform (CoastAdapt-AI) deployable to any coastal community; (4) adaptation plans co-developed with three pilot communities; and (5) at least 8 peer-reviewed publications and 2 PhD dissertations. The platform will be designed for adoption by municipal planning departments, FEMA regional offices, and state coastal management programs.</p>
+<h2 style="color:#2E7D32;">9. Broader Impacts</h2>
+<p style="text-align:justify;">This project directly addresses NSF's goals of advancing national welfare by developing tools that help communities prepare for climate change impacts. The participatory design process ensures that historically marginalized communities—who are disproportionately affected by coastal hazards—have meaningful input into adaptation planning. The project will train 3 PhD students and 2 postdoctoral researchers in the emerging field of AI for climate adaptation. We will develop a graduate-level course module on "AI for Environmental Justice" and host an annual summer school for practitioners from coastal management agencies. All software, models, and data products will be released under open-source licenses.</p>
+<h2 style="color:#2E7D32;">10. Data Management Plan</h2>
+<p style="text-align:justify;">All research data will be archived in the UCSC Data Repository and made publicly available within one year of collection, consistent with NSF data sharing policies. Sensor data will be streamed in real-time to the IOOS (Integrated Ocean Observing System) network. Model code will be maintained on GitHub under the Apache 2.0 license. Community engagement data (interview transcripts, survey responses) will be anonymized and archived in the Qualitative Data Repository. We estimate total data generation of approximately 15 TB over the project lifetime, with $35,000 budgeted annually for data storage and archiving costs.</p>
+<h2 style="color:#2E7D32;">References</h2>
+<p style="font-size:10px;">Bentivoglio, R. et al. (2022). Deep learning methods for flood mapping: A review of existing applications and future research directions. Hydrology and Earth System Sciences, 26, 4345-4378.</p>
+<p style="font-size:10px;">IPCC (2021). Climate Change 2021: The Physical Science Basis. Cambridge University Press.</p>
+<p style="font-size:10px;">Rolnick, D. et al. (2023). Tackling climate change with machine learning. ACM Computing Surveys, 55(2), 1-96.</p>
+<p style="font-size:10px;">Sweet, W.V. et al. (2022). Global and Regional Sea Level Rise Scenarios for the United States: Updated Mean Projections. NOAA Technical Report NOS 01.</p>
+<p style="font-size:10px;">Vandal, T. et al. (2017). DeepSD: Generating high fidelity daily climate predictions using deep learning. KDD '17, 1525-1534.</p>
+<p style="font-size:10px;">Zhu, J. et al. (2024). Graph neural networks for infrastructure resilience assessment under compound climate hazards. Nature Communications, 15, 2341.</p>`,
+  },
+  {
+    id: "sales-invoice",
+    name: "Sales Invoice",
+    icon: "🧾",
+    description: "Professional multi-page sales invoice with line items, tax breakdown, payment terms, and remittance advice.",
+    content: `<div style="border-bottom:4px solid #1565C0;padding-bottom:16px;margin-bottom:16px;">
+<table style="width:100%;"><tr>
+<td style="width:60%;vertical-align:top;">
+<h1 style="color:#1565C0;margin:0;font-size:28px;">INVOICE</h1>
+<p style="margin:4px 0;font-size:13px;"><strong>Vidyalaya Technologies Pvt. Ltd.</strong></p>
+<p style="margin:2px 0;font-size:11px;">Tower B, 5th Floor, Cyber Gateway<br/>HITEC City, Hyderabad, Telangana 500081, India<br/>Phone: +91 40 6789 0000 | Fax: +91 40 6789 0001<br/>Email: accounts@vidyalaya.tech | GSTIN: 36AABCV1234A1Z5</p>
+</td>
+<td style="width:40%;vertical-align:top;text-align:right;">
+<div style="border:1px solid #ddd;padding:12px;display:inline-block;text-align:left;">
+<p style="margin:2px 0;font-size:11px;"><strong>Invoice Number:</strong> VT-INV-2026-00142</p>
+<p style="margin:2px 0;font-size:11px;"><strong>Invoice Date:</strong> March 15, 2026</p>
+<p style="margin:2px 0;font-size:11px;"><strong>Due Date:</strong> April 14, 2026</p>
+<p style="margin:2px 0;font-size:11px;"><strong>PO Reference:</strong> PO-ACME-2026-089</p>
+<p style="margin:2px 0;font-size:11px;"><strong>Payment Terms:</strong> Net 30</p>
+<p style="margin:2px 0;font-size:11px;"><strong>Currency:</strong> USD</p>
+</div>
+</td>
+</tr></table>
+</div>
+<table style="width:100%;margin-bottom:20px;"><tr>
+<td style="width:50%;vertical-align:top;"><strong style="color:#1565C0;">Bill To:</strong><br/><strong>Acme Corporation</strong><br/>456 Enterprise Boulevard, Suite 800<br/>San Francisco, CA 94102, USA<br/>Attn: Accounts Payable<br/>ap@acmecorp.com</td>
+<td style="width:50%;vertical-align:top;"><strong style="color:#1565C0;">Ship To:</strong><br/><strong>Acme Corporation - Engineering</strong><br/>789 Innovation Drive<br/>Palo Alto, CA 94301, USA<br/>Attn: David Chen, CTO<br/>d.chen@acmecorp.com</td>
+</tr></table>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#1565C0;color:white;">
+<th style="border:1px solid #ddd;padding:8px;text-align:left;width:5%;">#</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:left;width:35%;">Description</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:left;width:10%;">SAC/HSN</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:center;width:8%;">Qty</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:right;width:12%;">Unit Price</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:center;width:8%;">Disc %</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:right;width:12%;">Amount</th>
+</tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">1</td><td style="border:1px solid #ddd;padding:6px;">Enterprise Platform License (Annual) — 500 users</td><td style="border:1px solid #ddd;padding:6px;">998314</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">1</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$125,000.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">10%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$112,500.00</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:6px;">2</td><td style="border:1px solid #ddd;padding:6px;">AI Analytics Module — Premium Tier</td><td style="border:1px solid #ddd;padding:6px;">998314</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">1</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$45,000.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$45,000.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">3</td><td style="border:1px solid #ddd;padding:6px;">Implementation & Configuration Services</td><td style="border:1px solid #ddd;padding:6px;">998313</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">120</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$200.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$24,000.00</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:6px;">4</td><td style="border:1px solid #ddd;padding:6px;">Data Migration Services (3 legacy systems)</td><td style="border:1px solid #ddd;padding:6px;">998313</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">3</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$5,000.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$15,000.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">5</td><td style="border:1px solid #ddd;padding:6px;">Custom API Integration Development</td><td style="border:1px solid #ddd;padding:6px;">998314</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">80</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$225.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">5%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$17,100.00</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:6px;">6</td><td style="border:1px solid #ddd;padding:6px;">On-site Training (5 sessions x 20 attendees)</td><td style="border:1px solid #ddd;padding:6px;">998392</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">5</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$3,500.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$17,500.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">7</td><td style="border:1px solid #ddd;padding:6px;">24/7 Premium Support Contract (12 months)</td><td style="border:1px solid #ddd;padding:6px;">998316</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">12</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$2,500.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">15%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$25,500.00</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:6px;">8</td><td style="border:1px solid #ddd;padding:6px;">SSL Certificate & Security Hardening</td><td style="border:1px solid #ddd;padding:6px;">998315</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">1</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$4,500.00</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">0%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$4,500.00</td></tr>
+</tbody>
+</table>
+<table style="width:40%;margin-left:auto;border-collapse:collapse;">
+<tr><td style="border:1px solid #ddd;padding:6px;"><strong>Subtotal:</strong></td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$261,100.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Discount Applied:</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">-$25,400.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Net Amount:</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$235,700.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Tax (IGST 18%):</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$42,426.00</td></tr>
+<tr style="background:#1565C0;color:white;font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;">TOTAL DUE:</td><td style="border:1px solid #ddd;padding:8px;text-align:right;font-size:16px;">$278,126.00</td></tr>
+</table>
+<h3 style="color:#1565C0;margin-top:24px;">Payment Instructions</h3>
+<table style="width:100%;border-collapse:collapse;margin:8px 0;">
+<tr><td style="border:1px solid #ddd;padding:6px;width:30%;background:#f5f5f5;"><strong>Bank Name:</strong></td><td style="border:1px solid #ddd;padding:6px;">HDFC Bank, HITEC City Branch</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;background:#f5f5f5;"><strong>Account Name:</strong></td><td style="border:1px solid #ddd;padding:6px;">Vidyalaya Technologies Pvt. Ltd.</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;background:#f5f5f5;"><strong>Account Number:</strong></td><td style="border:1px solid #ddd;padding:6px;">50100XXXXXXXXX</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;background:#f5f5f5;"><strong>IFSC Code:</strong></td><td style="border:1px solid #ddd;padding:6px;">HDFC0001234</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;background:#f5f5f5;"><strong>SWIFT Code:</strong></td><td style="border:1px solid #ddd;padding:6px;">HDFCINBB</td></tr>
+</table>
+<h3 style="color:#1565C0;">Terms & Conditions</h3>
+<ol style="font-size:11px;">
+<li>Payment is due within 30 days of the invoice date. Late payments are subject to 1.5% monthly interest.</li>
+<li>All software licenses are subject to the End User License Agreement (EULA) available at vidyalaya.tech/eula.</li>
+<li>Professional services are billed at the rates specified above; any scope changes require a written change order.</li>
+<li>Support contracts auto-renew annually unless cancelled with 60 days written notice.</li>
+<li>All prices are in USD. Currency conversion applies at the exchange rate on the date of payment.</li>
+<li>This invoice is computer-generated and valid without signature as per the Information Technology Act, 2000.</li>
+</ol>
+<p style="text-align:center;color:#888;font-size:10px;margin-top:24px;">Thank you for your business! | Questions? Contact accounts@vidyalaya.tech</p>`,
+  },
+  {
+    id: "purchase-order-doc",
+    name: "Purchase Order Document",
+    icon: "📦",
+    description: "Detailed purchase order with vendor information, delivery schedule, terms, and approval signatures.",
+    content: `<div style="border:3px solid #1a237e;padding:20px;margin-bottom:20px;">
+<h1 style="text-align:center;color:#1a237e;margin:0;font-size:28px;">PURCHASE ORDER</h1>
+<table style="width:100%;margin-top:16px;border-collapse:collapse;">
+<tr><td style="padding:4px;width:25%;"><strong>PO Number:</strong></td><td style="padding:4px;width:25%;">PO-2026-00567</td><td style="padding:4px;width:25%;"><strong>Date Issued:</strong></td><td style="padding:4px;width:25%;">March 15, 2026</td></tr>
+<tr><td style="padding:4px;"><strong>Requisition #:</strong></td><td style="padding:4px;">REQ-IT-2026-089</td><td style="padding:4px;"><strong>Required By:</strong></td><td style="padding:4px;">April 30, 2026</td></tr>
+<tr><td style="padding:4px;"><strong>Department:</strong></td><td style="padding:4px;">IT Infrastructure</td><td style="padding:4px;"><strong>Approved By:</strong></td><td style="padding:4px;">Sarah Chen, VP Engineering</td></tr>
+</table>
+</div>
+<table style="width:100%;margin-bottom:20px;"><tr>
+<td style="width:50%;vertical-align:top;"><strong style="color:#1a237e;">Buyer:</strong><br/><strong>Acme Technologies Inc.</strong><br/>100 Innovation Drive, Suite 500<br/>San Francisco, CA 94102<br/>procurement@acmetech.com<br/>+1 (415) 555-0100</td>
+<td style="width:50%;vertical-align:top;"><strong style="color:#1a237e;">Vendor:</strong><br/><strong>Global IT Solutions Ltd.</strong><br/>2500 Enterprise Way<br/>Austin, TX 78701<br/>orders@globalit.com<br/>+1 (512) 555-0200<br/>Tax ID: 87-XXXXXXX</td>
+</tr></table>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#1a237e;color:white;">
+<th style="border:1px solid #ddd;padding:8px;">#</th>
+<th style="border:1px solid #ddd;padding:8px;">Part Number</th>
+<th style="border:1px solid #ddd;padding:8px;">Description</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:center;">Qty</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:right;">Unit Price</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:right;">Total</th>
+</tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">1</td><td style="border:1px solid #ddd;padding:6px;">SRV-R750-XA</td><td style="border:1px solid #ddd;padding:6px;">Dell PowerEdge R750xa Rack Server (Dual Xeon, 512GB RAM, 8x 1.92TB NVMe)</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">4</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$18,500.00</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$74,000.00</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:6px;">2</td><td style="border:1px solid #ddd;padding:6px;">GPU-A100-80</td><td style="border:1px solid #ddd;padding:6px;">NVIDIA A100 80GB PCIe GPU Accelerator</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">8</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$11,200.00</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$89,600.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">3</td><td style="border:1px solid #ddd;padding:6px;">SW-N9K-C93</td><td style="border:1px solid #ddd;padding:6px;">Cisco Nexus 9300 Series 48-port 25GE Switch</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">2</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$8,900.00</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$17,800.00</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:6px;">4</td><td style="border:1px solid #ddd;padding:6px;">UPS-SRT10K</td><td style="border:1px solid #ddd;padding:6px;">APC Smart-UPS SRT 10kVA Rack Mount with Network Card</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">2</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$6,200.00</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$12,400.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">5</td><td style="border:1px solid #ddd;padding:6px;">CAB-42U-RK</td><td style="border:1px solid #ddd;padding:6px;">42U Server Rack Cabinet with Cable Management</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">2</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$2,800.00</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$5,600.00</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:6px;">6</td><td style="border:1px solid #ddd;padding:6px;">SVC-INSTALL</td><td style="border:1px solid #ddd;padding:6px;">Professional Installation & Configuration Services (on-site)</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">40</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$250.00</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$10,000.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">7</td><td style="border:1px solid #ddd;padding:6px;">WRN-3YR-PRO</td><td style="border:1px solid #ddd;padding:6px;">3-Year ProSupport Next Business Day Warranty (per server)</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">4</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$3,200.00</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$12,800.00</td></tr>
+</tbody>
+</table>
+<table style="width:35%;margin-left:auto;border-collapse:collapse;">
+<tr><td style="border:1px solid #ddd;padding:6px;"><strong>Subtotal:</strong></td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$222,200.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Shipping & Handling:</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$3,500.00</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Tax (8.625%):</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$19,464.75</td></tr>
+<tr style="background:#1a237e;color:white;font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;">TOTAL:</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$245,164.75</td></tr>
+</table>
+<h3 style="color:#1a237e;margin-top:24px;">Delivery Schedule</h3>
+<table style="width:100%;border-collapse:collapse;margin:8px 0;">
+<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;">Shipment</th><th style="border:1px solid #ddd;padding:6px;">Items</th><th style="border:1px solid #ddd;padding:6px;">Expected Date</th><th style="border:1px solid #ddd;padding:6px;">Delivery Address</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">Shipment 1</td><td style="border:1px solid #ddd;padding:6px;">Rack Cabinets, UPS Systems</td><td style="border:1px solid #ddd;padding:6px;">April 1, 2026</td><td style="border:1px solid #ddd;padding:6px;">100 Innovation Dr, SF, CA</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Shipment 2</td><td style="border:1px solid #ddd;padding:6px;">Servers, GPUs, Switches</td><td style="border:1px solid #ddd;padding:6px;">April 15, 2026</td><td style="border:1px solid #ddd;padding:6px;">100 Innovation Dr, SF, CA</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Shipment 3</td><td style="border:1px solid #ddd;padding:6px;">Installation Services</td><td style="border:1px solid #ddd;padding:6px;">April 21-25, 2026</td><td style="border:1px solid #ddd;padding:6px;">On-site</td></tr>
+</tbody>
+</table>
+<h3 style="color:#1a237e;">Terms and Conditions</h3>
+<ol style="font-size:11px;">
+<li><strong>Quality Standards:</strong> All equipment must meet or exceed manufacturer specifications and comply with applicable UL, FCC, and CE certifications.</li>
+<li><strong>Inspection:</strong> Buyer reserves the right to inspect all goods upon delivery. Defective items must be replaced within 5 business days at Vendor's expense.</li>
+<li><strong>Warranty:</strong> All hardware carries minimum 3-year manufacturer warranty with next-business-day on-site service.</li>
+<li><strong>Payment Terms:</strong> Net 45 days from receipt of goods and approved invoice. 2% discount available for payment within 10 days.</li>
+<li><strong>Cancellation:</strong> This PO may be cancelled with 15 days written notice prior to shipment without penalty.</li>
+</ol>
+<table style="width:100%;margin-top:32px;"><tr>
+<td style="width:50%;padding-top:40px;border-top:1px solid #333;">
+<p style="font-size:11px;margin:4px 0;"><strong>Authorized Buyer Signature</strong></p>
+<p style="font-size:10px;color:#666;">Name: Sarah Chen, VP Engineering<br/>Date: March 15, 2026</p>
+</td>
+<td style="width:50%;padding-top:40px;border-top:1px solid #333;">
+<p style="font-size:11px;margin:4px 0;"><strong>Vendor Acceptance Signature</strong></p>
+<p style="font-size:10px;color:#666;">Name: _________________________<br/>Date: _________________________</p>
+</td>
+</tr></table>`,
+  },
+  {
+    id: "hr-onboarding",
+    name: "HR Onboarding Checklist",
+    icon: "👤",
+    description: "Comprehensive employee onboarding checklist with pre-arrival, Day 1, 30-60-90 day goals, and IT setup.",
+    content: `<div style="background:#2e7d32;color:white;padding:24px;text-align:center;margin-bottom:20px;">
+<h1 style="margin:0;font-size:26px;">New Employee Onboarding Checklist</h1>
+<p style="margin:8px 0 0 0;opacity:0.9;">Human Resources Department | Acme Technologies Inc.</p>
+</div>
+<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">1. New Hire Information</h2>
+<table style="width:100%;border-collapse:collapse;margin:12px 0;">
+<tr><td style="border:1px solid #ddd;padding:8px;width:25%;background:#f5f5f5;"><strong>Full Name:</strong></td><td style="border:1px solid #ddd;padding:8px;width:25%;">[Employee Name]</td><td style="border:1px solid #ddd;padding:8px;width:25%;background:#f5f5f5;"><strong>Employee ID:</strong></td><td style="border:1px solid #ddd;padding:8px;width:25%;">EMP-2026-XXXX</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>Position:</strong></td><td style="border:1px solid #ddd;padding:8px;">[Job Title]</td><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>Department:</strong></td><td style="border:1px solid #ddd;padding:8px;">[Department]</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>Start Date:</strong></td><td style="border:1px solid #ddd;padding:8px;">[Start Date]</td><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>Reporting Manager:</strong></td><td style="border:1px solid #ddd;padding:8px;">[Manager Name]</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>Location:</strong></td><td style="border:1px solid #ddd;padding:8px;">[Office Location]</td><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>HR Contact:</strong></td><td style="border:1px solid #ddd;padding:8px;">[HR Representative]</td></tr>
+</table>
+<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">2. Pre-Arrival Checklist (HR / IT / Manager)</h2>
+<table style="width:100%;border-collapse:collapse;margin:12px 0;">
+<thead><tr style="background:#2e7d32;color:white;"><th style="border:1px solid #ddd;padding:8px;width:5%;">Done</th><th style="border:1px solid #ddd;padding:8px;">Task</th><th style="border:1px solid #ddd;padding:8px;width:15%;">Owner</th><th style="border:1px solid #ddd;padding:8px;width:15%;">Due Date</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Send offer letter and collect signed acceptance</td><td style="border:1px solid #ddd;padding:6px;">HR</td><td style="border:1px solid #ddd;padding:6px;">-2 weeks</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Initiate background check and verify references</td><td style="border:1px solid #ddd;padding:6px;">HR</td><td style="border:1px solid #ddd;padding:6px;">-2 weeks</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Create email account and Google Workspace access</td><td style="border:1px solid #ddd;padding:6px;">IT</td><td style="border:1px solid #ddd;padding:6px;">-1 week</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Provision laptop, monitors, and peripherals</td><td style="border:1px solid #ddd;padding:6px;">IT</td><td style="border:1px solid #ddd;padding:6px;">-1 week</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Set up Slack, Jira, GitHub, and VPN accounts</td><td style="border:1px solid #ddd;padding:6px;">IT</td><td style="border:1px solid #ddd;padding:6px;">-3 days</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Prepare workspace/desk assignment</td><td style="border:1px solid #ddd;padding:6px;">Facilities</td><td style="border:1px solid #ddd;padding:6px;">-3 days</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Order building access badge and parking permit</td><td style="border:1px solid #ddd;padding:6px;">Security</td><td style="border:1px solid #ddd;padding:6px;">-3 days</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Send welcome email with Day 1 instructions</td><td style="border:1px solid #ddd;padding:6px;">HR</td><td style="border:1px solid #ddd;padding:6px;">-2 days</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Assign onboarding buddy from team</td><td style="border:1px solid #ddd;padding:6px;">Manager</td><td style="border:1px solid #ddd;padding:6px;">-2 days</td></tr>
+</tbody>
+</table>
+<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">3. Day 1 — Orientation</h2>
+<table style="width:100%;border-collapse:collapse;margin:12px 0;">
+<thead><tr style="background:#e8f5e9;"><th style="border:1px solid #ddd;padding:8px;width:5%;">Done</th><th style="border:1px solid #ddd;padding:8px;">Task</th><th style="border:1px solid #ddd;padding:8px;width:15%;">Time</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Reception welcome and badge collection</td><td style="border:1px solid #ddd;padding:6px;">9:00 AM</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">HR orientation: company overview, policies, benefits enrollment</td><td style="border:1px solid #ddd;padding:6px;">9:30 AM</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Complete I-9, W-4, direct deposit, and emergency contact forms</td><td style="border:1px solid #ddd;padding:6px;">10:30 AM</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">IT setup: laptop configuration, software installation, security training</td><td style="border:1px solid #ddd;padding:6px;">11:00 AM</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Team lunch with manager and onboarding buddy</td><td style="border:1px solid #ddd;padding:6px;">12:00 PM</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Office tour and introductions to key stakeholders</td><td style="border:1px solid #ddd;padding:6px;">1:30 PM</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Manager 1:1: role expectations, team structure, initial projects</td><td style="border:1px solid #ddd;padding:6px;">3:00 PM</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Complete mandatory compliance training modules (online)</td><td style="border:1px solid #ddd;padding:6px;">4:00 PM</td></tr>
+</tbody>
+</table>
+<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">4. 30-60-90 Day Goals</h2>
+<table style="width:100%;border-collapse:collapse;margin:12px 0;">
+<thead><tr style="background:#2e7d32;color:white;"><th style="border:1px solid #ddd;padding:8px;">Period</th><th style="border:1px solid #ddd;padding:8px;">Goals</th><th style="border:1px solid #ddd;padding:8px;width:15%;">Status</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:8px;vertical-align:top;font-weight:bold;background:#e8f5e9;">First 30 Days<br/><em style="font-weight:normal;font-size:11px;">Learn & Observe</em></td><td style="border:1px solid #ddd;padding:8px;"><ul style="margin:0;padding-left:20px;"><li>Complete all onboarding training modules</li><li>Understand team processes, tools, and communication channels</li><li>Shadow team members on 3+ ongoing projects</li><li>Have 1:1 meetings with all direct team members</li><li>Set up development environment and complete first small task</li></ul></td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;vertical-align:top;font-weight:bold;background:#e8f5e9;">Days 31-60<br/><em style="font-weight:normal;font-size:11px;">Contribute</em></td><td style="border:1px solid #ddd;padding:8px;"><ul style="margin:0;padding-left:20px;"><li>Own and complete 2-3 independent tasks or features</li><li>Participate actively in sprint planning and retrospectives</li><li>Begin conducting code reviews for the team</li><li>Identify one process improvement opportunity</li><li>Meet with cross-functional stakeholders (PM, Design, QA)</li></ul></td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;vertical-align:top;font-weight:bold;background:#e8f5e9;">Days 61-90<br/><em style="font-weight:normal;font-size:11px;">Lead & Own</em></td><td style="border:1px solid #ddd;padding:8px;"><ul style="margin:0;padding-left:20px;"><li>Lead a feature or project from design through deployment</li><li>Present a technical topic or project demo to the team</li><li>Establish recurring 1:1 cadence with manager</li><li>Draft personal development plan for next 6 months</li><li>Complete probation review and goal-setting for next quarter</li></ul></td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td></tr>
+</tbody>
+</table>
+<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">5. Required Documents Checklist</h2>
+<table style="width:100%;border-collapse:collapse;margin:12px 0;">
+<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;width:5%;">Done</th><th style="border:1px solid #ddd;padding:6px;">Document</th><th style="border:1px solid #ddd;padding:6px;width:20%;">Status</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Government-issued photo ID (passport or driver's license)</td><td style="border:1px solid #ddd;padding:6px;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Social Security card or work authorization documents</td><td style="border:1px solid #ddd;padding:6px;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Signed offer letter and employment agreement</td><td style="border:1px solid #ddd;padding:6px;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Signed NDA and Intellectual Property agreement</td><td style="border:1px solid #ddd;padding:6px;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Benefits enrollment forms (health, dental, vision, 401k)</td><td style="border:1px solid #ddd;padding:6px;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Emergency contact information</td><td style="border:1px solid #ddd;padding:6px;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:6px;">Acknowledgment of Employee Handbook and Code of Conduct</td><td style="border:1px solid #ddd;padding:6px;"></td></tr>
+</tbody>
+</table>
+<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">6. Acknowledgment</h2>
+<p style="font-size:12px;">I confirm that I have completed all items in this onboarding checklist and received all necessary materials and access.</p>
+<table style="width:100%;margin-top:24px;"><tr>
+<td style="width:50%;padding-top:40px;border-top:1px solid #333;"><strong>Employee Signature:</strong><br/><span style="color:#666;font-size:11px;">Date: _______________</span></td>
+<td style="width:50%;padding-top:40px;border-top:1px solid #333;"><strong>Manager Signature:</strong><br/><span style="color:#666;font-size:11px;">Date: _______________</span></td>
+</tr></table>`,
+  },
+  {
+    id: "legal-nda",
+    name: "Legal NDA",
+    icon: "🔒",
+    description: "Non-Disclosure Agreement with definitions, obligations, exclusions, remedies, and signature blocks.",
+    content: `<h1 style="text-align:center;font-size:24px;color:#333;">NON-DISCLOSURE AGREEMENT</h1>
+<p style="text-align:center;font-size:13px;color:#666;">(Mutual Confidentiality Agreement)</p>
+<hr style="border:2px solid #333;margin:16px 0;"/>
+<p style="text-align:justify;font-size:12px;">This Non-Disclosure Agreement ("Agreement") is entered into as of <strong>[Date]</strong> ("Effective Date") by and between:</p>
+<table style="width:100%;margin:16px 0;"><tr>
+<td style="width:50%;vertical-align:top;padding:12px;border:1px solid #ddd;"><strong>Party A (Disclosing Party):</strong><br/>Acme Technologies Inc.<br/>100 Innovation Drive, Suite 500<br/>San Francisco, CA 94102<br/>Represented by: [Name, Title]</td>
+<td style="width:50%;vertical-align:top;padding:12px;border:1px solid #ddd;"><strong>Party B (Receiving Party):</strong><br/>[Company Name]<br/>[Address Line 1]<br/>[City, State, ZIP]<br/>Represented by: [Name, Title]</td>
+</tr></table>
+<p style="text-align:justify;">WHEREAS, the parties wish to explore a potential business relationship relating to <strong>[Purpose of Disclosure]</strong> ("Purpose"), and in connection therewith, each party may disclose certain Confidential Information to the other party.</p>
+<p style="text-align:justify;">NOW, THEREFORE, in consideration of the mutual covenants and agreements herein, the parties agree as follows:</p>
+<h2 style="color:#333;font-size:15px;">Article 1 — Definitions</h2>
+<p style="text-align:justify;"><strong>1.1 "Confidential Information"</strong> means any and all non-public information, in any form or medium, disclosed by either party to the other, whether orally, in writing, electronically, or through inspection of tangible objects, including but not limited to: (a) trade secrets, inventions, patent applications, and intellectual property; (b) business plans, strategies, financial data, and projections; (c) customer lists, vendor relationships, and pricing information; (d) software source code, algorithms, architectures, and technical documentation; (e) product roadmaps, prototypes, and unreleased features; (f) employee information and organizational structures; and (g) any information designated as "confidential" or "proprietary" at the time of disclosure.</p>
+<p style="text-align:justify;"><strong>1.2 "Representatives"</strong> means a party's officers, directors, employees, agents, advisors, consultants, and contractors who have a need to know the Confidential Information for the Purpose.</p>
+<h2 style="color:#333;font-size:15px;">Article 2 — Obligations of the Receiving Party</h2>
+<p style="text-align:justify;"><strong>2.1</strong> The Receiving Party shall: (a) hold all Confidential Information in strict confidence; (b) not disclose any Confidential Information to any third party without the prior written consent of the Disclosing Party; (c) use the Confidential Information solely for the Purpose; (d) limit access to Confidential Information to its Representatives who have a need to know and who are bound by confidentiality obligations no less restrictive than those in this Agreement; and (e) protect the Confidential Information using the same degree of care it uses to protect its own confidential information, but in no event less than reasonable care.</p>
+<h2 style="color:#333;font-size:15px;">Article 3 — Exclusions</h2>
+<p style="text-align:justify;"><strong>3.1</strong> Confidential Information shall not include information that: (a) is or becomes publicly available through no fault of the Receiving Party; (b) was known to the Receiving Party prior to disclosure, as evidenced by written records; (c) is independently developed by the Receiving Party without use of or reference to the Confidential Information; (d) is rightfully received from a third party without restriction on disclosure; or (e) is required to be disclosed by law, regulation, or court order, provided that the Receiving Party gives prompt written notice to enable the Disclosing Party to seek a protective order.</p>
+<h2 style="color:#333;font-size:15px;">Article 4 — Term and Termination</h2>
+<p style="text-align:justify;"><strong>4.1</strong> This Agreement shall remain in effect for a period of <strong>two (2) years</strong> from the Effective Date, unless earlier terminated by either party upon thirty (30) days written notice. The confidentiality obligations shall survive termination for a period of <strong>three (3) years</strong> from the date of disclosure of the respective Confidential Information, or indefinitely for trade secrets to the extent permitted by applicable law.</p>
+<h2 style="color:#333;font-size:15px;">Article 5 — Return of Materials</h2>
+<p style="text-align:justify;"><strong>5.1</strong> Upon termination of this Agreement or upon request by the Disclosing Party, the Receiving Party shall promptly return or destroy all Confidential Information and all copies thereof, and shall certify in writing that it has done so. Notwithstanding the foregoing, the Receiving Party may retain one archival copy for legal compliance purposes, subject to the continuing confidentiality obligations of this Agreement.</p>
+<h2 style="color:#333;font-size:15px;">Article 6 — Remedies</h2>
+<p style="text-align:justify;"><strong>6.1</strong> The parties acknowledge that any breach of this Agreement may cause irreparable harm for which monetary damages would be an inadequate remedy. Accordingly, in addition to any other remedies available at law or in equity, the Disclosing Party shall be entitled to seek injunctive relief, specific performance, or other equitable remedies without the necessity of proving actual damages or posting any bond.</p>
+<h2 style="color:#333;font-size:15px;">Article 7 — Governing Law and Dispute Resolution</h2>
+<p style="text-align:justify;"><strong>7.1</strong> This Agreement shall be governed by and construed in accordance with the laws of the State of California, without regard to conflict of law principles. Any dispute arising under this Agreement shall first be submitted to good faith negotiation, followed by binding arbitration under the rules of the American Arbitration Association in San Francisco, California.</p>
+<h2 style="color:#333;font-size:15px;">Article 8 — General Provisions</h2>
+<p style="text-align:justify;"><strong>8.1 Entire Agreement:</strong> This Agreement constitutes the entire agreement between the parties concerning the subject matter hereof and supersedes all prior agreements, understandings, and discussions.</p>
+<p style="text-align:justify;"><strong>8.2 Amendment:</strong> This Agreement may not be amended except by written instrument signed by both parties.</p>
+<p style="text-align:justify;"><strong>8.3 Severability:</strong> If any provision is held invalid or unenforceable, the remaining provisions shall continue in full force and effect.</p>
+<p style="text-align:justify;"><strong>8.4 Assignment:</strong> Neither party may assign this Agreement without the prior written consent of the other party.</p>
+<p style="text-align:justify;"><strong>8.5 Counterparts:</strong> This Agreement may be executed in counterparts, each of which shall be deemed an original.</p>
+<hr style="border:1px solid #ddd;margin:32px 0;"/>
+<p style="text-align:center;font-weight:bold;">IN WITNESS WHEREOF, the parties have executed this Agreement as of the Effective Date.</p>
+<table style="width:100%;margin-top:32px;"><tr>
+<td style="width:50%;padding:20px;vertical-align:top;">
+<p style="margin:4px 0;"><strong>PARTY A: Acme Technologies Inc.</strong></p>
+<p style="margin:40px 0 4px 0;border-top:1px solid #333;padding-top:4px;">Signature</p>
+<p style="margin:4px 0;">Name: _________________________</p>
+<p style="margin:4px 0;">Title: _________________________</p>
+<p style="margin:4px 0;">Date: _________________________</p>
+</td>
+<td style="width:50%;padding:20px;vertical-align:top;">
+<p style="margin:4px 0;"><strong>PARTY B: [Company Name]</strong></p>
+<p style="margin:40px 0 4px 0;border-top:1px solid #333;padding-top:4px;">Signature</p>
+<p style="margin:4px 0;">Name: _________________________</p>
+<p style="margin:4px 0;">Title: _________________________</p>
+<p style="margin:4px 0;">Date: _________________________</p>
+</td>
+</tr></table>`,
+  },
+  {
+    id: "accounts-pl",
+    name: "Profit & Loss Statement",
+    icon: "💹",
+    description: "Multi-page P&L statement with quarterly breakdown, YoY comparison, financial ratios, and notes.",
+    content: `<div style="text-align:center;border-bottom:4px solid #1565C0;padding-bottom:16px;margin-bottom:20px;">
+<h1 style="color:#1565C0;margin:0;font-size:26px;">PROFIT & LOSS STATEMENT</h1>
+<p style="font-size:14px;margin:8px 0;"><strong>Acme Technologies Inc.</strong></p>
+<p style="font-size:12px;color:#666;">For the Fiscal Year Ended December 31, 2025</p>
+<p style="font-size:11px;color:#888;">(All amounts in USD thousands unless otherwise stated)</p>
+</div>
+<h2 style="color:#1565C0;font-size:16px;">Executive Summary</h2>
+<p style="text-align:justify;">Acme Technologies delivered a record fiscal year with total revenue of $45,800K, representing 19.9% year-over-year growth. Gross profit margin expanded 310 basis points to 75.1%, driven by favorable product mix and operational efficiencies. Net income of $12,400K represents a 40.9% increase over the prior year, with diluted EPS of $2.48 compared to $1.76 in FY2024. The company generated strong free cash flow of $14,200K, enabling continued investment in R&D and strategic acquisitions while maintaining a healthy balance sheet.</p>
+<h2 style="color:#1565C0;font-size:16px;">Detailed Profit & Loss — Quarterly Breakdown</h2>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#1565C0;color:white;">
+<th style="border:1px solid #ddd;padding:8px;text-align:left;">Line Item</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:right;">Q1</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:right;">Q2</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:right;">Q3</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:right;">Q4</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:right;">FY 2025</th>
+<th style="border:1px solid #ddd;padding:8px;text-align:right;">FY 2024</th>
+</tr></thead>
+<tbody>
+<tr style="font-weight:bold;background:#e3f2fd;"><td style="border:1px solid #ddd;padding:6px;" colspan="7">REVENUE</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">SaaS Subscriptions</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">6,200</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">6,800</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">7,400</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">7,800</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">28,200</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">22,800</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Professional Services</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,800</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,200</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,400</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">8,400</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">7,200</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">License & Maintenance</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,600</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,700</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,800</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,900</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">7,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">6,400</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Training & Other</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">600</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">500</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">700</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">400</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,200</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,800</td></tr>
+<tr style="font-weight:bold;background:#f5f5f5;"><td style="border:1px solid #ddd;padding:6px;">TOTAL REVENUE</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">10,200</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">11,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">12,100</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">12,500</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">45,800</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">38,200</td></tr>
+<tr style="font-weight:bold;background:#e3f2fd;"><td style="border:1px solid #ddd;padding:6px;" colspan="7">COST OF REVENUE</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Cloud Infrastructure</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,400</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,500</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,600</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,700</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">6,200</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">5,800</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Customer Success Team</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">800</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">850</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">900</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">950</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">3,500</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">3,200</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Third-Party Licenses</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">400</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">420</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">440</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">440</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,700</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,700</td></tr>
+<tr style="font-weight:bold;background:#f5f5f5;"><td style="border:1px solid #ddd;padding:6px;">GROSS PROFIT</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">7,600</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">8,230</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">9,160</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">9,410</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">34,400</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">27,500</td></tr>
+<tr style="font-weight:bold;background:#e3f2fd;"><td style="border:1px solid #ddd;padding:6px;" colspan="7">OPERATING EXPENSES</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Research & Development</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,000</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,100</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,200</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,300</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">8,600</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">7,200</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Sales & Marketing</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,500</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,600</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,700</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,800</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">6,600</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">5,800</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">General & Administrative</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">700</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">720</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">740</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">740</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,900</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,600</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Depreciation & Amortization</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">425</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">425</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">425</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">425</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,700</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">1,600</td></tr>
+<tr style="font-weight:bold;background:#f5f5f5;"><td style="border:1px solid #ddd;padding:6px;">TOTAL OPERATING EXPENSES</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">4,625</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">4,845</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">5,065</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">5,265</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">19,800</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">17,200</td></tr>
+<tr style="font-weight:bold;"><td style="border:1px solid #ddd;padding:6px;">OPERATING INCOME</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">2,975</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">3,385</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">4,095</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">4,145</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">14,600</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">10,300</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Interest Income</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">120</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">125</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">130</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">135</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">510</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">380</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Interest Expense</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(70)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(70)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(65)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(65)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(270)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(320)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;padding-left:20px;">Other Income / (Expense)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">50</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(20)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">30</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(100)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(40)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">60</td></tr>
+<tr style="font-weight:bold;"><td style="border:1px solid #ddd;padding:6px;">INCOME BEFORE TAX</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">3,075</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">3,420</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">4,190</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">4,115</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">14,800</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">10,420</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Income Tax Expense (15%)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(461)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(513)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(629)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(617)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(2,200)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">(1,620)</td></tr>
+<tr style="font-weight:bold;background:#e8f5e9;"><td style="border:1px solid #ddd;padding:8px;font-size:14px;">NET INCOME</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">2,614</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">2,907</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">3,561</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">3,498</td><td style="border:1px solid #ddd;padding:8px;text-align:right;font-size:14px;">12,400</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">8,800</td></tr>
+</tbody>
+</table>
+<h2 style="color:#1565C0;font-size:16px;">Key Financial Ratios</h2>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;text-align:left;">Ratio</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">FY 2025</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">FY 2024</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">Benchmark</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:6px;">Gross Profit Margin</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">75.1%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">72.0%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">70-80%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Operating Margin</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">31.9%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">27.0%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">20-35%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Net Profit Margin</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">27.1%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">23.0%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">15-25%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Revenue Growth (YoY)</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">19.9%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">15.2%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">10-25%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">R&D as % of Revenue</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">18.8%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">18.8%</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">15-25%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:6px;">Diluted EPS</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$2.48</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">$1.76</td><td style="border:1px solid #ddd;padding:6px;text-align:right;">—</td></tr>
+</tbody>
+</table>
+<h2 style="color:#1565C0;font-size:16px;">Notes to the P&L Statement</h2>
+<p style="font-size:11px;"><strong>Note 1 — Revenue Recognition:</strong> SaaS subscription revenue is recognized ratably over the contract period. Professional services revenue is recognized as services are delivered using the percentage-of-completion method.</p>
+<p style="font-size:11px;"><strong>Note 2 — Stock-Based Compensation:</strong> $3,200K of stock-based compensation expense is included in operating expenses (R&D: $1,800K; S&M: $900K; G&A: $500K).</p>
+<p style="font-size:11px;"><strong>Note 3 — Restructuring Charges:</strong> Q4 includes $180K in one-time restructuring charges related to the consolidation of the London and Singapore support teams.</p>
+<p style="font-size:11px;"><strong>Note 4 — Tax Rate:</strong> The effective tax rate of 14.9% reflects R&D tax credits and the benefit of qualified small business stock (QSBS) provisions.</p>
+<p style="font-size:11px;"><strong>Note 5 — Non-GAAP Adjustments:</strong> Adjusted EBITDA (excluding SBC and one-time charges) was $19,780K, representing a 43.2% adjusted EBITDA margin.</p>
+<hr style="border:1px solid #ddd;margin:24px 0;"/>
+<table style="width:100%;"><tr>
+<td style="width:33%;text-align:center;"><p style="font-size:10px;color:#666;">Prepared by:<br/><strong>Jennifer Lee, Controller</strong><br/>Date: February 15, 2026</p></td>
+<td style="width:33%;text-align:center;"><p style="font-size:10px;color:#666;">Reviewed by:<br/><strong>Frank Davis, CFO</strong><br/>Date: February 20, 2026</p></td>
+<td style="width:33%;text-align:center;"><p style="font-size:10px;color:#666;">Approved by:<br/><strong>Dr. Robert Harrison, CEO</strong><br/>Date: February 25, 2026</p></td>
+</tr></table>`,
   },
 ];
