@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { FileText, Table2, Presentation as PresentationIcon, GitBranch } from "lucide-react";
+import { Search, FileText, Table2, Presentation, GitBranch, BarChart3 } from "lucide-react";
 import WordTemplates from "./components/WordTemplates";
 import ExcelTemplates from "./components/ExcelTemplates";
 import PptTemplates from "./components/PptTemplates";
 import FlowchartTemplates from "./components/FlowchartTemplates";
+import InfographicTemplates from "./components/InfographicTemplates";
 
 // ── Word Template Content (HTML) ───────────────────────────────────────────────
 
@@ -404,41 +404,23 @@ const categories = [
 ];
 
 const tabs = [
-  { id: "word", label: "Word", icon: FileText, count: 6 },
-  { id: "excel", label: "Excel", icon: Table2, count: 8 },
-  { id: "ppt", label: "Presentations", icon: PresentationIcon, count: 5 },
-  { id: "flowchart", label: "Flowcharts", icon: GitBranch, count: 6 },
-  { id: "all", label: "All Quick Templates", icon: FileText, count: 39 },
-];
+  { key: "all", label: "All Templates", icon: null },
+  { key: "word", label: "Word", icon: FileText },
+  { key: "excel", label: "Excel", icon: Table2 },
+  { key: "ppt", label: "PPT", icon: Presentation },
+  { key: "flowchart", label: "Flowcharts", icon: GitBranch },
+  { key: "infographic", label: "Infographics", icon: BarChart3 },
+] as const;
+
+type Tab = (typeof tabs)[number]["key"];
 
 export default function TemplatesPage() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState("word");
-
-  const handleTemplateClick = (name: string, type: "word" | "excel" | "ppt") => {
-    if (type === "word") {
-      const content = wordContent[name];
-      if (content) {
-        localStorage.setItem("vidyalaya-doc-content", content);
-        router.push("/document");
-      }
-    } else if (type === "excel") {
-      const data = excelContent[name];
-      if (data) {
-        localStorage.setItem("vidyalaya-spreadsheet-template", data);
-        router.push("/spreadsheet");
-      }
-    } else if (type === "ppt") {
-      const data = pptContent[name];
-      if (data) {
-        localStorage.setItem("vidyalaya-ppt-template", data);
-        router.push("/presentation");
-      }
-    }
-  };
+  const [activeTab, setActiveTab] = useState<Tab>("all");
+  const [search, setSearch] = useState("");
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 pb-10">
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
           Templates
@@ -448,71 +430,43 @@ export default function TemplatesPage() {
         </p>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex gap-1 overflow-x-auto rounded-lg p-1" style={{ backgroundColor: "var(--secondary)" }}>
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-all"
-            style={{
-              backgroundColor: activeTab === tab.id ? "var(--card)" : "transparent",
-              color: activeTab === tab.id ? "var(--foreground)" : "var(--muted-foreground)",
-              boxShadow: activeTab === tab.id ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-            }}
-          >
-            <tab.icon size={14} />
-            {tab.label}
-            <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ backgroundColor: "var(--secondary)", color: "var(--muted-foreground)" }}>
-              {tab.count}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === "word" && <WordTemplates />}
-      {activeTab === "excel" && <ExcelTemplates />}
-      {activeTab === "ppt" && <PptTemplates />}
-      {activeTab === "flowchart" && <FlowchartTemplates />}
-
-      {/* All Quick Templates (legacy grid view) */}
-      {activeTab === "all" && (
-        <div className="space-y-8">
-          {categories.map((cat) => (
-            <section key={cat.title}>
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-                <cat.icon size={16} />
-                {cat.title}
-                <span className="ml-1 rounded-full px-2 py-0.5 text-xs" style={{ backgroundColor: "var(--secondary)", color: "var(--secondary-foreground)" }}>
-                  {cat.count}
-                </span>
-              </h2>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
-                {cat.templates.map((tmpl) => (
-                  <button
-                    key={tmpl}
-                    onClick={() => handleTemplateClick(tmpl, cat.type)}
-                    className="rounded-lg border px-4 py-3 text-left transition-all hover:scale-[1.02] hover:border-[var(--primary)] group"
-                    style={{
-                      backgroundColor: "var(--card)",
-                      borderColor: "var(--border)",
-                      color: "var(--card-foreground)",
-                    }}
-                  >
-                    <div className="text-sm font-medium group-hover:text-[var(--primary)]">{tmpl}</div>
-                    {descriptions[tmpl] && (
-                      <div className="text-[10px] mt-1 line-clamp-2" style={{ color: "var(--muted-foreground)" }}>
-                        {descriptions[tmpl]}
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </section>
+      {/* Search & Tabs */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[200px] max-w-sm flex-1">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--muted-foreground)" }} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search templates..."
+            className="w-full rounded-lg border py-1.5 pl-8 pr-3 text-xs bg-transparent"
+            style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
+          />
+        </div>
+        <div className="flex gap-1 flex-wrap">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${
+                activeTab === t.key ? "border-[var(--primary)]" : "border-[var(--border)]"
+              }`}
+              style={{ color: activeTab === t.key ? "var(--primary)" : "var(--muted-foreground)" }}
+            >
+              {t.icon && <t.icon size={12} />}
+              {t.label}
+            </button>
           ))}
         </div>
-      )}
+      </div>
+
+      {/* Template Sections */}
+      <div className="space-y-8">
+        {(activeTab === "all" || activeTab === "word") && <WordTemplates />}
+        {(activeTab === "all" || activeTab === "excel") && <ExcelTemplates />}
+        {(activeTab === "all" || activeTab === "ppt") && <PptTemplates />}
+        {(activeTab === "all" || activeTab === "flowchart") && <FlowchartTemplates />}
+        {(activeTab === "all" || activeTab === "infographic") && <InfographicTemplates />}
+      </div>
     </div>
   );
 }

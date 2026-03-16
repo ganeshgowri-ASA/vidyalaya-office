@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FileText } from "lucide-react";
+import { FileText, Eye } from "lucide-react";
+import { useState } from "react";
 
 const templates = [
   { name: "IEEE Paper", desc: "IEEE conference paper format with abstract, keywords, and two-column layout" },
@@ -20,6 +21,7 @@ const thumbnailColors = ["#1565C0", "#2E7D32", "#6A1B9A", "#C62828", "#E65100", 
 
 export default function WordTemplates() {
   const router = useRouter();
+  const [preview, setPreview] = useState<string | null>(null);
 
   const handleUse = (name: string) => {
     const keyMap: Record<string, string> = {
@@ -32,48 +34,52 @@ export default function WordTemplates() {
     if (!stored) {
       localStorage.setItem("vidyalaya-template-hint", key);
     }
-    router.push("/document");
   };
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {templates.map((t, i) => (
-        <div
-          key={t.name}
-          className="group rounded-xl border overflow-hidden transition-all hover:shadow-lg hover:border-[var(--primary)]"
-          style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
-        >
-          {/* Thumbnail */}
+    <div>
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+        <FileText size={16} />
+        Word Templates
+        <span className="ml-1 rounded-full px-2 py-0.5 text-xs" style={{ backgroundColor: "var(--secondary)", color: "var(--secondary-foreground)" }}>
+          {wordTemplates.length}
+        </span>
+      </h2>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3">
+        {wordTemplates.map((t) => (
           <div
-            className="h-28 flex items-center justify-center relative"
-            style={{ backgroundColor: thumbnailColors[i] + "18" }}
+            key={t.name}
+            className="rounded-lg border px-4 py-3 transition-all hover:border-[var(--primary)] group"
+            style={{ backgroundColor: "var(--card)", borderColor: "var(--border)", color: "var(--card-foreground)" }}
           >
-            <FileText size={36} style={{ color: thumbnailColors[i] }} className="opacity-60" />
-            <div
-              className="absolute top-2 right-2 rounded px-1.5 py-0.5 text-[10px] font-medium"
-              style={{ backgroundColor: thumbnailColors[i] + "22", color: thumbnailColors[i] }}
-            >
-              .docx
+            <div className="text-sm font-medium group-hover:text-[var(--primary)]">{t.name}</div>
+            <div className="text-[10px] mt-1 line-clamp-2" style={{ color: "var(--muted-foreground)" }}>{t.desc}</div>
+            <div className="flex gap-1 mt-2">
+              <button
+                onClick={() => handleUse(t.name)}
+                className="px-2 py-1 rounded text-[10px] text-white"
+                style={{ backgroundColor: "var(--primary)" }}
+              >
+                Use Template
+              </button>
+              <button
+                onClick={() => setPreview(preview === t.name ? null : t.name)}
+                className="px-2 py-1 rounded text-[10px] border"
+                style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}
+              >
+                <Eye size={10} className="inline mr-1" />Preview
+              </button>
             </div>
+            {preview === t.name && wordContent[t.name] && (
+              <div
+                className="mt-2 max-h-48 overflow-y-auto rounded border p-2 text-[10px]"
+                style={{ borderColor: "var(--border)", backgroundColor: "var(--muted)" }}
+                dangerouslySetInnerHTML={{ __html: wordContent[t.name].slice(0, 1500) + "..." }}
+              />
+            )}
           </div>
-          {/* Content */}
-          <div className="p-3 space-y-2">
-            <h3 className="text-sm font-semibold" style={{ color: "var(--card-foreground)" }}>
-              {t.name}
-            </h3>
-            <p className="text-xs line-clamp-2" style={{ color: "var(--muted-foreground)" }}>
-              {t.desc}
-            </p>
-            <button
-              onClick={() => handleUse(t.name)}
-              className="w-full mt-1 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors"
-              style={{ backgroundColor: "var(--primary)" }}
-            >
-              Use Template
-            </button>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

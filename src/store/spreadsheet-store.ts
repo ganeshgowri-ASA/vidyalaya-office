@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { evaluateFormula, colToLetter } from "@/components/spreadsheet/formula-engine";
+import { evaluateFormula, colToLetter, parseCellRef } from "@/components/spreadsheet/formula-engine";
 
 export interface CellStyle {
   bold?: boolean;
@@ -234,8 +234,10 @@ function getComputedValue(
     return isNaN(n) ? cell.raw : n;
   }
 
-  return evaluateFormula(cell.raw, (c, r) => {
-    return getComputedValue(cells, c, r, new Set(visited));
+  return evaluateFormula(cell.raw, (ref) => {
+    const parsed = parseCellRef(ref);
+    if (!parsed) return "";
+    return getComputedValue(cells, parsed.col, parsed.row, new Set(visited));
   });
 }
 
