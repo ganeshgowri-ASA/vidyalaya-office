@@ -2,6 +2,14 @@
 
 export type RibbonTabId = "home" | "edit" | "annotate" | "forms" | "organize" | "convert" | "security" | "review";
 
+export type ConvertDirection =
+  | "pdf-to-word" | "pdf-to-excel" | "pdf-to-ppt" | "pdf-to-image"
+  | "word-to-pdf" | "excel-to-pdf" | "ppt-to-pdf" | "image-to-pdf";
+
+export type CompressQuality = "low" | "medium" | "high";
+
+export type SignatureMode = "draw" | "type" | "upload";
+
 export interface Annotation {
   id: string;
   type: "text" | "highlight" | "underline" | "strikethrough" | "drawing" | "stamp" | "signature" | "redaction" | "sticky-note" | "shape";
@@ -16,15 +24,16 @@ export interface Annotation {
   strokeWidth?: number;
   points?: { x: number; y: number }[];
   stamp?: string;
+  stampType?: "Approved" | "Rejected" | "Draft" | "Confidential" | "Final";
   signatureDataUrl?: string;
-  shapeType?: "rectangle" | "circle" | "line" | "arrow";
+  shapeType?: "rectangle" | "circle" | "line" | "arrow" | "polygon" | "star";
   noteColor?: string;
   noteOpen?: boolean;
 }
 
 export interface FormField {
   id: string;
-  type: "text-input" | "checkbox" | "radio" | "dropdown" | "signature";
+  type: "text-input" | "checkbox" | "radio" | "dropdown" | "signature" | "date-picker";
   page: number;
   x: number;
   y: number;
@@ -126,6 +135,37 @@ export interface SecurityConfig {
   allowEditing: boolean;
   allowAnnotations: boolean;
   encryptionLevel: "128-aes" | "256-aes";
+}
+
+export interface MeasurementAnnotation {
+  id: string;
+  type: "distance" | "area" | "perimeter";
+  page: number;
+  points: { x: number; y: number }[];
+  value: number;
+  unit: string;
+  color: string;
+}
+
+export interface CreatorElement {
+  id: string;
+  type: "text" | "image" | "table" | "shape";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  page: number;
+  text?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+  imageDataUrl?: string;
+  tableRows?: number;
+  tableCols?: number;
+  tableData?: string[][];
+  shapeType?: string;
 }
 
 // ─── Shared Styles ────────────────────────────────────────────────────────────
