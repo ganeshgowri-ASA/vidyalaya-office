@@ -19,6 +19,8 @@ const templates = [
 
 const thumbnailColors = ["#1565C0", "#2E7D32", "#6A1B9A", "#C62828", "#E65100", "#00838F", "#1a237e", "#333333", "#00695c", "#2e7d32"];
 
+const wordContent: Record<string, string> = {};
+
 export default function WordTemplates() {
   const router = useRouter();
   const [preview, setPreview] = useState<string | null>(null);
