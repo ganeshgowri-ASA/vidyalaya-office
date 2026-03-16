@@ -2,21 +2,9 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import type { DataValidationRule } from "@/store/spreadsheet-store";
 
-type ValidationType = "list" | "number" | "date" | "textLength";
-
-interface ValidationRule {
-  type: ValidationType;
-  listItems?: string;
-  numberMin?: string;
-  numberMax?: string;
-  dateMin?: string;
-  dateMax?: string;
-  textMinLength?: string;
-  textMaxLength?: string;
-  errorTitle?: string;
-  errorMessage?: string;
-}
+type ValidationType = DataValidationRule["type"];
 
 export function DataValidationModal({
   open,
@@ -25,9 +13,9 @@ export function DataValidationModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onApply: (rule: ValidationRule) => void;
+  onApply: (rule: DataValidationRule) => void;
 }) {
-  const [rule, setRule] = useState<ValidationRule>({
+  const [rule, setRule] = useState<DataValidationRule>({
     type: "list",
     listItems: "",
     numberMin: "",
@@ -36,13 +24,16 @@ export function DataValidationModal({
     dateMax: "",
     textMinLength: "",
     textMaxLength: "",
+    customFormula: "",
+    inputTitle: "",
+    inputMessage: "",
     errorTitle: "Invalid Input",
     errorMessage: "The value entered does not meet the validation criteria.",
   });
 
   if (!open) return null;
 
-  const updateRule = (partial: Partial<ValidationRule>) => {
+  const updateRule = (partial: Partial<DataValidationRule>) => {
     setRule((prev) => ({ ...prev, ...partial }));
   };
 
@@ -88,6 +79,7 @@ export function DataValidationModal({
               <option value="number">Number Range</option>
               <option value="date">Date Range</option>
               <option value="textLength">Text Length</option>
+              <option value="custom">Custom Formula</option>
             </select>
           </div>
 
@@ -224,6 +216,26 @@ export function DataValidationModal({
                   onChange={(e) => updateRule({ textMaxLength: e.target.value })}
                 />
               </div>
+            </div>
+          )}
+
+          {rule.type === "custom" && (
+            <div>
+              <label className="text-xs font-medium block mb-1" style={{ color: "var(--muted-foreground)" }}>
+                Custom Formula (must evaluate to TRUE)
+              </label>
+              <input
+                type="text"
+                className="w-full text-sm rounded px-2 py-1.5 border outline-none font-mono"
+                style={{
+                  backgroundColor: "var(--background)",
+                  borderColor: "var(--border)",
+                  color: "var(--foreground)",
+                }}
+                placeholder="=AND(A1>0, A1<100)"
+                value={rule.customFormula || ""}
+                onChange={(e) => updateRule({ customFormula: e.target.value })}
+              />
             </div>
           )}
 
