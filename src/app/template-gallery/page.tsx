@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search,
   FileText,
@@ -66,6 +67,7 @@ const templates: GalleryTemplate[] = [
 ];
 
 export default function TemplateGalleryPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [subcategoryFilter, setSubcategoryFilter] = useState("All");
@@ -220,7 +222,7 @@ export default function TemplateGalleryPage() {
                       <Eye size={12} /> Preview
                     </button>
                     <Link
-                      href={cfg.href}
+                      href={`${cfg.href}?template=${encodeURIComponent(t.id)}`}
                       className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-white"
                       style={{ backgroundColor: cfg.color }}
                     >
@@ -228,7 +230,7 @@ export default function TemplateGalleryPage() {
                     </Link>
                   </div>
                 </div>
-                <div className="p-3">
+                <div className="p-3 cursor-pointer" onClick={() => router.push(`${cfg.href}?template=${encodeURIComponent(t.id)}`)}>
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-medium truncate" style={{ color: "var(--card-foreground)" }}>{t.name}</p>
                     <span className="shrink-0 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: `${cfg.color}15`, color: cfg.color }}>
@@ -264,7 +266,7 @@ export default function TemplateGalleryPage() {
                 >
                   <Eye size={14} />
                 </button>
-                <Link href={cfg.href} className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium" style={{ backgroundColor: cfg.color, color: "white" }}>
+                <Link href={`${cfg.href}?template=${encodeURIComponent(t.id)}`} className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium" style={{ backgroundColor: cfg.color, color: "white" }}>
                   Use
                 </Link>
               </div>
@@ -295,7 +297,7 @@ export default function TemplateGalleryPage() {
                     <p className="text-xs mt-2" style={{ color: cfg.color }}>{previewTemplate.subcategory}</p>
                     <div className="flex gap-2 mt-6">
                       <button onClick={() => setPreviewTemplate(null)} className="flex-1 rounded-lg py-2 text-sm" style={{ color: "var(--muted-foreground)" }}>Close</button>
-                      <Link href={cfg.href} className="flex-1 rounded-lg py-2 text-sm font-medium text-center text-white" style={{ backgroundColor: cfg.color }}>
+                      <Link href={`${cfg.href}?template=${encodeURIComponent(previewTemplate.id)}`} className="flex-1 rounded-lg py-2 text-sm font-medium text-center text-white" style={{ backgroundColor: cfg.color }}>
                         Use Template
                       </Link>
                     </div>

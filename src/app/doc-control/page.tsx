@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search, Plus, Filter, ChevronDown, ChevronRight, X, Edit3, Trash2, Archive,
   RotateCcw, Shield, Clock, User, Calendar, Building2, FileText, Tag,
@@ -145,6 +146,7 @@ function RoutePathVisual({ doc }: { doc: DocRecord }) {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function DocControlPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"registry" | "changes" | "archive" | "departments" | "audit">("registry");
   const [docs, setDocs] = useState<DocRecord[]>(MOCK_DOCS);
   const [archivedDocs, setArchivedDocs] = useState<DocRecord[]>(MOCK_ARCHIVED);
@@ -259,15 +261,17 @@ export default function DocControlPage() {
     setNewDocName("");
     setShowNewDoc(false);
 
-    // Navigate to editor
+    // Navigate to correct editor based on document type
+    const editorRoutes: Record<string, string> = {
+      Word: "/document",
+      Excel: "/spreadsheet",
+      PPT: "/presentation",
+    };
+    const editorPath = editorRoutes[newDocType] || "/document";
     if (newDocType === "Word") {
       localStorage.setItem("vidyalaya-doc-content", `<h1>${newDocName}</h1><p>Start editing your document here...</p>`);
-      window.location.href = "/document";
-    } else if (newDocType === "Excel") {
-      window.location.href = "/spreadsheet";
-    } else {
-      window.location.href = "/presentation";
     }
+    router.push(`${editorPath}?docId=${newDoc.docId}`);
   };
 
   const deleteDoc = (id: string) => {
@@ -841,9 +845,14 @@ export default function DocControlPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 px-5 py-3 border-t" style={{ borderColor: "var(--border)" }}>
+              <button onClick={() => {
+                const routes: Record<string, string> = { Word: "/document", Excel: "/spreadsheet", PPT: "/presentation" };
+                const route = routes[selectedDoc.docType || "Word"] || "/document";
+                router.push(`${route}?docId=${selectedDoc.docId}`);
+              }} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-white" style={{ backgroundColor: "var(--primary)" }}><Edit3 size={12} /> Open in Editor</button>
               <button onClick={() => archiveDoc(selectedDoc.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}><Archive size={12} /> Archive</button>
               <button onClick={() => deleteDoc(selectedDoc.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs border-red-500 text-red-400"><Trash2 size={12} /> Delete</button>
-              <button onClick={() => { setSelectedDoc(null); setEditingHeader(false); }} className="px-3 py-1.5 rounded-lg text-xs text-white" style={{ backgroundColor: "var(--primary)" }}>Close</button>
+              <button onClick={() => { setSelectedDoc(null); setEditingHeader(false); }} className="px-3 py-1.5 rounded-lg text-xs border" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>Close</button>
             </div>
           </div>
         </div>
