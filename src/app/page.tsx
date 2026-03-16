@@ -28,9 +28,13 @@ import {
   ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/app-store";
 import { formatDate } from "@/lib/utils";
 import type { FileType } from "@/types";
+import { ImportDialog } from "@/components/shared/import-dialog";
+import { ExportManager } from "@/lib/export-manager";
+import type { DocumentType } from "@/lib/export-manager";
 import {
   BarChart,
   Bar,
@@ -224,6 +228,23 @@ export default function DashboardPage() {
   const starredFiles = recentFiles.filter((f) => f.starred);
   const [dashSearch, setDashSearch] = useState("");
   const [contextMenu, setContextMenu] = useState<{ fileId: string; x: number; y: number } | null>(null);
+  const [showImport, setShowImport] = useState(false);
+  const router = useRouter();
+
+  const handleImport = async (file: File, type: DocumentType) => {
+    // For PDF files, navigate to PDF page
+    if (type === "pdf") {
+      router.push("/pdf");
+      return;
+    }
+    // For other types, navigate to the appropriate editor
+    const routes: Record<string, string> = {
+      document: "/document",
+      spreadsheet: "/spreadsheet",
+      presentation: "/presentation",
+    };
+    router.push(routes[type] || "/document");
+  };
 
   const searchTerm = dashSearch.toLowerCase();
   const filteredFiles = dashSearch
@@ -302,7 +323,7 @@ export default function DashboardPage() {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
             Quick Create
           </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             {quickCreate.map((item) => (
               <Link
                 key={item.type}
@@ -314,6 +335,23 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium">{item.label}</span>
               </Link>
             ))}
+            <button
+              onClick={() => setShowImport(true)}
+              className="group flex flex-col items-center gap-2 rounded-xl border p-5 transition-all hover:scale-[1.02]"
+              style={{
+                backgroundColor: "var(--card)",
+                borderColor: "var(--border)",
+                color: "var(--card-foreground)",
+                cursor: "pointer",
+              }}
+            >
+              <Upload
+                size={28}
+                className="transition-colors"
+                style={{ color: "var(--primary)" }}
+              />
+              <span className="text-sm font-medium">Import File</span>
+            </button>
           </div>
         </section>
 
@@ -630,6 +668,12 @@ export default function DashboardPage() {
           onClose={() => setContextMenu(null)}
         />
       )}
+      {/* Import Dialog */}
+      <ImportDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={handleImport}
+      />
     </div>
   );
 }

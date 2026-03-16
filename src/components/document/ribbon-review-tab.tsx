@@ -15,6 +15,7 @@ export function ReviewTab() {
     trackChanges, toggleTrackChanges,
     showComments, toggleComments,
     comments, addComment,
+    setShowSpellingPanel, setShowStatisticsPanel,
   } = useDocumentStore();
 
   const {
@@ -32,14 +33,7 @@ export function ReviewTab() {
       {/* ===== PROOFING GROUP ===== */}
       <div className="flex flex-col items-center border-r pr-2 mr-1" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-0.5">
-          <ToolbarButton icon={<SpellCheck size={14} />} label="Spelling" title="Spelling & Grammar" onClick={() => {
-            const editor = document.getElementById("doc-editor");
-            if (editor) {
-              // Trigger browser spell check
-              editor.setAttribute("spellcheck", "true");
-              alert("Spell check is enabled. Misspelled words will be underlined in red.");
-            }
-          }} />
+          <ToolbarButton icon={<SpellCheck size={14} />} label="Spelling" title="Spelling & Grammar Panel" onClick={() => setShowSpellingPanel(true)} />
           <ToolbarButton icon={<BookOpen size={14} />} label="Thesaurus" title="Thesaurus" onClick={() => {
             const sel = window.getSelection();
             const word = sel?.toString() || prompt("Enter a word to look up:");
@@ -47,6 +41,7 @@ export function ReviewTab() {
               window.open(`https://www.thesaurus.com/browse/${encodeURIComponent(word)}`, "_blank");
             }
           }} />
+          <ToolbarButton icon={<Hash size={14} />} label="Stats" title="Word Count & Statistics Panel" onClick={() => setShowStatisticsPanel(true)} />
           <div className="relative">
             <ToolbarButton icon={<Hash size={14} />} label="Word Count" title="Word Count" onClick={() => setShowWordCount(!showWordCount)} />
             {showWordCount && (

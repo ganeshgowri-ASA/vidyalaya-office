@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useDocumentStore } from "@/store/document-store";
 import { PAGE_SIZES } from "./constants";
-import { Globe, ChevronDown, Minus, Plus, FileText, Maximize2, Monitor } from "lucide-react";
+import { Globe, ChevronDown, Minus, Plus, FileText, Maximize2 } from "lucide-react";
 
 const LANGUAGES = [
   "English", "Hindi", "Tamil", "Telugu", "Kannada", "Malayalam",
@@ -14,7 +14,8 @@ export function StatusBar() {
   const {
     wordCount, charCount, lineCount, paragraphCount, pageSize,
     currentFont, currentFontSize, zoom, setZoom, lastSaved,
-    language, setLanguage, autoSaveEnabled,
+    language, setLanguage, autoSaveEnabled, readingTime,
+    setShowStatisticsPanel,
   } = useDocumentStore();
 
   const [showLangDropdown, setShowLangDropdown] = useState(false);
@@ -44,6 +45,10 @@ export function StatusBar() {
         <span>Paragraphs: {paragraphCount}</span>
         <span className="h-3 w-px" style={{ backgroundColor: "var(--border)" }} />
         <span>Lines: {lineCount.toLocaleString()}</span>
+        <span className="h-3 w-px" style={{ backgroundColor: "var(--border)" }} />
+        <button className="hover:underline cursor-pointer" onClick={() => setShowStatisticsPanel(true)} title="Open statistics panel">
+          ~{readingTime || Math.max(1, Math.ceil(wordCount / 238))} min read
+        </button>
         <span className="h-3 w-px" style={{ backgroundColor: "var(--border)" }} />
         {/* Language selector */}
         <div className="relative">

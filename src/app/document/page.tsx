@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useCallback } from "react";
-import { Download, FileText, FileType2 } from "lucide-react";
+import { Upload, FileText } from "lucide-react";
 import { RibbonToolbar } from "@/components/document/ribbon-toolbar";
 import { EditorArea, getEditorContent } from "@/components/document/editor-area";
 import { StatusBar } from "@/components/document/status-bar";
@@ -20,10 +20,17 @@ import { MailMergeDialog } from "@/components/document/mail-merge";
 import { DocumentPropertiesDialog } from "@/components/document/document-properties";
 import { KeyboardShortcutsDialog } from "@/components/document/keyboard-shortcuts-dialog";
 import { useDocumentStore } from "@/store/document-store";
-import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
 import { SmartArtInfographicsModal } from "@/components/document/smartart-infographics-modal";
 import { EquationEditor } from "@/components/document/equation-editor";
 import { CitationManagerModal } from "@/components/document/citation-manager";
+import { TableOfContentsPanel } from "@/components/document/table-of-contents";
+import { FootnotesEndnotesPanel } from "@/components/document/footnotes-endnotes";
+import { WatermarkDialog } from "@/components/document/watermark-dialog";
+import { ColumnsDialog } from "@/components/document/columns-dialog";
+import { WordCountStatisticsPanel } from "@/components/document/word-count-statistics";
+import { SpellingGrammarPanel } from "@/components/document/spelling-grammar";
+import { OutlineNavigationPanel } from "@/components/document/outline-navigation";
+import { BookmarksCrossRefPanel } from "@/components/document/bookmarks-crossref";
 import {
   CollaborationToolbar,
   CollabCommentsSidebar,
@@ -32,6 +39,11 @@ import {
   VersionHistoryPanel,
 } from "@/components/collaboration";
 import { useCollaborationStore } from "@/store/collaboration-store";
+import { ExportDropdown } from "@/components/shared/export-dropdown";
+import { ExportProgress } from "@/components/shared/export-progress";
+import { ImportDialog } from "@/components/shared/import-dialog";
+import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
+import { ExportManager, type ExportFormat } from "@/lib/export-manager";
 
 export default function DocumentPage() {
   const {
@@ -42,6 +54,8 @@ export default function DocumentPage() {
     showMailMerge, setShowMailMerge,
     showDocProperties, setShowDocProperties,
     showKeyboardShortcuts, setShowKeyboardShortcuts,
+    showTocPanel, showFootnotesPanel, showOutlinePanel,
+    showStatisticsPanel, showSpellingPanel, showBookmarksPanel,
   } = useDocumentStore();
 
   const {
@@ -49,13 +63,16 @@ export default function DocumentPage() {
     showVersionHistory: showCollabVersionHistory,
   } = useCollaborationStore();
 
-  const [showExport, setShowExport] = React.useState(false);
   const [showPageSetup, setShowPageSetup] = React.useState(false);
   const [showHeaderFooterEditor, setShowHeaderFooterEditor] = React.useState(false);
   const [showVersionControl, setShowVersionControl] = React.useState(false);
   const [showDeveloper, setShowDeveloper] = React.useState(false);
   const [headerConfig, setHeaderConfig] = React.useState({ left: "", center: "", right: "" });
   const [footerConfig, setFooterConfig] = React.useState({ left: "", center: "", right: "" });
+  const [isExporting, setIsExporting] = React.useState(false);
+  const [exportProgress, setExportProgress] = React.useState({ percent: 0, message: "" });
+  const [showImport, setShowImport] = React.useState(false);
+  const [showPrintPreview, setShowPrintPreview] = React.useState(false);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -148,19 +165,28 @@ export default function DocumentPage() {
     return () => window.removeEventListener("keydown", handler);
   }, [setShowFindReplace, showKeyboardShortcuts, setShowKeyboardShortcuts]);
 
-  const handleExportHTML = useCallback(() => {
-    exportAsHTML(fileName);
-    setShowExport(false);
-  }, [fileName]);
-
-  const handleExportText = useCallback(() => {
-    exportAsText(fileName);
-    setShowExport(false);
+  const handleExport = useCallback(async (format: ExportFormat) => {
+    const content = getEditorContent();
+    setIsExporting(true);
+    try {
+      await ExportManager.exportDocument(format, content, fileName, setExportProgress);
+    } finally {
+      setTimeout(() => setIsExporting(false), 1500);
+    }
   }, [fileName]);
 
   const handlePrint = useCallback(() => {
-    window.print();
-    setShowExport(false);
+    const content = getEditorContent();
+    ExportManager.printContent(content, fileName);
+  }, [fileName]);
+
+  const handleImport = useCallback(async (file: File) => {
+    const result = await ExportManager.importDocument(file, setExportProgress);
+    const editor = document.getElementById("doc-editor");
+    if (editor) {
+      editor.innerHTML = result.content;
+      localStorage.setItem("vidyalaya-doc-content", result.content);
+    }
   }, []);
 
   const handleHeaderFooterSave = (header: { left: string; center: string; right: string }, footer: { left: string; center: string; right: string }) => {
@@ -193,47 +219,23 @@ export default function DocumentPage() {
             aria-label="Document name"
           />
         </div>
-        <div className="relative">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowExport(!showExport)}
+            onClick={() => setShowImport(true)}
             className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors hover:bg-[var(--muted)]"
             style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
           >
-            <Download size={14} />
-            Export
+            <Upload size={14} />
+            Import
           </button>
-          {showExport && (
-            <div
-              className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border shadow-lg py-1"
-              style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
-            >
-              <button
-                onClick={handleExportHTML}
-                className="flex w-full items-center gap-2 px-4 py-2 text-xs hover:bg-[var(--muted)]"
-                style={{ color: "var(--foreground)" }}
-              >
-                <FileType2 size={14} />
-                Download as HTML
-              </button>
-              <button
-                onClick={handleExportText}
-                className="flex w-full items-center gap-2 px-4 py-2 text-xs hover:bg-[var(--muted)]"
-                style={{ color: "var(--foreground)" }}
-              >
-                <FileText size={14} />
-                Download as Text
-              </button>
-              <hr style={{ borderColor: "var(--border)" }} />
-              <button
-                onClick={handlePrint}
-                className="flex w-full items-center gap-2 px-4 py-2 text-xs hover:bg-[var(--muted)]"
-                style={{ color: "var(--foreground)" }}
-              >
-                <Download size={14} />
-                Print (Ctrl+P)
-              </button>
-            </div>
-          )}
+          <ExportDropdown
+            documentType="document"
+            onExport={handleExport}
+            onPrint={handlePrint}
+            onPrintPreview={() => setShowPrintPreview(true)}
+            isExporting={isExporting}
+            exportProgress={exportProgress}
+          />
         </div>
       </div>
 
@@ -258,8 +260,17 @@ export default function DocumentPage() {
 
       {/* Main content area */}
       <div className="relative flex flex-1 overflow-hidden">
+        {/* Table of Contents Panel */}
+        {showTocPanel && <TableOfContentsPanel />}
+
+        {/* Outline/Navigation Panel */}
+        {showOutlinePanel && <OutlineNavigationPanel />}
+
+        {/* Footnotes Panel */}
+        {showFootnotesPanel && <FootnotesEndnotesPanel />}
+
         {/* Navigation Pane */}
-        {showNavigationPane && <NavigationPane />}
+        {showNavigationPane && !showOutlinePanel && <NavigationPane />}
 
         {/* Styles Panel */}
         {showStylesPanel && <StylesPanel />}
@@ -287,6 +298,15 @@ export default function DocumentPage() {
           onRestore={handleVersionRestore}
           documentName={fileName}
         />
+
+        {/* Word Count Statistics Panel */}
+        {showStatisticsPanel && <WordCountStatisticsPanel />}
+
+        {/* Spelling & Grammar Panel */}
+        {showSpellingPanel && <SpellingGrammarPanel />}
+
+        {/* Bookmarks & Cross-references Panel */}
+        {showBookmarksPanel && <BookmarksCrossRefPanel />}
 
         {/* AI Panel */}
         <AIPanel />
@@ -334,8 +354,32 @@ export default function DocumentPage() {
         open={showKeyboardShortcuts}
         onClose={() => setShowKeyboardShortcuts(false)}
       />
+      {/* Watermark Dialog */}
+      <WatermarkDialog />
+      {/* Columns Dialog */}
+      <ColumnsDialog />
       {/* Collaboration modals */}
       <ShareDialog />
+
+      {/* Export/Import modals */}
+      <ImportDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={handleImport}
+        defaultType="document"
+      />
+      <PrintPreviewModal
+        open={showPrintPreview}
+        onClose={() => setShowPrintPreview(false)}
+        htmlContent={typeof window !== "undefined" ? getEditorContent() : ""}
+        title={fileName}
+      />
+      <ExportProgress
+        visible={isExporting}
+        percent={exportProgress.percent}
+        message={exportProgress.message}
+        onClose={() => setIsExporting(false)}
+      />
     </div>
   );
 }

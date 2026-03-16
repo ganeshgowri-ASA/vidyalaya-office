@@ -204,6 +204,8 @@ export function SpreadsheetToolbar({
   onExportCSV, onPrint, onOpenPivot, onOpenValidation, onOpenSortFilter,
   onOpenCondFormatDialog, onPageSetup, onOpenGoalSeek, onOpenStatistics,
   onExportExcel, onImportCSV,
+  onOpenFindReplace, onOpenNamedRanges, onOpenComments, onOpenFreezePanes,
+  onOpenCellFormatting,
 }: {
   onExportCSV: () => void; onPrint: () => void;
   onOpenPivot?: () => void; onOpenValidation?: () => void;
@@ -211,6 +213,9 @@ export function SpreadsheetToolbar({
   onPageSetup?: () => void; onOpenGoalSeek?: () => void;
   onOpenStatistics?: () => void; onExportExcel?: () => void;
   onImportCSV?: () => void;
+  onOpenFindReplace?: () => void; onOpenNamedRanges?: () => void;
+  onOpenComments?: () => void; onOpenFreezePanes?: () => void;
+  onOpenCellFormatting?: () => void;
 }) {
   const setSelectionStyle = useSpreadsheetStore((s) => s.setSelectionStyle);
   const activeCell = useSpreadsheetStore((s) => s.activeCell);
@@ -606,22 +611,8 @@ export function SpreadsheetToolbar({
           }}
         </DropdownBtn>
         <ToolBtn title="Sort & Filter" onClick={() => onOpenSortFilter?.()}><Filter size={14} /></ToolBtn>
-        <ToolBtn title="Find & Select" onClick={() => {
-          const text = prompt("Find:");
-          if (!text) return;
-          const sheet = getActiveSheet();
-          for (const [key, cell] of Object.entries(sheet.cells)) {
-            if (cell.raw.toLowerCase().includes(text.toLowerCase())) {
-              const match = key.match(/^([A-Z]+)(\d+)$/);
-              if (match) {
-                const col = match[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
-                const row = parseInt(match[2]) - 1;
-                useSpreadsheetStore.getState().setActiveCell(col, row);
-                break;
-              }
-            }
-          }
-        }}><Search size={14} /></ToolBtn>
+        <ToolBtn title="Find & Replace (Ctrl+H)" onClick={() => onOpenFindReplace?.()}><Search size={14} /></ToolBtn>
+        <ToolBtn title="Format Cells" onClick={() => onOpenCellFormatting?.()}><Settings2 size={14} /></ToolBtn>
       </RibbonGroup>
     </div>
   );
@@ -807,11 +798,7 @@ export function SpreadsheetToolbar({
       </RibbonGroup>
 
       <RibbonGroup label="Defined Names">
-        <ToolBtn title="Name Manager" onClick={() => {
-          const names = useSpreadsheetStore.getState().namedRanges;
-          const list = Object.entries(names).map(([n, r]) => `${n}: ${r}`).join("\n");
-          alert(list || "No named ranges defined.");
-        }}><Bookmark size={14} /></ToolBtn>
+        <ToolBtn title="Name Manager" onClick={() => onOpenNamedRanges?.()}><Bookmark size={14} /></ToolBtn>
         <ToolBtn title="Define Name" onClick={() => {
           const bounds = getSelectionBounds();
           if (!bounds) { alert("Select a range first."); return; }
@@ -917,14 +904,11 @@ export function SpreadsheetToolbar({
         <ToolBtn title="Delete Comment" onClick={() => {
           if (activeCell) setCellComment(activeCell.col, activeCell.row, undefined);
         }}><Trash2 size={14} /></ToolBtn>
-        <ToolBtn title="Show All Comments" onClick={() => {
-          const sheet = getActiveSheet();
-          const comments: string[] = [];
-          for (const [key, cell] of Object.entries(sheet.cells)) {
-            if (cell.comment) comments.push(`${key}: ${cell.comment.text} (by ${cell.comment.author})`);
-          }
-          alert(comments.length ? comments.join("\n") : "No comments.");
-        }}><Eye size={14} /></ToolBtn>
+        <ToolBtn title="Manage Comments" onClick={() => onOpenComments?.()}><MessageSquare size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Proofing">
+        <ToolBtn title="Find & Replace" onClick={() => onOpenFindReplace?.()}><Search size={14} /></ToolBtn>
       </RibbonGroup>
 
       <RibbonGroup label="Protect">
@@ -970,6 +954,7 @@ export function SpreadsheetToolbar({
                 close();
               }}>Freeze Panes</DropdownItem>
               <DropdownItem onClick={() => { setFrozenPanes(0, 0); close(); }}>Unfreeze Panes</DropdownItem>
+              <DropdownItem onClick={() => { onOpenFreezePanes?.(); close(); }}>Advanced Freeze...</DropdownItem>
             </>
           )}
         </DropdownBtn>

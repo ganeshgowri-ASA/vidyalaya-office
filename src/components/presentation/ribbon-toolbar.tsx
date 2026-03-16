@@ -134,6 +134,11 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
     setShowMediaPanel, setShowTextEffectsPanel, setShowExportPanel,
     applyTransitionToAll, updateSlideTransitionDuration,
     setPresenterViewMode,
+    setShowThemeDesigner, showThemeDesigner,
+    setShowShapeDrawingTools, showShapeDrawingTools,
+    setShowImageEditor, showImageEditor,
+    setShowTransitionPanel, showTransitionPanel,
+    setShowAnimationTimeline, showAnimationTimeline,
   } = store;
 
   const [showBgPicker, setShowBgPicker] = useState(false);
@@ -555,6 +560,7 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
             <RibbonGroup label="Media">
               <RibbonButton icon={<Image size={18} />} label="Picture" onClick={() => fileInputRef.current?.click()} />
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAddImage} />
+              <RibbonButton icon={<Paintbrush2 size={16} />} label="Image Edit" onClick={() => setShowImageEditor(!showImageEditor)} active={showImageEditor} small />
               <RibbonButton icon={<Video size={16} />} label="Video" onClick={() => setShowMediaPanel(true)} small />
               <RibbonButton icon={<Music size={16} />} label="Audio" onClick={() => setShowMediaPanel(true)} small />
             </RibbonGroup>
@@ -568,6 +574,7 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
               <RibbonButton icon={<Star size={16} />} onClick={() => handleAddShape('star')} title="Star" small />
               <RibbonButton icon={<Hexagon size={16} />} onClick={() => handleAddShape('hexagon')} title="Hexagon" small />
               <RibbonButton icon={<Heart size={16} />} onClick={() => handleAddShape('heart')} title="Heart" small />
+              <RibbonButton icon={<PenTool size={16} />} onClick={() => setShowShapeDrawingTools(!showShapeDrawingTools)} title="Shape Tools" active={showShapeDrawingTools} small />
               <div className="relative">
                 <RibbonButton icon={<Shapes size={14} />} onClick={() => setShowAllShapes(!showAllShapes)} title="All Shapes" small />
                 {showAllShapes && (
@@ -712,6 +719,7 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
 
             <RibbonGroup label="Design">
               <RibbonButton icon={<Wand2 size={16} />} label="Suggestions" onClick={() => setShowDesignPanel(!showDesignPanel)} active={showDesignPanel} />
+              <RibbonButton icon={<Paintbrush size={16} />} label="Theme Editor" onClick={() => setShowThemeDesigner(!showThemeDesigner)} active={showThemeDesigner} />
             </RibbonGroup>
             <RibbonDivider />
 
@@ -785,7 +793,7 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
           <div className="flex items-end gap-0.5">
             <RibbonGroup label="Transition">
               <div className="flex items-center gap-1 flex-wrap">
-                {TRANSITION_TYPES.map((t) => (
+                {TRANSITION_TYPES.slice(0, 8).map((t) => (
                   <button key={t.value} onClick={() => { pushUndo(); updateSlideTransition(activeSlideIndex, t.value); }}
                     className="px-2 py-1.5 rounded text-[10px] border transition-all hover:scale-105"
                     style={{
@@ -796,6 +804,7 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
                     {t.label}
                   </button>
                 ))}
+                <RibbonButton icon={<SlidersHorizontal size={14} />} label="More..." onClick={() => setShowTransitionPanel(!showTransitionPanel)} active={showTransitionPanel} small />
               </div>
             </RibbonGroup>
             <RibbonDivider />
@@ -862,6 +871,9 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
               <RibbonButton icon={<Sparkles size={18} />} label="Animations Panel"
                 onClick={() => setShowAnimationsPanel(!showAnimationsPanel)}
                 active={showAnimationsPanel} />
+              <RibbonButton icon={<Timer size={16} />} label="Timeline"
+                onClick={() => setShowAnimationTimeline(!showAnimationTimeline)}
+                active={showAnimationTimeline} />
             </RibbonGroup>
             <RibbonDivider />
             <RibbonGroup label="Quick Animations">

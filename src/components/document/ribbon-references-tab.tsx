@@ -20,7 +20,10 @@ function execCmd(command: string, value?: string) {
 }
 
 export function ReferencesTab() {
-  const { setShowCitationManager, citations, citationStyle: storeCitationStyle } = useDocumentStore();
+  const {
+    setShowCitationManager, citations, citationStyle: storeCitationStyle,
+    setShowTocPanel, setShowFootnotesPanel, setShowBookmarksPanel,
+  } = useDocumentStore();
   const [citationStyle, setCitationStyle] = useState("APA 7th Edition");
   const [showTocMenu, setShowTocMenu] = useState(false);
   const [showCrossRefMenu, setShowCrossRefMenu] = useState(false);
@@ -196,6 +199,11 @@ export function ReferencesTab() {
                   style={{ color: "var(--foreground)" }} onClick={insertTOC}>
                   Custom Table of Contents...
                 </button>
+                <hr className="my-1" style={{ borderColor: "var(--border)" }} />
+                <button className="w-full text-left text-xs px-3 py-1.5 rounded hover:bg-[var(--muted)]"
+                  style={{ color: "var(--foreground)" }} onClick={() => { setShowTocPanel(true); setShowTocMenu(false); }}>
+                  Open TOC Panel...
+                </button>
               </div>
             )}
           </div>
@@ -209,6 +217,7 @@ export function ReferencesTab() {
       {/* ===== FOOTNOTES GROUP ===== */}
       <div className="flex flex-col items-center border-r pr-2 mr-1" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-0.5">
+          <ToolbarButton icon={<AlignLeft size={14} />} label="Panel" title="Open Footnotes Panel" onClick={() => setShowFootnotesPanel(true)} />
           <ToolbarButton icon={<FileText size={14} />} label="Footnote" title="Insert Footnote" onClick={() => {
             focusEditor();
             const editor = document.getElementById("doc-editor");
@@ -366,6 +375,14 @@ export function ReferencesTab() {
           <ToolbarButton icon={<FileBarChart size={14} />} label="Word Count" title="Academic Word Count" onClick={insertWordCountStats} />
         </div>
         <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Lists & Stats</span>
+      </div>
+
+      {/* ===== BOOKMARKS GROUP ===== */}
+      <div className="flex flex-col items-center border-r pr-2 mr-1" style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-center gap-0.5">
+          <ToolbarButton icon={<Bookmark size={14} />} label="Bookmarks" title="Bookmarks & Cross-references Panel" onClick={() => setShowBookmarksPanel(true)} />
+        </div>
+        <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Bookmarks</span>
       </div>
 
       {/* ===== INDEX GROUP ===== */}

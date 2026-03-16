@@ -19,7 +19,6 @@ const templates = [
 
 const thumbnailColors = ["#1565C0", "#2E7D32", "#6A1B9A", "#C62828", "#E65100", "#00838F", "#1a237e", "#333333", "#00695c", "#2e7d32"];
 
-/* wordContent is defined in the parent page; previews use the key lookup */
 const wordContent: Record<string, string> = {};
 
 export default function WordTemplates() {
@@ -73,12 +72,13 @@ export default function WordTemplates() {
                 <Eye size={10} className="inline mr-1" />Preview
               </button>
             </div>
-            {preview === t.name && wordContent[t.name] && (
+            {preview === t.name && (
               <div
                 className="mt-2 max-h-48 overflow-y-auto rounded border p-2 text-[10px]"
                 style={{ borderColor: "var(--border)", backgroundColor: "var(--muted)" }}
-                dangerouslySetInnerHTML={{ __html: wordContent[t.name].slice(0, 1500) + "..." }}
-              />
+              >
+                <p style={{ color: "var(--muted-foreground)" }}>{t.desc}</p>
+              </div>
             )}
           </div>
         ))}

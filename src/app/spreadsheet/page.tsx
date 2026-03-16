@@ -1,6 +1,6 @@
 "use client";
 
-import SpreadsheetEditor from "@/components/spreadsheet/SpreadsheetEditor";
+import SpreadsheetWorkspace from "@/components/spreadsheet/spreadsheet-workspace";
 import { CollaborationToolbar, CollabCommentsSidebar, ShareDialog, VersionHistoryPanel } from "@/components/collaboration";
 import { useCollaborationStore } from "@/store/collaboration-store";
 
@@ -12,7 +12,7 @@ export default function SpreadsheetPage() {
       <CollaborationToolbar />
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <div style={{ flex: 1, overflow: "hidden" }}>
-          <SpreadsheetEditor />
+          <SpreadsheetWorkspace />
         </div>
         {showCollabComments && <CollabCommentsSidebar />}
         {showCollabHistory && <VersionHistoryPanel />}
