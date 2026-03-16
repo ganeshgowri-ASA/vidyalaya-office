@@ -156,9 +156,8 @@ export function ReviewTab() {
 }
 
 function WordCountDialog({ onClose }: { onClose: () => void }) {
-  const { wordCount, charCount, lineCount } = useDocumentStore();
-  const editor = typeof document !== "undefined" ? document.getElementById("doc-editor") : null;
-  const paragraphs = editor ? editor.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li").length : 0;
+  const { wordCount, charCount, lineCount, paragraphCount } = useDocumentStore();
+  const paragraphs = paragraphCount || (typeof document !== "undefined" ? document.getElementById("doc-editor")?.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li").length || 0 : 0);
 
   return (
     <div className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-4 shadow-lg w-64"

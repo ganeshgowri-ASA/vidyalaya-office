@@ -16,6 +16,9 @@ import { PageSetupDialog } from "@/components/document/page-setup-dialog";
 import { HeaderFooterEditor } from "@/components/document/header-footer-editor";
 import { VersionControlPanel } from "@/components/document/version-control-panel";
 import { DeveloperPanel } from "@/components/document/developer-tab";
+import { MailMergeDialog } from "@/components/document/mail-merge";
+import { DocumentPropertiesDialog } from "@/components/document/document-properties";
+import { KeyboardShortcutsDialog } from "@/components/document/keyboard-shortcuts-dialog";
 import { useDocumentStore } from "@/store/document-store";
 import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
 import { SmartArtInfographicsModal } from "@/components/document/smartart-infographics-modal";
@@ -23,7 +26,16 @@ import { EquationEditor } from "@/components/document/equation-editor";
 import { CitationManagerModal } from "@/components/document/citation-manager";
 
 export default function DocumentPage() {
-  const { fileName, setFileName, setShowFindReplace, showComments, trackChanges, showStylesPanel, setHeaderText, setFooterText, showNavigationPane, showEquationEditor, setShowEquationEditor, showCitationManager, setShowCitationManager } = useDocumentStore();
+  const {
+    fileName, setFileName, setShowFindReplace, showComments, trackChanges,
+    showStylesPanel, setHeaderText, setFooterText, showNavigationPane,
+    showEquationEditor, setShowEquationEditor,
+    showCitationManager, setShowCitationManager,
+    showMailMerge, setShowMailMerge,
+    showDocProperties, setShowDocProperties,
+    showKeyboardShortcuts, setShowKeyboardShortcuts,
+  } = useDocumentStore();
+
   const [showExport, setShowExport] = React.useState(false);
   const [showPageSetup, setShowPageSetup] = React.useState(false);
   const [showHeaderFooterEditor, setShowHeaderFooterEditor] = React.useState(false);
@@ -112,11 +124,16 @@ export default function DocumentPage() {
             useDocumentStore.getState().setLineSpacing("2");
             break;
         }
+        // Ctrl+Shift+/ for keyboard shortcuts
+        if (e.shiftKey && (e.key === "/" || e.key === "?")) {
+          e.preventDefault();
+          setShowKeyboardShortcuts(!showKeyboardShortcuts);
+        }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [setShowFindReplace]);
+  }, [setShowFindReplace, showKeyboardShortcuts, setShowKeyboardShortcuts]);
 
   const handleExportHTML = useCallback(() => {
     exportAsHTML(fileName);
@@ -213,6 +230,8 @@ export default function DocumentPage() {
         onHeaderFooterEditor={() => setShowHeaderFooterEditor(true)}
         onToggleVersionControl={() => setShowVersionControl(!showVersionControl)}
         onToggleDeveloper={() => setShowDeveloper(!showDeveloper)}
+        onShowDocProperties={() => setShowDocProperties(true)}
+        onShowKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
       />
 
       {/* Track Changes Panel */}
@@ -280,6 +299,18 @@ export default function DocumentPage() {
       <CitationManagerModal
         open={showCitationManager}
         onClose={() => setShowCitationManager(false)}
+      />
+      <MailMergeDialog
+        open={showMailMerge}
+        onClose={() => setShowMailMerge(false)}
+      />
+      <DocumentPropertiesDialog
+        open={showDocProperties}
+        onClose={() => setShowDocProperties(false)}
+      />
+      <KeyboardShortcutsDialog
+        open={showKeyboardShortcuts}
+        onClose={() => setShowKeyboardShortcuts(false)}
       />
     </div>
   );

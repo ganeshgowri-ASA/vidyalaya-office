@@ -237,6 +237,9 @@ export function EditorArea() {
     orientation, viewMode, showRuler, showGridlines,
     pageColor,
     setSelectedTable, setSelectedImage, setSelectedSmartArt,
+    watermarkDirection, watermarkOpacity, watermarkImageUrl, useImageWatermark,
+    showLineNumbers, setParagraphCount,
+    pageNumberPosition, pageNumberFormat, differentFirstPage, showHeaderFooter: showHF,
   } = useDocumentStore();
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -347,7 +350,10 @@ export function EditorArea() {
     const chars = trimmed.length;
     const lines = trimmed === "" ? 0 : trimmed.split(/\n/).length;
     updateCounts(words, chars, lines);
-  }, [updateCounts]);
+    // Count paragraphs
+    const paragraphs = editorRef.current.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li").length;
+    setParagraphCount(Math.max(paragraphs, trimmed === "" ? 0 : 1));
+  }, [updateCounts, setParagraphCount]);
 
   const handleInput = useCallback(() => {
     countWords();
@@ -435,24 +441,39 @@ export function EditorArea() {
         )}
 
         {/* Watermark */}
-        {showWatermark && watermarkText && (
+        {showWatermark && (
           <div
             className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
             style={{ zIndex: 0 }}
           >
-            <span
-              style={{
-                fontSize: 72,
-                fontWeight: 700,
-                color: "rgba(200, 200, 200, 0.3)",
-                transform: "rotate(-45deg)",
-                whiteSpace: "nowrap",
-                letterSpacing: 8,
-                userSelect: "none",
-              }}
-            >
-              {watermarkText}
-            </span>
+            {useImageWatermark && watermarkImageUrl ? (
+              <img
+                src={watermarkImageUrl}
+                alt="watermark"
+                style={{
+                  maxWidth: "60%",
+                  maxHeight: "60%",
+                  opacity: watermarkOpacity,
+                  transform: watermarkDirection === "diagonal" ? "rotate(-45deg)" : "none",
+                  userSelect: "none",
+                  pointerEvents: "none",
+                }}
+              />
+            ) : watermarkText ? (
+              <span
+                style={{
+                  fontSize: 72,
+                  fontWeight: 700,
+                  color: `rgba(200, 200, 200, ${watermarkOpacity})`,
+                  transform: watermarkDirection === "diagonal" ? "rotate(-45deg)" : "none",
+                  whiteSpace: "nowrap",
+                  letterSpacing: 8,
+                  userSelect: "none",
+                }}
+              >
+                {watermarkText}
+              </span>
+            ) : null}
           </div>
         )}
 
@@ -468,22 +489,29 @@ export function EditorArea() {
           </div>
         )}
 
-        <div
-          ref={editorRef}
-          id="doc-editor"
-          contentEditable={!isReadMode}
-          suppressContentEditableWarning
-          onInput={handleInput}
-          onContextMenu={handleContextMenu}
-          className="outline-none min-h-[800px] relative"
-          style={{
-            wordWrap: "break-word",
-            overflowWrap: "break-word",
-            zIndex: 1,
-            cursor: isReadMode ? "default" : "text",
-          }}
-          spellCheck
-        />
+        <div className="relative" style={{ display: "flex" }}>
+          {/* Line Numbers */}
+          {showLineNumbers && (
+            <LineNumbers editorRef={editorRef} />
+          )}
+          <div
+            ref={editorRef}
+            id="doc-editor"
+            contentEditable={!isReadMode}
+            suppressContentEditableWarning
+            onInput={handleInput}
+            onContextMenu={handleContextMenu}
+            className="outline-none min-h-[800px] relative flex-1"
+            style={{
+              wordWrap: "break-word",
+              overflowWrap: "break-word",
+              zIndex: 1,
+              cursor: isReadMode ? "default" : "text",
+              paddingLeft: showLineNumbers ? "8px" : undefined,
+            }}
+            spellCheck
+          />
+        </div>
 
         {/* Footer */}
         {showHeaderFooter && (
@@ -506,6 +534,46 @@ export function EditorArea() {
           onClose={() => setContextMenu(null)}
         />
       )}
+    </div>
+  );
+}
+
+function LineNumbers({ editorRef }: { editorRef: React.RefObject<HTMLDivElement | null> }) {
+  const [lineCount, setLineCount] = React.useState(1);
+
+  React.useEffect(() => {
+    const updateLines = () => {
+      if (!editorRef.current) return;
+      const text = editorRef.current.innerText || "";
+      const lines = text.split("\n").length;
+      setLineCount(Math.max(lines, 1));
+    };
+
+    updateLines();
+    const interval = setInterval(updateLines, 1000);
+
+    const editor = editorRef.current;
+    editor?.addEventListener("input", updateLines);
+    return () => {
+      clearInterval(interval);
+      editor?.removeEventListener("input", updateLines);
+    };
+  }, [editorRef]);
+
+  return (
+    <div className="select-none flex-shrink-0 text-right pr-2 border-r"
+      style={{
+        width: 40,
+        color: "#999",
+        fontSize: "10px",
+        lineHeight: "1.6em",
+        paddingTop: 2,
+        borderColor: "#e0e0e0",
+        fontFamily: "monospace",
+      }}>
+      {Array.from({ length: lineCount }, (_, i) => (
+        <div key={i}>{i + 1}</div>
+      ))}
     </div>
   );
 }

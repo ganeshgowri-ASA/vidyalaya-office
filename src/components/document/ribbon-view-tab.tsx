@@ -6,7 +6,7 @@ import {
   PanelLeft, BookOpen, FileText, Globe, Layout,
   ListTree, Edit3, Eye, SplitSquareHorizontal,
   Maximize2, Monitor, ChevronDown, History, Terminal,
-  Code, GitBranch, MessageCircle,
+  Code, GitBranch, MessageCircle, Hash, Keyboard, FileBarChart,
 } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
 import { ToolbarButton, ToolbarSeparator } from "./toolbar-button";
@@ -15,9 +15,11 @@ import type { ViewMode } from "@/store/document-store";
 export interface ViewTabProps {
   onToggleVersionControl?: () => void;
   onToggleDeveloper?: () => void;
+  onShowDocProperties?: () => void;
+  onShowKeyboardShortcuts?: () => void;
 }
 
-export function ViewTab({ onToggleVersionControl, onToggleDeveloper }: ViewTabProps) {
+export function ViewTab({ onToggleVersionControl, onToggleDeveloper, onShowDocProperties, onShowKeyboardShortcuts }: ViewTabProps) {
   const {
     zoom, setZoom,
     viewMode, setViewMode,
@@ -26,6 +28,7 @@ export function ViewTab({ onToggleVersionControl, onToggleDeveloper }: ViewTabPr
     showNavigationPane, toggleNavigationPane,
     trackChanges, toggleTrackChanges,
     showComments, toggleComments,
+    showLineNumbers, toggleLineNumbers,
   } = useDocumentStore();
 
   const [showZoomDialog, setShowZoomDialog] = useState(false);
@@ -58,6 +61,8 @@ export function ViewTab({ onToggleVersionControl, onToggleDeveloper }: ViewTabPr
             active={showGridlines} onClick={toggleGridlines} />
           <ToolbarButton icon={<PanelLeft size={14} />} label="Navigation" title="Navigation Pane"
             active={showNavigationPane} onClick={toggleNavigationPane} />
+          <ToolbarButton icon={<Hash size={14} />} label="Line #" title="Line Numbers"
+            active={showLineNumbers} onClick={toggleLineNumbers} />
         </div>
         <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Show</span>
       </div>
@@ -130,6 +135,12 @@ export function ViewTab({ onToggleVersionControl, onToggleDeveloper }: ViewTabPr
           )}
           {onToggleDeveloper && (
             <ToolbarButton icon={<Terminal size={14} />} label="Macros" title="Macros" onClick={onToggleDeveloper} />
+          )}
+          {onShowDocProperties && (
+            <ToolbarButton icon={<FileBarChart size={14} />} label="Properties" title="Document Properties" onClick={onShowDocProperties} />
+          )}
+          {onShowKeyboardShortcuts && (
+            <ToolbarButton icon={<Keyboard size={14} />} label="Shortcuts" title="Keyboard Shortcuts" onClick={onShowKeyboardShortcuts} />
           )}
         </div>
         <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Window</span>

@@ -3,32 +3,22 @@
 import React, { useState } from "react";
 import { useDocumentStore } from "@/store/document-store";
 import { PAGE_SIZES } from "./constants";
-import { Globe, ChevronDown, ZoomIn, ZoomOut, Minus, Plus } from "lucide-react";
+import { Globe, ChevronDown, Minus, Plus, FileText, Maximize2, Monitor } from "lucide-react";
 
 const LANGUAGES = [
-  "English",
-  "Hindi",
-  "Tamil",
-  "Telugu",
-  "Kannada",
-  "Malayalam",
-  "Bengali",
-  "Marathi",
-  "Gujarati",
-  "Punjabi",
-  "French",
-  "Spanish",
-  "German",
+  "English", "Hindi", "Tamil", "Telugu", "Kannada", "Malayalam",
+  "Bengali", "Marathi", "Gujarati", "Punjabi", "French", "Spanish", "German",
 ];
 
 export function StatusBar() {
   const {
-    wordCount, charCount, lineCount, pageSize,
+    wordCount, charCount, lineCount, paragraphCount, pageSize,
     currentFont, currentFontSize, zoom, setZoom, lastSaved,
-    language, setLanguage,
+    language, setLanguage, autoSaveEnabled,
   } = useDocumentStore();
 
   const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const [showZoomPresets, setShowZoomPresets] = useState(false);
 
   const pageEstimate = Math.max(1, Math.ceil(wordCount / 300));
 
@@ -51,6 +41,8 @@ export function StatusBar() {
         <span className="h-3 w-px" style={{ backgroundColor: "var(--border)" }} />
         <span>Characters: {charCount.toLocaleString()}</span>
         <span className="h-3 w-px" style={{ backgroundColor: "var(--border)" }} />
+        <span>Paragraphs: {paragraphCount}</span>
+        <span className="h-3 w-px" style={{ backgroundColor: "var(--border)" }} />
         <span>Lines: {lineCount.toLocaleString()}</span>
         <span className="h-3 w-px" style={{ backgroundColor: "var(--border)" }} />
         {/* Language selector */}
@@ -71,10 +63,7 @@ export function StatusBar() {
               {LANGUAGES.map((lang) => (
                 <button
                   key={lang}
-                  onClick={() => {
-                    setLanguage(lang);
-                    setShowLangDropdown(false);
-                  }}
+                  onClick={() => { setLanguage(lang); setShowLangDropdown(false); }}
                   className="flex w-full items-center px-3 py-1.5 text-[11px] hover:bg-[var(--muted)]"
                   style={{
                     color: language === lang ? "var(--primary)" : "var(--foreground)",
@@ -89,23 +78,44 @@ export function StatusBar() {
         </div>
       </div>
 
-      {/* Right side - Zoom slider */}
+      {/* Right side - Zoom slider & save status */}
       <div className="flex items-center gap-2">
-        {lastSaved && <span className="text-[10px]">Saved: {lastSaved}</span>}
+        {/* Auto-save indicator */}
+        {autoSaveEnabled && lastSaved && (
+          <span className="text-[10px] flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+            Saved: {lastSaved}
+          </span>
+        )}
+        {autoSaveEnabled && !lastSaved && (
+          <span className="text-[10px] flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+            Unsaved
+          </span>
+        )}
         <span className="h-3 w-px" style={{ backgroundColor: "var(--border)" }} />
+
+        {/* Zoom preset buttons */}
+        <button onClick={() => setZoom(80)} className="p-0.5 rounded hover:bg-[var(--muted)]" title="Fit Page">
+          <FileText size={11} />
+        </button>
+        <button onClick={() => setZoom(100)} className="p-0.5 rounded hover:bg-[var(--muted)]" title="Fit Width">
+          <Maximize2 size={11} />
+        </button>
+
         {/* Zoom controls */}
         <div className="flex items-center gap-1">
           <button
             className="p-0.5 rounded hover:bg-[var(--muted)] cursor-pointer"
-            onClick={() => setZoom(Math.max(50, zoom - 10))}
+            onClick={() => setZoom(Math.max(10, zoom - 10))}
             title="Zoom Out"
           >
             <Minus size={12} />
           </button>
           <input
             type="range"
-            min={50}
-            max={200}
+            min={10}
+            max={500}
             step={10}
             value={zoom}
             onChange={(e) => setZoom(parseInt(e.target.value))}
@@ -115,12 +125,32 @@ export function StatusBar() {
           />
           <button
             className="p-0.5 rounded hover:bg-[var(--muted)] cursor-pointer"
-            onClick={() => setZoom(Math.min(200, zoom + 10))}
+            onClick={() => setZoom(Math.min(500, zoom + 10))}
             title="Zoom In"
           >
             <Plus size={12} />
           </button>
-          <span className="w-10 text-center text-[10px]">{zoom}%</span>
+          <div className="relative">
+            <button onClick={() => setShowZoomPresets(!showZoomPresets)}
+              className="w-12 text-center text-[10px] hover:underline cursor-pointer">
+              {zoom}%
+            </button>
+            {showZoomPresets && (
+              <div className="absolute bottom-full right-0 mb-1 z-50 rounded-lg border shadow-lg py-1 w-24"
+                style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+                {[10, 25, 50, 75, 100, 150, 200, 300, 400, 500].map((z) => (
+                  <button key={z} onClick={() => { setZoom(z); setShowZoomPresets(false); }}
+                    className="w-full text-left px-3 py-1 text-[10px] hover:bg-[var(--muted)]"
+                    style={{
+                      color: zoom === z ? "var(--primary)" : "var(--foreground)",
+                      fontWeight: zoom === z ? 600 : 400,
+                    }}>
+                    {z}%
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
