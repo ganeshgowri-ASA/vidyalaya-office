@@ -17,4 +17,6 @@ export { default as RedactionPanel } from "./RedactionPanel";
 export { default as PasswordProtectionModal } from "./PasswordProtectionModal";
 export { default as OcrPanel } from "./OcrPanel";
 export { default as PdfCreatorPanel } from "./PdfCreatorPanel";
+export { default as BookmarksPanel } from "./BookmarksPanel";
+export { default as OrganizePagesPanel } from "./OrganizePagesPanel";
 export * from "./types";

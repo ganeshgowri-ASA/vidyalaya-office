@@ -234,6 +234,9 @@ interface AppState {
 
   // Folder operations
   createFolder: (name: string, parentId: string) => void;
+  renameFolder: (folderId: string, newName: string) => void;
+  deleteFolder: (folderId: string) => void;
+  createFile: (name: string, type: FileType, folderId: string) => void;
 
   // Trash operations
   restoreFile: (fileId: string) => void;
@@ -336,6 +339,39 @@ export const useAppStore = create<AppState>()((set) => ({
           created: new Date().toISOString(),
           modified: new Date().toISOString(),
         },
+      ],
+    })),
+  renameFolder: (folderId, newName) =>
+    set((state) => ({
+      folders: state.folders.map((f) =>
+        f.id === folderId ? { ...f, name: newName, modified: new Date().toISOString() } : f
+      ),
+    })),
+  deleteFolder: (folderId) =>
+    set((state) => ({
+      folders: state.folders.filter((f) => f.id !== folderId),
+      recentFiles: state.recentFiles.map((f) =>
+        f.folderId === folderId ? { ...f, folderId: "folder-root" } : f
+      ),
+    })),
+  createFile: (name, type, folderId) =>
+    set((state) => ({
+      recentFiles: [
+        {
+          id: `file-${++fileCounter}`,
+          name,
+          type,
+          content: "",
+          created: new Date().toISOString(),
+          modified: new Date().toISOString(),
+          owner: "Admin User",
+          tags: [],
+          version: 1,
+          starred: false,
+          size: 0,
+          folderId,
+        },
+        ...state.recentFiles,
       ],
     })),
 

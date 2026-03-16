@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Mail,
@@ -36,7 +36,23 @@ export default function ProfilePage() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("vidyalaya_profile");
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.displayName) setDisplayName(data.displayName);
+        if (data.email) setEmail(data.email);
+        if (data.themeMode) setThemeMode(data.themeMode);
+        if (data.defaultView) setDefaultView(data.defaultView);
+        if (typeof data.emailNotifications === "boolean") setEmailNotifications(data.emailNotifications);
+      }
+    } catch {}
+  }, []);
+
   const handleSave = () => {
+    const profileData = { displayName, email, themeMode, defaultView, emailNotifications };
+    localStorage.setItem("vidyalaya_profile", JSON.stringify(profileData));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
