@@ -20,6 +20,23 @@ export function indexToColLetter(index: number): string {
   return result;
 }
 
+export const colToLetter = indexToColLetter;
+
+export function parseCellRef(ref: string): { col: number; row: number } | null {
+  const m = ref.toUpperCase().match(/^([A-Z]+)(\d+)$/);
+  if (!m) return null;
+  return { col: colLetterToIndex(m[1]), row: parseInt(m[2]) - 1 };
+}
+
+export function parseRange(range: string): { start: { col: number; row: number }; end: { col: number; row: number } } | null {
+  const parts = range.split(":");
+  if (parts.length !== 2) return null;
+  const start = parseCellRef(parts[0].trim());
+  const end = parseCellRef(parts[1].trim());
+  if (!start || !end) return null;
+  return { start, end };
+}
+
 function toNum(val: ArgValue | FuncArg | undefined): number {
   if (val === undefined || val === null) return 0;
   if (Array.isArray(val)) return toNum(val[0]);
