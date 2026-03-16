@@ -11,6 +11,41 @@ export interface VFile {
   tags: string[];
   version: number;
   starred?: boolean;
+  size?: number; // bytes
+  folderId?: string;
+  deleted?: boolean;
+  deletedAt?: string;
+}
+
+export interface VFolder {
+  id: string;
+  name: string;
+  parentId: string | null;
+  created: string;
+  modified: string;
+}
+
+export interface ActivityItem {
+  id: string;
+  action: string;
+  item: string;
+  tool: string;
+  user: string;
+  time: string;
+  type: "edit" | "approve" | "comment" | "share" | "upload" | "delete" | "create";
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  role: "admin" | "editor" | "viewer";
+  preferences: {
+    theme: "light" | "dark" | "system";
+    defaultView: "grid" | "list";
+    emailNotifications: boolean;
+  };
 }
 
 export type TemplateCategory = "word" | "excel" | "ppt";
