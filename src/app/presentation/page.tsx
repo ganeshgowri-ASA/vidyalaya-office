@@ -22,6 +22,11 @@ import ExportPanel from '@/components/presentation/export-panel';
 import { PageSetupDialog } from '@/components/document/page-setup-dialog';
 import { CollaborationToolbar, CollabCommentsSidebar, ShareDialog, VersionHistoryPanel } from '@/components/collaboration';
 import { useCollaborationStore } from '@/store/collaboration-store';
+import { ExportDropdown } from '@/components/shared/export-dropdown';
+import { ExportProgress } from '@/components/shared/export-progress';
+import { ImportDialog } from '@/components/shared/import-dialog';
+import { PrintPreviewModal } from '@/components/shared/print-preview-modal';
+import { ExportManager, type ExportFormat } from '@/lib/export-manager';
 
 export default function PresentationPage() {
   const {
@@ -30,6 +35,99 @@ export default function PresentationPage() {
     selectedElementId, removeElement, activeSlideIndex,
   } = usePresentationStore();
   const [showPageSetup, setShowPageSetup] = React.useState(false);
+  const [isExporting, setIsExporting] = React.useState(false);
+  const [exportProgress, setExportProgress] = React.useState({ percent: 0, message: '' });
+  const [showImportDialog, setShowImportDialog] = React.useState(false);
+  const [showPrintPreviewModal, setShowPrintPreviewModal] = React.useState(false);
+
+  const slides = usePresentationStore((s) => s.slides);
+  const presentationTitle = 'Presentation';
+
+  const getSlidesData = useCallback(() => {
+    return slides.map((slide) => {
+      const textEls = slide.elements.filter((e) => e.type === 'text');
+      const title = textEls[0]?.content || `Slide`;
+      const content = textEls.slice(1).map((e) => e.content || '').join('\n');
+      return { title, content };
+    });
+  }, [slides]);
+
+  const handlePresentationExport = useCallback(async (format: ExportFormat) => {
+    setIsExporting(true);
+    try {
+      const slidesData = getSlidesData();
+      await ExportManager.exportPresentation(format, slidesData, presentationTitle, setExportProgress);
+    } finally {
+      setTimeout(() => setIsExporting(false), 1500);
+    }
+  }, [getSlidesData, presentationTitle]);
+
+  const handlePresentationPrint = useCallback(() => {
+    const slidesData = getSlidesData();
+    ExportManager.exportPresentation('pdf', slidesData, presentationTitle);
+  }, [getSlidesData, presentationTitle]);
+
+  const handlePresentationImport = useCallback(async (file: File) => {
+    const result = await ExportManager.importPresentation(file, setExportProgress);
+    const newSlides = result.slides.map((s, i) => ({
+      id: `imported-${Date.now()}-${i}`,
+      layout: 'content' as const,
+      background: '#ffffff',
+      transition: 'fade' as const,
+      transitionDuration: 500,
+      elements: [
+        {
+          id: `title-${i}`,
+          type: 'text' as const,
+          x: 50,
+          y: 30,
+          width: 860,
+          height: 80,
+          content: s.title,
+          rotation: 0,
+          style: {
+            fontSize: 32,
+            fontWeight: 'bold',
+            color: '#000000',
+            fontFamily: 'Arial',
+            textAlign: 'center',
+          },
+        },
+        {
+          id: `content-${i}`,
+          type: 'text' as const,
+          x: 50,
+          y: 140,
+          width: 860,
+          height: 350,
+          content: s.content,
+          rotation: 0,
+          style: {
+            fontSize: 18,
+            color: '#333333',
+            fontFamily: 'Arial',
+            textAlign: 'left',
+          },
+        },
+      ],
+      notes: '',
+    }));
+    if (newSlides.length > 0) {
+      loadTemplate(newSlides);
+    }
+  }, [loadTemplate]);
+
+  const getPresentationPreviewHtml = useCallback(() => {
+    const slidesData = getSlidesData();
+    let html = '';
+    slidesData.forEach((s, i) => {
+      html += `<div style="border:1px solid #ddd;padding:40px;margin:20px 0;min-height:400px;page-break-after:always">`;
+      html += `<h1 style="font-size:28px;margin-bottom:20px">${s.title}</h1>`;
+      html += `<p style="font-size:16px;line-height:1.6;white-space:pre-wrap">${s.content}</p>`;
+      html += `</div>`;
+    });
+    return html;
+  }, [getSlidesData]);
 
   useEffect(() => {
     const templateData = localStorage.getItem('vidyalaya-ppt-template');
@@ -98,6 +196,27 @@ export default function PresentationPage() {
     <>
       <div className="flex flex-col h-[calc(100vh-48px)] no-print">
         <CollaborationToolbar />
+        {/* Export/Import bar */}
+        <div
+          className="no-print flex items-center justify-end gap-2 border-b px-4 py-1"
+          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+        >
+          <button
+            onClick={() => setShowImportDialog(true)}
+            className="flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs transition-colors hover:bg-[var(--muted)]"
+            style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+          >
+            Import
+          </button>
+          <ExportDropdown
+            documentType="presentation"
+            onExport={handlePresentationExport}
+            onPrint={handlePresentationPrint}
+            onPrintPreview={() => setShowPrintPreviewModal(true)}
+            isExporting={isExporting}
+            exportProgress={exportProgress}
+          />
+        </div>
         <RibbonToolbar onPageSetup={() => setShowPageSetup(true)} />
         <div className="flex flex-1 overflow-hidden">
           <SlidePanel />
@@ -124,6 +243,24 @@ export default function PresentationPage() {
       <PrintView />
       <PageSetupDialog open={showPageSetup} onClose={() => setShowPageSetup(false)} />
       <ShareDialog />
+      <ImportDialog
+        open={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onImport={handlePresentationImport}
+        defaultType="presentation"
+      />
+      <PrintPreviewModal
+        open={showPrintPreviewModal}
+        onClose={() => setShowPrintPreviewModal(false)}
+        htmlContent={getPresentationPreviewHtml()}
+        title={presentationTitle}
+      />
+      <ExportProgress
+        visible={isExporting}
+        percent={exportProgress.percent}
+        message={exportProgress.message}
+        onClose={() => setIsExporting(false)}
+      />
     </>
   );
 }
