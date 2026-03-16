@@ -18,6 +18,8 @@ import { PropertiesPanel } from "@/components/pdf";
 import { HeaderFooterModal } from "@/components/pdf";
 import { PrintModal } from "@/components/pdf";
 import { ExportModal } from "@/components/pdf";
+import { BookmarksPanel } from "@/components/pdf";
+import { OrganizePagesPanel } from "@/components/pdf";
 import type {
   RibbonTabId, HeaderFooterConfig, PrintOptions, ExportOptions,
   SecurityConfig, DocumentProperties, SearchResult,
@@ -159,6 +161,14 @@ export default function PdfToolsPage() {
     date: new Date().toISOString().split("T")[0],
   });
   const [certSignatureApplied, setCertSignatureApplied] = useState(false);
+
+  // ── Bookmarks ──
+  const [showBookmarks, setShowBookmarks] = useState(false);
+  const [bookmarks, setBookmarks] = useState<import("@/components/pdf/types").Bookmark[]>([]);
+
+  // ── Organize Pages ──
+  const [showOrganize, setShowOrganize] = useState(false);
+  const [pageOrder, setPageOrder] = useState<number[]>([]);
 
   // ── Compare ──
   const [compareDoc, setCompareDoc] = useState<PDFDocumentProxy | null>(null);
@@ -721,6 +731,14 @@ export default function PdfToolsPage() {
 
   useEffect(() => { if (pdfDoc && compareDoc) renderComparePages(); }, [pdfDoc, compareDoc, renderComparePages]);
 
+  useEffect(() => {
+    if (totalPages > 0) {
+      setPageOrder(Array.from({ length: totalPages }, (_, i) => i));
+    } else {
+      setPageOrder([]);
+    }
+  }, [totalPages]);
+
   // ─── Search ────────────────────────────────────────────────────────────────
 
   const handleSearch = useCallback(async (query: string, opts: { caseSensitive: boolean; wholeWord: boolean }) => {
@@ -770,6 +788,103 @@ export default function PdfToolsPage() {
 
   const applySecurity = () => { setSecurityApplied(true); setShowSecurity(false); };
   const applyCertSignature = () => { if (!certificateInfo.name || !certificateInfo.email) return; setCertSignatureApplied(true); setShowCertModal(false); };
+
+  // ─── Bookmark handlers ────────────────────────────────────────────────────
+  const addBookmark = (bookmark: import("@/components/pdf/types").Bookmark) => {
+    setBookmarks((prev) => [...prev, bookmark]);
+  };
+  const removeBookmark = (id: string) => {
+    setBookmarks((prev) => prev.filter((b) => b.id !== id));
+  };
+  const updateBookmark = (id: string, updates: Partial<import("@/components/pdf/types").Bookmark>) => {
+    setBookmarks((prev) => prev.map((b) => b.id === id ? { ...b, ...updates } : b));
+  };
+
+  // ─── Organize page handlers ──────────────────────────────────────────────
+  const handleReorderPages = async (newOrder: number[]) => {
+    if (!pdfBytes) return;
+    try {
+      const src = await PDFDocument.load(pdfBytes);
+      const dest = await PDFDocument.create();
+      const pages = await dest.copyPages(src, newOrder);
+      pages.forEach((p) => dest.addPage(p));
+      const bytes = await dest.save();
+      await loadPdf(bytes.buffer as ArrayBuffer, pdfName);
+    } catch (err) { console.error("Reorder failed:", err); }
+  };
+
+  const handleDeletePages = async (pages: number[]) => {
+    if (!pdfBytes) return;
+    try {
+      const src = await PDFDocument.load(pdfBytes);
+      const allIndices = src.getPageIndices().filter((i) => !pages.includes(i));
+      if (allIndices.length === 0) return;
+      const dest = await PDFDocument.create();
+      const copied = await dest.copyPages(src, allIndices);
+      copied.forEach((p) => dest.addPage(p));
+      const bytes = await dest.save();
+      await loadPdf(bytes.buffer as ArrayBuffer, pdfName);
+    } catch (err) { console.error("Delete pages failed:", err); }
+  };
+
+  const handleRotatePages = (pages: number[], deg: number) => {
+    setPageRotations((prev) => {
+      const next = { ...prev };
+      pages.forEach((p) => { next[p] = ((next[p] || 0) + deg) % 360; });
+      return next;
+    });
+  };
+
+  const handleInsertBlankPage = async (afterPage: number) => {
+    if (!pdfBytes) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const refPage = doc.getPages()[Math.min(afterPage, doc.getPageCount() - 1)];
+      const { width, height } = refPage.getSize();
+      doc.insertPage(afterPage + 1, [width, height]);
+      const bytes = await doc.save();
+      await loadPdf(bytes.buffer as ArrayBuffer, pdfName);
+    } catch (err) { console.error("Insert blank failed:", err); }
+  };
+
+  const handleExtractPages = async (pages: number[]) => {
+    if (!pdfBytes) return;
+    try {
+      const src = await PDFDocument.load(pdfBytes);
+      const dest = await PDFDocument.create();
+      const copied = await dest.copyPages(src, pages);
+      copied.forEach((p) => dest.addPage(p));
+      const bytes = await dest.save();
+      downloadBlob(new Blob([bytes as BlobPart], { type: "application/pdf" }), `extracted_${pdfName || "pages.pdf"}`);
+    } catch (err) { console.error("Extract failed:", err); }
+  };
+
+  // ─── Redaction apply handler ──────────────────────────────────────────────
+  const handleApplyRedactions = async () => {
+    if (!pdfBytes) return;
+    const redactionAnns = annotations.filter((a) => a.type === "redaction");
+    if (redactionAnns.length === 0) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const pages = doc.getPages();
+      for (const ann of redactionAnns) {
+        const pageIdx = ann.page - 1;
+        if (pageIdx < 0 || pageIdx >= pages.length) continue;
+        const page = pages[pageIdx];
+        const { height } = page.getSize();
+        page.drawRectangle({
+          x: ann.x,
+          y: height - ann.y - (ann.height ?? 20),
+          width: ann.width ?? 100,
+          height: ann.height ?? 20,
+          color: { type: 'RGB' as any, red: 0, green: 0, blue: 0 } as any,
+        });
+      }
+      const bytes = await doc.save();
+      await loadPdf(bytes.buffer as ArrayBuffer, pdfName);
+      setAnnotations((prev) => prev.filter((a) => a.type !== "redaction"));
+    } catch (err) { console.error("Apply redactions failed:", err); }
+  };
 
   // ─── Create blank PDF ──────────────────────────────────────────────────────
 
@@ -852,6 +967,7 @@ export default function PdfToolsPage() {
                 <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
                 <button style={btnStyle} onClick={() => setShowSearch(!showSearch)}><Search size={14} /> Find</button>
                 <button style={btnStyle} onClick={() => setShowProperties(!showProperties)}><Info size={14} /> Properties</button>
+                <button style={{ ...btnStyle, ...(showBookmarks ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowBookmarks(!showBookmarks)}><BookOpen size={14} /> Bookmarks</button>
               </>
             )}
           </div>
@@ -889,6 +1005,7 @@ export default function PdfToolsPage() {
             <button style={btnStyle} onClick={() => setActiveTab("edit")}><EyeOff size={14} /> Redact</button>
             <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
             <button style={btnStyle} onClick={flattenAnnotations} disabled={annotations.length === 0}><Layers size={14} /> Flatten</button>
+            <button style={{ ...btnStyle, color: annotations.filter(a => a.type === "redaction").length === 0 ? "var(--muted-foreground)" : "#dc2626" }} onClick={handleApplyRedactions} disabled={annotations.filter(a => a.type === "redaction").length === 0}><EyeOff size={14} /> Apply Redactions</button>
             <button style={btnStyle} onClick={() => setAnnotations((prev) => prev.slice(0, -1))} disabled={annotations.length === 0}><Undo2 size={14} /> Undo</button>
             <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>{annotations.length} annotation{annotations.length !== 1 ? "s" : ""}</span>
           </div>
@@ -908,6 +1025,8 @@ export default function PdfToolsPage() {
       case "organize":
         return (
           <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={{ ...btnStyle, ...(showOrganize ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowOrganize(!showOrganize)}><LayoutGrid size={14} /> Organize Pages</button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
             <button style={btnStyle} onClick={() => setActiveTab("merge")}><FilePlus size={14} /> Merge PDFs</button>
             <button style={btnStyle} onClick={() => setActiveTab("split")}><Scissors size={14} /> Split PDF</button>
             <button style={btnStyle} onClick={() => setActiveTab("compress")}><Minimize2 size={14} /> Compress</button>
@@ -1224,6 +1343,33 @@ export default function PdfToolsPage() {
       )}
 
       <div className="flex-1 flex overflow-hidden">
+        {showBookmarks && pdfDoc && (
+          <BookmarksPanel
+            bookmarks={bookmarks}
+            currentPage={currentPage}
+            onNavigate={setCurrentPage}
+            onAddBookmark={addBookmark}
+            onRemoveBookmark={removeBookmark}
+            onUpdateBookmark={updateBookmark}
+            onClose={() => setShowBookmarks(false)}
+            totalPages={totalPages}
+          />
+        )}
+        {showOrganize && pdfDoc && (
+          <div style={{ width: 300, flexShrink: 0, borderRight: "1px solid var(--border)", overflowY: "auto" }}>
+            <OrganizePagesPanel
+              thumbnails={[]}
+              pageOrder={pageOrder}
+              pageRotations={pageRotations}
+              totalPages={totalPages}
+              onReorderPages={handleReorderPages}
+              onDeletePages={handleDeletePages}
+              onRotatePages={handleRotatePages}
+              onInsertBlankPage={handleInsertBlankPage}
+              onExtractPages={handleExtractPages}
+            />
+          </div>
+        )}
         <div className="flex-1 flex flex-col overflow-hidden">{renderActiveTab()}</div>
         {showProperties && pdfDoc && (
           <PropertiesPanel
