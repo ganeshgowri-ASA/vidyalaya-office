@@ -1,0 +1,174 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Table2, ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
+
+type CellDataTemplate = { raw: string; style: { bold?: boolean; bgColor?: string; textColor?: string; format?: string; align?: string } };
+
+const hdr = (raw: string): CellDataTemplate => ({ raw, style: { bold: true, bgColor: "#4472C4", textColor: "#ffffff" } });
+const cell = (raw: string, style?: CellDataTemplate["style"]): CellDataTemplate => ({ raw, style: style || {} });
+const numCell = (raw: string): CellDataTemplate => ({ raw, style: { format: "number" } });
+const curCell = (raw: string): CellDataTemplate => ({ raw, style: { format: "currency" } });
+const pctCell = (raw: string): CellDataTemplate => ({ raw, style: { format: "percent" } });
+const mk = (data: Record<string, CellDataTemplate>): string => JSON.stringify({ cells: data });
+
+const excelContent: Record<string, string> = {
+  // ── Sales ──
+  "Sales Dashboard": mk({ A1: hdr("Month"), B1: hdr("Revenue"), C1: hdr("Expenses"), D1: hdr("Profit"), E1: hdr("Margin"), F1: hdr("Deals Closed"), A2: cell("January"), B2: curCell("125000"), C2: curCell("82000"), D2: cell("=B2-C2"), E2: pctCell("=D2/B2"), F2: numCell("28"), A3: cell("February"), B3: curCell("138000"), C3: curCell("85000"), D3: cell("=B3-C3"), E3: pctCell("=D3/B3"), F3: numCell("32"), A4: cell("March"), B4: curCell("155000"), C4: curCell("88000"), D4: cell("=B4-C4"), E4: pctCell("=D4/B4"), F4: numCell("35"), A5: cell("April"), B5: curCell("168000"), C5: curCell("92000"), D5: cell("=B5-C5"), E5: pctCell("=D5/B5"), F5: numCell("41"), A6: cell("May"), B6: curCell("175000"), C6: curCell("95000"), D6: cell("=B6-C6"), E6: pctCell("=D6/B6"), F6: numCell("38"), A7: cell("June"), B7: curCell("190000"), C7: curCell("98000"), D7: cell("=B7-C7"), E7: pctCell("=D7/B7"), F7: numCell("45"), A8: { raw: "Total", style: { bold: true } }, B8: cell("=SUM(B2:B7)"), C8: cell("=SUM(C2:C7)"), D8: cell("=SUM(D2:D7)"), F8: cell("=SUM(F2:F7)") }),
+  "Pipeline Tracker": mk({ A1: hdr("Deal Name"), B1: hdr("Company"), C1: hdr("Stage"), D1: hdr("Value"), E1: hdr("Probability"), F1: hdr("Expected"), G1: hdr("Close Date"), A2: cell("Enterprise License"), B2: cell("Acme Corp"), C2: cell("Negotiation"), D2: curCell("250000"), E2: pctCell("0.75"), F2: cell("=D2*E2"), G2: cell("Apr 15"), A3: cell("Platform Upgrade"), B3: cell("TechStart"), C3: cell("Proposal"), D3: curCell("180000"), E3: pctCell("0.50"), F3: cell("=D3*E3"), G3: cell("May 01"), A4: cell("Data Analytics"), B4: cell("FinGroup"), C4: cell("Discovery"), D4: curCell("320000"), E4: pctCell("0.25"), F4: cell("=D4*E4"), G4: cell("Jun 30"), A5: cell("Support Contract"), B5: cell("HealthCo"), C5: cell("Closed Won"), D5: curCell("95000"), E5: pctCell("1.0"), F5: cell("=D5*E5"), G5: cell("Mar 10"), A6: cell("API Integration"), B6: cell("RetailMax"), C6: cell("Proposal"), D6: curCell("145000"), E6: pctCell("0.60"), F6: cell("=D6*E6"), G6: cell("Apr 30"), A7: { raw: "Total Pipeline", style: { bold: true } }, D7: cell("=SUM(D2:D6)"), F7: cell("=SUM(F2:F6)") }),
+  "Commission Calculator": mk({ A1: hdr("Sales Rep"), B1: hdr("Q1 Sales"), C1: hdr("Q2 Sales"), D1: hdr("Q3 Sales"), E1: hdr("Q4 Sales"), F1: hdr("Total Sales"), G1: hdr("Rate"), H1: hdr("Commission"), A2: cell("Alice Johnson"), B2: curCell("120000"), C2: curCell("135000"), D2: curCell("142000"), E2: curCell("158000"), F2: cell("=SUM(B2:E2)"), G2: pctCell("0.08"), H2: cell("=F2*G2"), A3: cell("Bob Smith"), B3: curCell("98000"), C3: curCell("105000"), D3: curCell("118000"), E3: curCell("125000"), F3: cell("=SUM(B3:E3)"), G3: pctCell("0.08"), H3: cell("=F3*G3"), A4: cell("Carol White"), B4: curCell("145000"), C4: curCell("162000"), D4: curCell("170000"), E4: curCell("185000"), F4: cell("=SUM(B4:E4)"), G4: pctCell("0.10"), H4: cell("=F4*G4"), A5: { raw: "Total", style: { bold: true } }, F5: cell("=SUM(F2:F4)"), H5: cell("=SUM(H2:H4)") }),
+  "Sales Forecast": mk({ A1: hdr("Product"), B1: hdr("Q1 Actual"), C1: hdr("Q2 Forecast"), D1: hdr("Q3 Forecast"), E1: hdr("Q4 Forecast"), F1: hdr("Annual"), A2: cell("Platform License"), B2: curCell("420000"), C2: curCell("480000"), D2: curCell("520000"), E2: curCell("580000"), F2: cell("=SUM(B2:E2)"), A3: cell("Professional Svcs"), B3: curCell("180000"), C3: curCell("200000"), D3: curCell("220000"), E3: curCell("240000"), F3: cell("=SUM(B3:E3)"), A4: cell("Support Plans"), B4: curCell("95000"), C4: curCell("105000"), D4: curCell("110000"), E4: curCell("120000"), F4: cell("=SUM(B4:E4)"), A5: cell("Training"), B5: curCell("45000"), C5: curCell("55000"), D5: curCell("60000"), E5: curCell("65000"), F5: cell("=SUM(B5:E5)"), A6: { raw: "Total", style: { bold: true } }, B6: cell("=SUM(B2:B5)"), C6: cell("=SUM(C2:C5)"), D6: cell("=SUM(D2:D5)"), E6: cell("=SUM(E2:E5)"), F6: cell("=SUM(F2:F5)") }),
+
+  // ── HR ──
+  "Employee Directory": mk({ A1: hdr("Name"), B1: hdr("Department"), C1: hdr("Title"), D1: hdr("Email"), E1: hdr("Phone"), F1: hdr("Start Date"), G1: hdr("Manager"), A2: cell("John Smith"), B2: cell("Engineering"), C2: cell("Senior Developer"), D2: cell("john@company.com"), E2: cell("x1234"), F2: cell("2020-03-15"), G2: cell("Mike Chen"), A3: cell("Jane Doe"), B3: cell("Design"), C3: cell("Lead Designer"), D3: cell("jane@company.com"), E3: cell("x1235"), F3: cell("2019-08-01"), G3: cell("Sarah K."), A4: cell("Bob Wilson"), B4: cell("Marketing"), C4: cell("Marketing Mgr"), D4: cell("bob@company.com"), E4: cell("x1236"), F4: cell("2021-01-10"), G4: cell("Lisa P."), A5: cell("Alice Brown"), B5: cell("Engineering"), C5: cell("DevOps Eng."), D5: cell("alice@company.com"), E5: cell("x1237"), F5: cell("2022-06-15"), G5: cell("Mike Chen") }),
+  "Leave Tracker": mk({ A1: hdr("Employee"), B1: hdr("Annual"), C1: hdr("Sick"), D1: hdr("Personal"), E1: hdr("Used Annual"), F1: hdr("Used Sick"), G1: hdr("Remaining"), A2: cell("John Smith"), B2: numCell("20"), C2: numCell("10"), D2: numCell("5"), E2: numCell("12"), F2: numCell("3"), G2: cell("=B2+C2+D2-E2-F2"), A3: cell("Jane Doe"), B3: numCell("20"), C3: numCell("10"), D3: numCell("5"), E3: numCell("8"), F3: numCell("1"), G3: cell("=B3+C3+D3-E3-F3"), A4: cell("Bob Wilson"), B4: numCell("20"), C4: numCell("10"), D4: numCell("5"), E4: numCell("15"), F4: numCell("5"), G4: cell("=B4+C4+D4-E4-F4"), A5: cell("Alice Brown"), B5: numCell("20"), C5: numCell("10"), D5: numCell("5"), E5: numCell("6"), F5: numCell("2"), G5: cell("=B5+C5+D5-E5-F5") }),
+  "Recruitment Tracker": mk({ A1: hdr("Position"), B1: hdr("Department"), C1: hdr("Candidates"), D1: hdr("Interviewed"), E1: hdr("Offered"), F1: hdr("Status"), G1: hdr("Days Open"), A2: cell("Sr. Engineer"), B2: cell("Engineering"), C2: numCell("45"), D2: numCell("8"), E2: numCell("2"), F2: cell("Offer Sent"), G2: numCell("28"), A3: cell("Product Mgr"), B3: cell("Product"), C3: numCell("32"), D3: numCell("5"), E3: numCell("1"), F3: cell("Interviewing"), G3: numCell("35"), A4: cell("Data Analyst"), B4: cell("Analytics"), C4: numCell("58"), D4: numCell("10"), E4: numCell("0"), F4: cell("Screening"), G4: numCell("14"), A5: cell("UX Designer"), B5: cell("Design"), C5: numCell("28"), D5: numCell("6"), E5: numCell("1"), F5: cell("Accepted"), G5: numCell("42") }),
+  "Performance Review": mk({ A1: hdr("Employee"), B1: hdr("Goal Achievement"), C1: hdr("Technical"), D1: hdr("Communication"), E1: hdr("Leadership"), F1: hdr("Overall"), G1: hdr("Rating"), A2: cell("John Smith"), B2: pctCell("0.92"), C2: numCell("4.5"), D2: numCell("4.0"), E2: numCell("3.8"), F2: cell("=(C2+D2+E2)/3"), G2: cell("Exceeds"), A3: cell("Jane Doe"), B3: pctCell("0.88"), C3: numCell("4.2"), D3: numCell("4.5"), E3: numCell("4.0"), F3: cell("=(C3+D3+E3)/3"), G3: cell("Exceeds"), A4: cell("Bob Wilson"), B4: pctCell("0.75"), C4: numCell("3.5"), D4: numCell("3.8"), E4: numCell("3.2"), F4: cell("=(C4+D4+E4)/3"), G4: cell("Meets") }),
+
+  // ── Finance ──
+  "P&L Statement": mk({ A1: { raw: "PROFIT & LOSS STATEMENT", style: { bold: true, bgColor: "#1565C0", textColor: "#ffffff" } }, A2: cell("Period: FY 2025"), A4: { raw: "Revenue", style: { bold: true } }, A5: cell("  Product Revenue"), B5: curCell("28500000"), A6: cell("  Service Revenue"), B6: curCell("10300000"), A7: cell("  Other Revenue"), B7: curCell("3500000"), A8: { raw: "Total Revenue", style: { bold: true } }, B8: cell("=SUM(B5:B7)"), A10: { raw: "Cost of Revenue", style: { bold: true } }, A11: cell("  COGS - Product"), B11: curCell("8550000"), A12: cell("  COGS - Service"), B12: curCell("5150000"), A13: { raw: "Gross Profit", style: { bold: true } }, B13: cell("=B8-B11-B12"), A15: { raw: "Operating Expenses", style: { bold: true } }, A16: cell("  Sales & Marketing"), B16: curCell("8400000"), A17: cell("  R&D"), B17: curCell("7200000"), A18: cell("  General & Admin"), B18: curCell("3600000"), A19: { raw: "Total OpEx", style: { bold: true } }, B19: cell("=SUM(B16:B18)"), A21: { raw: "Net Income", style: { bold: true } }, B21: cell("=B13-B19") }),
+  "Balance Sheet": mk({ A1: { raw: "BALANCE SHEET", style: { bold: true, bgColor: "#2E7D32", textColor: "#ffffff" } }, A2: cell("As of Dec 31, 2025"), A4: { raw: "ASSETS", style: { bold: true } }, A5: cell("  Cash & Equivalents"), B5: curCell("15200000"), A6: cell("  Accounts Receivable"), B6: curCell("8400000"), A7: cell("  Inventory"), B7: curCell("3200000"), A8: { raw: "Total Current Assets", style: { bold: true } }, B8: cell("=SUM(B5:B7)"), A9: cell("  Property & Equipment"), B9: curCell("12500000"), A10: cell("  Intangible Assets"), B10: curCell("5800000"), A11: { raw: "Total Assets", style: { bold: true } }, B11: cell("=B8+B9+B10"), A13: { raw: "LIABILITIES", style: { bold: true } }, A14: cell("  Accounts Payable"), B14: curCell("4200000"), A15: cell("  Short-term Debt"), B15: curCell("2500000"), A16: cell("  Long-term Debt"), B16: curCell("8000000"), A17: { raw: "Total Liabilities", style: { bold: true } }, B17: cell("=SUM(B14:B16)"), A19: { raw: "EQUITY", style: { bold: true } }, A20: cell("  Common Stock"), B20: curCell("10000000"), A21: cell("  Retained Earnings"), B21: cell("=B11-B17-B20"), A22: { raw: "Total Equity", style: { bold: true } }, B22: cell("=B20+B21") }),
+  "Cash Flow Statement": mk({ A1: { raw: "CASH FLOW STATEMENT", style: { bold: true, bgColor: "#1565C0", textColor: "#ffffff" } }, A3: { raw: "Operating Activities", style: { bold: true } }, A4: cell("  Net Income"), B4: curCell("8700000"), A5: cell("  Depreciation"), B5: curCell("2100000"), A6: cell("  Changes in Working Capital"), B6: curCell("-1200000"), A7: { raw: "Net Cash from Operations", style: { bold: true } }, B7: cell("=SUM(B4:B6)"), A9: { raw: "Investing Activities", style: { bold: true } }, A10: cell("  Capital Expenditures"), B10: curCell("-3500000"), A11: cell("  Acquisitions"), B11: curCell("-15000000"), A12: { raw: "Net Cash from Investing", style: { bold: true } }, B12: cell("=B10+B11"), A14: { raw: "Financing Activities", style: { bold: true } }, A15: cell("  Debt Repayment"), B15: curCell("-2000000"), A16: cell("  Dividends Paid"), B16: curCell("-3000000"), A17: { raw: "Net Cash from Financing", style: { bold: true } }, B17: cell("=B15+B16"), A19: { raw: "Net Change in Cash", style: { bold: true } }, B19: cell("=B7+B12+B17") }),
+  "Budget vs Actual": mk({ A1: hdr("Department"), B1: hdr("Budget"), C1: hdr("Actual"), D1: hdr("Variance"), E1: hdr("Var %"), A2: cell("Engineering"), B2: curCell("2400000"), C2: curCell("2350000"), D2: cell("=B2-C2"), E2: pctCell("=D2/B2"), A3: cell("Sales"), B3: curCell("1800000"), C3: curCell("1920000"), D3: cell("=B3-C3"), E3: pctCell("=D3/B3"), A4: cell("Marketing"), B4: curCell("950000"), C4: curCell("880000"), D4: cell("=B4-C4"), E4: pctCell("=D4/B4"), A5: cell("Operations"), B5: curCell("750000"), C5: curCell("790000"), D5: cell("=B5-C5"), E5: pctCell("=D5/B5"), A6: cell("HR"), B6: curCell("450000"), C6: curCell("420000"), D6: cell("=B6-C6"), E6: pctCell("=D6/B6"), A7: { raw: "Total", style: { bold: true } }, B7: cell("=SUM(B2:B6)"), C7: cell("=SUM(C2:C6)"), D7: cell("=SUM(D2:D6)") }),
+  "Invoice": mk({ A1: { raw: "INVOICE", style: { bold: true, bgColor: "#1565C0", textColor: "#ffffff" } }, A3: cell("Bill To:"), B3: cell("Client Company Inc."), A4: cell("Invoice #:"), B4: cell("INV-2026-001"), A5: cell("Date:"), B5: cell("March 15, 2026"), A6: cell("Due:"), B6: cell("April 14, 2026"), A8: hdr("Description"), B8: hdr("Qty"), C8: hdr("Rate"), D8: hdr("Amount"), A9: cell("Web Development"), B9: numCell("40"), C9: curCell("150"), D9: cell("=B9*C9"), A10: cell("UI/UX Design"), B10: numCell("20"), C10: curCell("125"), D10: cell("=B10*C10"), A11: cell("Project Management"), B11: numCell("10"), C11: curCell("100"), D11: cell("=B11*C11"), A12: cell("QA Testing"), B12: numCell("15"), C12: curCell("110"), D12: cell("=B12*C12"), A14: { raw: "Subtotal", style: { bold: true } }, D14: cell("=SUM(D9:D12)"), A15: cell("Tax (10%)"), D15: cell("=D14*0.1"), A16: { raw: "Total Due", style: { bold: true } }, D16: cell("=D14+D15") }),
+
+  // ── Operations ──
+  "Inventory Management": mk({ A1: hdr("Item"), B1: hdr("SKU"), C1: hdr("Category"), D1: hdr("Qty On Hand"), E1: hdr("Unit Cost"), F1: hdr("Total Value"), G1: hdr("Reorder Level"), H1: hdr("Status"), A2: cell("Widget Alpha"), B2: cell("WDG-001"), C2: cell("Components"), D2: numCell("450"), E2: curCell("12.50"), F2: cell("=D2*E2"), G2: numCell("100"), H2: cell("OK"), A3: cell("Gadget Beta"), B3: cell("GDG-002"), C3: cell("Finished"), D3: numCell("75"), E3: curCell("45.00"), F3: cell("=D3*E3"), G3: numCell("80"), H3: cell("REORDER"), A4: cell("Sensor Pack"), B4: cell("SEN-010"), C4: cell("Raw Material"), D4: numCell("320"), E4: curCell("8.75"), F4: cell("=D4*E4"), G4: numCell("150"), H4: cell("OK"), A5: cell("Circuit Board"), B5: cell("PCB-005"), C5: cell("Components"), D5: numCell("50"), E5: curCell("22.30"), F5: cell("=D5*E5"), G5: numCell("100"), H5: cell("REORDER"), A6: { raw: "Total Inventory Value", style: { bold: true } }, F6: cell("=SUM(F2:F5)") }),
+  "Production Schedule": mk({ A1: hdr("Order ID"), B1: hdr("Product"), C1: hdr("Qty"), D1: hdr("Start Date"), E1: hdr("End Date"), F1: hdr("Line"), G1: hdr("Status"), A2: cell("PO-2026-101"), B2: cell("Widget Alpha"), C2: numCell("500"), D2: cell("Mar 15"), E2: cell("Mar 22"), F2: cell("Line A"), G2: cell("In Progress"), A3: cell("PO-2026-102"), B3: cell("Gadget Beta"), C3: numCell("200"), D3: cell("Mar 18"), E3: cell("Mar 28"), F3: cell("Line B"), G3: cell("Scheduled"), A4: cell("PO-2026-103"), B4: cell("Sensor Pack"), C4: numCell("1000"), D4: cell("Mar 25"), E4: cell("Apr 01"), F4: cell("Line A"), G4: cell("Pending"), A5: cell("PO-2026-104"), B5: cell("Circuit Board"), C5: numCell("300"), D5: cell("Apr 01"), E5: cell("Apr 08"), F5: cell("Line C"), G5: cell("Pending") }),
+  "Quality Checklist": mk({ A1: hdr("Check Item"), B1: hdr("Standard"), C1: hdr("Result"), D1: hdr("Pass/Fail"), E1: hdr("Inspector"), F1: hdr("Date"), A2: cell("Dimension Check"), B2: cell("±0.05mm"), C2: cell("0.03mm"), D2: cell("PASS"), E2: cell("QA-001"), F2: cell("Mar 15"), A3: cell("Surface Finish"), B3: cell("Ra 0.8μm"), C3: cell("Ra 0.6μm"), D3: cell("PASS"), E3: cell("QA-001"), F3: cell("Mar 15"), A4: cell("Tensile Strength"), B4: cell(">500 MPa"), C4: cell("520 MPa"), D4: cell("PASS"), E4: cell("QA-002"), F4: cell("Mar 15"), A5: cell("Electrical Test"), B5: cell("<1Ω"), C5: cell("1.2Ω"), D5: cell("FAIL"), E5: cell("QA-003"), F5: cell("Mar 16") }),
+
+  // ── Maintenance ──
+  "Equipment Maintenance Log": mk({ A1: hdr("Equipment"), B1: hdr("ID"), C1: hdr("Last Service"), D1: hdr("Next Service"), E1: hdr("Type"), F1: hdr("Cost"), G1: hdr("Technician"), A2: cell("CNC Machine #1"), B2: cell("EQ-001"), C2: cell("Feb 15"), D2: cell("May 15"), E2: cell("Preventive"), F2: curCell("1500"), G2: cell("Tech A"), A3: cell("3D Printer"), B3: cell("EQ-005"), C3: cell("Mar 01"), D3: cell("Jun 01"), E3: cell("Calibration"), F3: curCell("350"), G3: cell("Tech B"), A4: cell("HVAC System"), B4: cell("EQ-010"), C4: cell("Jan 20"), D4: cell("Apr 20"), E4: cell("Filter Replace"), F4: curCell("800"), G4: cell("Vendor"), A5: cell("Server Rack A"), B5: cell("IT-001"), C5: cell("Mar 10"), D5: cell("Sep 10"), E5: cell("Preventive"), F5: curCell("2200"), G5: cell("Tech A"), A6: { raw: "Total Maintenance Cost", style: { bold: true } }, F6: cell("=SUM(F2:F5)") }),
+  "Work Order Tracker": mk({ A1: hdr("WO Number"), B1: hdr("Description"), C1: hdr("Priority"), D1: hdr("Assigned To"), E1: hdr("Status"), F1: hdr("Created"), G1: hdr("Completed"), A2: cell("WO-2026-001"), B2: cell("Replace pump bearing"), C2: cell("High"), D2: cell("Mech Team"), E2: cell("In Progress"), F2: cell("Mar 10"), G2: cell(""), A3: cell("WO-2026-002"), B3: cell("Rewire control panel"), C3: cell("Medium"), D3: cell("Elec Team"), E3: cell("Completed"), F3: cell("Mar 08"), G3: cell("Mar 12"), A4: cell("WO-2026-003"), B4: cell("Calibrate sensors"), C4: cell("Low"), D4: cell("Instr Team"), E4: cell("Pending"), F4: cell("Mar 14"), G4: cell(""), A5: cell("WO-2026-004"), B5: cell("Emergency conveyor fix"), C5: cell("Critical"), D5: cell("Mech Team"), E5: cell("Completed"), F5: cell("Mar 11"), G5: cell("Mar 11") }),
+  "Spare Parts Inventory": mk({ A1: hdr("Part Name"), B1: hdr("Part No"), C1: hdr("Category"), D1: hdr("Qty"), E1: hdr("Min Stock"), F1: hdr("Unit Cost"), G1: hdr("Value"), A2: cell("Ball Bearing 6205"), B2: cell("BRG-6205"), C2: cell("Bearings"), D2: numCell("45"), E2: numCell("20"), F2: curCell("18.50"), G2: cell("=D2*F2"), A3: cell("V-Belt A68"), B3: cell("BLT-A68"), C3: cell("Belts"), D3: numCell("12"), E3: numCell("10"), F3: curCell("24.00"), G3: cell("=D3*F3"), A4: cell("Contactor 40A"), B4: cell("ELC-040"), C4: cell("Electrical"), D4: numCell("8"), E4: numCell("5"), F4: curCell("85.00"), G4: cell("=D4*F4"), A5: cell("Oil Filter HF35"), B5: cell("FLT-HF35"), C5: cell("Filters"), D5: numCell("30"), E5: numCell("15"), F5: curCell("12.75"), G5: cell("=D5*F5"), A6: { raw: "Total Spares Value", style: { bold: true } }, G6: cell("=SUM(G2:G5)") }),
+
+  // ── Legal ──
+  "Contract Tracker": mk({ A1: hdr("Contract"), B1: hdr("Counterparty"), C1: hdr("Type"), D1: hdr("Start"), E1: hdr("Expiry"), F1: hdr("Value"), G1: hdr("Status"), A2: cell("Master Service Agreement"), B2: cell("Acme Corp"), C2: cell("MSA"), D2: cell("2024-01-01"), E2: cell("2027-01-01"), F2: curCell("500000"), G2: cell("Active"), A3: cell("Software License"), B3: cell("TechVendor"), C3: cell("License"), D3: cell("2025-06-01"), E3: cell("2026-06-01"), F3: curCell("120000"), G3: cell("Active"), A4: cell("Consulting Agreement"), B4: cell("Advisory LLC"), C4: cell("Services"), D4: cell("2025-09-01"), E4: cell("2026-03-01"), F4: curCell("75000"), G4: cell("Expiring Soon"), A5: cell("Office Lease"), B5: cell("RealEstate Co"), C5: cell("Lease"), D5: cell("2023-01-01"), E5: cell("2028-01-01"), F5: curCell("960000"), G5: cell("Active") }),
+  "Compliance Checklist": mk({ A1: hdr("Requirement"), B1: hdr("Regulation"), C1: hdr("Owner"), D1: hdr("Due Date"), E1: hdr("Status"), F1: hdr("Evidence"), A2: cell("Data Privacy Assessment"), B2: cell("GDPR Art. 35"), C2: cell("DPO"), D2: cell("Mar 31"), E2: cell("Complete"), F2: cell("DPIA-2026-01"), A3: cell("SOC 2 Type II Audit"), B3: cell("AICPA"), C3: cell("IT Security"), D3: cell("Jun 30"), E3: cell("In Progress"), F3: cell("Audit Schedule"), A4: cell("Annual AML Review"), B4: cell("BSA/AML"), C4: cell("Compliance"), D4: cell("Dec 31"), E4: cell("Pending"), F4: cell(""), A5: cell("Employee Training"), B5: cell("Internal"), C5: cell("HR"), D5: cell("Quarterly"), E5: cell("Complete"), F5: cell("LMS Records") }),
+  "NDA Template": mk({ A1: { raw: "NON-DISCLOSURE AGREEMENT TRACKER", style: { bold: true, bgColor: "#6A1B9A", textColor: "#ffffff" } }, A3: hdr("NDA #"), B3: hdr("Counterparty"), C3: hdr("Type"), D3: hdr("Executed"), E3: hdr("Expires"), F3: hdr("Scope"), G3: hdr("Signed By"), A4: cell("NDA-2026-001"), B4: cell("NewCo Ltd"), C4: cell("Mutual"), D4: cell("2026-01-15"), E4: cell("2028-01-15"), F4: cell("Product Partnership"), G4: cell("CEO"), A5: cell("NDA-2026-002"), B5: cell("InvestGroup"), C5: cell("One-way"), D5: cell("2026-02-01"), E5: cell("2027-02-01"), F5: cell("Due Diligence"), G5: cell("CFO"), A6: cell("NDA-2026-003"), B6: cell("TalentHire"), C6: cell("Mutual"), D6: cell("2026-03-01"), E6: cell("2027-03-01"), F6: cell("Recruitment"), G6: cell("HR Head") }),
+
+  // ── Management ──
+  "KPI Dashboard": mk({ A1: hdr("KPI"), B1: hdr("Target"), C1: hdr("Actual"), D1: hdr("Status"), E1: hdr("Trend"), A2: cell("Revenue Growth"), B2: pctCell("0.20"), C2: pctCell("0.22"), D2: cell("On Track"), E2: cell("↑"), A3: cell("Customer NPS"), B3: numCell("65"), C3: numCell("72"), D3: cell("Exceeded"), E3: cell("↑"), A4: cell("Employee Retention"), B4: pctCell("0.90"), C4: pctCell("0.923"), D4: cell("On Track"), E4: cell("→"), A5: cell("Platform Uptime"), B5: pctCell("0.9995"), C5: pctCell("0.9998"), D5: cell("Exceeded"), E5: cell("↑"), A6: cell("CAC Payback (months)"), B6: numCell("12"), C6: numCell("10"), D6: cell("On Track"), E6: cell("↓"), A7: cell("Churn Rate"), B7: pctCell("0.05"), C7: pctCell("0.032"), D7: cell("Exceeded"), E7: cell("↓") }),
+  "OKR Tracker": mk({ A1: hdr("Objective"), B1: hdr("Key Result"), C1: hdr("Owner"), D1: hdr("Target"), E1: hdr("Current"), F1: hdr("Progress"), A2: cell("Grow Revenue"), B2: cell("Reach $65M ARR"), C2: cell("VP Sales"), D2: curCell("65000000"), E2: curCell("52000000"), F2: pctCell("=E2/D2"), A3: cell(""), B3: cell("Close 100 enterprise deals"), C3: cell("Sales Dir"), D3: numCell("100"), E3: numCell("72"), F3: pctCell("=E3/D3"), A4: cell("Improve Product"), B4: cell("Launch 5 major features"), C4: cell("VP Product"), D4: numCell("5"), E4: numCell("3"), F4: pctCell("=E4/D4"), A5: cell(""), B5: cell("Reduce P99 latency <100ms"), C5: cell("Eng Lead"), D5: numCell("100"), E5: numCell("85"), F5: pctCell("=1-(E5/D5)"), A6: cell("Build Team"), B6: cell("Hire 50 new employees"), C6: cell("VP HR"), D6: numCell("50"), E6: numCell("38"), F6: pctCell("=E6/D6") }),
+  "Meeting Action Items": mk({ A1: hdr("Action Item"), B1: hdr("Owner"), C1: hdr("Priority"), D1: hdr("Due Date"), E1: hdr("Status"), F1: hdr("Meeting Date"), A2: cell("Finalize Q2 budget"), B2: cell("CFO"), C2: cell("High"), D2: cell("Mar 20"), E2: cell("In Progress"), F2: cell("Mar 10"), A3: cell("Review hiring plan"), B3: cell("VP HR"), C3: cell("High"), D3: cell("Mar 18"), E3: cell("Complete"), F3: cell("Mar 10"), A4: cell("Update product roadmap"), B4: cell("VP Product"), C4: cell("Medium"), D4: cell("Mar 25"), E4: cell("Pending"), F4: cell("Mar 10"), A5: cell("Security audit prep"), B5: cell("CISO"), C5: cell("High"), D5: cell("Apr 01"), E5: cell("In Progress"), F5: cell("Mar 10") }),
+
+  // ── Investment ──
+  "Portfolio Tracker": mk({ A1: hdr("Asset"), B1: hdr("Ticker"), C1: hdr("Shares"), D1: hdr("Avg Cost"), E1: hdr("Current Price"), F1: hdr("Market Value"), G1: hdr("Gain/Loss"), H1: hdr("Return"), A2: cell("Apple Inc."), B2: cell("AAPL"), C2: numCell("200"), D2: curCell("165.50"), E2: curCell("192.30"), F2: cell("=C2*E2"), G2: cell("=F2-(C2*D2)"), H2: pctCell("=G2/(C2*D2)"), A3: cell("Microsoft"), B3: cell("MSFT"), C3: numCell("150"), D3: curCell("380.00"), E3: curCell("425.80"), F3: cell("=C3*E3"), G3: cell("=F3-(C3*D3)"), H3: pctCell("=G3/(C3*D3)"), A4: cell("S&P 500 ETF"), B4: cell("SPY"), C4: numCell("100"), D4: curCell("480.00"), E4: curCell("520.50"), F4: cell("=C4*E4"), G4: cell("=F4-(C4*D4)"), H4: pctCell("=G4/(C4*D4)"), A5: cell("Bond Fund"), B5: cell("BND"), C5: numCell("300"), D5: curCell("72.00"), E5: curCell("73.50"), F5: cell("=C5*E5"), G5: cell("=F5-(C5*D5)"), H5: pctCell("=G5/(C5*D5)"), A6: { raw: "Total Portfolio", style: { bold: true } }, F6: cell("=SUM(F2:F5)"), G6: cell("=SUM(G2:G5)") }),
+  "ROI Calculator": mk({ A1: { raw: "ROI CALCULATOR", style: { bold: true, bgColor: "#2E7D32", textColor: "#ffffff" } }, A3: hdr("Project"), B3: hdr("Investment"), C3: hdr("Year 1"), D3: hdr("Year 2"), E3: hdr("Year 3"), F3: hdr("Total Return"), G3: hdr("ROI"), A4: cell("AI Platform"), B4: curCell("500000"), C4: curCell("150000"), D4: curCell("350000"), E4: curCell("600000"), F4: cell("=SUM(C4:E4)"), G4: pctCell("=(F4-B4)/B4"), A5: cell("CRM Upgrade"), B5: curCell("200000"), C5: curCell("80000"), D5: curCell("120000"), E5: curCell("180000"), F5: cell("=SUM(C5:E5)"), G5: pctCell("=(F5-B5)/B5"), A6: cell("Office Expansion"), B6: curCell("1000000"), C6: curCell("0"), D6: curCell("200000"), E6: curCell("450000"), F6: cell("=SUM(C6:E6)"), G6: pctCell("=(F6-B6)/B6"), A7: { raw: "Total", style: { bold: true } }, B7: cell("=SUM(B4:B6)"), F7: cell("=SUM(F4:F6)") }),
+  "DCF Model": mk({ A1: { raw: "DCF VALUATION MODEL", style: { bold: true, bgColor: "#1565C0", textColor: "#ffffff" } }, A3: cell("Discount Rate:"), B3: pctCell("0.10"), A4: cell("Terminal Growth:"), B4: pctCell("0.03"), A6: hdr("Year"), B6: hdr("Free Cash Flow"), C6: hdr("Discount Factor"), D6: hdr("PV of FCF"), A7: cell("Year 1"), B7: curCell("5000000"), C7: cell("=1/(1+$B$3)^1"), D7: cell("=B7*C7"), A8: cell("Year 2"), B8: curCell("6500000"), C8: cell("=1/(1+$B$3)^2"), D8: cell("=B8*C8"), A9: cell("Year 3"), B9: curCell("8200000"), C9: cell("=1/(1+$B$3)^3"), D9: cell("=B9*C9"), A10: cell("Year 4"), B10: curCell("10000000"), C10: cell("=1/(1+$B$3)^4"), D10: cell("=B10*C10"), A11: cell("Year 5"), B11: curCell("12500000"), C11: cell("=1/(1+$B$3)^5"), D11: cell("=B11*C11"), A13: { raw: "Sum of PV", style: { bold: true } }, D13: cell("=SUM(D7:D11)"), A14: cell("Terminal Value"), D14: cell("=B11*(1+B4)/(B3-B4)*C11"), A15: { raw: "Enterprise Value", style: { bold: true } }, D15: cell("=D13+D14") }),
+};
+
+interface DeptGroup {
+  dept: string;
+  templates: { name: string; desc: string }[];
+}
+
+const deptGroups: DeptGroup[] = [
+  { dept: "Sales", templates: [
+    { name: "Sales Dashboard", desc: "Monthly revenue, expenses, profit margins, deals closed" },
+    { name: "Pipeline Tracker", desc: "Deal pipeline with stages, probability, expected close" },
+    { name: "Commission Calculator", desc: "Rep commissions by quarter with rate tiers" },
+    { name: "Sales Forecast", desc: "Product-level quarterly forecast with annual rollup" },
+  ]},
+  { dept: "HR", templates: [
+    { name: "Employee Directory", desc: "Staff directory with contacts, titles, managers" },
+    { name: "Leave Tracker", desc: "Annual, sick, personal leave tracking by employee" },
+    { name: "Recruitment Tracker", desc: "Open positions, candidates, interview pipeline" },
+    { name: "Performance Review", desc: "Employee ratings across multiple competencies" },
+  ]},
+  { dept: "Finance / Accounts", templates: [
+    { name: "P&L Statement", desc: "Profit & loss with revenue, COGS, OpEx, net income" },
+    { name: "Balance Sheet", desc: "Assets, liabilities, equity breakdown" },
+    { name: "Cash Flow Statement", desc: "Operating, investing, financing cash flows" },
+    { name: "Budget vs Actual", desc: "Department budget variance analysis" },
+    { name: "Invoice", desc: "Professional invoice with line items and tax" },
+  ]},
+  { dept: "Operations", templates: [
+    { name: "Inventory Management", desc: "Stock levels, reorder points, value tracking" },
+    { name: "Production Schedule", desc: "Production orders, timelines, line assignments" },
+    { name: "Quality Checklist", desc: "Inspection checks with pass/fail and standards" },
+  ]},
+  { dept: "Maintenance", templates: [
+    { name: "Equipment Maintenance Log", desc: "Service history, schedules, costs per equipment" },
+    { name: "Work Order Tracker", desc: "Work orders by priority, status, assignment" },
+    { name: "Spare Parts Inventory", desc: "Parts stock, minimum levels, values" },
+  ]},
+  { dept: "Legal", templates: [
+    { name: "Contract Tracker", desc: "Active contracts, counterparties, expiry dates" },
+    { name: "Compliance Checklist", desc: "Regulatory requirements, status, evidence" },
+    { name: "NDA Template", desc: "NDA register with scope and signatories" },
+  ]},
+  { dept: "Management", templates: [
+    { name: "KPI Dashboard", desc: "Key metrics with targets, actuals, trends" },
+    { name: "OKR Tracker", desc: "Objectives and key results with progress" },
+    { name: "Meeting Action Items", desc: "Action items with owners, priorities, due dates" },
+  ]},
+  { dept: "Investment", templates: [
+    { name: "Portfolio Tracker", desc: "Holdings with cost basis, market value, returns" },
+    { name: "ROI Calculator", desc: "Project ROI analysis over multiple years" },
+    { name: "DCF Model", desc: "Discounted cash flow valuation model" },
+  ]},
+];
+
+export default function ExcelTemplates() {
+  const router = useRouter();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ Sales: true, HR: true });
+
+  const handleUse = (name: string) => {
+    const data = excelContent[name];
+    if (data) {
+      localStorage.setItem("vidyalaya-spreadsheet-template", data);
+      router.push("/spreadsheet");
+    }
+  };
+
+  const toggle = (dept: string) => setExpanded((p) => ({ ...p, [dept]: !p[dept] }));
+  const totalCount = deptGroups.reduce((s, g) => s + g.templates.length, 0);
+
+  return (
+    <div>
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+        <Table2 size={16} />
+        Excel Templates by Department
+        <span className="ml-1 rounded-full px-2 py-0.5 text-xs" style={{ backgroundColor: "var(--secondary)", color: "var(--secondary-foreground)" }}>
+          {totalCount}
+        </span>
+      </h2>
+      <div className="space-y-2">
+        {deptGroups.map((g) => (
+          <div key={g.dept} className="rounded-lg border" style={{ borderColor: "var(--border)", backgroundColor: "var(--card)" }}>
+            <button
+              onClick={() => toggle(g.dept)}
+              className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-semibold"
+              style={{ color: "var(--foreground)" }}
+            >
+              <span className="flex items-center gap-2">
+                {g.dept}
+                <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ backgroundColor: "var(--muted)", color: "var(--muted-foreground)" }}>
+                  {g.templates.length}
+                </span>
+              </span>
+              {expanded[g.dept] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </button>
+            {expanded[g.dept] && (
+              <div className="grid grid-cols-2 gap-2 px-4 pb-3 sm:grid-cols-3 md:grid-cols-4">
+                {g.templates.map((t) => (
+                  <button
+                    key={t.name}
+                    onClick={() => handleUse(t.name)}
+                    className="rounded-lg border px-3 py-2 text-left transition-all hover:scale-[1.02] hover:border-[var(--primary)] group"
+                    style={{ borderColor: "var(--border)", color: "var(--card-foreground)" }}
+                  >
+                    <div className="text-[11px] font-medium group-hover:text-[var(--primary)]">{t.name}</div>
+                    <div className="text-[9px] mt-0.5 line-clamp-2" style={{ color: "var(--muted-foreground)" }}>{t.desc}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
