@@ -2,7 +2,7 @@
 
 import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { Minus, Plus, Trash2, GripVertical } from 'lucide-react';
-import { usePresentationStore, type SlideElement } from '@/store/presentation-store';
+import { usePresentationStore, type SlideElement, WORDART_STYLES } from '@/store/presentation-store';
 import { SHAPE_DEFINITIONS } from '@/components/shared/shapes-icons-library';
 
 // ── Inline Table Renderer ────────────────────────────────────────────────────
@@ -21,6 +21,18 @@ function TableElement({ el, isSelected, scale }: { el: SlideElement; isSelected:
   const cellW = el.width / td.cols;
   const cellH = el.height / td.rows;
 
+  const getTableStyle = () => {
+    switch (td.tableStyle) {
+      case 'striped': return { evenBg: 'rgba(59,130,246,0.1)', headerBg: 'rgba(59,130,246,0.4)' };
+      case 'bordered': return { evenBg: 'rgba(255,255,255,0.05)', headerBg: 'rgba(59,130,246,0.3)', border: '2px solid rgba(59,130,246,0.5)' };
+      case 'minimal': return { evenBg: 'transparent', headerBg: 'transparent', border: '1px solid rgba(255,255,255,0.1)' };
+      case 'colorful': return { evenBg: 'rgba(168,85,247,0.1)', headerBg: 'rgba(168,85,247,0.4)' };
+      default: return { evenBg: 'rgba(255,255,255,0.05)', headerBg: 'rgba(59,130,246,0.3)' };
+    }
+  };
+
+  const tableStyle = getTableStyle();
+
   return (
     <div style={{ width: el.width, height: el.height }}>
       <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: el.style.fontSize || 12, color: el.style.color || '#000' }}>
@@ -33,9 +45,9 @@ function TableElement({ el, isSelected, scale }: { el: SlideElement; isSelected:
                   suppressContentEditableWarning
                   onBlur={(e) => handleCellEdit(ri, ci, e.currentTarget.textContent || '')}
                   style={{
-                    border: '1px solid rgba(0,0,0,0.2)',
+                    border: tableStyle.border || '1px solid rgba(0,0,0,0.2)',
                     padding: '2px 4px',
-                    background: ri === 0 && td.headerRow ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.05)',
+                    background: ri === 0 && td.headerRow ? tableStyle.headerBg : (ri % 2 === 0 ? tableStyle.evenBg : 'rgba(255,255,255,0.05)'),
                     fontWeight: ri === 0 && td.headerRow ? 'bold' : 'normal',
                     minWidth: cellW, minHeight: cellH,
                     outline: 'none',
@@ -101,27 +113,21 @@ function ChartElement({ el }: { el: SlideElement }) {
     );
   }
 
-  // Bar or Line chart
   const barGroupW = chartW / cd.labels.length;
   const barW = barGroupW / (cd.datasets.length + 1);
 
   return (
     <svg width={el.width} height={el.height}>
-      {/* Y axis */}
       <line x1={padding} y1={padding} x2={padding} y2={padding + chartH} stroke="rgba(255,255,255,0.3)" strokeWidth={1} />
-      {/* X axis */}
       <line x1={padding} y1={padding + chartH} x2={padding + chartW} y2={padding + chartH} stroke="rgba(255,255,255,0.3)" strokeWidth={1} />
-      {/* Grid lines */}
       {[0.25, 0.5, 0.75, 1].map((f) => (
         <line key={f} x1={padding} y1={padding + chartH * (1 - f)} x2={padding + chartW} y2={padding + chartH * (1 - f)}
           stroke="rgba(255,255,255,0.1)" strokeWidth={0.5} strokeDasharray="4 4" />
       ))}
-      {/* Labels */}
       {cd.labels.map((label, i) => (
         <text key={i} x={padding + barGroupW * i + barGroupW / 2} y={padding + chartH + 14}
           textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize={9}>{label}</text>
       ))}
-
       {cd.chartType === 'line' ? (
         cd.datasets.map((ds, di) => {
           const points = ds.data.map((v, i) => ({
@@ -150,7 +156,6 @@ function ChartElement({ el }: { el: SlideElement }) {
           })
         )
       )}
-      {/* Legend */}
       {cd.datasets.map((ds, di) => (
         <g key={di}>
           <rect x={padding + di * 80} y={el.height - 14} width={8} height={8} fill={ds.color} rx={1} />
@@ -202,19 +207,77 @@ function ResizeHandle({ position, onResize }: { position: string; onResize: (dx:
   );
 }
 
+// ── Smart Guide Lines ────────────────────────────────────────────────────────
+function SmartGuides({ dragElement, elements, show }: { dragElement: SlideElement | null; elements: SlideElement[]; show: boolean }) {
+  if (!show || !dragElement) return null;
+
+  const guides: React.ReactNode[] = [];
+  const threshold = 5;
+  const centerX = dragElement.x + dragElement.width / 2;
+  const centerY = dragElement.y + dragElement.height / 2;
+
+  elements.forEach(el => {
+    if (el.id === dragElement.id) return;
+    const elCenterX = el.x + el.width / 2;
+    const elCenterY = el.y + el.height / 2;
+
+    // Center alignment guides
+    if (Math.abs(centerX - elCenterX) < threshold) {
+      guides.push(
+        <div key={`cx-${el.id}`} className="absolute pointer-events-none" style={{
+          left: elCenterX, top: Math.min(dragElement.y, el.y),
+          width: 1, height: Math.abs(dragElement.y - el.y) + Math.max(dragElement.height, el.height),
+          background: '#f59e0b', zIndex: 100,
+        }} />
+      );
+    }
+    if (Math.abs(centerY - elCenterY) < threshold) {
+      guides.push(
+        <div key={`cy-${el.id}`} className="absolute pointer-events-none" style={{
+          top: elCenterY, left: Math.min(dragElement.x, el.x),
+          height: 1, width: Math.abs(dragElement.x - el.x) + Math.max(dragElement.width, el.width),
+          background: '#f59e0b', zIndex: 100,
+        }} />
+      );
+    }
+    // Edge alignment
+    if (Math.abs(dragElement.x - el.x) < threshold) {
+      guides.push(
+        <div key={`lx-${el.id}`} className="absolute pointer-events-none" style={{
+          left: el.x, top: Math.min(dragElement.y, el.y),
+          width: 1, height: Math.abs(dragElement.y - el.y) + Math.max(dragElement.height, el.height),
+          background: '#3b82f6', zIndex: 100,
+        }} />
+      );
+    }
+    if (Math.abs((dragElement.x + dragElement.width) - (el.x + el.width)) < threshold) {
+      guides.push(
+        <div key={`rx-${el.id}`} className="absolute pointer-events-none" style={{
+          left: el.x + el.width, top: Math.min(dragElement.y, el.y),
+          width: 1, height: Math.abs(dragElement.y - el.y) + Math.max(dragElement.height, el.height),
+          background: '#3b82f6', zIndex: 100,
+        }} />
+      );
+    }
+  });
+
+  return <>{guides}</>;
+}
+
 // ── Main Canvas Component ────────────────────────────────────────────────────
 export default function SlideCanvas() {
   const {
     slides, activeSlideIndex, selectedElementId,
     selectElement, updateElementContent, updateElement,
     canvasZoom, setCanvasZoom, showGrid, showRuler, showGuides,
-    snapToGrid, pushUndo, removeElement,
+    snapToGrid, snapToObjects, pushUndo, removeElement,
   } = usePresentationStore();
 
   const slide = slides[activeSlideIndex];
   const canvasRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<{ id: string; startX: number; startY: number; elX: number; elY: number } | null>(null);
   const [resizeState, setResizeState] = useState<{ id: string; startW: number; startH: number; startX: number; startY: number } | null>(null);
+  const [dragElement, setDragElement] = useState<SlideElement | null>(null);
 
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent) => {
@@ -225,7 +288,6 @@ export default function SlideCanvas() {
     [selectElement],
   );
 
-  // Drag element
   const handleElementMouseDown = useCallback((e: React.MouseEvent, el: SlideElement) => {
     e.stopPropagation();
     selectElement(el.id);
@@ -239,6 +301,7 @@ export default function SlideCanvas() {
       elX: el.x,
       elY: el.y,
     });
+    setDragElement(el);
   }, [selectElement, canvasZoom, pushUndo]);
 
   useEffect(() => {
@@ -254,17 +317,22 @@ export default function SlideCanvas() {
         newY = Math.round(newY / 24) * 24;
       }
       updateElement(activeSlideIndex, dragState.id, { x: newX, y: newY });
+      // Update drag element for smart guides
+      const el = slides[activeSlideIndex]?.elements.find(e => e.id === dragState.id);
+      if (el) setDragElement({ ...el, x: newX, y: newY });
     };
-    const handleMouseUp = () => setDragState(null);
+    const handleMouseUp = () => {
+      setDragState(null);
+      setDragElement(null);
+    };
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [dragState, canvasZoom, snapToGrid, activeSlideIndex, updateElement]);
+  }, [dragState, canvasZoom, snapToGrid, activeSlideIndex, updateElement, slides]);
 
-  // Resize element
   const handleResize = useCallback((elementId: string, el: SlideElement) => {
     return (dx: number, dy: number, pos: string) => {
       const scale = canvasZoom / 100;
@@ -284,7 +352,6 @@ export default function SlideCanvas() {
     };
   }, [canvasZoom, activeSlideIndex, updateElement]);
 
-  // Keyboard shortcuts for delete
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Delete' && selectedElementId) {
@@ -305,7 +372,6 @@ export default function SlideCanvas() {
   const renderElement = (el: SlideElement) => {
     const isSelected = el.id === selectedElementId;
 
-    // Shape transform
     const shapeTransform: string[] = [];
     if (el.rotation) shapeTransform.push(`rotate(${el.rotation}deg)`);
     if (el.style.rotateX) shapeTransform.push(`rotateX(${el.style.rotateX}deg)`);
@@ -313,13 +379,56 @@ export default function SlideCanvas() {
     const perspectiveStyle: React.CSSProperties =
       (el.style.rotateX || el.style.rotateY) ? { perspective: 600, transformStyle: 'preserve-3d' as const } : {};
 
+    // Shadow and effects
+    const effectStyles: React.CSSProperties = {};
+    if (el.style.shadow) {
+      effectStyles.boxShadow = `${el.style.shadowOffsetX || 4}px ${el.style.shadowOffsetY || 4}px ${el.style.shadowBlur || 12}px ${el.style.shadowColor || 'rgba(0,0,0,0.4)'}`;
+    }
+    if (el.style.glow) {
+      effectStyles.boxShadow = `0 0 15px ${el.style.glowColor || '#3b82f6'}, 0 0 30px ${el.style.glowColor || '#3b82f6'}40`;
+    }
+    if (el.style.reflection) {
+      effectStyles.filter = 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))';
+    }
+
     const commonStyle: React.CSSProperties = {
       left: el.x, top: el.y, width: el.width, height: el.type === 'text' ? undefined : el.height,
       minHeight: el.type === 'text' ? el.height : undefined,
       outline: isSelected ? '2px solid #3b82f6' : 'none',
       outlineOffset: 2,
       opacity: el.style.opacity ?? 1,
+      ...effectStyles,
     };
+
+    // Group indicator
+    if (el.groupId && isSelected) {
+      commonStyle.outlineStyle = 'dashed';
+    }
+
+    // Media element
+    if (el.type === 'media' && el.mediaData) {
+      return (
+        <div key={el.id} className="absolute cursor-move"
+          onMouseDown={(e) => handleElementMouseDown(e, el)}
+          style={{ ...commonStyle, height: el.height }}>
+          {el.mediaData.mediaType === 'video' ? (
+            <div className="w-full h-full bg-black/50 rounded flex items-center justify-center relative">
+              <iframe src={el.mediaData.url} className="w-full h-full rounded" style={{ border: 'none' }} />
+            </div>
+          ) : el.mediaData.mediaType === 'audio' ? (
+            <div className="w-full h-full bg-black/30 rounded flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-2xl mb-1">🎵</div>
+                <audio controls src={el.mediaData.url} className="w-full" />
+              </div>
+            </div>
+          ) : null}
+          {isSelected && ['nw', 'ne', 'sw', 'se'].map((pos) => (
+            <ResizeHandle key={pos} position={pos} onResize={handleResize(el.id, el)} />
+          ))}
+        </div>
+      );
+    }
 
     // Table
     if (el.type === 'table') {
@@ -368,7 +477,7 @@ export default function SlideCanvas() {
     if (el.type === 'shape') {
       const shapeColor = el.style.backgroundColor || '#3b82f6';
       const borderStyle = el.style.borderWidth ? `${el.style.borderWidth}px solid ${el.style.borderColor || '#000'}` : 'none';
-      const shadowStyle = el.style.shadow ? '4px 4px 12px rgba(0,0,0,0.4)' : 'none';
+      const shadowStyle = el.style.shadow ? `${el.style.shadowOffsetX || 4}px ${el.style.shadowOffsetY || 4}px ${el.style.shadowBlur || 12}px ${el.style.shadowColor || 'rgba(0,0,0,0.4)'}` : 'none';
 
       let shapeSpecificStyle: React.CSSProperties = {
         ...commonStyle,
@@ -381,7 +490,6 @@ export default function SlideCanvas() {
         ...perspectiveStyle,
       };
 
-      // Check if it's an advanced shape from shapes library
       const advancedShape = SHAPE_DEFINITIONS.find(s => s.id === el.content);
       if (advancedShape) {
         return (
@@ -402,18 +510,11 @@ export default function SlideCanvas() {
         );
       }
 
-      // Check if it's an icon
       if (el.content.startsWith('icon:')) {
         return (
           <div key={el.id} className="absolute cursor-move flex items-center justify-center"
             onMouseDown={(e) => handleElementMouseDown(e, el)}
-            style={{
-              ...commonStyle, height: el.height,
-              color: el.style.color || '#3b82f6',
-              fontSize: Math.min(el.width, el.height) * 0.6,
-              transform: shapeTransform.length > 0 ? shapeTransform.join(' ') : undefined,
-              ...perspectiveStyle,
-            }}>
+            style={{ ...commonStyle, height: el.height, color: el.style.color || '#3b82f6', fontSize: Math.min(el.width, el.height) * 0.6, transform: shapeTransform.length > 0 ? shapeTransform.join(' ') : undefined, ...perspectiveStyle }}>
             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg viewBox="0 0 100 100" width={el.width * 0.7} height={el.height * 0.7}>
                 <circle cx="50" cy="50" r="40" fill={el.style.color || '#3b82f6'} fillOpacity={0.15} stroke={el.style.color || '#3b82f6'} strokeWidth={2} />
@@ -429,8 +530,17 @@ export default function SlideCanvas() {
         );
       }
 
+      // Extended shapes
       if (el.content === 'arrow') {
         shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(0 25%, 65% 25%, 65% 0, 100% 50%, 65% 100%, 65% 75%, 0 75%)', background: shapeColor };
+      } else if (el.content === 'arrow-left') {
+        shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(100% 25%, 35% 25%, 35% 0, 0 50%, 35% 100%, 35% 75%, 100% 75%)', background: shapeColor };
+      } else if (el.content === 'arrow-up') {
+        shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(25% 100%, 25% 35%, 0 35%, 50% 0, 100% 35%, 75% 35%, 75% 100%)', background: shapeColor };
+      } else if (el.content === 'arrow-down') {
+        shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(25% 0, 25% 65%, 0 65%, 50% 100%, 100% 65%, 75% 65%, 75% 0)', background: shapeColor };
+      } else if (el.content === 'arrow-double') {
+        shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(0 50%, 25% 0, 25% 25%, 75% 25%, 75% 0, 100% 50%, 75% 100%, 75% 75%, 25% 75%, 25% 100%)', background: shapeColor };
       } else if (el.content === 'star') {
         shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)', background: shapeColor };
       } else if (el.content === 'diamond') {
@@ -442,25 +552,43 @@ export default function SlideCanvas() {
         shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)', background: shapeColor };
       } else if (el.content === 'pentagon') {
         shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)', background: shapeColor };
-      } else if (el.content === 'line') {
-        shapeSpecificStyle = { ...shapeSpecificStyle, height: 3, backgroundColor: shapeColor, borderRadius: 0 };
-      } else if (el.content === 'callout') {
+      } else if (el.content === 'heart') {
+        shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(50% 85%, 15% 55%, 0% 35%, 0% 20%, 10% 5%, 25% 0%, 40% 5%, 50% 20%, 60% 5%, 75% 0%, 90% 5%, 100% 20%, 100% 35%, 85% 55%)', background: shapeColor };
+      } else if (el.content === 'cross') {
+        shapeSpecificStyle = { ...shapeSpecificStyle, backgroundColor: 'transparent', clipPath: 'polygon(35% 0%, 65% 0%, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0% 65%, 0% 35%, 35% 35%)', background: shapeColor };
+      } else if (el.content === 'cloud') {
         return (
           <div key={el.id} className="absolute cursor-move"
             onMouseDown={(e) => handleElementMouseDown(e, el)}
-            style={{
-              ...commonStyle, height: el.height,
-              boxShadow: shadowStyle,
-              transform: shapeTransform.length > 0 ? shapeTransform.join(' ') : undefined,
-              ...perspectiveStyle,
-            }}>
-            <div style={{ width: '100%', height: 'calc(100% - 10px)', backgroundColor: shapeColor, borderRadius: 8, border: borderStyle }} />
+            style={{ ...commonStyle, height: el.height, ...perspectiveStyle }}>
+            <svg viewBox="0 0 100 60" width={el.width} height={el.height}>
+              <ellipse cx="35" cy="40" rx="25" ry="18" fill={shapeColor} />
+              <ellipse cx="65" cy="40" rx="25" ry="18" fill={shapeColor} />
+              <ellipse cx="50" cy="25" rx="30" ry="22" fill={shapeColor} />
+              <ellipse cx="25" cy="30" rx="20" ry="15" fill={shapeColor} />
+              <ellipse cx="75" cy="30" rx="20" ry="15" fill={shapeColor} />
+            </svg>
+            {isSelected && ['nw', 'ne', 'sw', 'se'].map((pos) => (
+              <ResizeHandle key={pos} position={pos} onResize={handleResize(el.id, el)} />
+            ))}
+          </div>
+        );
+      } else if (el.content === 'line' || el.content === 'curve') {
+        shapeSpecificStyle = { ...shapeSpecificStyle, height: 3, backgroundColor: shapeColor, borderRadius: 0 };
+      } else if (el.content === 'callout' || el.content === 'callout-round') {
+        return (
+          <div key={el.id} className="absolute cursor-move"
+            onMouseDown={(e) => handleElementMouseDown(e, el)}
+            style={{ ...commonStyle, height: el.height, boxShadow: shadowStyle, transform: shapeTransform.length > 0 ? shapeTransform.join(' ') : undefined, ...perspectiveStyle }}>
+            <div style={{ width: '100%', height: 'calc(100% - 10px)', backgroundColor: shapeColor, borderRadius: el.content === 'callout-round' ? '50%' : 8, border: borderStyle }} />
             <div style={{ position: 'absolute', bottom: 0, left: 20, width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `10px solid ${shapeColor}` }} />
             {isSelected && ['nw', 'ne', 'sw', 'se'].map((pos) => (
               <ResizeHandle key={pos} position={pos} onResize={handleResize(el.id, el)} />
             ))}
           </div>
         );
+      } else if (el.content === 'rounded-rect') {
+        shapeSpecificStyle = { ...shapeSpecificStyle, borderRadius: '12px' };
       }
 
       return (
@@ -474,7 +602,41 @@ export default function SlideCanvas() {
       );
     }
 
-    // Text element
+    // Text element with WordArt/effects support
+    const textEffectStyle: React.CSSProperties = {};
+    if (el.textEffect) {
+      if (el.textEffect.wordArt) {
+        const wa = WORDART_STYLES.find(w => w.id === el.textEffect?.wordArt);
+        if (wa) {
+          if (wa.id.includes('gradient') || wa.id === 'wa-outline') {
+            if (wa.id === 'wa-gradient-blue') { textEffectStyle.background = 'linear-gradient(to right, #3b82f6, #06b6d4)'; textEffectStyle.WebkitBackgroundClip = 'text'; textEffectStyle.WebkitTextFillColor = 'transparent'; }
+            else if (wa.id === 'wa-gradient-fire') { textEffectStyle.background = 'linear-gradient(to right, #f97316, #ef4444)'; textEffectStyle.WebkitBackgroundClip = 'text'; textEffectStyle.WebkitTextFillColor = 'transparent'; }
+            else if (wa.id === 'wa-gradient-rainbow') { textEffectStyle.background = 'linear-gradient(to right, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7)'; textEffectStyle.WebkitBackgroundClip = 'text'; textEffectStyle.WebkitTextFillColor = 'transparent'; }
+            else if (wa.id === 'wa-outline') { textEffectStyle.WebkitTextStroke = '1px currentColor'; textEffectStyle.WebkitTextFillColor = 'transparent'; }
+          }
+          if (wa.id === 'wa-shadow') textEffectStyle.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+          if (wa.id === 'wa-glow') textEffectStyle.textShadow = '0 0 10px currentColor, 0 0 20px currentColor';
+          if (wa.id === 'wa-3d') textEffectStyle.textShadow = '1px 1px 0 #ccc, 2px 2px 0 #999, 3px 3px 0 #666';
+          if (wa.id === 'wa-neon') textEffectStyle.textShadow = '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #3b82f6, 0 0 20px #3b82f6';
+        }
+      }
+      if (el.textEffect.textShadow) textEffectStyle.textShadow = el.textEffect.textShadow;
+      if (el.textEffect.gradientFill) {
+        textEffectStyle.background = el.textEffect.gradientFill;
+        textEffectStyle.WebkitBackgroundClip = 'text';
+        textEffectStyle.WebkitTextFillColor = 'transparent';
+      }
+      if (el.textEffect.textReflection) {
+        textEffectStyle.filter = 'drop-shadow(0 2px 3px rgba(255,255,255,0.15))';
+      }
+      if (el.textEffect.text3DRotateX || el.textEffect.text3DRotateY) {
+        textEffectStyle.transform = `perspective(600px) rotateX(${el.textEffect.text3DRotateX || 0}deg) rotateY(${el.textEffect.text3DRotateY || 0}deg)`;
+      }
+      if (el.textEffect.glowColor) {
+        textEffectStyle.textShadow = `0 0 ${el.textEffect.glowSize || 10}px ${el.textEffect.glowColor}`;
+      }
+    }
+
     return (
       <div key={el.id}
         onMouseDown={(e) => handleElementMouseDown(e, el)}
@@ -482,6 +644,7 @@ export default function SlideCanvas() {
         style={{
           ...commonStyle,
           outline: isSelected ? '2px solid #3b82f6' : '1px dashed transparent',
+          ...effectStyles,
         }}>
         <div
           contentEditable
@@ -503,6 +666,7 @@ export default function SlideCanvas() {
             letterSpacing: el.style.letterSpacing ? `${el.style.letterSpacing}px` : undefined,
             color: el.style.color || '#ffffff',
             wordBreak: 'break-word',
+            ...textEffectStyle,
           }}>
           {el.content}
         </div>
@@ -533,7 +697,6 @@ export default function SlideCanvas() {
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Vertical ruler */}
         {showRuler && (
           <div className="relative" style={{ width: 20, minWidth: 20, background: 'var(--muted)', borderRight: '1px solid var(--border)' }}>
             {Array.from({ length: Math.ceil(540 * scale / 50) }, (_, i) => (
@@ -548,7 +711,6 @@ export default function SlideCanvas() {
           </div>
         )}
 
-        {/* Canvas area */}
         <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
           <div
             ref={canvasRef}
@@ -565,7 +727,6 @@ export default function SlideCanvas() {
               transform: `scale(${scale})`,
               transformOrigin: 'center center',
             }}>
-            {/* Grid overlay */}
             {showGrid && (
               <div className="absolute inset-0 pointer-events-none" style={{
                 backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)',
@@ -574,7 +735,6 @@ export default function SlideCanvas() {
               }} />
             )}
 
-            {/* Guides */}
             {showGuides && (
               <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 50 }}>
                 <div className="absolute left-1/2 top-0 bottom-0" style={{ width: 1, background: 'rgba(59,130,246,0.3)', transform: 'translateX(-0.5px)' }} />
@@ -584,23 +744,21 @@ export default function SlideCanvas() {
               </div>
             )}
 
+            {/* Smart guides */}
+            <SmartGuides dragElement={dragElement} elements={slide.elements} show={snapToObjects && !!dragState} />
+
             {slide.elements.map(renderElement)}
 
-            {/* Slide number */}
             {slide.slideNumberVisible !== false && (
               <div className="absolute bottom-2 right-3 text-white/60 font-medium" style={{ fontSize: 12 }}>
                 {activeSlideIndex + 1}
               </div>
             )}
-
-            {/* Footer text */}
             {slide.footerText && (
               <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-white/40" style={{ fontSize: 10 }}>
                 {slide.footerText}
               </div>
             )}
-
-            {/* Date/time */}
             {slide.dateTimeVisible && (
               <div className="absolute bottom-2 left-3 text-white/40" style={{ fontSize: 10 }}>
                 {new Date().toLocaleDateString()}
@@ -610,7 +768,6 @@ export default function SlideCanvas() {
         </div>
       </div>
 
-      {/* Zoom slider bar */}
       <div className="flex items-center justify-center gap-2 px-4 py-1 border-t"
         style={{ borderColor: 'var(--border)', background: 'var(--muted)' }}>
         <button onClick={() => setCanvasZoom(Math.max(25, canvasZoom - 10))}
