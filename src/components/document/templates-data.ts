@@ -1874,7 +1874,8 @@ Response (201 Created):
 <p style="margin-top:20px;"><strong>Additional Comments or Suggestions:</strong></p>
 <div style="border:1px solid #ddd;min-height:100px;padding:10px;margin-top:10px;"></div>
 <p style="margin-top:20px;color:#666;font-style:italic;">Scale: 1 = Strongly Disagree, 2 = Disagree, 3 = Neutral, 4 = Agree, 5 = Strongly Agree</p>`,
-,  {
+  },
+  {
     id: "springer-journal",
     name: "Springer Journal Paper",
     icon: "📘",
