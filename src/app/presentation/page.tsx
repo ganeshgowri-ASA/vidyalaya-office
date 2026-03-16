@@ -14,6 +14,11 @@ import AnimationsPanel from '@/components/presentation/animations-panel';
 import SmartArtModal from '@/components/presentation/smart-art-modal';
 import StatusBar from '@/components/presentation/status-bar';
 import SlideSorter from '@/components/presentation/slide-sorter';
+import SlideMasterPanel from '@/components/presentation/slide-master-panel';
+import DesignPanel from '@/components/presentation/design-panel';
+import MediaPanel from '@/components/presentation/media-panel';
+import TextEffectsPanel from '@/components/presentation/text-effects-panel';
+import ExportPanel from '@/components/presentation/export-panel';
 import { PageSetupDialog } from '@/components/document/page-setup-dialog';
 
 export default function PresentationPage() {
@@ -24,7 +29,6 @@ export default function PresentationPage() {
   } = usePresentationStore();
   const [showPageSetup, setShowPageSetup] = React.useState(false);
 
-  // Load template from localStorage if navigated from Templates page
   useEffect(() => {
     const templateData = localStorage.getItem('vidyalaya-ppt-template');
     if (templateData) {
@@ -46,7 +50,6 @@ export default function PresentationPage() {
         e.preventDefault();
         setPresenterMode(true);
       }
-      // Undo/Redo
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         undo();
@@ -55,7 +58,6 @@ export default function PresentationPage() {
         e.preventDefault();
         redo();
       }
-      // Copy/Paste elements
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
         const activeEl = document.activeElement;
         if (activeEl && (activeEl.getAttribute('contenteditable') === 'true' || activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) return;
@@ -70,7 +72,6 @@ export default function PresentationPage() {
         e.preventDefault();
         pasteElement();
       }
-      // Delete element
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const activeEl = document.activeElement;
         if (activeEl && (activeEl.getAttribute('contenteditable') === 'true' || activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) return;
@@ -100,6 +101,8 @@ export default function PresentationPage() {
             <SpeakerNotes />
           </div>
           <AnimationsPanel />
+          <TextEffectsPanel />
+          <DesignPanel />
           <AIPanel />
         </div>
         <StatusBar />
@@ -108,6 +111,9 @@ export default function PresentationPage() {
       <TemplateModal />
       <SmartArtModal />
       <SlideSorter />
+      <SlideMasterPanel />
+      <MediaPanel />
+      <ExportPanel />
       <PrintView />
       <PageSetupDialog open={showPageSetup} onClose={() => setShowPageSetup(false)} />
     </>
