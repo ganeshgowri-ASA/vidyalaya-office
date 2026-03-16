@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Document {
+  id              String    @id @default(cuid())
+  docId           String    @unique
+  name            String
+  content         String?   @db.Text
+  department      String?
+  routePath       String?
+  status          String    @default("Draft")
+  version         String    @default("1.0")
+  retentionPeriod String?
+  expiryDate      DateTime?
+  headerConfig    Json?
+  footerConfig    Json?
+  classification  String    @default("Internal")
+  tags            String[]
+  createdBy       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  versions DocumentVersion[]
+
+  @@index([department])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model DocumentVersion {
+  id          String   @id @default(cuid())
+  documentId  String
+  version     String
+  content     String?  @db.Text
+  changeNotes String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+}
+
+model Department {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  code        String  @unique
+  head        String?
+  description String?
+}
+
+model UserSettings {
+  id          String @id @default(cuid())
+  userId      String @unique
+  apiKeys     Json?
+  preferences Json?
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String?
+  userId     String?
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

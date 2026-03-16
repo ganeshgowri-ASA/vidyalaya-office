@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
+import "katex/dist/katex.min.css";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { KeyboardShortcutsModal } from "@/components/layout/keyboard-shortcuts-modal";
 
 export const metadata: Metadata = {
   title: "Vidyalaya Office - AI-Native Office Suite",
@@ -25,6 +27,7 @@ export default function RootLayout({
               <main className="flex-1 overflow-y-auto p-6">{children}</main>
             </div>
           </div>
+          <KeyboardShortcutsModal />
         </ThemeProvider>
       </body>
     </html>
