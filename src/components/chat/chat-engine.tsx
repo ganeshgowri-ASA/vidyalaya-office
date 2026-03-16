@@ -1,0 +1,234 @@
+'use client';
+
+import React, { useState, useRef, useEffect } from 'react';
+
+interface Message {
+  id: string;
+  channelId: string;
+  userId: string;
+  userName: string;
+  avatar: string;
+  content: string;
+  timestamp: string;
+  reactions: { emoji: string; count: number; reacted: boolean }[];
+  thread: Message[];
+  pinned: boolean;
+  edited: boolean;
+}
+
+interface Channel {
+  id: string;
+  name: string;
+  type: 'channel' | 'dm' | 'group';
+  icon: string;
+  unread: number;
+  members: number;
+  description: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  avatar: string;
+  status: 'online' | 'away' | 'busy' | 'offline';
+  role: string;
+}
+
+const USERS: User[] = [
+  { id: 'u1', name: 'You', avatar: '\uD83D\uDE4B', status: 'online', role: 'Developer' },
+  { id: 'u2', name: 'Priya Sharma', avatar: '\uD83D\uDC69\u200D\uD83D\uDCBB', status: 'online', role: 'Designer' },
+  { id: 'u3', name: 'Rahul Verma', avatar: '\uD83D\uDC68\u200D\uD83D\uDD27', status: 'away', role: 'DevOps' },
+  { id: 'u4', name: 'Anita Patel', avatar: '\uD83D\uDC69\u200D\uD83C\uDFEB', status: 'busy', role: 'PM' },
+  { id: 'u5', name: 'Vidyalaya Bot', avatar: '\uD83E\uDD16', status: 'online', role: 'AI Assistant' },
+];
+
+const CHANNELS: Channel[] = [
+  { id: 'general', name: 'general', type: 'channel', icon: '#', unread: 3, members: 15, description: 'Company-wide announcements' },
+  { id: 'engineering', name: 'engineering', type: 'channel', icon: '#', unread: 7, members: 8, description: 'Engineering discussions' },
+  { id: 'design', name: 'design', type: 'channel', icon: '#', unread: 0, members: 5, description: 'Design reviews and feedback' },
+  { id: 'random', name: 'random', type: 'channel', icon: '#', unread: 1, members: 15, description: 'Water cooler chat' },
+  { id: 'dm-priya', name: 'Priya Sharma', type: 'dm', icon: '\uD83D\uDC69\u200D\uD83D\uDCBB', unread: 2, members: 2, description: '' },
+  { id: 'dm-rahul', name: 'Rahul Verma', type: 'dm', icon: '\uD83D\uDC68\u200D\uD83D\uDD27', unread: 0, members: 2, description: '' },
+];
+
+const MOCK_MESSAGES: Message[] = [
+  { id: 'm1', channelId: 'general', userId: 'u4', userName: 'Anita Patel', avatar: '\uD83D\uDC69\u200D\uD83C\uDFEB', content: 'Team standup at 10 AM today. Please update your task boards.', timestamp: '09:15 AM', reactions: [{ emoji: '\uD83D\uDC4D', count: 4, reacted: true }], thread: [], pinned: true, edited: false },
+  { id: 'm2', channelId: 'general', userId: 'u2', userName: 'Priya Sharma', avatar: '\uD83D\uDC69\u200D\uD83D\uDCBB', content: 'The new dashboard designs are ready for review. Check #design channel.', timestamp: '09:32 AM', reactions: [{ emoji: '\uD83C\uDF89', count: 2, reacted: false }], thread: [], pinned: false, edited: false },
+  { id: 'm3', channelId: 'general', userId: 'u3', userName: 'Rahul Verma', avatar: '\uD83D\uDC68\u200D\uD83D\uDD27', content: 'CI/CD pipeline optimization complete. Build times reduced by 40%.', timestamp: '10:05 AM', reactions: [{ emoji: '\uD83D\uDE80', count: 6, reacted: true }, { emoji: '\uD83D\uDD25', count: 3, reacted: false }], thread: [], pinned: false, edited: false },
+  { id: 'm4', channelId: 'general', userId: 'u5', userName: 'Vidyalaya Bot', avatar: '\uD83E\uDD16', content: '\u2728 Daily digest: 3 PRs merged, 2 issues closed, 1 new deployment to staging.', timestamp: '10:30 AM', reactions: [], thread: [], pinned: false, edited: false },
+  { id: 'm5', channelId: 'engineering', userId: 'u1', userName: 'You', avatar: '\uD83D\uDE4B', content: 'Working on the graphics editor component. SVG canvas with shape tools is done.', timestamp: '11:00 AM', reactions: [{ emoji: '\uD83D\uDCAF', count: 2, reacted: false }], thread: [], pinned: false, edited: false },
+  { id: 'm6', channelId: 'engineering', userId: 'u3', userName: 'Rahul Verma', avatar: '\uD83D\uDC68\u200D\uD83D\uDD27', content: 'Nice! Can you add export to PNG/SVG support?', timestamp: '11:15 AM', reactions: [], thread: [], pinned: false, edited: false },
+];
+
+let msgCounter = 10;
+
+export function ChatEngine() {
+  const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
+  const [activeChannel, setActiveChannel] = useState('general');
+  const [inputText, setInputText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showMembers, setShowMembers] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const channelMessages = messages.filter(m => m.channelId === activeChannel);
+  const currentChannel = CHANNELS.find(c => c.id === activeChannel);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [channelMessages.length]);
+
+  const sendMessage = () => {
+    if (!inputText.trim()) return;
+    const msg: Message = {
+      id: `m${++msgCounter}`, channelId: activeChannel, userId: 'u1', userName: 'You',
+      avatar: '\uD83D\uDE4B', content: inputText, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      reactions: [], thread: [], pinned: false, edited: false,
+    };
+    setMessages([...messages, msg]);
+    setInputText('');
+  };
+
+  const addReaction = (msgId: string, emoji: string) => {
+    setMessages(messages.map(m => {
+      if (m.id !== msgId) return m;
+      const existing = m.reactions.find(r => r.emoji === emoji);
+      if (existing) {
+        return { ...m, reactions: m.reactions.map(r => r.emoji === emoji ? { ...r, count: r.reacted ? r.count - 1 : r.count + 1, reacted: !r.reacted } : r) };
+      }
+      return { ...m, reactions: [...m.reactions, { emoji, count: 1, reacted: true }] };
+    }));
+  };
+
+  const statusColor = (s: string) => s === 'online' ? '#22c55e' : s === 'away' ? '#f59e0b' : s === 'busy' ? '#ef4444' : '#6b7280';
+
+  return (
+    <div className="flex flex-col h-full bg-[var(--bg-primary,#0f172a)] text-[var(--text-primary,#e2e8f0)]">
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Channel Sidebar */}
+        <div className="w-56 bg-[var(--bg-secondary,#1e293b)] border-r border-[var(--border-color,#334155)] flex flex-col">
+          <div className="p-3 border-b border-[var(--border-color,#334155)]">
+            <h2 className="text-sm font-bold">\uD83D\uDCAC Vidyalaya Chat</h2>
+            <p className="text-[10px] text-[var(--text-secondary,#94a3b8)]">Internal Team Communication</p>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            <p className="px-2 text-[10px] text-[var(--text-secondary,#94a3b8)] uppercase tracking-wider mt-2">Channels</p>
+            {CHANNELS.filter(c => c.type === 'channel').map(ch => (
+              <button key={ch.id} onClick={() => setActiveChannel(ch.id)}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${activeChannel === ch.id ? 'bg-blue-600/20 text-blue-400' : 'hover:bg-[var(--bg-hover,#334155)]'}`}>
+                <span className="text-[var(--text-secondary,#94a3b8)]">#</span>
+                <span className="flex-1 text-left">{ch.name}</span>
+                {ch.unread > 0 && <span className="px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold">{ch.unread}</span>}
+              </button>
+            ))}
+            <p className="px-2 text-[10px] text-[var(--text-secondary,#94a3b8)] uppercase tracking-wider mt-3">Direct Messages</p>
+            {CHANNELS.filter(c => c.type === 'dm').map(ch => (
+              <button key={ch.id} onClick={() => setActiveChannel(ch.id)}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${activeChannel === ch.id ? 'bg-blue-600/20 text-blue-400' : 'hover:bg-[var(--bg-hover,#334155)]'}`}>
+                <span>{ch.icon}</span>
+                <span className="flex-1 text-left truncate">{ch.name}</span>
+                {ch.unread > 0 && <span className="px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold">{ch.unread}</span>}
+              </button>
+            ))}
+          </div>
+          <div className="p-2 border-t border-[var(--border-color,#334155)]">
+            <div className="flex items-center gap-2 px-2 py-1">
+              <span>\uD83D\uDE4B</span>
+              <div className="flex-1">
+                <p className="text-xs font-medium">You</p>
+                <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /><span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">Online</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Messages Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Channel Header */}
+          <div className="flex items-center gap-3 px-4 py-2 bg-[var(--bg-secondary,#1e293b)] border-b border-[var(--border-color,#334155)]">
+            <span className="text-sm font-semibold">{currentChannel?.type === 'channel' ? '#' : ''} {currentChannel?.name}</span>
+            {currentChannel?.description && <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">{currentChannel.description}</span>}
+            <div className="flex-1" />
+            <button onClick={() => setShowSearch(!showSearch)} className={`px-2 py-1 rounded text-xs ${showSearch ? 'bg-blue-600/30 text-blue-400' : 'hover:bg-[var(--bg-hover,#334155)]'}`}>\uD83D\uDD0D</button>
+            <button onClick={() => setShowMembers(!showMembers)} className={`px-2 py-1 rounded text-xs ${showMembers ? 'bg-blue-600/30 text-blue-400' : 'hover:bg-[var(--bg-hover,#334155)]'}`}>\uD83D\uDC65 {currentChannel?.members}</button>
+          </div>
+          {showSearch && (
+            <div className="px-4 py-2 bg-[var(--bg-secondary,#1e293b)] border-b border-[var(--border-color,#334155)]">
+              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search messages..." autoFocus
+                className="w-full px-3 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+            </div>
+          )}
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            {channelMessages.filter(m => !searchQuery || m.content.toLowerCase().includes(searchQuery.toLowerCase())).map(msg => (
+              <div key={msg.id} className={`flex gap-3 group ${msg.userId === 'u1' ? '' : ''}`}>
+                <span className="text-2xl mt-0.5">{msg.avatar}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-xs font-semibold ${msg.userId === 'u5' ? 'text-purple-400' : ''}`}>{msg.userName}</span>
+                    <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">{msg.timestamp}</span>
+                    {msg.pinned && <span className="text-[10px] px-1 rounded bg-yellow-600/20 text-yellow-400">\uD83D\uDCCC Pinned</span>}
+                    {msg.edited && <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">(edited)</span>}
+                  </div>
+                  <p className="text-sm mt-0.5 leading-relaxed">{msg.content}</p>
+                  {msg.reactions.length > 0 && (
+                    <div className="flex gap-1 mt-1">
+                      {msg.reactions.map((r, i) => (
+                        <button key={i} onClick={() => addReaction(msg.id, r.emoji)}
+                          className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] transition-colors ${r.reacted ? 'bg-blue-600/20 border border-blue-500/30' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
+                          {r.emoji} {r.count}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="hidden group-hover:flex gap-1 mt-1">
+                    {['\uD83D\uDC4D', '\u2764\uFE0F', '\uD83D\uDE02', '\uD83D\uDE80', '\uD83D\uDC40'].map(e => (
+                      <button key={e} onClick={() => addReaction(msg.id, e)} className="px-1 py-0.5 rounded hover:bg-[var(--bg-hover,#334155)] text-xs">{e}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="px-4 py-3 bg-[var(--bg-secondary,#1e293b)] border-t border-[var(--border-color,#334155)]">
+            <div className="flex items-center gap-2">
+              <button className="px-2 py-1 rounded hover:bg-[var(--bg-hover,#334155)] text-xs">\u2795</button>
+              <input value={inputText} onChange={e => setInputText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                placeholder={`Message #${currentChannel?.name || ''}...`}
+                className="flex-1 px-3 py-2 rounded-lg bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+              <button className="px-2 py-1 rounded hover:bg-[var(--bg-hover,#334155)] text-xs">\uD83D\uDE00</button>
+              <button className="px-2 py-1 rounded hover:bg-[var(--bg-hover,#334155)] text-xs">\uD83D\uDCCE</button>
+              <button onClick={sendMessage} className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs">Send</button>
+            </div>
+            <div className="flex gap-2 mt-1">
+              <button className="px-2 py-0.5 rounded bg-purple-600/20 text-purple-400 text-[10px] hover:bg-purple-600/30">\u2728 AI Compose</button>
+              <button className="px-2 py-0.5 rounded bg-[var(--bg-tertiary,#0f172a)] text-[var(--text-secondary,#94a3b8)] text-[10px]">@mention</button>
+              <button className="px-2 py-0.5 rounded bg-[var(--bg-tertiary,#0f172a)] text-[var(--text-secondary,#94a3b8)] text-[10px]">/command</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Members Panel */}
+        {showMembers && (
+          <div className="w-52 bg-[var(--bg-secondary,#1e293b)] border-l border-[var(--border-color,#334155)] p-3 overflow-y-auto">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)] mb-3">Members ({USERS.length})</h3>
+            <div className="space-y-2">
+              {USERS.map(u => (
+                <div key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[var(--bg-hover,#334155)] cursor-pointer">
+                  <div className="relative"><span className="text-lg">{u.avatar}</span><span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-secondary,#1e293b)]" style={{ backgroundColor: statusColor(u.status) }} /></div>
+                  <div><p className="text-xs font-medium">{u.name}</p><p className="text-[10px] text-[var(--text-secondary,#94a3b8)]">{u.role}</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
