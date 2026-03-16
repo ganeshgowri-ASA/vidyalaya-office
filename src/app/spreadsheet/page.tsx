@@ -1,23 +1,4 @@
-"use client";
-
-import { useCallback, useEffect, useState, useRef } from "react";
-import { useSpreadsheetStore } from "@/store/spreadsheet-store";
-import { SpreadsheetToolbar } from "@/components/spreadsheet/spreadsheet-toolbar";
-import { FormulaBar } from "@/components/spreadsheet/formula-bar";
-import { SpreadsheetGrid } from "@/components/spreadsheet/spreadsheet-grid";
-import { SheetTabs } from "@/components/spreadsheet/sheet-tabs";
-import { StatusBar } from "@/components/spreadsheet/status-bar";
-import { ChartModal } from "@/components/spreadsheet/chart-modal";
-import { TemplatesModal } from "@/components/spreadsheet/templates-modal";
-import { AiPanel } from "@/components/spreadsheet/ai-panel";
-import { PivotTableModal } from "@/components/spreadsheet/pivot-table-modal";
-import { DataValidationModal } from "@/components/spreadsheet/data-validation-modal";
-import { SortFilterPanel } from "@/components/spreadsheet/sort-filter-panel";
-import { ConditionalFormattingModal } from "@/components/spreadsheet/conditional-formatting-modal";
-import { GoalSeekModal } from "@/components/spreadsheet/goal-seek-modal";
-import { StatisticalAnalysisModal } from "@/components/spreadsheet/statistical-analysis-modal";
-import { exportToCSV, exportToExcelXML, printSheet } from "@/components/spreadsheet/export-utils";
-import { PageSetupDialog } from "@/components/document/page-setup-dialog";
+import SpreadsheetEditor from "@/components/spreadsheet/SpreadsheetEditor";
 
 export default function SpreadsheetPage() {
   const getActiveSheet = useSpreadsheetStore((s) => s.getActiveSheet);
@@ -84,57 +65,8 @@ export default function SpreadsheetPage() {
   }, [importCSV]);
 
   return (
-    <div
-      className="flex flex-col h-full -m-6"
-      style={{ backgroundColor: "var(--background)" }}
-    >
-      <SpreadsheetToolbar
-        onExportCSV={handleExportCSV}
-        onExportExcel={handleExportExcel}
-        onPrint={handlePrint}
-        onOpenPivot={() => setShowPivot(true)}
-        onOpenValidation={() => setShowValidation(true)}
-        onOpenSortFilter={() => setShowSortFilter(true)}
-        onOpenCondFormatDialog={() => setShowCondFormat(true)}
-        onOpenGoalSeek={() => setShowGoalSeek(true)}
-        onOpenStatistics={() => setShowStatistics(true)}
-        onPageSetup={() => setShowPageSetup(true)}
-        onImportCSV={handleImportCSV}
-      />
-      <FormulaBar />
-      <div className="flex flex-1 overflow-hidden">
-        <SpreadsheetGrid />
-        <AiPanel />
-      </div>
-      <SheetTabs />
-      <StatusBar />
-      <ChartModal />
-      <TemplatesModal />
-      <PivotTableModal open={showPivot} onClose={() => setShowPivot(false)} />
-      <DataValidationModal
-        open={showValidation}
-        onClose={() => setShowValidation(false)}
-        onApply={(rule) => {
-          setShowValidation(false);
-        }}
-      />
-      <SortFilterPanel
-        open={showSortFilter}
-        onClose={() => setShowSortFilter(false)}
-      />
-      <ConditionalFormattingModal
-        open={showCondFormat}
-        onClose={() => setShowCondFormat(false)}
-      />
-      <GoalSeekModal
-        open={showGoalSeek}
-        onClose={() => setShowGoalSeek(false)}
-      />
-      <StatisticalAnalysisModal
-        open={showStatistics}
-        onClose={() => setShowStatistics(false)}
-      />
-      <PageSetupDialog open={showPageSetup} onClose={() => setShowPageSetup(false)} />
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <SpreadsheetEditor />
     </div>
   );
 }
