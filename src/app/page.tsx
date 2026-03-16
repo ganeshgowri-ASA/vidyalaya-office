@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   FileText,
   Table2,
@@ -18,6 +18,14 @@ import {
   Edit3,
   Upload,
   Trash2,
+  Grid3X3,
+  List,
+  MoreHorizontal,
+  Copy,
+  Share2,
+  Pencil,
+  FolderOpen,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -39,6 +47,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 
 const quickCreate: { label: string; type: FileType; href: string; icon: React.ElementType }[] = [
   { label: "New Document", type: "document", href: "/document", icon: FileText },
@@ -54,15 +63,46 @@ const typeIcons: Record<FileType, React.ElementType> = {
   pdf: FileDown,
 };
 
-/* Mock activity feed data */
-const activityFeed = [
-  { id: "a1", action: "edited", item: "Q4 Business Report", tool: "Document", user: "You", time: "5 minutes ago", icon: Edit3, color: "var(--primary)" },
-  { id: "a2", action: "approved", item: "Staff Recruitment Policy", tool: "Review", user: "Ms. Priya Patel", time: "2 hours ago", icon: CheckCircle, color: "#16a34a" },
-  { id: "a3", action: "commented on", item: "Annual Budget Proposal", tool: "Review", user: "Dr. Ananya Sharma", time: "3 hours ago", icon: MessageSquare, color: "#f59e0b" },
-  { id: "a4", action: "uploaded", item: "Campus Safety Audit", tool: "PDF Tools", user: "Ravi Shankar", time: "Yesterday", icon: Upload, color: "#8b5cf6" },
-  { id: "a5", action: "created", item: "Sales Dashboard 2024", tool: "Spreadsheet", user: "You", time: "Yesterday", icon: Table2, color: "#3b82f6" },
-  { id: "a6", action: "deleted", item: "Old Template Draft", tool: "Templates", user: "You", time: "2 days ago", icon: Trash2, color: "#dc2626" },
-];
+const typeColors: Record<FileType, string> = {
+  document: "#3b82f6",
+  spreadsheet: "#16a34a",
+  presentation: "#f59e0b",
+  pdf: "#dc2626",
+};
+
+const typeExtensions: Record<FileType, string> = {
+  document: ".docx",
+  spreadsheet: ".xlsx",
+  presentation: ".pptx",
+  pdf: ".pdf",
+};
+
+const activityIcons: Record<string, React.ElementType> = {
+  edit: Edit3,
+  approve: CheckCircle,
+  comment: MessageSquare,
+  share: Share2,
+  upload: Upload,
+  delete: Trash2,
+  create: FileText,
+};
+
+const activityColors: Record<string, string> = {
+  edit: "var(--primary)",
+  approve: "#16a34a",
+  comment: "#f59e0b",
+  share: "#8b5cf6",
+  upload: "#3b82f6",
+  delete: "#dc2626",
+  create: "#16a34a",
+};
+
+function formatFileSize(bytes?: number): string {
+  if (!bytes) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 /* Mock weekly document creation data */
 const weeklyData = [
@@ -84,14 +124,110 @@ const templateUsage = [
 ];
 
 /* Storage mock */
-const storageUsed = 6.75; // GB
-const storageTotal = 15; // GB
+const storageUsed = 6.75;
+const storageTotal = 15;
 const storagePercent = Math.round((storageUsed / storageTotal) * 100);
 
+function FileContextMenu({
+  fileId,
+  onClose,
+  position,
+}: {
+  fileId: string;
+  onClose: () => void;
+  position: { x: number; y: number };
+}) {
+  const { renameFile, duplicateFile, deleteFile, recentFiles } = useAppStore();
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [newName, setNewName] = useState("");
+  const file = recentFiles.find((f) => f.id === fileId);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [onClose]);
+
+  if (!file) return null;
+
+  if (renaming) {
+    return (
+      <div
+        ref={menuRef}
+        className="fixed z-50 w-64 rounded-lg border p-3 shadow-xl"
+        style={{ top: position.y, left: position.x, backgroundColor: "var(--card)", borderColor: "var(--border)" }}
+      >
+        <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Rename file</p>
+        <input
+          autoFocus
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && newName.trim()) {
+              renameFile(fileId, newName.trim());
+              onClose();
+            }
+            if (e.key === "Escape") onClose();
+          }}
+          className="w-full rounded border px-2 py-1.5 text-sm outline-none"
+          style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+        />
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => { if (newName.trim()) { renameFile(fileId, newName.trim()); onClose(); } }}
+            className="flex-1 rounded px-2 py-1 text-xs font-medium"
+            style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+          >
+            Save
+          </button>
+          <button onClick={onClose} className="flex-1 rounded px-2 py-1 text-xs" style={{ color: "var(--muted-foreground)" }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const actions = [
+    { label: "Open", icon: ExternalLink, action: () => onClose() },
+    { label: "Rename", icon: Pencil, action: () => { setNewName(file.name); setRenaming(true); } },
+    { label: "Duplicate", icon: Copy, action: () => { duplicateFile(fileId); onClose(); } },
+    { label: "Share", icon: Share2, action: () => onClose() },
+    { label: "Delete", icon: Trash2, action: () => { deleteFile(fileId); onClose(); }, danger: true },
+  ];
+
+  return (
+    <div
+      ref={menuRef}
+      className="fixed z-50 w-48 rounded-lg border py-1 shadow-xl"
+      style={{ top: position.y, left: position.x, backgroundColor: "var(--card)", borderColor: "var(--border)" }}
+    >
+      {actions.map((a, i) => (
+        <button
+          key={a.label}
+          onClick={a.action}
+          className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:opacity-80 ${i === actions.length - 1 ? "border-t" : ""}`}
+          style={{
+            color: (a as { danger?: boolean }).danger ? "#dc2626" : "var(--card-foreground)",
+            borderColor: "var(--border)",
+          }}
+        >
+          <a.icon size={14} />
+          {a.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
-  const { recentFiles, toggleStar, searchQuery, setSearchQuery } = useAppStore();
+  const { recentFiles, toggleStar, activities, dashboardView, setDashboardView, onboardingComplete, setOnboardingComplete } = useAppStore();
   const starredFiles = recentFiles.filter((f) => f.starred);
   const [dashSearch, setDashSearch] = useState("");
+  const [contextMenu, setContextMenu] = useState<{ fileId: string; x: number; y: number } | null>(null);
   const [showImport, setShowImport] = useState(false);
   const router = useRouter();
 
@@ -117,6 +253,11 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
+      {/* Onboarding */}
+      {!onboardingComplete && (
+        <OnboardingWizard onComplete={() => setOnboardingComplete(true)} />
+      )}
+
       {/* Welcome */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
@@ -131,10 +272,7 @@ export default function DashboardPage() {
       <section>
         <div
           className="flex items-center gap-3 rounded-xl border px-4 py-3"
-          style={{
-            backgroundColor: "var(--card)",
-            borderColor: "var(--border)",
-          }}
+          style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
         >
           <Search size={18} style={{ color: "var(--muted-foreground)" }} />
           <input
@@ -146,36 +284,26 @@ export default function DashboardPage() {
             style={{ color: "var(--foreground)" }}
           />
           {dashSearch && (
-            <button
-              onClick={() => setDashSearch("")}
-              className="text-xs px-2 py-1 rounded-md hover:opacity-80"
-              style={{ color: "var(--muted-foreground)" }}
-            >
+            <button onClick={() => setDashSearch("")} className="text-xs px-2 py-1 rounded-md hover:opacity-80" style={{ color: "var(--muted-foreground)" }}>
               Clear
             </button>
           )}
+          <Link href="/search" className="text-xs px-2 py-1 rounded-md hover:opacity-80" style={{ color: "var(--primary)" }}>
+            Advanced Search
+          </Link>
         </div>
-        {/* Search results */}
         {dashSearch && (
-          <div
-            className="mt-2 rounded-xl border p-3"
-            style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
-          >
+          <div className="mt-2 rounded-xl border p-3" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
             {filteredFiles.length > 0 ? (
               <div className="space-y-1">
                 {filteredFiles.map((file) => {
                   const Icon = typeIcons[file.type];
                   return (
-                    <div
-                      key={file.id}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer hover:opacity-80"
-                      style={{ color: "var(--card-foreground)" }}
-                    >
-                      <Icon size={16} style={{ color: "var(--primary)" }} />
+                    <div key={file.id} className="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer hover:opacity-80" style={{ color: "var(--card-foreground)" }}>
+                      <Icon size={16} style={{ color: typeColors[file.type] }} />
                       <span className="text-sm">{file.name}</span>
-                      <span className="ml-auto text-xs" style={{ color: "var(--muted-foreground)" }}>
-                        {file.type}
-                      </span>
+                      <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>{typeExtensions[file.type]}</span>
+                      <span className="ml-auto text-xs" style={{ color: "var(--muted-foreground)" }}>{formatFileSize(file.size)}</span>
                     </div>
                   );
                 })}
@@ -191,7 +319,6 @@ export default function DashboardPage() {
 
       {/* Quick Create + Storage */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-        {/* Quick Create */}
         <section className="lg:col-span-3">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
             Quick Create
@@ -202,17 +329,9 @@ export default function DashboardPage() {
                 key={item.type}
                 href={item.href}
                 className="group flex flex-col items-center gap-2 rounded-xl border p-5 transition-all hover:scale-[1.02]"
-                style={{
-                  backgroundColor: "var(--card)",
-                  borderColor: "var(--border)",
-                  color: "var(--card-foreground)",
-                }}
+                style={{ backgroundColor: "var(--card)", borderColor: "var(--border)", color: "var(--card-foreground)" }}
               >
-                <item.icon
-                  size={28}
-                  className="transition-colors"
-                  style={{ color: "var(--primary)" }}
-                />
+                <item.icon size={28} className="transition-colors" style={{ color: "var(--primary)" }} />
                 <span className="text-sm font-medium">{item.label}</span>
               </Link>
             ))}
@@ -236,37 +355,20 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Storage Usage */}
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-            <HardDrive size={14} />
-            Storage
+            <HardDrive size={14} /> Storage
           </h2>
-          <div
-            className="rounded-xl border p-5 space-y-3"
-            style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
-          >
+          <div className="rounded-xl border p-5 space-y-3" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>{storagePercent}%</p>
                 <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>used</p>
               </div>
-              <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                {storageUsed} GB / {storageTotal} GB
-              </p>
+              <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{storageUsed} GB / {storageTotal} GB</p>
             </div>
-            {/* Progress bar */}
-            <div
-              className="h-2.5 w-full rounded-full overflow-hidden"
-              style={{ backgroundColor: "var(--secondary)" }}
-            >
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${storagePercent}%`,
-                  backgroundColor: storagePercent > 80 ? "#dc2626" : storagePercent > 60 ? "#f59e0b" : "var(--primary)",
-                }}
-              />
+            <div className="h-2.5 w-full rounded-full overflow-hidden" style={{ backgroundColor: "var(--secondary)" }}>
+              <div className="h-full rounded-full transition-all" style={{ width: `${storagePercent}%`, backgroundColor: storagePercent > 80 ? "#dc2626" : storagePercent > 60 ? "#f59e0b" : "var(--primary)" }} />
             </div>
             <div className="flex justify-between text-xs" style={{ color: "var(--muted-foreground)" }}>
               <span>Documents: 3.2 GB</span>
@@ -280,40 +382,23 @@ export default function DashboardPage() {
       {starredFiles.length > 0 && (
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-            <Pin size={14} />
-            Pinned & Starred
+            <Pin size={14} /> Pinned & Starred
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {starredFiles.map((file) => {
               const Icon = typeIcons[file.type];
               return (
-                <div
-                  key={file.id}
-                  className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:opacity-90"
-                  style={{
-                    backgroundColor: "var(--card)",
-                    borderColor: "var(--border)",
-                  }}
-                >
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-lg"
-                    style={{ backgroundColor: "var(--accent)" }}
-                  >
-                    <Icon size={20} style={{ color: "var(--primary)" }} />
+                <div key={file.id} className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:opacity-90" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${typeColors[file.type]}15` }}>
+                    <Icon size={20} style={{ color: typeColors[file.type] }} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium" style={{ color: "var(--card-foreground)" }}>
-                      {file.name}
-                    </p>
+                    <p className="truncate text-sm font-medium" style={{ color: "var(--card-foreground)" }}>{file.name}</p>
                     <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                      {file.type} &middot; v{file.version} &middot; {formatDate(file.modified)}
+                      {typeExtensions[file.type]} &middot; v{file.version} &middot; {formatDate(file.modified)}
                     </p>
                   </div>
-                  <button
-                    onClick={() => toggleStar(file.id)}
-                    className="shrink-0"
-                    title="Unpin"
-                  >
+                  <button onClick={() => toggleStar(file.id)} className="shrink-0" title="Unpin">
                     <Star size={16} fill="var(--primary)" style={{ color: "var(--primary)" }} />
                   </button>
                 </div>
@@ -323,41 +408,151 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* Activity Feed + Recent Files */}
+      {/* Recent Files Section with Grid/List Toggle */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+            <Clock size={14} /> Recent Files
+          </h2>
+          <div className="flex items-center gap-1 rounded-lg border p-0.5" style={{ borderColor: "var(--border)" }}>
+            <button
+              onClick={() => setDashboardView("grid")}
+              className="rounded-md p-1.5 transition-colors"
+              style={{ backgroundColor: dashboardView === "grid" ? "var(--accent)" : "transparent", color: dashboardView === "grid" ? "var(--accent-foreground)" : "var(--muted-foreground)" }}
+              title="Grid view"
+            >
+              <Grid3X3 size={14} />
+            </button>
+            <button
+              onClick={() => setDashboardView("list")}
+              className="rounded-md p-1.5 transition-colors"
+              style={{ backgroundColor: dashboardView === "list" ? "var(--accent)" : "transparent", color: dashboardView === "list" ? "var(--accent-foreground)" : "var(--muted-foreground)" }}
+              title="List view"
+            >
+              <List size={14} />
+            </button>
+          </div>
+        </div>
+
+        {dashboardView === "grid" ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {recentFiles.map((file) => {
+              const Icon = typeIcons[file.type];
+              return (
+                <div
+                  key={file.id}
+                  className="group rounded-xl border p-4 transition-all hover:scale-[1.01] cursor-pointer"
+                  style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
+                  onContextMenu={(e) => { e.preventDefault(); setContextMenu({ fileId: file.id, x: e.clientX, y: e.clientY }); }}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${typeColors[file.type]}15` }}>
+                      <Icon size={22} style={{ color: typeColors[file.type] }} />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => toggleStar(file.id)} className="shrink-0 p-1 rounded hover:opacity-70">
+                        <Star size={14} fill={file.starred ? "var(--primary)" : "none"} style={{ color: "var(--primary)" }} />
+                      </button>
+                      <button
+                        onClick={(e) => setContextMenu({ fileId: file.id, x: e.clientX, y: e.clientY })}
+                        className="shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 hover:opacity-70 transition-opacity"
+                        style={{ color: "var(--muted-foreground)" }}
+                      >
+                        <MoreHorizontal size={14} />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="truncate text-sm font-medium" style={{ color: "var(--card-foreground)" }}>{file.name}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: `${typeColors[file.type]}15`, color: typeColors[file.type] }}>
+                      {typeExtensions[file.type]}
+                    </span>
+                    <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>{formatFileSize(file.size)}</span>
+                  </div>
+                  <p className="text-xs mt-2" style={{ color: "var(--muted-foreground)" }}>
+                    Modified {formatDate(file.modified)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl border divide-y" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+            {/* Header */}
+            <div className="flex items-center gap-3 px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+              <span className="w-6" />
+              <span className="flex-1">Name</span>
+              <span className="w-16 text-center hidden sm:block">Type</span>
+              <span className="w-20 text-right hidden md:block">Size</span>
+              <span className="w-28 text-right hidden lg:block">Modified</span>
+              <span className="w-32 text-right hidden lg:block">Owner</span>
+              <span className="w-16" />
+            </div>
+            {recentFiles.map((file) => {
+              const Icon = typeIcons[file.type];
+              return (
+                <div
+                  key={file.id}
+                  className="group flex items-center gap-3 px-4 py-3 cursor-pointer hover:opacity-90"
+                  style={{ borderColor: "var(--border)" }}
+                  onContextMenu={(e) => { e.preventDefault(); setContextMenu({ fileId: file.id, x: e.clientX, y: e.clientY }); }}
+                >
+                  <Icon size={18} style={{ color: typeColors[file.type] }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium" style={{ color: "var(--card-foreground)" }}>{file.name}</p>
+                  </div>
+                  <span className="w-16 text-center text-xs hidden sm:block px-1.5 py-0.5 rounded" style={{ color: typeColors[file.type] }}>
+                    {typeExtensions[file.type]}
+                  </span>
+                  <span className="w-20 text-right text-xs hidden md:block" style={{ color: "var(--muted-foreground)" }}>
+                    {formatFileSize(file.size)}
+                  </span>
+                  <span className="w-28 text-right text-xs hidden lg:block" style={{ color: "var(--muted-foreground)" }}>
+                    {formatDate(file.modified)}
+                  </span>
+                  <span className="w-32 text-right text-xs truncate hidden lg:block" style={{ color: "var(--muted-foreground)" }}>
+                    {file.owner}
+                  </span>
+                  <div className="w-16 flex items-center justify-end gap-1">
+                    <button onClick={() => toggleStar(file.id)} className="p-1 rounded hover:opacity-70">
+                      <Star size={14} fill={file.starred ? "var(--primary)" : "none"} style={{ color: "var(--primary)" }} />
+                    </button>
+                    <button
+                      onClick={(e) => setContextMenu({ fileId: file.id, x: e.clientX, y: e.clientY })}
+                      className="p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      <MoreHorizontal size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Activity Feed + Quick Links */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Activity Feed */}
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-            <Activity size={14} />
-            Recent Activity
+            <Activity size={14} /> Recent Activity
           </h2>
-          <div
-            className="rounded-xl border divide-y"
-            style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
-          >
-            {activityFeed.map((item) => {
-              const Icon = item.icon;
+          <div className="rounded-xl border divide-y" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+            {activities.map((item) => {
+              const Icon = activityIcons[item.type] || Edit3;
+              const color = activityColors[item.type] || "var(--primary)";
               return (
-                <div
-                  key={item.id}
-                  className="flex items-start gap-3 px-4 py-3"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <div
-                    className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                    style={{ backgroundColor: `${item.color}15`, color: item.color }}
-                  >
+                <div key={item.id} className="flex items-start gap-3 px-4 py-3" style={{ borderColor: "var(--border)" }}>
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${color}15`, color }}>
                     <Icon size={14} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm" style={{ color: "var(--card-foreground)" }}>
-                      <span className="font-medium">{item.user}</span>{" "}
-                      {item.action}{" "}
-                      <span className="font-medium">{item.item}</span>
+                      <span className="font-medium">{item.user}</span> {item.action} <span className="font-medium">{item.item}</span>
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
-                      {item.tool} &middot; {item.time}
-                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{item.tool} &middot; {item.time}</p>
                   </div>
                 </div>
               );
@@ -365,46 +560,31 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Recent Files */}
+        {/* Quick Links */}
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-            <Clock size={14} />
-            Recent Files
+            <FolderOpen size={14} /> Quick Access
           </h2>
-          <div
-            className="rounded-xl border divide-y"
-            style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
-          >
-            {recentFiles.map((file) => {
-              const Icon = typeIcons[file.type];
-              return (
-                <div
-                  key={file.id}
-                  className="flex items-center gap-3 px-4 py-3"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <Icon size={18} style={{ color: "var(--primary)" }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium" style={{ color: "var(--card-foreground)" }}>
-                      {file.name}
-                    </p>
-                    <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                      {file.type} &middot; v{file.version} &middot; {formatDate(file.modified)}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => toggleStar(file.id)}
-                    className="shrink-0"
-                  >
-                    <Star
-                      size={16}
-                      fill={file.starred ? "var(--primary)" : "none"}
-                      style={{ color: "var(--primary)" }}
-                    />
-                  </button>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "File Manager", href: "/file-manager", icon: FolderOpen, desc: "Browse all files" },
+              { label: "Templates", href: "/template-gallery", icon: Grid3X3, desc: "Start from a template" },
+              { label: "Trash", href: "/trash", icon: Trash2, desc: "Recover deleted files" },
+              { label: "Search", href: "/search", icon: Search, desc: "Find anything" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-3 rounded-xl border p-4 transition-all hover:scale-[1.01]"
+                style={{ backgroundColor: "var(--card)", borderColor: "var(--border)", color: "var(--card-foreground)" }}
+              >
+                <item.icon size={20} style={{ color: "var(--primary)" }} />
+                <div>
+                  <p className="text-sm font-medium">{item.label}</p>
+                  <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{item.desc}</p>
                 </div>
-              );
-            })}
+              </Link>
+            ))}
           </div>
         </section>
       </div>
@@ -412,40 +592,24 @@ export default function DashboardPage() {
       {/* Usage Analytics */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-          <BarChart3 size={14} />
-          Usage Analytics
+          <BarChart3 size={14} /> Usage Analytics
         </h2>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Documents created per week */}
-          <div
-            className="rounded-xl border p-5"
-            style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
-          >
-            <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--card-foreground)" }}>
-              Documents Created Per Week
-            </h3>
+          <div className="rounded-xl border p-5" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+            <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--card-foreground)" }}>Documents Created Per Week</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={weeklyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="week" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 8,
-                      color: "var(--card-foreground)",
-                      fontSize: 12,
-                    }}
-                  />
+                  <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--card-foreground)", fontSize: 12 }} />
                   <Bar dataKey="documents" name="Documents" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="spreadsheets" name="Spreadsheets" fill="#16a34a" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="presentations" name="Presentations" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            {/* Legend */}
             <div className="flex justify-center gap-4 mt-2">
               {[
                 { label: "Documents", color: "#3b82f6" },
@@ -460,14 +624,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Most used templates */}
-          <div
-            className="rounded-xl border p-5"
-            style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
-          >
-            <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--card-foreground)" }}>
-              Most Used Templates
-            </h3>
+          <div className="rounded-xl border p-5" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+            <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--card-foreground)" }}>Most Used Templates</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -486,19 +644,10 @@ export default function DashboardPage() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 8,
-                      color: "var(--card-foreground)",
-                      fontSize: 12,
-                    }}
-                  />
+                  <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--card-foreground)", fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            {/* Legend */}
             <div className="flex flex-wrap justify-center gap-3 mt-2">
               {templateUsage.map((t) => (
                 <div key={t.name} className="flex items-center gap-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>
@@ -511,6 +660,14 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      {/* Context Menu */}
+      {contextMenu && (
+        <FileContextMenu
+          fileId={contextMenu.fileId}
+          position={{ x: contextMenu.x, y: contextMenu.y }}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
       {/* Import Dialog */}
       <ImportDialog
         open={showImport}
