@@ -7,18 +7,27 @@ const templates = [
   { name: "IEEE Paper", desc: "IEEE conference paper format with abstract, keywords, and two-column layout" },
   { name: "CV", desc: "Professional CV/Resume with sections for experience, education, and skills" },
   { name: "Business Report", desc: "Formal business report with executive summary and analysis sections" },
-  { name: "SOP", desc: "Annual report template with financial highlights and company overview" },
-  { name: "ISO 17025 SOP", desc: "Standard operating procedure with step-by-step instructions and compliance" },
-  { name: "Springer", desc: "Springer journal article format with structured sections and references" },
+  { name: "SOP", desc: "Standard operating procedure with step-by-step instructions and compliance" },
+  { name: "Meeting Minutes", desc: "Meeting minutes with attendees, agenda, action items, and decisions" },
+  { name: "Project Proposal", desc: "Project proposal with objectives, timeline, budget, and risk analysis" },
+  { name: "Annual Report", desc: "Corporate annual report with financial statements and governance" },
+  { name: "Legal Contract", desc: "Service agreement with terms, payment, IP, and dispute resolution" },
+  { name: "Technical Spec", desc: "Technical specification with requirements, architecture, and API specs" },
+  { name: "Training Manual", desc: "Training manual with modules, exercises, and assessment questions" },
 ];
 
-const thumbnailColors = ["#1565C0", "#2E7D32", "#6A1B9A", "#C62828", "#E65100", "#00838F"];
+const thumbnailColors = ["#1565C0", "#2E7D32", "#6A1B9A", "#C62828", "#E65100", "#00838F", "#1a237e", "#333333", "#00695c", "#2e7d32"];
 
 export default function WordTemplates() {
   const router = useRouter();
 
   const handleUse = (name: string) => {
-    const key = name === "CV" ? "CV" : name === "IEEE Paper" ? "IEEE" : name === "ISO 17025 SOP" ? "ISO 17025 SOP" : name;
+    const keyMap: Record<string, string> = {
+      "CV": "CV",
+      "IEEE Paper": "IEEE",
+      "Technical Spec": "Technical Specification",
+    };
+    const key = keyMap[name] || name;
     const stored = localStorage.getItem("vidyalaya-doc-content");
     if (!stored) {
       localStorage.setItem("vidyalaya-template-hint", key);
