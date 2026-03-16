@@ -4,10 +4,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Search, Plus, Filter, ChevronDown, ChevronRight, X, Edit3, Trash2, Archive,
   RotateCcw, Shield, Clock, User, Calendar, Building2, FileText, Tag,
-  CheckCircle2, AlertCircle, XCircle, Eye, History, Download, Send,
+  CheckCircle2, AlertCircle, XCircle, Eye, History, Download, Send, GitPullRequest,
 } from "lucide-react";
 import ChangeRequests, { type ChangeRequest } from "./components/ChangeRequests";
 import AuditTrail, { type AuditEntry } from "./components/AuditTrail";
+import ChangeRequestForm from "./components/ChangeRequestForm";
+import NewDocumentDialog from "./components/NewDocumentDialog";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
