@@ -38,6 +38,11 @@ import PdfForms from "./components/PdfForms";
 import type { FormField } from "./components/PdfForms";
 import { PasswordProtectionModal, ComparePanel, OcrPanel, PdfCreatorPanel } from "./components/PdfSecurity";
 import type { CreatorElement } from "./components/PdfSecurity";
+import { ExportDropdown } from "@/components/shared/export-dropdown";
+import { ExportProgress } from "@/components/shared/export-progress";
+import { ImportDialog } from "@/components/shared/import-dialog";
+import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
+import { ExportManager, type ExportFormat as UnifiedExportFormat } from "@/lib/export-manager";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -214,6 +219,57 @@ export default function PdfToolsPage() {
   // ── PDF Creator ──
   const [creatorElements, setCreatorElements] = useState<CreatorElement[]>([]);
   const [selectedCreatorElement, setSelectedCreatorElement] = useState<string | null>(null);
+
+  // ── Unified Export/Import ──
+  const [isUnifiedExporting, setIsUnifiedExporting] = useState(false);
+  const [unifiedExportProgress, setUnifiedExportProgress] = useState({ percent: 0, message: "" });
+  const [showUnifiedImport, setShowUnifiedImport] = useState(false);
+  const [showUnifiedPrintPreview, setShowUnifiedPrintPreview] = useState(false);
+
+  const handleUnifiedExport = useCallback(async (format: UnifiedExportFormat) => {
+    setIsUnifiedExporting(true);
+    try {
+      if (format === "text-extract") {
+        // Extract text from all pages
+        const pages: { text?: string }[] = [];
+        if (pdfDoc) {
+          for (let i = 1; i <= totalPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const textContent = await page.getTextContent();
+            const text = textContent.items.map((item: unknown) => { const obj = item as Record<string, unknown>; return typeof obj.str === "string" ? obj.str : ""; }).join(" ");
+            pages.push({ text });
+          }
+        }
+        await ExportManager.exportPdf(format, { pages }, pdfName.replace(".pdf", "") || "document", setUnifiedExportProgress);
+      } else if (format === "images") {
+        // Export pages as images
+        const pages: { imageDataUrl?: string }[] = [];
+        if (pdfDoc) {
+          for (let i = 1; i <= totalPages; i++) {
+            setUnifiedExportProgress({ percent: Math.round((i / totalPages) * 80), message: `Rendering page ${i}...` });
+            const page = await pdfDoc.getPage(i);
+            const viewport = page.getViewport({ scale: 2 });
+            const canvas = document.createElement("canvas");
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              await page.render({ canvasContext: ctx, viewport, canvas } as Parameters<typeof page.render>[0]).promise;
+              pages.push({ imageDataUrl: canvas.toDataURL("image/png") });
+            }
+          }
+        }
+        await ExportManager.exportPdf(format, { pages }, pdfName.replace(".pdf", "") || "document", setUnifiedExportProgress);
+      }
+    } finally {
+      setTimeout(() => setIsUnifiedExporting(false), 1500);
+    }
+  }, [pdfDoc, totalPages, pdfName]);
+
+  const handleUnifiedPdfImport = useCallback(async (file: File) => {
+    const buffer = await ExportManager.readFileAsArrayBuffer(file);
+    await loadPdf(buffer, file.name);
+  }, []);
 
   // ─── PDF load handler ─────────────────────────────────────────────────────
 
@@ -1131,6 +1187,28 @@ export default function PdfToolsPage() {
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: "var(--background)", color: "var(--foreground)" }}>
       <RibbonToolbar activeTab={ribbonTab} onTabChange={handleRibbonTabChange} pdfName={pdfName} />
+      {/* Unified Export/Import bar */}
+      <div
+        className="flex items-center justify-end gap-2 border-b px-4 py-1"
+        style={{ borderColor: "var(--border)", backgroundColor: "var(--card)" }}
+      >
+        <button
+          onClick={() => setShowUnifiedImport(true)}
+          className="flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs transition-colors hover:bg-[var(--muted)]"
+          style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
+        >
+          <Upload size={14} />
+          Open PDF
+        </button>
+        <ExportDropdown
+          documentType="pdf"
+          onExport={handleUnifiedExport}
+          onPrint={() => setShowPrint(true)}
+          onPrintPreview={() => setShowUnifiedPrintPreview(true)}
+          isExporting={isUnifiedExporting}
+          exportProgress={unifiedExportProgress}
+        />
+      </div>
       {renderRibbonContent()}
 
       {showSearch && (
@@ -1163,6 +1241,18 @@ export default function PdfToolsPage() {
       {showPrint && <PrintModal options={printOptions} totalPages={totalPages} onOptionsChange={setPrintOptions} onPrint={handlePrint} onClose={() => setShowPrint(false)} />}
       {showExport && <ExportModal options={exportOptions} onOptionsChange={setExportOptions} onExport={handleExport} onClose={() => setShowExport(false)} />}
       {showSecurity && <PasswordProtectionModal config={securityConfig} onConfigChange={setSecurityConfig} onApply={applySecurity} onClose={() => setShowSecurity(false)} applied={securityApplied} />}
+      <ImportDialog
+        open={showUnifiedImport}
+        onClose={() => setShowUnifiedImport(false)}
+        onImport={handleUnifiedPdfImport}
+        defaultType="pdf"
+      />
+      <ExportProgress
+        visible={isUnifiedExporting}
+        percent={unifiedExportProgress.percent}
+        message={unifiedExportProgress.message}
+        onClose={() => setIsUnifiedExporting(false)}
+      />
       {showCreateBlank && (
         <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => setShowCreateBlank(false)}>
           <div className="flex flex-col gap-4 p-6" style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.3)", width: 380 }} onClick={(e) => e.stopPropagation()}>

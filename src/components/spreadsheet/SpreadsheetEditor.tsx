@@ -50,6 +50,12 @@ import {
 import type { Cell, CellStyle, Sheet, ChartConfig } from "./types";
 import { evaluateFormula, colLetterToIndex, indexToColLetter } from "./formula-engine";
 import { TEMPLATES } from "./templates";
+import { ExportDropdown } from "@/components/shared/export-dropdown";
+import { ExportProgress } from "@/components/shared/export-progress";
+import { ImportDialog } from "@/components/shared/import-dialog";
+import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
+import { ExportManager, type ExportFormat } from "@/lib/export-manager";
+import { Upload } from "lucide-react";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const DEFAULT_ROWS = 50;
@@ -516,26 +522,94 @@ export default function SpreadsheetEditor() {
     []
   );
 
-  // ─── Export ─────────────────────────────────────────────────────────────
-  const exportCSV = () => {
-    const rows: string[] = [];
-    for (let r = 0; r < DEFAULT_ROWS; r++) {
-      const cols: string[] = [];
-      for (let c = 0; c < DEFAULT_COLS; c++) {
-        const ref = cellRef(c, r);
-        const val = getCellDisplay(ref);
-        cols.push(`"${val.replace(/"/g, '""')}"`);
-      }
-      rows.push(cols.join(","));
-    }
-    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${activeSheet.name}.csv`;
-    a.click();
-  };
+  // ─── Export/Import State ──────────────────────────────────────────────
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState({ percent: 0, message: "" });
+  const [showImport, setShowImport] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
-  const printPDF = () => window.print();
+  const getSheetRows = useCallback((sheet: Sheet): string[][] => {
+    const keys = Object.keys(sheet.cells);
+    if (keys.length === 0) return [[""]];
+    let maxRow = 0, maxCol = 0;
+    keys.forEach((key) => {
+      const m = key.match(/^([A-Z]+)(\d+)$/);
+      if (m) {
+        const c = colLetterToIndex(m[1]);
+        const r = parseInt(m[2], 10) - 1;
+        if (c > maxCol) maxCol = c;
+        if (r > maxRow) maxRow = r;
+      }
+    });
+    const rows: string[][] = [];
+    for (let r = 0; r <= maxRow; r++) {
+      const row: string[] = [];
+      for (let c = 0; c <= maxCol; c++) {
+        const ref = cellRef(c, r);
+        row.push(getCellDisplay(ref));
+      }
+      rows.push(row);
+    }
+    return rows;
+  }, [getCellDisplay]);
+
+  const handleExport = useCallback(async (format: ExportFormat) => {
+    setIsExporting(true);
+    try {
+      const sheetData = sheets.map((s) => ({ name: s.name, rows: getSheetRows(s) }));
+      if (format === "csv" || format === "json") {
+        await ExportManager.exportSpreadsheet(format, sheetData, activeSheet.name, setExportProgress);
+      } else {
+        await ExportManager.batchExportSpreadsheet(sheetData, format, activeSheet.name, setExportProgress);
+      }
+    } finally {
+      setTimeout(() => setIsExporting(false), 1500);
+    }
+  }, [sheets, activeSheet.name, getSheetRows]);
+
+  const handleSpreadsheetPrint = useCallback(() => {
+    const sheetData = { name: activeSheet.name, rows: getSheetRows(activeSheet) };
+    ExportManager.exportSpreadsheet("pdf", [sheetData], activeSheet.name);
+  }, [activeSheet, getSheetRows]);
+
+  const handleSpreadsheetImport = useCallback(async (file: File) => {
+    const result = await ExportManager.importSpreadsheet(file, setExportProgress);
+    setSheets((prev) => {
+      const updated = prev.map((sheet) => {
+        if (sheet.id !== activeSheetId) return sheet;
+        const newCells: Record<string, Cell> = {};
+        result.rows.forEach((row, ri) => {
+          row.forEach((val, ci) => {
+            if (val) {
+              const ref = cellRef(ci, ri);
+              newCells[ref] = { value: val };
+            }
+          });
+        });
+        return { ...sheet, cells: newCells };
+      });
+      return updated;
+    });
+  }, [activeSheetId]);
+
+  const getSpreadsheetPreviewHtml = useCallback(() => {
+    const rows = getSheetRows(activeSheet);
+    let html = `<table style="border-collapse:collapse;width:100%;font-family:Calibri,sans-serif;font-size:12px">`;
+    rows.forEach((row, ri) => {
+      html += "<tr>";
+      row.forEach((val) => {
+        const tag = ri === 0 ? "th" : "td";
+        html += `<${tag} style="border:1px solid #ccc;padding:6px 10px;text-align:left;${ri === 0 ? "background:#f0f0f0;font-weight:600" : ""}">${val}</${tag}>`;
+      });
+      html += "</tr>";
+    });
+    html += "</table>";
+    return html;
+  }, [activeSheet, getSheetRows]);
+
+  // Keep old functions for backward compat
+  const exportCSV = () => handleExport("csv");
+  const printPDF = () => handleSpreadsheetPrint();
 
   // ─── AI Panel ──────────────────────────────────────────────────────────
   const sendAiMessage = async (msg?: string) => {
@@ -781,12 +855,17 @@ export default function SpreadsheetEditor() {
         <button style={toolbarBtnStyle()} onClick={() => setShowTemplates(true)}>
           <FileSpreadsheet size={14} /> Templates
         </button>
-        <button style={toolbarBtnStyle()} onClick={exportCSV}>
-          <Download size={14} /> CSV
+        <button style={toolbarBtnStyle()} onClick={() => setShowImport(true)}>
+          <Upload size={14} /> Import
         </button>
-        <button style={toolbarBtnStyle()} onClick={printPDF}>
-          <Printer size={14} /> Print
-        </button>
+        <ExportDropdown
+          documentType="spreadsheet"
+          onExport={handleExport}
+          onPrint={handleSpreadsheetPrint}
+          onPrintPreview={() => setShowPrintPreview(true)}
+          isExporting={isExporting}
+          exportProgress={exportProgress}
+        />
 
         <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
 
@@ -1553,6 +1632,26 @@ export default function SpreadsheetEditor() {
           </div>
         </Modal>
       )}
+
+      {/* Export/Import modals */}
+      <ImportDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={handleSpreadsheetImport}
+        defaultType="spreadsheet"
+      />
+      <PrintPreviewModal
+        open={showPrintPreview}
+        onClose={() => setShowPrintPreview(false)}
+        htmlContent={getSpreadsheetPreviewHtml()}
+        title={activeSheet.name}
+      />
+      <ExportProgress
+        visible={isExporting}
+        percent={exportProgress.percent}
+        message={exportProgress.message}
+        onClose={() => setIsExporting(false)}
+      />
     </div>
   );
 }
