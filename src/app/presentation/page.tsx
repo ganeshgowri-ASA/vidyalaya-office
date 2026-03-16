@@ -20,6 +20,8 @@ import MediaPanel from '@/components/presentation/media-panel';
 import TextEffectsPanel from '@/components/presentation/text-effects-panel';
 import ExportPanel from '@/components/presentation/export-panel';
 import { PageSetupDialog } from '@/components/document/page-setup-dialog';
+import { CollaborationToolbar, CollabCommentsSidebar, ShareDialog, VersionHistoryPanel } from '@/components/collaboration';
+import { useCollaborationStore } from '@/store/collaboration-store';
 
 export default function PresentationPage() {
   const {
@@ -90,9 +92,12 @@ export default function PresentationPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  const { showCollabComments, showVersionHistory: showCollabHistory } = useCollaborationStore();
+
   return (
     <>
       <div className="flex flex-col h-[calc(100vh-48px)] no-print">
+        <CollaborationToolbar />
         <RibbonToolbar onPageSetup={() => setShowPageSetup(true)} />
         <div className="flex flex-1 overflow-hidden">
           <SlidePanel />
@@ -104,6 +109,8 @@ export default function PresentationPage() {
           <TextEffectsPanel />
           <DesignPanel />
           <AIPanel />
+          {showCollabComments && <CollabCommentsSidebar />}
+          {showCollabHistory && <VersionHistoryPanel />}
         </div>
         <StatusBar />
       </div>
@@ -116,6 +123,7 @@ export default function PresentationPage() {
       <ExportPanel />
       <PrintView />
       <PageSetupDialog open={showPageSetup} onClose={() => setShowPageSetup(false)} />
+      <ShareDialog />
     </>
   );
 }
