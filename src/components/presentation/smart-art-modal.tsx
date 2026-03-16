@@ -14,7 +14,9 @@ import { usePresentationStore } from '@/store/presentation-store';
 type SmartArtType = 'org-chart' | 'process-flow' | 'cycle' | 'hierarchy' | 'venn'
   | 'mind-map' | 'timeline' | 'swot' | 'fishbone' | 'gantt'
   | 'pyramid' | 'matrix' | 'flowchart' | 'funnel' | 'radial'
-  | 'list-blocks' | 'picture-list' | 'infographic-bar' | 'infographic-pie';
+  | 'list-blocks' | 'picture-list' | 'infographic-bar' | 'infographic-pie'
+  | 'process-detailed' | 'org-chart-detailed' | 'decision-tree' | 'swimlane'
+  | 'data-flow' | 'network-topology' | 'bpmn';
 
 interface SmartArtOption {
   type: SmartArtType;
@@ -24,7 +26,7 @@ interface SmartArtOption {
   category: string;
 }
 
-const SMARTART_CATEGORIES = ['List', 'Process', 'Cycle', 'Hierarchy', 'Relationship', 'Matrix', 'Pyramid', 'Picture', 'Diagrams', 'Infographics'];
+const SMARTART_CATEGORIES = ['List', 'Process', 'Cycle', 'Hierarchy', 'Relationship', 'Matrix', 'Pyramid', 'Picture', 'Diagrams', 'Infographics', 'Flowcharts', 'Network'];
 
 const SMART_ART_OPTIONS: SmartArtOption[] = [
   // List
@@ -55,6 +57,15 @@ const SMART_ART_OPTIONS: SmartArtOption[] = [
   // Infographics
   { type: 'infographic-bar', label: 'Bar Infographic', icon: <Network size={20} />, description: 'Data visualization bar style', category: 'Infographics' },
   { type: 'infographic-pie', label: 'Pie Infographic', icon: <Circle size={20} />, description: 'Data visualization pie style', category: 'Infographics' },
+  // Flowcharts (SmartDraw/Visio-inspired)
+  { type: 'process-detailed', label: 'Detailed Process', icon: <ArrowRightCircle size={20} />, description: 'Process flow with sub-steps', category: 'Flowcharts' },
+  { type: 'decision-tree', label: 'Decision Tree', icon: <GitBranch size={20} />, description: 'Yes/No branching decisions', category: 'Flowcharts' },
+  { type: 'swimlane', label: 'Swimlane Diagram', icon: <Network size={20} />, description: 'Horizontal lanes with process steps', category: 'Flowcharts' },
+  { type: 'bpmn', label: 'BPMN Process', icon: <ArrowRightCircle size={20} />, description: 'Business process with events & gateways', category: 'Flowcharts' },
+  { type: 'org-chart-detailed', label: 'Detailed Org Chart', icon: <Network size={20} />, description: 'Org chart with titles & departments', category: 'Hierarchy' },
+  // Network
+  { type: 'data-flow', label: 'Data Flow Diagram', icon: <Network size={20} />, description: 'DFD with data stores & processes', category: 'Network' },
+  { type: 'network-topology', label: 'Network Topology', icon: <Circle size={20} />, description: 'Star/ring/mesh network layouts', category: 'Network' },
 ];
 
 interface NodeData {
@@ -348,6 +359,187 @@ function generateSmartArtSVG(type: SmartArtType, nodes: NodeData[]): string {
       });
       return svg + '</svg>';
     }
+    case 'process-detailed': {
+      const steps = nodes.length > 0 ? nodes : [{id:'1',label:'Start'},{id:'2',label:'Process A'},{id:'3',label:'Sub-process'},{id:'4',label:'Review'},{id:'5',label:'Complete'}];
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">`;
+      svg += `<defs><marker id="arrowPD" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="${a}"/></marker></defs>`;
+      const stepH = 50, gap = 20, startY = 20;
+      steps.slice(0, 6).forEach((st, i) => {
+        const y = startY + i * (stepH + gap);
+        const indent = i > 0 && i < steps.length - 1 ? 30 : 0;
+        const isTerminal = i === 0 || i === steps.length - 1;
+        if (isTerminal) {
+          svg += `<rect x="${100+indent}" y="${y}" width="400" height="${stepH}" rx="25" fill="${a}"/>`;
+        } else {
+          svg += `<rect x="${100+indent}" y="${y}" width="400" height="${stepH}" rx="6" fill="${p}" opacity="${0.8+i*0.04}"/>`;
+        }
+        svg += `<text x="${300+indent}" y="${y+stepH/2+5}" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${esc(st.label)}</text>`;
+        if (i < steps.length - 1) {
+          svg += `<line x1="300" y1="${y+stepH}" x2="300" y2="${y+stepH+gap}" stroke="${a}" stroke-width="2" marker-end="url(#arrowPD)"/>`;
+        }
+      });
+      return svg + '</svg>';
+    }
+    case 'org-chart-detailed': {
+      const items = nodes.length > 0 ? nodes : [{id:'1',label:'CEO'},{id:'2',label:'VP Engineering'},{id:'3',label:'VP Sales'},{id:'4',label:'VP Marketing'},{id:'5',label:'CTO'}];
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">`;
+      // Root
+      svg += `<rect x="220" y="10" width="160" height="60" rx="8" fill="${a}"/>`;
+      svg += `<circle cx="260" cy="30" r="10" fill="${bg}" opacity="0.5"/>`;
+      svg += `<text x="300" y="34" text-anchor="middle" fill="white" font-size="10">CEO</text>`;
+      svg += `<text x="300" y="54" text-anchor="middle" fill="${bg}" font-size="9">${esc(items[0]?.label || 'CEO')}</text>`;
+      svg += `<line x1="300" y1="70" x2="300" y2="95" stroke="#94a3b8" stroke-width="2"/>`;
+      const childCount = Math.min(items.length - 1, 4);
+      if (childCount > 0) {
+        const spacing = 140;
+        const totalW = (childCount - 1) * spacing;
+        const startX = 300 - totalW / 2;
+        svg += `<line x1="${startX}" y1="95" x2="${startX + totalW}" y2="95" stroke="#94a3b8" stroke-width="2"/>`;
+        items.slice(1, 5).forEach((item, i) => {
+          const cx = startX + i * spacing;
+          svg += `<line x1="${cx}" y1="95" x2="${cx}" y2="115" stroke="#94a3b8" stroke-width="2"/>`;
+          svg += `<rect x="${cx-65}" y="115" width="130" height="55" rx="6" fill="${p}"/>`;
+          svg += `<circle cx="${cx-35}" cy="133" r="8" fill="${bg}" opacity="0.4"/>`;
+          svg += `<text x="${cx+5}" y="137" text-anchor="middle" fill="white" font-size="9">${esc(item.label)}</text>`;
+          svg += `<text x="${cx}" y="157" text-anchor="middle" fill="${bg}" font-size="8">Department</text>`;
+          // Sub-nodes
+          svg += `<rect x="${cx-50}" y="185" width="100" height="30" rx="4" fill="${s}"/>`;
+          svg += `<text x="${cx}" y="204" text-anchor="middle" fill="white" font-size="8">Team Member</text>`;
+        });
+      }
+      return svg + '</svg>';
+    }
+    case 'decision-tree': {
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">`;
+      svg += `<defs><marker id="arrowDT" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="${a}"/></marker></defs>`;
+      // Root decision
+      svg += `<polygon points="300,15 390,55 300,95 210,55" fill="${p}"/>`;
+      svg += `<text x="300" y="59" text-anchor="middle" fill="white" font-size="10" font-weight="bold">${esc(nodes[0]?.label || 'Decision?')}</text>`;
+      // Yes branch
+      svg += `<line x1="210" y1="55" x2="130" y2="130" stroke="#22c55e" stroke-width="2" marker-end="url(#arrowDT)"/>`;
+      svg += `<text x="155" y="85" fill="#22c55e" font-size="9" font-weight="bold">Yes</text>`;
+      svg += `<rect x="60" y="130" width="140" height="45" rx="6" fill="#22c55e"/>`;
+      svg += `<text x="130" y="157" text-anchor="middle" fill="white" font-size="10">${esc(nodes[1]?.label || 'Action A')}</text>`;
+      // No branch
+      svg += `<line x1="390" y1="55" x2="470" y2="130" stroke="#ef4444" stroke-width="2" marker-end="url(#arrowDT)"/>`;
+      svg += `<text x="440" y="85" fill="#ef4444" font-size="9" font-weight="bold">No</text>`;
+      svg += `<polygon points="470,130 530,160 470,190 410,160" fill="#f59e0b"/>`;
+      svg += `<text x="470" y="164" text-anchor="middle" fill="white" font-size="9">${esc(nodes[2]?.label || 'Check B?')}</text>`;
+      // Sub branches
+      svg += `<line x1="410" y1="160" x2="340" y2="230" stroke="#22c55e" stroke-width="1.5"/>`;
+      svg += `<rect x="270" y="230" width="120" height="38" rx="6" fill="#22c55e" opacity="0.8"/>`;
+      svg += `<text x="330" y="253" text-anchor="middle" fill="white" font-size="9">${esc(nodes[3]?.label || 'Result 1')}</text>`;
+      svg += `<line x1="530" y1="160" x2="560" y2="230" stroke="#ef4444" stroke-width="1.5"/>`;
+      svg += `<rect x="500" y="230" width="120" height="38" rx="6" fill="#ef4444" opacity="0.8"/>`;
+      svg += `<text x="560" y="253" text-anchor="middle" fill="white" font-size="9">${esc(nodes[4]?.label || 'Result 2')}</text>`;
+      return svg + '</svg>';
+    }
+    case 'swimlane': {
+      const lanes = nodes.length > 0 ? nodes : [{id:'1',label:'Customer'},{id:'2',label:'Sales'},{id:'3',label:'Engineering'}];
+      const laneH = Math.floor((h - 40) / Math.min(lanes.length, 4));
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">`;
+      svg += `<defs><marker id="arrowSL" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="${a}"/></marker></defs>`;
+      lanes.slice(0, 4).forEach((lane, i) => {
+        const y = 20 + i * laneH;
+        svg += `<rect x="5" y="${y}" width="${w-10}" height="${laneH}" rx="4" fill="${i % 2 === 0 ? bg : '#f0f9ff'}" stroke="${s}" stroke-width="1"/>`;
+        svg += `<rect x="5" y="${y}" width="80" height="${laneH}" rx="4" fill="${p}" opacity="0.9"/>`;
+        svg += `<text x="45" y="${y+laneH/2+4}" text-anchor="middle" fill="white" font-size="10" font-weight="bold">${esc(lane.label)}</text>`;
+        // Process steps in lane
+        const stepX = 110, stepW = 90, stepGap = 30;
+        for (let j = 0; j < 3; j++) {
+          const sx = stepX + j * (stepW + stepGap);
+          svg += `<rect x="${sx}" y="${y+laneH/2-15}" width="${stepW}" height="30" rx="4" fill="${s}" opacity="0.7"/>`;
+          svg += `<text x="${sx+stepW/2}" y="${y+laneH/2+4}" text-anchor="middle" fill="white" font-size="8">Step ${j+1}</text>`;
+          if (j < 2) svg += `<line x1="${sx+stepW}" y1="${y+laneH/2}" x2="${sx+stepW+stepGap}" y2="${y+laneH/2}" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowSL)"/>`;
+        }
+      });
+      return svg + '</svg>';
+    }
+    case 'data-flow': {
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">`;
+      svg += `<defs><marker id="arrowDF" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="${a}"/></marker></defs>`;
+      // External entity
+      svg += `<rect x="20" y="40" width="100" height="50" fill="none" stroke="${a}" stroke-width="2"/>`;
+      svg += `<text x="70" y="70" text-anchor="middle" fill="${a}" font-size="10" font-weight="bold">${esc(nodes[0]?.label || 'User')}</text>`;
+      // Process 1
+      svg += `<circle cx="250" cy="65" r="40" fill="${p}" stroke="${a}" stroke-width="2"/>`;
+      svg += `<text x="250" y="60" text-anchor="middle" fill="white" font-size="9">1.0</text>`;
+      svg += `<text x="250" y="74" text-anchor="middle" fill="white" font-size="9">${esc(nodes[1]?.label || 'Process')}</text>`;
+      // Data store
+      svg += `<line x1="170" y1="200" x2="330" y2="200" stroke="${a}" stroke-width="2"/>`;
+      svg += `<line x1="170" y1="230" x2="330" y2="230" stroke="${a}" stroke-width="2"/>`;
+      svg += `<text x="250" y="220" text-anchor="middle" fill="${a}" font-size="10">D1 ${esc(nodes[2]?.label || 'Database')}</text>`;
+      // Process 2
+      svg += `<circle cx="450" cy="65" r="40" fill="${s}" stroke="${a}" stroke-width="2"/>`;
+      svg += `<text x="450" y="60" text-anchor="middle" fill="white" font-size="9">2.0</text>`;
+      svg += `<text x="450" y="74" text-anchor="middle" fill="white" font-size="9">${esc(nodes[3]?.label || 'Validate')}</text>`;
+      // Arrows
+      svg += `<line x1="120" y1="65" x2="210" y2="65" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowDF)"/>`;
+      svg += `<text x="165" y="57" text-anchor="middle" fill="${a}" font-size="8">Request</text>`;
+      svg += `<line x1="290" y1="65" x2="410" y2="65" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowDF)"/>`;
+      svg += `<line x1="250" y1="105" x2="250" y2="200" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowDF)"/>`;
+      svg += `<line x1="450" y1="105" x2="450" y2="200" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowDF)"/>`;
+      svg += `<line x1="330" y1="215" x2="410" y2="215" stroke="${a}" stroke-width="1.5"/>`;
+      svg += `<line x1="410" y1="215" x2="410" y2="105" stroke="${a}" stroke-width="1.5"/>`;
+      // External entity 2
+      svg += `<rect x="500" y="140" width="90" height="50" fill="none" stroke="${a}" stroke-width="2"/>`;
+      svg += `<text x="545" y="170" text-anchor="middle" fill="${a}" font-size="9">${esc(nodes[4]?.label || 'External')}</text>`;
+      svg += `<line x1="470" y1="95" x2="500" y2="140" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowDF)"/>`;
+      return svg + '</svg>';
+    }
+    case 'network-topology': {
+      const centerX = w/2, centerY = h/2;
+      const nodeCount = Math.min(Math.max(nodes.length, 4), 8);
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">`;
+      // Central hub
+      svg += `<rect x="${centerX-40}" y="${centerY-25}" width="80" height="50" rx="6" fill="${a}"/>`;
+      svg += `<text x="${centerX}" y="${centerY-5}" text-anchor="middle" fill="white" font-size="8">SERVER</text>`;
+      svg += `<text x="${centerX}" y="${centerY+10}" text-anchor="middle" fill="${bg}" font-size="9">${esc(nodes[0]?.label || 'Hub')}</text>`;
+      // Peripheral nodes in star topology
+      nodes.slice(1, nodeCount).forEach((nd, i) => {
+        const angle = (2 * Math.PI * i) / (nodeCount - 1) - Math.PI / 2;
+        const nx = centerX + 150 * Math.cos(angle);
+        const ny = centerY + 120 * Math.sin(angle);
+        svg += `<line x1="${centerX}" y1="${centerY}" x2="${nx}" y2="${ny}" stroke="${s}" stroke-width="2" stroke-dasharray="4,4"/>`;
+        svg += `<rect x="${nx-35}" y="${ny-18}" width="70" height="36" rx="4" fill="${p}"/>`;
+        svg += `<text x="${nx}" y="${ny+4}" text-anchor="middle" fill="white" font-size="9">${esc(nd.label)}</text>`;
+      });
+      // Legend
+      svg += `<text x="15" y="${h-15}" fill="${a}" font-size="8" opacity="0.6">Star Topology</text>`;
+      return svg + '</svg>';
+    }
+    case 'bpmn': {
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">`;
+      svg += `<defs><marker id="arrowBP" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="${a}"/></marker></defs>`;
+      const cy = h / 2;
+      // Start event (circle)
+      svg += `<circle cx="40" cy="${cy}" r="18" fill="#22c55e" stroke="#15803d" stroke-width="2"/>`;
+      svg += `<text x="40" y="${cy+4}" text-anchor="middle" fill="white" font-size="8">Start</text>`;
+      // Task 1
+      svg += `<line x1="58" y1="${cy}" x2="100" y2="${cy}" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowBP)"/>`;
+      svg += `<rect x="100" y="${cy-22}" width="100" height="44" rx="6" fill="${p}"/>`;
+      svg += `<text x="150" y="${cy+4}" text-anchor="middle" fill="white" font-size="9">${esc(nodes[0]?.label || 'Task 1')}</text>`;
+      // Gateway (diamond)
+      svg += `<line x1="200" y1="${cy}" x2="240" y2="${cy}" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowBP)"/>`;
+      svg += `<polygon points="270,${cy-25} 295,${cy} 270,${cy+25} 245,${cy}" fill="#f59e0b" stroke="#b45309" stroke-width="1.5"/>`;
+      svg += `<text x="270" y="${cy+4}" text-anchor="middle" fill="white" font-size="12">X</text>`;
+      // Branch A
+      svg += `<line x1="295" y1="${cy}" x2="340" y2="${cy}" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowBP)"/>`;
+      svg += `<rect x="340" y="${cy-22}" width="100" height="44" rx="6" fill="${s}"/>`;
+      svg += `<text x="390" y="${cy+4}" text-anchor="middle" fill="white" font-size="9">${esc(nodes[1]?.label || 'Task 2')}</text>`;
+      // Branch B (down)
+      svg += `<line x1="270" y1="${cy+25}" x2="270" y2="${cy+70}" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowBP)"/>`;
+      svg += `<rect x="220" y="${cy+70}" width="100" height="44" rx="6" fill="${s}"/>`;
+      svg += `<text x="270" y="${cy+96}" text-anchor="middle" fill="white" font-size="9">${esc(nodes[2]?.label || 'Task 3')}</text>`;
+      // End event
+      svg += `<line x1="440" y1="${cy}" x2="500" y2="${cy}" stroke="${a}" stroke-width="1.5" marker-end="url(#arrowBP)"/>`;
+      svg += `<circle cx="520" cy="${cy}" r="18" fill="#ef4444" stroke="#b91c1c" stroke-width="3"/>`;
+      svg += `<text x="520" y="${cy+4}" text-anchor="middle" fill="white" font-size="8">End</text>`;
+      // Merge from branch B
+      svg += `<line x1="320" y1="${cy+92}" x2="500" y2="${cy+92}" stroke="${a}" stroke-width="1"/>`;
+      svg += `<line x1="500" y1="${cy+92}" x2="500" y2="${cy+18}" stroke="${a}" stroke-width="1"/>`;
+      return svg + '</svg>';
+    }
     default:
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}"><text x="${w/2}" y="${h/2}" text-anchor="middle" fill="#999" font-size="14">Select a diagram type</text></svg>`;
   }
@@ -486,9 +678,9 @@ export default function SmartArtModal() {
 
           {/* Right: Preview & nodes */}
           <div className="flex-1 p-4 overflow-y-auto">
-            {/* Preview */}
+            {/* Preview with editable text overlays */}
             <div
-              className="rounded border mb-4 overflow-hidden"
+              className="rounded border mb-2 overflow-hidden relative"
               style={{
                 background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
                 borderColor: 'var(--border)',
@@ -498,28 +690,38 @@ export default function SmartArtModal() {
                 dangerouslySetInnerHTML={{ __html: previewSvg }}
                 style={{ width: '100%', height: 220 }}
               />
+              {/* Editable text overlay hint */}
+              <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[8px] opacity-60" style={{ background: 'rgba(0,0,0,0.5)', color: 'white' }}>
+                Edit text in nodes below
+              </div>
             </div>
 
-            {/* Node editor */}
-            <div className="text-xs font-medium mb-2 opacity-60">Edit Nodes</div>
+            {/* Inline text editing for nodes */}
+            <div className="text-xs font-medium mb-2 opacity-60 flex items-center justify-between">
+              <span>Edit Nodes</span>
+              <span className="text-[9px] opacity-50">Click text to edit - changes update preview live</span>
+            </div>
             <div className="space-y-1.5 mb-3">
-              {nodes.map((node) => (
+              {nodes.map((node, idx) => (
                 <div key={node.id} className="flex items-center gap-2">
+                  <span className="text-[10px] opacity-40 w-5 text-right shrink-0">{idx + 1}</span>
                   <input
                     type="text"
                     value={node.label}
                     onChange={(e) => handleUpdateNode(node.id, e.target.value)}
-                    className="flex-1 px-2 py-1 rounded border text-sm outline-none"
+                    onFocus={(e) => e.target.select()}
+                    className="flex-1 px-2 py-1.5 rounded border text-sm outline-none focus:ring-1 focus:ring-blue-500 transition-all"
                     style={{
                       background: 'var(--muted)',
                       borderColor: 'var(--border)',
                       color: 'var(--card-foreground)',
                     }}
+                    placeholder={`Node ${idx + 1} label`}
                   />
                   <button
                     onClick={() => handleRemoveNode(node.id)}
                     className="p-1 rounded hover:opacity-80 text-xs"
-                    style={{ color: '#ef4444' }}
+                    style={{ color: '#ef4444', opacity: nodes.length <= 2 ? 0.3 : 1 }}
                     disabled={nodes.length <= 2}
                   >
                     <X size={14} />

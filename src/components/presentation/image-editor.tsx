@@ -38,6 +38,19 @@ const FILTER_PRESETS: FilterPreset[] = [
   { name: 'Warm', filters: { sepia: 30, saturate: 130, hueRotate: -10 } },
   { name: 'Cool', filters: { saturate: 90, hueRotate: 180, brightness: 105 } },
   { name: 'Dramatic', filters: { contrast: 140, brightness: 90, saturate: 140, grayscale: 10 } },
+  // Canva-like filter presets
+  { name: 'Vivid', filters: { saturate: 160, contrast: 115, brightness: 105 } },
+  { name: 'Muted', filters: { saturate: 60, contrast: 90, brightness: 105 } },
+  { name: 'Vintage', filters: { sepia: 50, contrast: 85, brightness: 95, saturate: 80 } },
+  { name: 'Noir', filters: { grayscale: 100, contrast: 130, brightness: 95 } },
+  { name: 'Cinematic', filters: { contrast: 120, brightness: 90, saturate: 130, hueRotate: 5 } },
+  { name: 'Faded', filters: { contrast: 80, brightness: 115, saturate: 70 } },
+  { name: 'Bright Pop', filters: { brightness: 120, saturate: 140, contrast: 110 } },
+  { name: 'Duotone', filters: { grayscale: 80, sepia: 40, hueRotate: 30, saturate: 150 } },
+  { name: 'Soft Glow', filters: { brightness: 115, contrast: 85, blur: 0.5 } },
+  { name: 'Dark Mood', filters: { brightness: 75, contrast: 140, saturate: 120 } },
+  { name: 'Retro', filters: { sepia: 60, saturate: 80, contrast: 95, hueRotate: -15 } },
+  { name: 'Crisp', filters: { contrast: 130, brightness: 100, saturate: 110 } },
 ];
 
 /* ─── Sample gallery images (placeholder) ───────────────────────── */

@@ -20,12 +20,16 @@ export type AnimationCategory = 'entrance' | 'emphasis' | 'exit' | 'motion';
 export type AnimationType =
   // Entrance
   | 'fadeIn' | 'flyIn' | 'zoom' | 'bounce' | 'appear'
+  | 'splitIn' | 'wheelIn' | 'floatIn' | 'riseUp' | 'expandIn' | 'blindsIn' | 'boxIn' | 'checkerboardIn' | 'peekIn' | 'stripesIn' | 'swivel'
   // Emphasis
   | 'pulse' | 'spin' | 'growShrink' | 'colorChange'
+  | 'teeter' | 'wobble' | 'flash' | 'shimmer' | 'wave' | 'jiggle' | 'blink' | 'colorPulse' | 'boldReveal' | 'complementaryColor'
   // Exit
   | 'disappear' | 'fadeOut' | 'flyOut' | 'shrink'
+  | 'splitOut' | 'wheelOut' | 'floatOut' | 'sinkDown' | 'collapseOut' | 'blindsOut' | 'boxOut' | 'checkerboardOut' | 'peekOut' | 'stripesOut'
   // Motion Paths
   | 'motionLine' | 'motionArc' | 'motionCustom'
+  | 'motionCircle' | 'motionDiamond' | 'motionHeart' | 'motionSpiral' | 'motionBounce' | 'motionWave' | 'motionFigure8' | 'motionLoop' | 'motionZigzag' | 'motionStar'
   // Legacy
   | 'wipe';
 
@@ -163,7 +167,10 @@ export interface SlideTransitionTiming {
 
 export type SlideTransitionType =
   | 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'split' | 'push'
-  | 'cover' | 'dissolve' | 'morph' | 'reveal' | 'cut' | 'uncover' | 'random';
+  | 'cover' | 'dissolve' | 'morph' | 'reveal' | 'cut' | 'uncover' | 'random'
+  | 'cube3d' | 'flip3d' | 'rotate3d' | 'doors3d' | 'box3d'
+  | 'blinds' | 'clock' | 'ripple' | 'honeycomb' | 'glitter' | 'vortex'
+  | 'origami' | 'fracture' | 'gallery' | 'conveyor';
 
 export interface PlaceholderPosition {
   id: string;
@@ -399,23 +406,64 @@ export const ANIMATION_DEFINITIONS: Record<AnimationCategory, { value: Animation
     { value: 'flyIn', label: 'Fly In' },
     { value: 'bounce', label: 'Bounce' },
     { value: 'zoom', label: 'Zoom' },
+    { value: 'splitIn', label: 'Split' },
+    { value: 'wheelIn', label: 'Wheel' },
+    { value: 'floatIn', label: 'Float In' },
+    { value: 'riseUp', label: 'Rise Up' },
+    { value: 'expandIn', label: 'Expand' },
+    { value: 'blindsIn', label: 'Blinds' },
+    { value: 'boxIn', label: 'Box' },
+    { value: 'checkerboardIn', label: 'Checkerboard' },
+    { value: 'peekIn', label: 'Peek In' },
+    { value: 'stripesIn', label: 'Stripes' },
+    { value: 'swivel', label: 'Swivel' },
   ],
   emphasis: [
     { value: 'pulse', label: 'Pulse' },
     { value: 'spin', label: 'Spin' },
     { value: 'growShrink', label: 'Grow/Shrink' },
     { value: 'colorChange', label: 'Color Change' },
+    { value: 'teeter', label: 'Teeter' },
+    { value: 'wobble', label: 'Wobble' },
+    { value: 'flash', label: 'Flash' },
+    { value: 'shimmer', label: 'Shimmer' },
+    { value: 'wave', label: 'Wave' },
+    { value: 'jiggle', label: 'Jiggle' },
+    { value: 'blink', label: 'Blink' },
+    { value: 'colorPulse', label: 'Color Pulse' },
+    { value: 'boldReveal', label: 'Bold Reveal' },
+    { value: 'complementaryColor', label: 'Complementary' },
   ],
   exit: [
     { value: 'disappear', label: 'Disappear' },
     { value: 'fadeOut', label: 'Fade Out' },
     { value: 'flyOut', label: 'Fly Out' },
     { value: 'shrink', label: 'Shrink' },
+    { value: 'splitOut', label: 'Split' },
+    { value: 'wheelOut', label: 'Wheel' },
+    { value: 'floatOut', label: 'Float Out' },
+    { value: 'sinkDown', label: 'Sink Down' },
+    { value: 'collapseOut', label: 'Collapse' },
+    { value: 'blindsOut', label: 'Blinds' },
+    { value: 'boxOut', label: 'Box' },
+    { value: 'checkerboardOut', label: 'Checkerboard' },
+    { value: 'peekOut', label: 'Peek Out' },
+    { value: 'stripesOut', label: 'Stripes' },
   ],
   motion: [
     { value: 'motionLine', label: 'Lines' },
     { value: 'motionArc', label: 'Arcs' },
-    { value: 'motionCustom', label: 'Custom' },
+    { value: 'motionCustom', label: 'Custom Path' },
+    { value: 'motionCircle', label: 'Circle' },
+    { value: 'motionDiamond', label: 'Diamond' },
+    { value: 'motionHeart', label: 'Heart' },
+    { value: 'motionSpiral', label: 'Spiral' },
+    { value: 'motionBounce', label: 'Bounce' },
+    { value: 'motionWave', label: 'Wave' },
+    { value: 'motionFigure8', label: 'Figure 8' },
+    { value: 'motionLoop', label: 'Loop' },
+    { value: 'motionZigzag', label: 'Zigzag' },
+    { value: 'motionStar', label: 'Star' },
   ],
 };
 
@@ -469,6 +517,7 @@ export const DEFAULT_SLIDE_MASTERS: SlideMaster[] = [
 // ── Shape Definitions ─────────────────────────────────────────────────────────
 
 export const SHAPE_TOOL_DEFINITIONS = [
+  // Basic Shapes
   { id: 'rect', label: 'Rectangle', category: 'basic' },
   { id: 'rounded-rect', label: 'Rounded Rectangle', category: 'basic' },
   { id: 'circle', label: 'Circle/Ellipse', category: 'basic' },
@@ -476,19 +525,59 @@ export const SHAPE_TOOL_DEFINITIONS = [
   { id: 'pentagon', label: 'Pentagon', category: 'basic' },
   { id: 'hexagon', label: 'Hexagon', category: 'basic' },
   { id: 'star', label: 'Star', category: 'basic' },
+  { id: 'diamond', label: 'Diamond', category: 'basic' },
+  { id: 'cross', label: 'Cross', category: 'basic' },
+  { id: 'heart', label: 'Heart', category: 'basic' },
+  { id: 'cloud', label: 'Cloud', category: 'basic' },
+  { id: 'octagon', label: 'Octagon', category: 'basic' },
+  { id: 'trapezoid', label: 'Trapezoid', category: 'basic' },
+  { id: 'parallelogram', label: 'Parallelogram', category: 'basic' },
+  { id: 'decagon', label: 'Decagon', category: 'basic' },
+  { id: 'crescent', label: 'Crescent', category: 'basic' },
+  { id: 'donut', label: 'Donut', category: 'basic' },
+  { id: 'frame', label: 'Frame', category: 'basic' },
+  // Arrows
   { id: 'arrow', label: 'Arrow Right', category: 'arrows' },
   { id: 'arrow-left', label: 'Arrow Left', category: 'arrows' },
   { id: 'arrow-up', label: 'Arrow Up', category: 'arrows' },
   { id: 'arrow-down', label: 'Arrow Down', category: 'arrows' },
   { id: 'arrow-double', label: 'Double Arrow', category: 'arrows' },
+  { id: 'arrow-curved', label: 'Curved Arrow', category: 'arrows' },
+  { id: 'arrow-u-turn', label: 'U-Turn Arrow', category: 'arrows' },
+  { id: 'arrow-chevron', label: 'Chevron Arrow', category: 'arrows' },
+  { id: 'arrow-notched', label: 'Notched Arrow', category: 'arrows' },
+  { id: 'arrow-striped', label: 'Striped Arrow', category: 'arrows' },
+  // Callouts
   { id: 'callout', label: 'Callout Bubble', category: 'callouts' },
   { id: 'callout-round', label: 'Round Callout', category: 'callouts' },
+  { id: 'callout-cloud', label: 'Cloud Callout', category: 'callouts' },
+  { id: 'callout-line', label: 'Line Callout', category: 'callouts' },
+  // Lines & Connectors
   { id: 'line', label: 'Line', category: 'lines' },
   { id: 'curve', label: 'Curve', category: 'lines' },
-  { id: 'diamond', label: 'Diamond', category: 'basic' },
-  { id: 'cross', label: 'Cross', category: 'basic' },
-  { id: 'heart', label: 'Heart', category: 'basic' },
-  { id: 'cloud', label: 'Cloud', category: 'basic' },
+  { id: 'elbow-connector', label: 'Elbow Connector', category: 'lines' },
+  { id: 'curved-connector', label: 'Curved Connector', category: 'lines' },
+  // Flowchart
+  { id: 'flowchart-process', label: 'Process', category: 'flowchart' },
+  { id: 'flowchart-decision', label: 'Decision', category: 'flowchart' },
+  { id: 'flowchart-terminator', label: 'Terminator', category: 'flowchart' },
+  { id: 'flowchart-data', label: 'Data', category: 'flowchart' },
+  { id: 'flowchart-document', label: 'Document', category: 'flowchart' },
+  { id: 'flowchart-predefined', label: 'Predefined Process', category: 'flowchart' },
+  { id: 'flowchart-manual-input', label: 'Manual Input', category: 'flowchart' },
+  { id: 'flowchart-preparation', label: 'Preparation', category: 'flowchart' },
+  { id: 'flowchart-connector', label: 'Connector', category: 'flowchart' },
+  { id: 'flowchart-database', label: 'Database', category: 'flowchart' },
+  // Stars & Banners
+  { id: 'star-4', label: '4-Point Star', category: 'stars' },
+  { id: 'star-6', label: '6-Point Star', category: 'stars' },
+  { id: 'star-8', label: '8-Point Star', category: 'stars' },
+  { id: 'burst-8', label: '8-Point Burst', category: 'stars' },
+  { id: 'burst-16', label: '16-Point Burst', category: 'stars' },
+  { id: 'ribbon', label: 'Ribbon Banner', category: 'stars' },
+  { id: 'scroll', label: 'Scroll Banner', category: 'stars' },
+  { id: 'badge', label: 'Badge', category: 'stars' },
+  { id: 'seal', label: 'Seal', category: 'stars' },
 ];
 
 // ── Design Suggestions ────────────────────────────────────────────────────────

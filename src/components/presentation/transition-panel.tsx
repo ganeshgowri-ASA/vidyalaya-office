@@ -14,6 +14,9 @@ import {
   Check,
   Layers,
   ChevronDown,
+  Box,
+  Sparkles,
+  Info,
 } from 'lucide-react';
 import {
   usePresentationStore,
@@ -24,22 +27,82 @@ import {
 
 /* ─── Constants ─── */
 
-const TRANSITION_TYPES: { value: SlideTransitionType; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'fade', label: 'Fade' },
-  { value: 'slide', label: 'Slide' },
-  { value: 'zoom', label: 'Zoom' },
-  { value: 'wipe', label: 'Wipe' },
-  { value: 'split', label: 'Split' },
-  { value: 'push', label: 'Push' },
-  { value: 'cover', label: 'Cover' },
-  { value: 'dissolve', label: 'Dissolve' },
-  { value: 'morph', label: 'Morph' },
-  { value: 'reveal', label: 'Reveal' },
-  { value: 'cut', label: 'Cut' },
-  { value: 'uncover', label: 'Uncover' },
-  { value: 'random', label: 'Random' },
+interface TransitionEntry {
+  value: SlideTransitionType;
+  label: string;
+}
+
+interface TransitionCategory {
+  name: string;
+  icon: React.ReactNode;
+  transitions: TransitionEntry[];
+}
+
+const TRANSITION_CATEGORIES: TransitionCategory[] = [
+  {
+    name: 'Basic',
+    icon: <Layers size={10} />,
+    transitions: [
+      { value: 'none', label: 'None' },
+      { value: 'fade', label: 'Fade' },
+      { value: 'slide', label: 'Slide' },
+      { value: 'cut', label: 'Cut' },
+      { value: 'push', label: 'Push' },
+    ],
+  },
+  {
+    name: 'Dramatic',
+    icon: <Zap size={10} />,
+    transitions: [
+      { value: 'zoom', label: 'Zoom' },
+      { value: 'wipe', label: 'Wipe' },
+      { value: 'split', label: 'Split' },
+      { value: 'dissolve', label: 'Dissolve' },
+      { value: 'reveal', label: 'Reveal' },
+      { value: 'cover', label: 'Cover' },
+      { value: 'uncover', label: 'Uncover' },
+    ],
+  },
+  {
+    name: '3D',
+    icon: <Box size={10} />,
+    transitions: [
+      { value: 'cube3d', label: 'Cube' },
+      { value: 'flip3d', label: 'Flip' },
+      { value: 'rotate3d', label: 'Rotate' },
+      { value: 'doors3d', label: 'Doors' },
+      { value: 'box3d', label: 'Box' },
+    ],
+  },
+  {
+    name: 'Special',
+    icon: <Sparkles size={10} />,
+    transitions: [
+      { value: 'blinds', label: 'Blinds' },
+      { value: 'clock', label: 'Clock' },
+      { value: 'ripple', label: 'Ripple' },
+      { value: 'honeycomb', label: 'Honeycomb' },
+      { value: 'glitter', label: 'Glitter' },
+      { value: 'vortex', label: 'Vortex' },
+      { value: 'origami', label: 'Origami' },
+      { value: 'fracture', label: 'Fracture' },
+      { value: 'gallery', label: 'Gallery' },
+      { value: 'conveyor', label: 'Conveyor' },
+    ],
+  },
+  {
+    name: 'Other',
+    icon: <Shuffle size={10} />,
+    transitions: [
+      { value: 'morph', label: 'Morph' },
+      { value: 'random', label: 'Random' },
+    ],
+  },
 ];
+
+const TRANSITION_TYPES: TransitionEntry[] = TRANSITION_CATEGORIES.flatMap(
+  (cat) => cat.transitions
+);
 
 const SOUND_OPTIONS: { value: TransitionSound; label: string }[] = [
   { value: 'none', label: 'No Sound' },
@@ -61,6 +124,7 @@ const EASING_OPTIONS = [
 /* ─── Keyframes for transition previews ─── */
 
 const TRANSITION_KEYFRAMES = `
+@keyframes t-none { 0%, 100% { opacity: 1; } }
 @keyframes t-fade { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
 @keyframes t-slide { 0% { transform: translateX(0); } 50% { transform: translateX(100%); } 51% { transform: translateX(-100%); } 100% { transform: translateX(0); } }
 @keyframes t-zoom { 0% { transform: scale(1); } 50% { transform: scale(0); } 100% { transform: scale(1); } }
@@ -74,7 +138,21 @@ const TRANSITION_KEYFRAMES = `
 @keyframes t-cut { 0% { opacity: 1; } 49% { opacity: 1; } 50% { opacity: 0; } 51% { opacity: 1; } 100% { opacity: 1; } }
 @keyframes t-uncover { 0% { transform: translateY(0); } 50% { transform: translateY(-100%); } 51% { transform: translateY(100%); } 100% { transform: translateY(0); } }
 @keyframes t-random { 0% { opacity: 1; transform: scale(1) rotate(0deg); } 25% { opacity: 0; transform: scale(0.5) rotate(90deg); } 50% { opacity: 0; transform: scale(1.2) rotate(180deg); } 75% { opacity: 1; transform: scale(0.8) rotate(270deg); } 100% { opacity: 1; transform: scale(1) rotate(360deg); } }
-@keyframes t-none { 0%, 100% { opacity: 1; } }
+@keyframes t-cube3d { 0% { transform: perspective(400px) rotateY(0deg); } 50% { transform: perspective(400px) rotateY(90deg); } 100% { transform: perspective(400px) rotateY(0deg); } }
+@keyframes t-flip3d { 0% { transform: perspective(600px) rotateY(0deg); } 50% { transform: perspective(600px) rotateY(180deg); } 100% { transform: perspective(600px) rotateY(360deg); } }
+@keyframes t-rotate3d { 0% { transform: perspective(500px) rotate3d(1, 1, 0, 0deg); } 50% { transform: perspective(500px) rotate3d(1, 1, 0, 180deg); } 100% { transform: perspective(500px) rotate3d(1, 1, 0, 360deg); } }
+@keyframes t-doors3d { 0% { transform: perspective(600px) rotateY(0deg); transform-origin: left center; } 50% { transform: perspective(600px) rotateY(-90deg); transform-origin: left center; } 100% { transform: perspective(600px) rotateY(0deg); transform-origin: left center; } }
+@keyframes t-box3d { 0% { transform: perspective(400px) rotateX(0deg) rotateY(0deg); } 33% { transform: perspective(400px) rotateX(90deg) rotateY(0deg); } 66% { transform: perspective(400px) rotateX(90deg) rotateY(90deg); } 100% { transform: perspective(400px) rotateX(0deg) rotateY(0deg); } }
+@keyframes t-blinds { 0% { clip-path: inset(0 0 0 0); } 25% { clip-path: polygon(0 0, 100% 0, 100% 20%, 0 20%, 0 40%, 100% 40%, 100% 60%, 0 60%, 0 80%, 100% 80%, 100% 100%, 0 100%); } 50% { clip-path: inset(0 0 0 0); opacity: 0.3; } 100% { clip-path: inset(0 0 0 0); opacity: 1; } }
+@keyframes t-clock { 0% { clip-path: polygon(50% 50%, 50% 0%, 50% 0%); } 25% { clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 50%); } 50% { clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 100%); } 75% { clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 50%); } 100% { clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%); } }
+@keyframes t-ripple { 0% { transform: scale(1); border-radius: 0; } 25% { transform: scale(0.8); border-radius: 50%; } 50% { transform: scale(1.1); border-radius: 50%; opacity: 0.5; } 75% { transform: scale(0.95); border-radius: 25%; } 100% { transform: scale(1); border-radius: 0; opacity: 1; } }
+@keyframes t-honeycomb { 0% { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); opacity: 1; } 50% { clip-path: polygon(50% 25%, 75% 37%, 75% 63%, 50% 75%, 25% 63%, 25% 37%); opacity: 0.3; } 100% { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); opacity: 1; } }
+@keyframes t-glitter { 0% { opacity: 1; filter: brightness(1); } 15% { opacity: 0.7; filter: brightness(2); } 30% { opacity: 0.4; filter: brightness(3); } 50% { opacity: 0; filter: brightness(4); } 65% { opacity: 0.4; filter: brightness(3); } 80% { opacity: 0.7; filter: brightness(2); } 100% { opacity: 1; filter: brightness(1); } }
+@keyframes t-vortex { 0% { transform: scale(1) rotate(0deg); opacity: 1; } 50% { transform: scale(0) rotate(720deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+@keyframes t-origami { 0% { transform: perspective(500px) rotateX(0deg) rotateY(0deg); } 25% { transform: perspective(500px) rotateX(45deg) rotateY(0deg); } 50% { transform: perspective(500px) rotateX(45deg) rotateY(45deg); opacity: 0.5; } 75% { transform: perspective(500px) rotateX(0deg) rotateY(45deg); } 100% { transform: perspective(500px) rotateX(0deg) rotateY(0deg); opacity: 1; } }
+@keyframes t-fracture { 0% { clip-path: inset(0 0 0 0); transform: scale(1); } 25% { clip-path: polygon(0 0, 60% 0, 40% 50%, 0 100%); transform: scale(1.02); } 50% { clip-path: polygon(30% 20%, 80% 0, 100% 60%, 50% 100%, 0 70%); transform: scale(0.95); opacity: 0.4; } 75% { clip-path: polygon(10% 10%, 90% 0, 100% 90%, 0 100%); transform: scale(1.02); } 100% { clip-path: inset(0 0 0 0); transform: scale(1); opacity: 1; } }
+@keyframes t-gallery { 0% { transform: scale(1) translateX(0); } 25% { transform: scale(0.7) translateX(30%); } 50% { transform: scale(0.7) translateX(-30%); opacity: 0.6; } 75% { transform: scale(0.85) translateX(15%); } 100% { transform: scale(1) translateX(0); opacity: 1; } }
+@keyframes t-conveyor { 0% { transform: translateX(0) scale(1); } 30% { transform: translateX(100%) scale(0.8); } 31% { transform: translateX(-100%) scale(0.8); } 100% { transform: translateX(0) scale(1); } }
 `;
 
 const TRANSITION_ANIMATION_MAP: Record<SlideTransitionType, string> = {
@@ -92,6 +170,21 @@ const TRANSITION_ANIMATION_MAP: Record<SlideTransitionType, string> = {
   cut: 't-cut',
   uncover: 't-uncover',
   random: 't-random',
+  cube3d: 't-cube3d',
+  flip3d: 't-flip3d',
+  rotate3d: 't-rotate3d',
+  doors3d: 't-doors3d',
+  box3d: 't-box3d',
+  blinds: 't-blinds',
+  clock: 't-clock',
+  ripple: 't-ripple',
+  honeycomb: 't-honeycomb',
+  glitter: 't-glitter',
+  vortex: 't-vortex',
+  origami: 't-origami',
+  fracture: 't-fracture',
+  gallery: 't-gallery',
+  conveyor: 't-conveyor',
 };
 
 /* ─── Mini preview square component ─── */
@@ -176,6 +269,26 @@ function SectionHeader({
         style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
       />
     </button>
+  );
+}
+
+/* ─── Category Header inside the grid ─── */
+
+function CategoryHeader({ name, icon }: { name: string; icon: React.ReactNode }) {
+  return (
+    <div
+      className="col-span-4 flex items-center gap-1 pt-2 pb-0.5"
+      style={{ color: 'var(--foreground)' }}
+    >
+      <span className="opacity-50">{icon}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-wider opacity-50">
+        {name}
+      </span>
+      <div
+        className="flex-1 h-px ml-1"
+        style={{ background: 'var(--border)' }}
+      />
+    </div>
   );
 }
 
@@ -303,7 +416,7 @@ export default function TransitionPanel() {
       {/* ── Scrollable Content ── */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-3 flex flex-col gap-3">
-          {/* ── Transition Types Grid ── */}
+          {/* ── Transition Types Grid (grouped by category) ── */}
           <div>
             <SectionHeader
               title="Transition Type"
@@ -313,49 +426,76 @@ export default function TransitionPanel() {
             />
             {expandedSections.transitions && (
               <div className="grid grid-cols-4 gap-1.5 mt-1.5">
-                {TRANSITION_TYPES.map((t) => {
-                  const isActive = currentTransition === t.value;
-                  const isHovered = hoveredType === t.value;
-                  return (
-                    <button
-                      key={t.value}
-                      onClick={() => handleSelectTransition(t.value)}
-                      onMouseEnter={() => setHoveredType(t.value)}
-                      onMouseLeave={() => setHoveredType(null)}
-                      className="flex flex-col items-center gap-1 p-1 rounded transition-all"
-                      style={{
-                        background: isActive
-                          ? 'color-mix(in srgb, var(--primary) 15%, transparent)'
-                          : 'transparent',
-                        border: isActive
-                          ? '1.5px solid var(--primary)'
-                          : '1.5px solid transparent',
-                        outline: 'none',
-                      }}
-                      title={t.label}
-                    >
-                      <TransitionPreview
-                        type={t.value}
-                        isActive={isActive}
-                        playing={isHovered || (isActive && isPreviewPlaying)}
-                        easing={easing}
-                      />
-                      <span
-                        className="text-[10px] leading-tight truncate w-full text-center"
-                        style={{
-                          color: isActive ? 'var(--primary)' : 'var(--foreground)',
-                          fontWeight: isActive ? 600 : 400,
-                          opacity: isActive ? 1 : 0.7,
-                        }}
-                      >
-                        {t.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                {TRANSITION_CATEGORIES.map((category) => (
+                  <React.Fragment key={category.name}>
+                    <CategoryHeader name={category.name} icon={category.icon} />
+                    {category.transitions.map((t) => {
+                      const isActive = currentTransition === t.value;
+                      const isHovered = hoveredType === t.value;
+                      return (
+                        <button
+                          key={t.value}
+                          onClick={() => handleSelectTransition(t.value)}
+                          onMouseEnter={() => setHoveredType(t.value)}
+                          onMouseLeave={() => setHoveredType(null)}
+                          className="flex flex-col items-center gap-1 p-1 rounded transition-all"
+                          style={{
+                            background: isActive
+                              ? 'color-mix(in srgb, var(--primary) 15%, transparent)'
+                              : 'transparent',
+                            border: isActive
+                              ? '1.5px solid var(--primary)'
+                              : '1.5px solid transparent',
+                            outline: 'none',
+                          }}
+                          title={t.label}
+                        >
+                          <TransitionPreview
+                            type={t.value}
+                            isActive={isActive}
+                            playing={isHovered || (isActive && isPreviewPlaying)}
+                            easing={easing}
+                          />
+                          <span
+                            className="text-[10px] leading-tight truncate w-full text-center"
+                            style={{
+                              color: isActive ? 'var(--primary)' : 'var(--foreground)',
+                              fontWeight: isActive ? 600 : 400,
+                              opacity: isActive ? 1 : 0.7,
+                            }}
+                          >
+                            {t.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
               </div>
             )}
           </div>
+
+          {/* ── Morph Info ── */}
+          {currentTransition === 'morph' && (
+            <div
+              className="flex items-start gap-2 p-2.5 rounded-md text-[11px] leading-relaxed"
+              style={{
+                background: 'color-mix(in srgb, var(--primary) 8%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--primary) 25%, transparent)',
+                color: 'var(--foreground)',
+              }}
+            >
+              <Info size={14} className="shrink-0 mt-0.5" style={{ color: 'var(--primary)' }} />
+              <div>
+                <span className="font-semibold" style={{ color: 'var(--primary)' }}>Morph Transition</span>
+                <p className="mt-0.5 opacity-75">
+                  Morph automatically animates matching elements between slides. Give
+                  shared objects the same name across consecutive slides for smooth
+                  movement, resizing, and recoloring effects.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* ── Duration ── */}
           <div>
