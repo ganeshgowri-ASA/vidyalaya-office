@@ -22,6 +22,16 @@ import {
   Maximize2, ZoomIn, LayoutGrid,
   PanelTop, Minus,
   AreaChart, ScatterChart,
+  Globe, Database, RefreshCw, PlugZap,
+  GitBranch, AlertTriangle, Play,
+  Layers, Sun, TrendingUp, TrendingDown,
+  Triangle, Circle, Activity, Box,
+  BarChart2, Workflow, Combine, SplitSquareVertical,
+  FolderOpen, ClipboardList, CheckSquare, Shuffle,
+  Diff, FlipVertical2,
+  List, ChevronUp, ChevronsDown,
+  MousePointer, Zap, BarChartHorizontal,
+  Clock, Square,
 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { colToLetter } from "./formula-engine";
@@ -619,112 +629,215 @@ export function SpreadsheetToolbar({
 
   const renderInsertTab = () => (
     <div className="flex items-start gap-0.5 flex-wrap">
+      {/* Tables */}
       <RibbonGroup label="Tables">
-        <ToolBtn title="PivotTable" onClick={() => onOpenPivot?.()}><Table2 size={14} /></ToolBtn>
-        <ToolBtn title="Table" onClick={() => {}}><Grid3X3 size={14} /></ToolBtn>
+        <ToolBtn title="PivotTable — Summarize data with a PivotTable" onClick={() => onOpenPivot?.()}>
+          <Table2 size={14} />
+        </ToolBtn>
+        <ToolBtn title="Table — Format selection as a structured table" onClick={() => {}}>
+          <Grid3X3 size={14} />
+        </ToolBtn>
       </RibbonGroup>
 
+      {/* Charts */}
       <RibbonGroup label="Charts">
-        <DropdownBtn icon={<BarChart3 size={14} />} title="Column/Bar Charts" label="Column">
+        {/* Column / Bar */}
+        <DropdownBtn icon={<BarChart3 size={14} />} title="Insert Column or Bar Chart" label="Column">
           {(close) => (
             <>
-              <DropdownHeader>Column</DropdownHeader>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Clustered Column</DropdownItem>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Stacked Column</DropdownItem>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>100% Stacked Column</DropdownItem>
+              <DropdownHeader>2-D Column</DropdownHeader>
+              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("column"); close(); }}>Clustered Column</DropdownItem>
+              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("column-stacked"); close(); }}>Stacked Column</DropdownItem>
+              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("column-stacked-100"); close(); }}>100% Stacked Column</DropdownItem>
               <DropdownDivider />
-              <DropdownHeader>Bar</DropdownHeader>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Clustered Bar</DropdownItem>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Stacked Bar</DropdownItem>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>100% Stacked Bar</DropdownItem>
+              <DropdownHeader>2-D Bar</DropdownHeader>
+              <DropdownItem icon={<BarChartHorizontal size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Clustered Bar</DropdownItem>
+              <DropdownItem icon={<BarChartHorizontal size={12} />} onClick={() => { openChartModal("bar-stacked"); close(); }}>Stacked Bar</DropdownItem>
+              <DropdownItem icon={<BarChartHorizontal size={12} />} onClick={() => { openChartModal("bar-stacked-100"); close(); }}>100% Stacked Bar</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>3-D Column</DropdownHeader>
+              <DropdownItem icon={<Box size={12} />} onClick={() => { openChartModal("column-3d"); close(); }}>3-D Clustered Column</DropdownItem>
+              <DropdownItem icon={<Box size={12} />} onClick={() => { openChartModal("column-3d-stacked"); close(); }}>3-D Stacked Column</DropdownItem>
             </>
           )}
         </DropdownBtn>
-        <DropdownBtn icon={<LineChart size={14} />} title="Line/Area Charts" label="Line">
+
+        {/* Line / Area */}
+        <DropdownBtn icon={<LineChart size={14} />} title="Insert Line or Area Chart" label="Line">
           {(close) => (
             <>
-              <DropdownHeader>Line</DropdownHeader>
+              <DropdownHeader>2-D Line</DropdownHeader>
               <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line"); close(); }}>Line</DropdownItem>
-              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line"); close(); }}>Stacked Line</DropdownItem>
-              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line"); close(); }}>Line with Markers</DropdownItem>
+              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line-stacked"); close(); }}>Stacked Line</DropdownItem>
+              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line-100"); close(); }}>100% Stacked Line</DropdownItem>
+              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line-markers"); close(); }}>Line with Markers</DropdownItem>
               <DropdownDivider />
-              <DropdownHeader>Area</DropdownHeader>
+              <DropdownHeader>2-D Area</DropdownHeader>
               <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area"); close(); }}>Area</DropdownItem>
-              <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area"); close(); }}>Stacked Area</DropdownItem>
-              <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area"); close(); }}>100% Stacked Area</DropdownItem>
+              <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area-stacked"); close(); }}>Stacked Area</DropdownItem>
+              <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area-100"); close(); }}>100% Stacked Area</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>3-D Line</DropdownHeader>
+              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line-3d"); close(); }}>3-D Line</DropdownItem>
             </>
           )}
         </DropdownBtn>
-        <DropdownBtn icon={<PieChart size={14} />} title="Pie/Doughnut Charts" label="Pie">
+
+        {/* Pie / Doughnut */}
+        <DropdownBtn icon={<PieChart size={14} />} title="Insert Pie or Doughnut Chart" label="Pie">
           {(close) => (
             <>
+              <DropdownHeader>2-D Pie</DropdownHeader>
               <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("pie"); close(); }}>Pie</DropdownItem>
-              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("pie"); close(); }}>3-D Pie</DropdownItem>
-              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("doughnut"); close(); }}>Doughnut</DropdownItem>
-              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("pie"); close(); }}>Pie of Pie</DropdownItem>
+              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("pie-of-pie"); close(); }}>Pie of Pie</DropdownItem>
+              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("bar-of-pie"); close(); }}>Bar of Pie</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>3-D Pie</DropdownHeader>
+              <DropdownItem icon={<Circle size={12} />} onClick={() => { openChartModal("pie-3d"); close(); }}>3-D Pie</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Doughnut</DropdownHeader>
+              <DropdownItem icon={<Circle size={12} />} onClick={() => { openChartModal("doughnut"); close(); }}>Doughnut</DropdownItem>
+              <DropdownItem icon={<Circle size={12} />} onClick={() => { openChartModal("doughnut-exploded"); close(); }}>Exploded Doughnut</DropdownItem>
             </>
           )}
         </DropdownBtn>
-        <DropdownBtn icon={<ScatterChart size={14} />} title="Scatter/Bubble Charts" label="XY">
+
+        {/* Scatter / Bubble */}
+        <DropdownBtn icon={<ScatterChart size={14} />} title="Insert Scatter (X, Y) or Bubble Chart" label="XY">
           {(close) => (
             <>
+              <DropdownHeader>Scatter</DropdownHeader>
               <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("scatter"); close(); }}>Scatter</DropdownItem>
-              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("scatter"); close(); }}>Scatter with Lines</DropdownItem>
-              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("bubble"); close(); }}>Bubble</DropdownItem>
-              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("bubble"); close(); }}>3-D Bubble</DropdownItem>
+              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("scatter-smooth"); close(); }}>Scatter with Smooth Lines</DropdownItem>
+              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("scatter-straight"); close(); }}>Scatter with Straight Lines</DropdownItem>
+              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("scatter-markers"); close(); }}>Scatter with Markers</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Bubble</DropdownHeader>
+              <DropdownItem icon={<Circle size={12} />} onClick={() => { openChartModal("bubble"); close(); }}>Bubble</DropdownItem>
+              <DropdownItem icon={<Circle size={12} />} onClick={() => { openChartModal("bubble-3d"); close(); }}>3-D Bubble</DropdownItem>
             </>
           )}
         </DropdownBtn>
-        <DropdownBtn icon={<BarChart3 size={14} />} title="Other Charts" label="More">
+
+        {/* Other Charts */}
+        <DropdownBtn icon={<BarChart2 size={14} />} title="Insert Other Charts" label="Other">
           {(close) => (
             <>
-              <DropdownHeader>Statistical</DropdownHeader>
-              <DropdownItem onClick={() => { openChartModal("histogram"); close(); }}>Histogram</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("boxwhisker"); close(); }}>Box & Whisker</DropdownItem>
+              <DropdownHeader>Radar</DropdownHeader>
+              <DropdownItem icon={<Activity size={12} />} onClick={() => { openChartModal("radar"); close(); }}>Radar</DropdownItem>
+              <DropdownItem icon={<Activity size={12} />} onClick={() => { openChartModal("radar-markers"); close(); }}>Radar with Markers</DropdownItem>
+              <DropdownItem icon={<Activity size={12} />} onClick={() => { openChartModal("radar-filled"); close(); }}>Filled Radar</DropdownItem>
               <DropdownDivider />
               <DropdownHeader>Hierarchy</DropdownHeader>
-              <DropdownItem onClick={() => { openChartModal("treemap"); close(); }}>Treemap</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("treemap"); close(); }}>Sunburst</DropdownItem>
+              <DropdownItem icon={<Layers size={12} />} onClick={() => { openChartModal("treemap"); close(); }}>Treemap</DropdownItem>
+              <DropdownItem icon={<Sun size={12} />} onClick={() => { openChartModal("sunburst"); close(); }}>Sunburst</DropdownItem>
               <DropdownDivider />
-              <DropdownHeader>Waterfall</DropdownHeader>
-              <DropdownItem onClick={() => { openChartModal("waterfall"); close(); }}>Waterfall</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("funnel"); close(); }}>Funnel</DropdownItem>
+              <DropdownHeader>Waterfall / Funnel</DropdownHeader>
+              <DropdownItem icon={<TrendingDown size={12} />} onClick={() => { openChartModal("waterfall"); close(); }}>Waterfall</DropdownItem>
+              <DropdownItem icon={<Triangle size={12} />} onClick={() => { openChartModal("funnel"); close(); }}>Funnel</DropdownItem>
               <DropdownDivider />
-              <DropdownHeader>Other</DropdownHeader>
-              <DropdownItem onClick={() => { openChartModal("radar"); close(); }}>Radar</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("stock"); close(); }}>Stock (OHLC)</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("radar"); close(); }}>Surface</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("bar"); close(); }}>Combo Chart</DropdownItem>
+              <DropdownHeader>Stock</DropdownHeader>
+              <DropdownItem icon={<TrendingUp size={12} />} onClick={() => { openChartModal("stock"); close(); }}>High-Low-Close</DropdownItem>
+              <DropdownItem icon={<TrendingUp size={12} />} onClick={() => { openChartModal("candlestick"); close(); }}>Open-High-Low-Close</DropdownItem>
+              <DropdownItem icon={<TrendingUp size={12} />} onClick={() => { openChartModal("ohlc"); close(); }}>Volume-High-Low-Close</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Surface</DropdownHeader>
+              <DropdownItem icon={<Box size={12} />} onClick={() => { openChartModal("surface3d"); close(); }}>3-D Surface</DropdownItem>
+              <DropdownItem icon={<Box size={12} />} onClick={() => { openChartModal("contour"); close(); }}>Contour</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Combo</DropdownHeader>
+              <DropdownItem icon={<Combine size={12} />} onClick={() => { openChartModal("combo-clustered-line"); close(); }}>Clustered Column — Line</DropdownItem>
+              <DropdownItem icon={<Combine size={12} />} onClick={() => { openChartModal("combo-area-line"); close(); }}>Area — Line</DropdownItem>
+              <DropdownItem icon={<Combine size={12} />} onClick={() => { openChartModal("combo"); close(); }}>Custom Combination</DropdownItem>
             </>
           )}
         </DropdownBtn>
       </RibbonGroup>
 
+      {/* Sparklines */}
       <RibbonGroup label="Sparklines">
-        <ToolBtn title="Line Sparkline" onClick={() => {}}><LineChart size={14} /></ToolBtn>
-        <ToolBtn title="Column Sparkline" onClick={() => {}}><BarChart3 size={14} /></ToolBtn>
+        <ToolBtn title="Line Sparkline — Insert a tiny line chart in a cell" onClick={() => {}}>
+          <LineChart size={14} />
+        </ToolBtn>
+        <ToolBtn title="Column Sparkline — Insert a tiny column chart in a cell" onClick={() => {}}>
+          <BarChart3 size={14} />
+        </ToolBtn>
+        <ToolBtn title="Win/Loss Sparkline — Insert a Win/Loss chart in a cell" onClick={() => {}}>
+          <Activity size={14} />
+        </ToolBtn>
       </RibbonGroup>
 
+      {/* Illustrations */}
+      <RibbonGroup label="Illustrations">
+        <ToolBtn title="Pictures — Insert a picture from file" onClick={() => {}}>
+          <Image size={14} />
+        </ToolBtn>
+        <DropdownBtn icon={<SplitSquareVertical size={14} />} title="Shapes — Insert ready-made shapes">
+          {(close) => (
+            <>
+              <DropdownHeader>Lines</DropdownHeader>
+              <DropdownItem onClick={() => { close(); }}>Line</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Arrow</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Double Arrow</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Basic Shapes</DropdownHeader>
+              <DropdownItem onClick={() => { close(); }}>Rectangle</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Oval / Circle</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Triangle</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Parallelogram</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Block Arrows</DropdownHeader>
+              <DropdownItem onClick={() => { close(); }}>Right Arrow</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Left Arrow</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Up Arrow</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Down Arrow</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <ToolBtn title="Icons — Insert icons from the icon library" onClick={() => {}}>
+          <Sparkles size={14} />
+        </ToolBtn>
+        <ToolBtn title="SmartArt — Insert a SmartArt graphic" onClick={() => {}}>
+          <Workflow size={14} />
+        </ToolBtn>
+      </RibbonGroup>
+
+      {/* Links */}
       <RibbonGroup label="Links">
-        <ToolBtn title="Hyperlink" onClick={() => {
+        <ToolBtn title="Hyperlink — Create a link to a webpage, file, or cell range" onClick={() => {
           if (!activeCell) return;
           const url = prompt("Enter URL:");
           if (url) setCellValue(activeCell.col, activeCell.row, url);
-        }}><Link size={14} /></ToolBtn>
+        }}>
+          <Link size={14} />
+        </ToolBtn>
       </RibbonGroup>
 
+      {/* Text */}
       <RibbonGroup label="Text">
-        <ToolBtn title="Text Box" onClick={() => {}}><TextCursorInput size={14} /></ToolBtn>
-        <ToolBtn title="Header & Footer" onClick={() => {}}><PanelTop size={14} /></ToolBtn>
+        <ToolBtn title="Text Box — Insert a moveable, resizable text box" onClick={() => {}}>
+          <TextCursorInput size={14} />
+        </ToolBtn>
+        <ToolBtn title="Header & Footer — Edit the header and footer of printed pages" onClick={() => {}}>
+          <PanelTop size={14} />
+        </ToolBtn>
+        <ToolBtn title="WordArt — Insert decorative text" onClick={() => {}}>
+          <Type size={14} />
+        </ToolBtn>
       </RibbonGroup>
 
+      {/* Symbols */}
       <RibbonGroup label="Symbols">
-        <ToolBtn title="Equation" onClick={() => {}}><Braces size={14} /></ToolBtn>
-        <ToolBtn title="Symbol" onClick={() => {
+        <ToolBtn title="Equation — Insert mathematical equations" onClick={() => {}}>
+          <Braces size={14} />
+        </ToolBtn>
+        <ToolBtn title="Symbol — Insert symbols not on your keyboard" onClick={() => {
           if (!activeCell) return;
-          const sym = prompt("Enter symbol character:");
+          const sym = prompt("Enter symbol character (e.g. ©, ™, ±, ∑):");
           if (sym) setCellValue(activeCell.col, activeCell.row, sym);
-        }}><Sparkles size={14} /></ToolBtn>
+        }}>
+          <Hash size={14} />
+        </ToolBtn>
       </RibbonGroup>
     </div>
   );
@@ -767,72 +880,174 @@ export function SpreadsheetToolbar({
 
   const renderFormulasTab = () => (
     <div className="flex items-start gap-0.5 flex-wrap">
+      {/* Function Library */}
       <RibbonGroup label="Function Library">
-        <ToolBtn title="Insert Function" onClick={() => {
+        <ToolBtn title="Insert Function — Search for and insert a function" onClick={() => {
           if (!activeCell) return;
           const fn = prompt("Enter function name (e.g. SUM, AVERAGE, IF):");
           if (fn) setCellValue(activeCell.col, activeCell.row, `=${fn.toUpperCase()}()`);
-        }}><Calculator size={14} /></ToolBtn>
-        <DropdownBtn icon={<Sigma size={14} />} title="AutoSum">
+        }}>
+          <Calculator size={14} />
+        </ToolBtn>
+        <DropdownBtn icon={<Sigma size={14} />} title="AutoSum — Sum the selected cells automatically" label="AutoSum">
           {(close) => (
             <>
-              <DropdownItem onClick={() => { handleAutoSum("SUM"); close(); }}>SUM</DropdownItem>
-              <DropdownItem onClick={() => { handleAutoSum("AVERAGE"); close(); }}>AVERAGE</DropdownItem>
-              <DropdownItem onClick={() => { handleAutoSum("COUNT"); close(); }}>COUNT</DropdownItem>
-              <DropdownItem onClick={() => { handleAutoSum("MAX"); close(); }}>MAX</DropdownItem>
-              <DropdownItem onClick={() => { handleAutoSum("MIN"); close(); }}>MIN</DropdownItem>
+              <DropdownItem icon={<Sigma size={12} />} onClick={() => { handleAutoSum("SUM"); close(); }}>Sum</DropdownItem>
+              <DropdownItem icon={<Sigma size={12} />} onClick={() => { handleAutoSum("AVERAGE"); close(); }}>Average</DropdownItem>
+              <DropdownItem icon={<Sigma size={12} />} onClick={() => { handleAutoSum("COUNT"); close(); }}>Count Numbers</DropdownItem>
+              <DropdownItem icon={<Sigma size={12} />} onClick={() => { handleAutoSum("MAX"); close(); }}>Max</DropdownItem>
+              <DropdownItem icon={<Sigma size={12} />} onClick={() => { handleAutoSum("MIN"); close(); }}>Min</DropdownItem>
+              <DropdownDivider />
+              <DropdownItem icon={<Sigma size={12} />} onClick={() => { handleAutoSum("COUNTA"); close(); }}>Count Non-Empty</DropdownItem>
+              <DropdownItem icon={<Sigma size={12} />} onClick={() => { handleAutoSum("PRODUCT"); close(); }}>Product</DropdownItem>
+              <DropdownItem icon={<Sigma size={12} />} onClick={() => { handleAutoSum("STDEV"); close(); }}>Std. Deviation</DropdownItem>
             </>
           )}
         </DropdownBtn>
-        <DropdownBtn icon={<DollarSign size={14} />} title="Financial">
+        <DropdownBtn icon={<Clock size={12} />} title="Recently Used — Access recently used functions" label="Recent">
           {(close) => (
             <>
-              {["PMT", "FV", "PV", "NPV", "IRR", "XIRR", "RATE", "NPER", "SLN", "EFFECT", "NOMINAL"].map((fn) => (
+              <DropdownHeader>Recently Used</DropdownHeader>
+              {["SUM", "IF", "VLOOKUP", "AVERAGE", "COUNT", "IFERROR", "TODAY"].map((fn) => (
                 <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
               ))}
             </>
           )}
         </DropdownBtn>
-        <DropdownBtn icon={<Braces size={14} />} title="Logical">
+        <DropdownBtn icon={<DollarSign size={14} />} title="Financial — Insert a financial function" label="Financial">
           {(close) => (
             <>
-              {["IF", "AND", "OR", "NOT", "IFS", "SWITCH", "IFERROR"].map((fn) => (
+              <DropdownHeader>Loan & Investment</DropdownHeader>
+              {["PMT", "FV", "PV", "NPV", "IRR", "XIRR", "RATE", "NPER"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Depreciation</DropdownHeader>
+              {["SLN", "DDB", "VDB", "SYD"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Interest Rate Conversion</DropdownHeader>
+              {["EFFECT", "NOMINAL"].map((fn) => (
                 <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
               ))}
             </>
           )}
         </DropdownBtn>
-        <DropdownBtn icon={<Type size={14} />} title="Text">
+        <DropdownBtn icon={<Braces size={14} />} title="Logical — Insert a logical function" label="Logical">
           {(close) => (
             <>
-              {["CONCATENATE", "LEFT", "RIGHT", "MID", "LEN", "TRIM", "UPPER", "LOWER", "PROPER", "SUBSTITUTE"].map((fn) => (
+              {["IF", "IFS", "AND", "OR", "NOT", "SWITCH", "IFERROR", "IFNA", "TRUE", "FALSE"].map((fn) => (
                 <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
               ))}
             </>
           )}
         </DropdownBtn>
-        <DropdownBtn icon={<Calendar size={14} />} title="Date & Time">
+        <DropdownBtn icon={<Type size={14} />} title="Text — Insert a text function" label="Text">
           {(close) => (
             <>
-              {["TODAY", "NOW", "DATE", "YEAR", "MONTH", "DAY", "HOUR", "MINUTE"].map((fn) => (
+              <DropdownHeader>Extract & Combine</DropdownHeader>
+              {["CONCATENATE", "CONCAT", "TEXTJOIN", "LEFT", "RIGHT", "MID"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Transform</DropdownHeader>
+              {["LEN", "TRIM", "UPPER", "LOWER", "PROPER", "SUBSTITUTE", "REPLACE", "REPT"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Search & Convert</DropdownHeader>
+              {["FIND", "SEARCH", "TEXT", "VALUE", "NUMBERVALUE", "EXACT"].map((fn) => (
                 <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
               ))}
             </>
           )}
         </DropdownBtn>
-        <DropdownBtn icon={<Search size={14} />} title="Lookup & Reference">
+        <DropdownBtn icon={<Calendar size={14} />} title="Date & Time — Insert a date or time function" label="Date">
           {(close) => (
             <>
-              {["VLOOKUP", "HLOOKUP", "INDEX", "MATCH", "XLOOKUP", "OFFSET"].map((fn) => (
+              <DropdownHeader>Current Date/Time</DropdownHeader>
+              {["TODAY", "NOW"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Date Parts</DropdownHeader>
+              {["DATE", "YEAR", "MONTH", "DAY", "WEEKDAY", "WEEKNUM", "EOMONTH"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Time Parts</DropdownHeader>
+              {["TIME", "HOUR", "MINUTE", "SECOND", "TIMEVALUE", "DATEVALUE"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Date Arithmetic</DropdownHeader>
+              {["DATEDIF", "DAYS", "NETWORKDAYS", "WORKDAY", "EDATE"].map((fn) => (
                 <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
               ))}
             </>
           )}
         </DropdownBtn>
-        <DropdownBtn icon={<Hash size={14} />} title="Math & Trig">
+        <DropdownBtn icon={<Search size={14} />} title="Lookup & Reference — Insert a lookup or reference function" label="Lookup">
           {(close) => (
             <>
-              {["SUM", "SUMIF", "SUMIFS", "ROUND", "ABS", "INT", "MOD", "POWER", "SQRT", "RAND"].map((fn) => (
+              <DropdownHeader>Lookup</DropdownHeader>
+              {["VLOOKUP", "HLOOKUP", "XLOOKUP", "LOOKUP"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Index & Match</DropdownHeader>
+              {["INDEX", "MATCH", "XMATCH"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Reference</DropdownHeader>
+              {["OFFSET", "INDIRECT", "ADDRESS", "ROW", "COLUMN", "ROWS", "COLUMNS", "CHOOSE", "TRANSPOSE"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<Hash size={14} />} title="Math & Trig — Insert a math or trig function" label="Math">
+          {(close) => (
+            <>
+              <DropdownHeader>Sum & Count</DropdownHeader>
+              {["SUM", "SUMIF", "SUMIFS", "SUMPRODUCT", "COUNT", "COUNTIF", "COUNTIFS", "COUNTA"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Rounding</DropdownHeader>
+              {["ROUND", "ROUNDUP", "ROUNDDOWN", "CEILING", "FLOOR", "INT", "TRUNC"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Math</DropdownHeader>
+              {["ABS", "MOD", "POWER", "SQRT", "EXP", "LN", "LOG", "LOG10", "RAND", "RANDBETWEEN", "SIGN"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Trigonometry</DropdownHeader>
+              {["SIN", "COS", "TAN", "ASIN", "ACOS", "ATAN", "ATAN2", "DEGREES", "RADIANS", "PI"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<BarChart2 size={14} />} title="More Functions — Statistical, Engineering, Information, Compatibility" label="More">
+          {(close) => (
+            <>
+              <DropdownHeader>Statistical</DropdownHeader>
+              {["AVERAGE", "AVERAGEIF", "AVERAGEIFS", "MEDIAN", "MODE", "STDEV", "STDEVP", "VAR", "VARP", "CORREL", "COVAR", "NORMDIST", "NORM.INV", "PERCENTILE", "QUARTILE", "RANK"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Information</DropdownHeader>
+              {["ISBLANK", "ISERROR", "ISNUMBER", "ISTEXT", "ISNA", "ISREF", "CELL", "TYPE", "N", "NA"].map((fn) => (
+                <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownHeader>Engineering</DropdownHeader>
+              {["CONVERT", "BIN2DEC", "DEC2BIN", "HEX2DEC", "DEC2HEX"].map((fn) => (
                 <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
               ))}
             </>
@@ -840,40 +1055,92 @@ export function SpreadsheetToolbar({
         </DropdownBtn>
       </RibbonGroup>
 
+      {/* Defined Names */}
       <RibbonGroup label="Defined Names">
-        <ToolBtn title="Name Manager" onClick={() => onOpenNamedRanges?.()}><Bookmark size={14} /></ToolBtn>
-        <ToolBtn title="Define Name" onClick={() => {
+        <ToolBtn title="Name Manager — Create, edit, delete, and find all names used in the workbook" onClick={() => onOpenNamedRanges?.()}>
+          <Bookmark size={14} />
+        </ToolBtn>
+        <ToolBtn title="Define Name — Define a name for a cell, range, or constant" onClick={() => {
           const bounds = getSelectionBounds();
           if (!bounds) { alert("Select a range first."); return; }
-          const name = prompt("Enter name:");
+          const name = prompt("Enter a name for this range:");
           if (name) setNamedRange(name, `${colToLetter(bounds.minC)}${bounds.minR + 1}:${colToLetter(bounds.maxC)}${bounds.maxR + 1}`);
-        }}><Plus size={14} /></ToolBtn>
+        }}>
+          <Plus size={14} />
+        </ToolBtn>
+        <DropdownBtn icon={<Link size={14} />} title="Use in Formula — Choose a name used in this workbook and insert it into the formula" label="Use">
+          {(close) => (
+            <>
+              <DropdownHeader>Named Ranges</DropdownHeader>
+              <DropdownItem onClick={close}>Paste Names...</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <ToolBtn title="Create from Selection — Automatically generate names from selected cells" onClick={() => {
+          const bounds = getSelectionBounds();
+          if (!bounds) { alert("Select a range first."); return; }
+          const name = prompt("Create name from row/column header:");
+          if (name) setNamedRange(name.trim().replace(/\s+/g, "_"), `${colToLetter(bounds.minC)}${bounds.minR + 1}:${colToLetter(bounds.maxC)}${bounds.maxR + 1}`);
+        }}>
+          <Grid3X3 size={14} />
+        </ToolBtn>
       </RibbonGroup>
 
+      {/* Formula Auditing */}
       <RibbonGroup label="Formula Auditing">
-        <ToolBtn title="Trace Precedents" onClick={() => alert("Trace Precedents: shows arrows to cells that provide data to this formula")}><ArrowUp size={14} /></ToolBtn>
-        <ToolBtn title="Trace Dependents" onClick={() => alert("Trace Dependents: shows arrows to cells that depend on this cell")}><ArrowDown size={14} /></ToolBtn>
-        <ToolBtn title="Remove Arrows" onClick={() => alert("All trace arrows removed")}><Minus size={14} /></ToolBtn>
+        <ToolBtn title="Trace Precedents — Show arrows indicating which cells affect the value of the currently selected cell" onClick={() => alert("Trace Precedents: Shows arrows to cells that provide data to the formula in the active cell.")}>
+          <ArrowUp size={14} />
+        </ToolBtn>
+        <ToolBtn title="Trace Dependents — Show arrows indicating which cells are affected by the value of the currently selected cell" onClick={() => alert("Trace Dependents: Shows arrows to cells that depend on the active cell.")}>
+          <ArrowDown size={14} />
+        </ToolBtn>
+        <DropdownBtn icon={<Minus size={14} />} title="Remove Arrows — Remove all tracer arrows" label="Remove">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { alert("All trace arrows removed."); close(); }}>Remove Arrows</DropdownItem>
+              <DropdownItem onClick={() => { alert("Precedent arrows removed."); close(); }}>Remove Precedent Arrows</DropdownItem>
+              <DropdownItem onClick={() => { alert("Dependent arrows removed."); close(); }}>Remove Dependent Arrows</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
         <Separator />
-        <ToolBtn title="Show Formulas" active={showFormulas} onClick={toggleShowFormulas}><Eye size={14} /></ToolBtn>
-        <ToolBtn title="Error Checking" onClick={() => alert("Error Checking: scans cells for formula errors")}><ShieldCheck size={14} /></ToolBtn>
-        <ToolBtn title="Evaluate Formula" onClick={() => {
+        <ToolBtn title="Show Formulas (Ctrl+`) — Show formula in each cell instead of the resulting value" active={showFormulas} onClick={toggleShowFormulas}>
+          <Eye size={14} />
+        </ToolBtn>
+        <DropdownBtn icon={<AlertTriangle size={14} />} title="Error Checking — Check for errors in formulas" label="Errors">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { alert("Error Checking: Scanning for formula errors..."); close(); }}>Error Checking...</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Trace Error</DropdownItem>
+              <DropdownItem onClick={() => { close(); }}>Circular References</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <ToolBtn title="Evaluate Formula — Debug a formula by evaluating each part individually" onClick={() => {
           if (!activeCell) return;
           const raw = getCellRaw(activeCell.col, activeCell.row);
           const display = getCellDisplay(activeCell.col, activeCell.row);
-          alert(`Formula: ${raw}\nResult: ${display}`);
-        }}><Calculator size={14} /></ToolBtn>
+          alert(`Evaluate Formula\n\nFormula: ${raw || "(empty)"}\nResult:  ${display || "(empty)"}`);
+        }}>
+          <Play size={14} />
+        </ToolBtn>
       </RibbonGroup>
 
+      {/* Calculation */}
       <RibbonGroup label="Calculation">
-        <ToolBtn title="Calculate Now (F9)" onClick={() => alert("Workbook recalculated")}><Redo2 size={14} /></ToolBtn>
-        <ToolBtn title="Calculate Sheet" onClick={() => alert("Active sheet recalculated")}><FileSpreadsheet size={14} /></ToolBtn>
-        <DropdownBtn icon={<Settings2 size={14} />} title="Calculation Options">
+        <ToolBtn title="Calculate Now (F9) — Recalculate all open workbooks" onClick={() => alert("Workbook recalculated (F9)")}>
+          <Redo2 size={14} />
+        </ToolBtn>
+        <ToolBtn title="Calculate Sheet — Recalculate the active sheet" onClick={() => alert("Active sheet recalculated")}>
+          <FileSpreadsheet size={14} />
+        </ToolBtn>
+        <DropdownBtn icon={<Settings2 size={14} />} title="Calculation Options — Specify when formulas are calculated" label="Options">
           {(close) => (
             <>
-              <DropdownItem onClick={close}>Automatic</DropdownItem>
-              <DropdownItem onClick={close}>Automatic Except Data Tables</DropdownItem>
-              <DropdownItem onClick={close}>Manual</DropdownItem>
+              <DropdownHeader>Calculation Mode</DropdownHeader>
+              <DropdownItem icon={<Play size={12} />} onClick={() => { alert("Automatic calculation enabled."); close(); }}>Automatic</DropdownItem>
+              <DropdownItem icon={<Activity size={12} />} onClick={() => { alert("Automatic (except data tables) enabled."); close(); }}>Automatic Except for Data Tables</DropdownItem>
+              <DropdownItem icon={<Square size={12} />} onClick={() => { alert("Manual calculation enabled. Press F9 to recalculate."); close(); }}>Manual</DropdownItem>
             </>
           )}
         </DropdownBtn>
@@ -883,30 +1150,68 @@ export function SpreadsheetToolbar({
 
   const renderDataTab = () => (
     <div className="flex items-start gap-0.5 flex-wrap">
-      <RibbonGroup label="Get & Transform">
+      {/* Get & Transform */}
+      <RibbonGroup label="Get &amp; Transform">
         <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
-        <ToolBtn title="From Text/CSV" onClick={() => csvInputRef.current?.click()}><Upload size={14} /></ToolBtn>
-        <ToolBtn title="From Web" onClick={() => alert("Import data from a web URL")}><Link size={14} /></ToolBtn>
-        <DropdownBtn icon={<FileText size={14} />} title="From Other Sources">
+        <ToolBtn title="From Text/CSV — Import data from a text or CSV file" onClick={() => csvInputRef.current?.click()}>
+          <Upload size={14} />
+        </ToolBtn>
+        <ToolBtn title="From Web — Import data from a web page" onClick={() => alert("From Web: Enter a URL to import data from a webpage.")}>
+          <Globe size={14} />
+        </ToolBtn>
+        <DropdownBtn icon={<Database size={14} />} title="From Other Sources — Import data from databases, XML, JSON, and more" label="Other">
           {(close) => (
             <>
-              <DropdownItem onClick={close}>From SQL Server</DropdownItem>
-              <DropdownItem onClick={close}>From Analysis Services</DropdownItem>
-              <DropdownItem onClick={close}>From XML</DropdownItem>
-              <DropdownItem onClick={close}>From JSON</DropdownItem>
-              <DropdownItem onClick={close}>From OData Feed</DropdownItem>
+              <DropdownHeader>Database</DropdownHeader>
+              <DropdownItem icon={<Database size={12} />} onClick={() => { alert("Import from SQL Server database."); close(); }}>From SQL Server</DropdownItem>
+              <DropdownItem icon={<Database size={12} />} onClick={() => { alert("Import from Analysis Services."); close(); }}>From Analysis Services</DropdownItem>
+              <DropdownItem icon={<Database size={12} />} onClick={() => { alert("Import from a generic ODBC connection."); close(); }}>From ODBC</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>File</DropdownHeader>
+              <DropdownItem icon={<FileText size={12} />} onClick={() => { alert("Import from XML data file."); close(); }}>From XML</DropdownItem>
+              <DropdownItem icon={<FileText size={12} />} onClick={() => { alert("Import from JSON file."); close(); }}>From JSON</DropdownItem>
+              <DropdownItem icon={<FileText size={12} />} onClick={() => { alert("Import from folder."); close(); }}>From Folder</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Online Services</DropdownHeader>
+              <DropdownItem icon={<Globe size={12} />} onClick={() => { alert("Import from OData feed."); close(); }}>From OData Feed</DropdownItem>
+              <DropdownItem icon={<Globe size={12} />} onClick={() => { alert("Import from SharePoint list."); close(); }}>From SharePoint List</DropdownItem>
             </>
           )}
         </DropdownBtn>
+        <ToolBtn title="Recent Sources — View recently used data sources" onClick={() => alert("Recent Sources: No recent data connections found.")}>
+          <FolderOpen size={14} />
+        </ToolBtn>
+        <ToolBtn title="Existing Connections — Connect to data sources that are already associated with this workbook" onClick={() => alert("Existing Connections: No existing data connections in this workbook.")}>
+          <PlugZap size={14} />
+        </ToolBtn>
       </RibbonGroup>
 
-      <RibbonGroup label="Queries & Connections">
-        <ToolBtn title="Refresh All" onClick={() => alert("All data connections refreshed")}><Redo2 size={14} /></ToolBtn>
-        <ToolBtn title="Connections" onClick={() => alert("Manage workbook connections")}><Link size={14} /></ToolBtn>
+      {/* Queries & Connections */}
+      <RibbonGroup label="Queries &amp; Connections">
+        <DropdownBtn icon={<RefreshCw size={14} />} title="Refresh All — Refresh all data connections in this workbook" label="Refresh">
+          {(close) => (
+            <>
+              <DropdownItem icon={<RefreshCw size={12} />} onClick={() => { alert("All data connections refreshed."); close(); }}>Refresh All</DropdownItem>
+              <DropdownItem icon={<RefreshCw size={12} />} onClick={() => { alert("Current connection refreshed."); close(); }}>Refresh</DropdownItem>
+              <DropdownDivider />
+              <DropdownItem onClick={() => { close(); }}>Refresh Status</DropdownItem>
+              <DropdownItem onClick={() => { alert("Cancel all pending refresh operations."); close(); }}>Cancel Refresh</DropdownItem>
+              <DropdownDivider />
+              <DropdownItem onClick={() => { close(); }}>Connection Properties...</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <ToolBtn title="Connections — Manage workbook connections" onClick={() => alert("Connections: Displays a list of all data connections for the workbook.")}>
+          <PlugZap size={14} />
+        </ToolBtn>
+        <ToolBtn title="Properties — Specify how cells connected to a data source should update, and what to display if data is missing" onClick={() => alert("Properties: Connection properties for the selected data connection.")}>
+          <Settings2 size={14} />
+        </ToolBtn>
       </RibbonGroup>
 
-      <RibbonGroup label="Sort & Filter">
-        <ToolBtn title="Sort A to Z" onClick={() => {
+      {/* Sort & Filter */}
+      <RibbonGroup label="Sort &amp; Filter">
+        <ToolBtn title="Sort A to Z — Sort smallest to largest, A to Z, or earliest to latest date" onClick={() => {
           if (!activeCell) return;
           const col = activeCell.col;
           const sheet = getActiveSheet();
@@ -925,8 +1230,10 @@ export function SpreadsheetToolbar({
           data.sort((a, b) => a.values[col].localeCompare(b.values[col]));
           const startRow = data[0]?.row ?? 0;
           data.forEach((d, i) => d.values.forEach((v, c) => setCellValue(c, startRow + i, v)));
-        }}><ArrowUpAZ size={14} /></ToolBtn>
-        <ToolBtn title="Sort Z to A" onClick={() => {
+        }}>
+          <ArrowUpAZ size={14} />
+        </ToolBtn>
+        <ToolBtn title="Sort Z to A — Sort largest to smallest, Z to A, or latest to earliest date" onClick={() => {
           if (!activeCell) return;
           const col = activeCell.col;
           const sheet = getActiveSheet();
@@ -945,17 +1252,37 @@ export function SpreadsheetToolbar({
           data.sort((a, b) => b.values[col].localeCompare(a.values[col]));
           const startRow = data[0]?.row ?? 0;
           data.forEach((d, i) => d.values.forEach((v, c) => setCellValue(c, startRow + i, v)));
-        }}><ArrowDownAZ size={14} /></ToolBtn>
-        <ToolBtn title="Filter" onClick={() => onOpenSortFilter?.()}><Filter size={14} /></ToolBtn>
+        }}>
+          <ArrowDownAZ size={14} />
+        </ToolBtn>
+        <ToolBtn title="Custom Sort — Sort data using a custom sort order with multiple columns" onClick={() => onOpenSortFilter?.()}>
+          <Settings2 size={14} />
+        </ToolBtn>
+        <Separator />
+        <ToolBtn title="Filter — Filter the rows of a selection using AutoFilter" onClick={() => onOpenSortFilter?.()}>
+          <Filter size={14} />
+        </ToolBtn>
+        <ToolBtn title="Clear — Clear the filter and sort state from the current data range" onClick={() => alert("Filter cleared from selection.")}>
+          <Trash2 size={14} />
+        </ToolBtn>
+        <ToolBtn title="Reapply — Reapply the current filter and sort" onClick={() => alert("Filter and sort reapplied.")}>
+          <RefreshCw size={14} />
+        </ToolBtn>
+        <ToolBtn title="Advanced — Filter with complex criteria" onClick={() => onOpenSortFilter?.()}>
+          <Search size={14} />
+        </ToolBtn>
       </RibbonGroup>
 
+      {/* Data Tools */}
       <RibbonGroup label="Data Tools">
-        <ToolBtn title="Text to Columns" onClick={() => alert("Text to Columns: Split cell content by delimiter")}><Columns3 size={14} /></ToolBtn>
-        <ToolBtn title="Flash Fill" onClick={() => alert("Flash Fill: Auto-fill values based on pattern")}><Sparkles size={14} /></ToolBtn>
+        <ToolBtn title="Text to Columns — Convert text in a column to separate columns by splitting on a delimiter" onClick={() => alert("Text to Columns: Splits the text in the selected cell(s) into separate columns using a delimiter.")}>
+          <Columns3 size={14} />
+        </ToolBtn>
+        <ToolBtn title="Flash Fill — Automatically fill data when a pattern is detected (Ctrl+E)" onClick={() => alert("Flash Fill: Automatically fills values based on a detected pattern in neighboring cells.")}>
+          <Zap size={14} />
+        </ToolBtn>
         <Separator />
-        <ToolBtn title="Data Validation" onClick={() => onOpenValidation?.()}><ShieldCheck size={14} /></ToolBtn>
-        <ToolBtn title="Conditional Formatting" onClick={() => onOpenCondFormatDialog?.()}><Highlighter size={14} /></ToolBtn>
-        <ToolBtn title="Remove Duplicates" onClick={() => {
+        <ToolBtn title="Remove Duplicates — Remove duplicate rows from a range" onClick={() => {
           const bounds = getSelectionBounds();
           if (!bounds) return;
           const seen = new Set<string>();
@@ -969,28 +1296,64 @@ export function SpreadsheetToolbar({
               seen.add(key);
             }
           }
-          alert(`${removed} duplicate(s) removed.`);
-        }}><Minus size={14} /></ToolBtn>
-      </RibbonGroup>
-
-      <RibbonGroup label="What-If Analysis">
-        <DropdownBtn icon={<Calculator size={14} />} title="What-If Analysis">
+          alert(`${removed} duplicate row(s) removed.`);
+        }}>
+          <Diff size={14} />
+        </ToolBtn>
+        <ToolBtn title="Data Validation — Control the type of data or values that users enter into a cell" onClick={() => onOpenValidation?.()}>
+          <ShieldCheck size={14} />
+        </ToolBtn>
+        <ToolBtn title="Consolidate — Combine values from multiple ranges into one output range" onClick={() => alert("Consolidate: Combines data from multiple ranges into a single summary range.")}>
+          <LayoutGrid size={14} />
+        </ToolBtn>
+        <DropdownBtn icon={<Calculator size={14} />} title="What-If Analysis — Try out different values to see how they affect formula outcomes" label="What-If">
           {(close) => (
             <>
-              <DropdownItem onClick={() => { onOpenGoalSeek?.(); close(); }}>Goal Seek...</DropdownItem>
-              <DropdownItem onClick={() => { alert("Scenario Manager: Create and compare scenarios"); close(); }}>Scenario Manager...</DropdownItem>
-              <DropdownItem onClick={() => { alert("Data Table: Calculate results for multiple inputs"); close(); }}>Data Table...</DropdownItem>
+              <DropdownHeader>What-If Analysis</DropdownHeader>
+              <DropdownItem icon={<Activity size={12} />} onClick={() => { onOpenGoalSeek?.(); close(); }}>Goal Seek...</DropdownItem>
+              <DropdownItem icon={<List size={12} />} onClick={() => { alert("Scenario Manager: Create, name, save, and switch between different sets of values."); close(); }}>Scenario Manager...</DropdownItem>
+              <DropdownItem icon={<Grid3X3 size={12} />} onClick={() => { alert("Data Table: Create a table of values by substituting one or two cells."); close(); }}>Data Table...</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Analysis</DropdownHeader>
+              <DropdownItem icon={<BarChart2 size={12} />} onClick={() => { onOpenStatistics?.(); close(); }}>Statistical Analysis...</DropdownItem>
+              <DropdownItem icon={<TrendingUp size={12} />} onClick={() => { alert("Solver: Find an optimal value for a formula by changing variable cells."); close(); }}>Solver...</DropdownItem>
             </>
           )}
         </DropdownBtn>
-        <ToolBtn title="Statistical Analysis" onClick={() => onOpenStatistics?.()}><Sigma size={14} /></ToolBtn>
-        <ToolBtn title="Consolidate" onClick={() => alert("Consolidate data from multiple ranges")}><LayoutGrid size={14} /></ToolBtn>
       </RibbonGroup>
 
+      {/* Outline */}
       <RibbonGroup label="Outline">
-        <ToolBtn title="Group" onClick={() => alert("Group selected rows/columns")}><Plus size={14} /></ToolBtn>
-        <ToolBtn title="Ungroup" onClick={() => alert("Ungroup selected rows/columns")}><Minus size={14} /></ToolBtn>
-        <ToolBtn title="Subtotal" onClick={() => alert("Add subtotals to a list")}><Sigma size={14} /></ToolBtn>
+        <DropdownBtn icon={<Plus size={14} />} title="Group — Group rows or columns to create an outline" label="Group">
+          {(close) => (
+            <>
+              <DropdownItem icon={<Rows3 size={12} />} onClick={() => { alert("Rows grouped. Use the outline buttons on the left to expand/collapse."); close(); }}>Group Rows</DropdownItem>
+              <DropdownItem icon={<Columns3 size={12} />} onClick={() => { alert("Columns grouped. Use the outline buttons at the top to expand/collapse."); close(); }}>Group Columns</DropdownItem>
+              <DropdownDivider />
+              <DropdownItem onClick={() => { alert("Auto Outline: Automatically creates an outline based on formulas."); close(); }}>Auto Outline</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<Minus size={14} />} title="Ungroup — Ungroup rows or columns that were previously grouped" label="Ungroup">
+          {(close) => (
+            <>
+              <DropdownItem icon={<Rows3 size={12} />} onClick={() => { alert("Selected rows ungrouped."); close(); }}>Ungroup Rows</DropdownItem>
+              <DropdownItem icon={<Columns3 size={12} />} onClick={() => { alert("Selected columns ungrouped."); close(); }}>Ungroup Columns</DropdownItem>
+              <DropdownDivider />
+              <DropdownItem onClick={() => { alert("All outline groupings removed."); close(); }}>Clear Outline</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <ToolBtn title="Subtotal — Calculate values for groups using aggregate functions like SUM, COUNT, or AVERAGE" onClick={() => alert("Subtotal: Inserts subtotal rows for each group in the selected list.")}>
+          <Sigma size={14} />
+        </ToolBtn>
+        <Separator />
+        <ToolBtn title="Show Detail — Expand a grouped range of rows or columns" onClick={() => alert("Detail rows/columns revealed.")}>
+          <ChevronDown size={14} />
+        </ToolBtn>
+        <ToolBtn title="Hide Detail — Collapse a grouped range of rows or columns" onClick={() => alert("Detail rows/columns hidden.")}>
+          <ChevronUp size={14} />
+        </ToolBtn>
       </RibbonGroup>
     </div>
   );
