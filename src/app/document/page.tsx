@@ -24,6 +24,14 @@ import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
 import { SmartArtInfographicsModal } from "@/components/document/smartart-infographics-modal";
 import { EquationEditor } from "@/components/document/equation-editor";
 import { CitationManagerModal } from "@/components/document/citation-manager";
+import {
+  CollaborationToolbar,
+  CollabCommentsSidebar,
+  ShareDialog,
+  PresenceIndicators,
+  VersionHistoryPanel,
+} from "@/components/collaboration";
+import { useCollaborationStore } from "@/store/collaboration-store";
 
 export default function DocumentPage() {
   const {
@@ -35,6 +43,11 @@ export default function DocumentPage() {
     showDocProperties, setShowDocProperties,
     showKeyboardShortcuts, setShowKeyboardShortcuts,
   } = useDocumentStore();
+
+  const {
+    showCollabComments,
+    showVersionHistory: showCollabVersionHistory,
+  } = useCollaborationStore();
 
   const [showExport, setShowExport] = React.useState(false);
   const [showPageSetup, setShowPageSetup] = React.useState(false);
@@ -224,6 +237,9 @@ export default function DocumentPage() {
         </div>
       </div>
 
+      {/* Collaboration Toolbar */}
+      <CollaborationToolbar />
+
       {/* Ribbon */}
       <RibbonToolbar
         onPageSetup={() => setShowPageSetup(true)}
@@ -256,6 +272,12 @@ export default function DocumentPage() {
 
         {/* Comments Sidebar */}
         {showComments && <CommentsSidebar />}
+
+        {/* Collaboration Comments Sidebar */}
+        {showCollabComments && <CollabCommentsSidebar />}
+
+        {/* Collaboration Version History */}
+        {showCollabVersionHistory && <VersionHistoryPanel />}
 
         {/* Version Control */}
         <VersionControlPanel
@@ -312,6 +334,8 @@ export default function DocumentPage() {
         open={showKeyboardShortcuts}
         onClose={() => setShowKeyboardShortcuts(false)}
       />
+      {/* Collaboration modals */}
+      <ShareDialog />
     </div>
   );
 }

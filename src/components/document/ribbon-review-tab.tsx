@@ -4,9 +4,10 @@ import React, { useState } from "react";
 import {
   SpellCheck, BookOpen, Hash, MessageCircle, GitBranch,
   Check, X, ChevronLeft, ChevronRight, Eye, Lock,
-  Users, FileText, ChevronDown, Shield, Diff,
+  Users, FileText, ChevronDown, Shield, Diff, Share2, MessageSquarePlus,
 } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
+import { useCollaborationStore } from "@/store/collaboration-store";
 import { ToolbarButton, ToolbarSeparator, ToolbarDropdown } from "./toolbar-button";
 
 export function ReviewTab() {
@@ -15,6 +16,13 @@ export function ReviewTab() {
     showComments, toggleComments,
     comments, addComment,
   } = useDocumentStore();
+
+  const {
+    toggleCollabComments,
+    showCollabComments,
+    toggleShareDialog,
+    openCommentCount,
+  } = useCollaborationStore();
 
   const [markupDisplay, setMarkupDisplay] = useState("all");
   const [showWordCount, setShowWordCount] = useState(false);
@@ -140,7 +148,7 @@ export function ReviewTab() {
       </div>
 
       {/* ===== PROTECT GROUP ===== */}
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center border-r pr-2 mr-1" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-0.5">
           <ToolbarButton icon={<Shield size={14} />} label="Restrict Editing" title="Restrict Editing" onClick={() => {
             alert("Restrict Editing: Set document protection to prevent unauthorized changes.");
@@ -150,6 +158,16 @@ export function ReviewTab() {
           }} />
         </div>
         <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Protect</span>
+      </div>
+
+      {/* ===== COLLABORATION GROUP ===== */}
+      <div className="flex flex-col items-center">
+        <div className="flex items-center gap-0.5">
+          <ToolbarButton icon={<MessageSquarePlus size={14} />} label="Collab Comments" title="Toggle Collaboration Comments" active={showCollabComments} onClick={toggleCollabComments} />
+          <ToolbarButton icon={<Share2 size={14} />} label="Share" title="Share Document" onClick={toggleShareDialog} />
+          <ToolbarButton icon={<Users size={14} />} label="Collaborators" title="View Collaborators" onClick={toggleCollabComments} />
+        </div>
+        <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Collaborate</span>
       </div>
     </>
   );
