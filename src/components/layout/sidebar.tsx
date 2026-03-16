@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -20,6 +19,9 @@ import {
   Grid3X3,
   User,
   HelpCircle,
+  Workflow,
+  Mail,
+  MessageSquare,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -34,7 +36,13 @@ const editorNav = [
   { label: "Document", href: "/document", icon: FileText },
   { label: "Spreadsheet", href: "/spreadsheet", icon: Table2 },
   { label: "Presentation", href: "/presentation", icon: Presentation },
+  { label: "Graphics", href: "/graphics", icon: Workflow },
   { label: "PDF Tools", href: "/pdf", icon: FileDown },
+];
+
+const communicateNav = [
+  { label: "Email", href: "/email", icon: Mail },
+  { label: "Chat", href: "/chat", icon: MessageSquare },
 ];
 
 const manageNav = [
@@ -149,6 +157,8 @@ export function Sidebar() {
           <NavSection items={mainNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Editors" items={editorNav} pathname={pathname} sidebarOpen={sidebarOpen} />
+          {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
+          <NavSection label="Communicate" items={communicateNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Manage" items={manageNav} pathname={pathname} sidebarOpen={sidebarOpen} />
         </nav>
