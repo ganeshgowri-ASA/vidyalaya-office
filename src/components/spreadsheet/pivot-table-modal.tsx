@@ -27,7 +27,7 @@ export function PivotTableModal({
   const [colFields, setColFields] = useState<PivotField[]>([]);
   const [valueFields, setValueFields] = useState<PivotField[]>([]);
   const [filterFields, setFilterFields] = useState<PivotField[]>([]);
-  const [aggregation, setAggregation] = useState<"SUM" | "COUNT" | "AVERAGE" | "MAX" | "MIN">("SUM");
+  const [aggregation, setAggregation] = useState<"SUM" | "COUNT" | "AVERAGE" | "MAX" | "MIN" | "MEDIAN" | "STDEV" | "PRODUCT">("SUM");
   const [draggedField, setDraggedField] = useState<PivotField | null>(null);
 
   // Extract field names from the header row of the selection
@@ -75,6 +75,16 @@ export function PivotTableModal({
         case "AVERAGE": return nums.reduce((a, b) => a + b, 0) / nums.length;
         case "MAX": return Math.max(...nums);
         case "MIN": return Math.min(...nums);
+        case "MEDIAN": {
+          const sorted = [...nums].sort((a, b) => a - b);
+          const mid = Math.floor(sorted.length / 2);
+          return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        }
+        case "STDEV": {
+          const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+          return Math.sqrt(nums.reduce((s, v) => s + (v - mean) ** 2, 0) / (nums.length - 1));
+        }
+        case "PRODUCT": return nums.reduce((a, b) => a * b, 1);
       }
     };
 
@@ -221,6 +231,9 @@ export function PivotTableModal({
                     <option value="AVERAGE">AVERAGE</option>
                     <option value="MAX">MAX</option>
                     <option value="MIN">MIN</option>
+                    <option value="MEDIAN">MEDIAN</option>
+                    <option value="STDEV">STDEV</option>
+                    <option value="PRODUCT">PRODUCT</option>
                   </select>
                 </div>
               </div>

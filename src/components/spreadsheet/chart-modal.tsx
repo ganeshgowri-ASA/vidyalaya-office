@@ -25,6 +25,7 @@ const CHART_COLORS = [
 
 const CHART_TYPE_LABELS: Record<string, string> = {
   bar: "Column Chart",
+  column: "Column Chart",
   line: "Line Chart",
   pie: "Pie Chart",
   scatter: "Scatter Chart",
@@ -35,12 +36,15 @@ const CHART_TYPE_LABELS: Record<string, string> = {
   waterfall: "Waterfall Chart",
   funnel: "Funnel Chart",
   treemap: "Treemap",
+  sunburst: "Sunburst Chart",
   histogram: "Histogram",
   butterfly: "Butterfly/Tornado Chart",
   gantt: "Gantt Chart",
   stock: "Stock (OHLC) Chart",
   boxwhisker: "Box & Whisker",
+  combo: "Combo Chart",
   logarithmic: "Logarithmic Scale",
+  bode: "Bode Plot",
 };
 
 // All advanced chart type labels
@@ -534,6 +538,77 @@ export function ChartModal() {
           </div>
         );
       }
+      case "column":
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart {...commonProps}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" fontSize={11} />
+              <YAxis fontSize={11} />
+              <Tooltip />
+              {showLegend && <Legend />}
+              {dataKeys.map((key, i) => (
+                <Bar key={key} dataKey={key} fill={CHART_COLORS[i % CHART_COLORS.length]}
+                  label={showDataLabels ? { position: "top", fontSize: 10 } : undefined} />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      case "combo": {
+        // Combo chart: first series as bar, rest as lines
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <ComposedChart {...commonProps}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" fontSize={11} />
+              <YAxis fontSize={11} />
+              <Tooltip />
+              {showLegend && <Legend />}
+              {dataKeys.map((key, i) =>
+                i === 0 ? (
+                  <Bar key={key} dataKey={key} fill={CHART_COLORS[0]} name={key}
+                    label={showDataLabels ? { position: "top", fontSize: 10 } : undefined} />
+                ) : (
+                  <Line key={key} type="monotone" dataKey={key}
+                    stroke={CHART_COLORS[i % CHART_COLORS.length]} strokeWidth={2}
+                    dot={{ r: 4 }} name={key} />
+                )
+              )}
+            </ComposedChart>
+          </ResponsiveContainer>
+        );
+      }
+      case "sunburst": {
+        // Sunburst as nested donut rings
+        const outerData = data.map((d, i) => ({
+          name: String(d.name),
+          value: Math.abs(Number(d[dataKeys[0]] || 0)),
+          fill: CHART_COLORS[i % CHART_COLORS.length],
+        }));
+        const innerData = dataKeys.length > 1
+          ? data.map((d, i) => ({
+              name: String(d.name),
+              value: Math.abs(Number(d[dataKeys[1]] || d[dataKeys[0]] || 0)),
+              fill: CHART_COLORS[(i + 3) % CHART_COLORS.length],
+            }))
+          : outerData.map((d, i) => ({ ...d, fill: CHART_COLORS[(i + 4) % CHART_COLORS.length] }));
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <PieChart>
+              <Pie data={innerData} cx="50%" cy="50%" innerRadius={0} outerRadius={60} dataKey="value" stroke="#fff" strokeWidth={2}>
+                {innerData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+              </Pie>
+              <Pie data={outerData} cx="50%" cy="50%" innerRadius={70} outerRadius={120} dataKey="value"
+                label={({ name, percent }: { name: string; percent: number }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
+                stroke="#fff" strokeWidth={2}>
+                {outerData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+              </Pie>
+              <Tooltip />
+              {showLegend && <Legend />}
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      }
       case "logarithmic":
         return (
           <ResponsiveContainer width="100%" height={350}>
@@ -552,6 +627,41 @@ export function ChartModal() {
             </LineChart>
           </ResponsiveContainer>
         );
+      case "bode": {
+        // Bode plot - magnitude and phase vs frequency (log scale)
+        const bodeData = data.map((d, i) => {
+          const freq = Number(d[dataKeys[0]] || (i + 1));
+          const magnitude = Number(d[dataKeys[1] || dataKeys[0]] || 0);
+          const phase = Number(d[dataKeys[2] || dataKeys[0]] || 0);
+          return { name: d.name, freq, magnitude, phase };
+        });
+        return (
+          <div className="space-y-2">
+            <div className="text-[10px] text-center font-medium" style={{ color: "var(--muted-foreground)" }}>Magnitude (dB)</div>
+            <ResponsiveContainer width="100%" height={160}>
+              <LineChart data={bodeData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" fontSize={9} />
+                <YAxis fontSize={9} />
+                <Tooltip />
+                <Line type="monotone" dataKey="magnitude" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} name="Magnitude (dB)" />
+                <ReferenceLine y={0} stroke="#666" strokeDasharray="5 5" />
+              </LineChart>
+            </ResponsiveContainer>
+            <div className="text-[10px] text-center font-medium" style={{ color: "var(--muted-foreground)" }}>Phase (degrees)</div>
+            <ResponsiveContainer width="100%" height={160}>
+              <LineChart data={bodeData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" fontSize={9} />
+                <YAxis fontSize={9} />
+                <Tooltip />
+                <Line type="monotone" dataKey="phase" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} name="Phase (deg)" />
+                <ReferenceLine y={-180} stroke="#666" strokeDasharray="5 5" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        );
+      }
       default:
         return null;
     }
@@ -627,11 +737,11 @@ export function ChartModal() {
           <div className="px-4 py-1.5 border-b overflow-x-auto" style={{ borderColor: "var(--border)" }}>
             <div className="flex items-center gap-1 text-[10px]">
               {Object.entries({
-                "Standard": ["bar", "line", "area", "scatter"],
-                "Circular": ["pie", "doughnut"],
+                "Standard": ["bar", "column", "line", "area", "scatter", "combo"],
+                "Circular": ["pie", "doughnut", "sunburst"],
                 "Specialty": ["radar", "bubble", "waterfall", "funnel", "treemap", "histogram"],
                 "Financial": ["stock", "gantt"],
-                "Analysis": ["boxwhisker", "butterfly", "logarithmic"],
+                "Analysis": ["boxwhisker", "butterfly", "logarithmic", "bode"],
               }).map(([cat, types]) => (
                 <div key={cat} className="flex items-center gap-0.5">
                   <span className="text-gray-400 font-medium whitespace-nowrap">{cat}:</span>
