@@ -19,6 +19,11 @@ import DesignPanel from '@/components/presentation/design-panel';
 import MediaPanel from '@/components/presentation/media-panel';
 import TextEffectsPanel from '@/components/presentation/text-effects-panel';
 import ExportPanel from '@/components/presentation/export-panel';
+import ThemeDesigner from '@/components/presentation/theme-designer';
+import ShapeDrawingTools from '@/components/presentation/shape-drawing-tools';
+import ImageEditor from '@/components/presentation/image-editor';
+import TransitionPanel from '@/components/presentation/transition-panel';
+import AnimationTimeline from '@/components/presentation/animation-timeline';
 import { PageSetupDialog } from '@/components/document/page-setup-dialog';
 import { CollaborationToolbar, CollabCommentsSidebar, ShareDialog, VersionHistoryPanel } from '@/components/collaboration';
 import { useCollaborationStore } from '@/store/collaboration-store';
@@ -103,11 +108,16 @@ export default function PresentationPage() {
           <SlidePanel />
           <div className="flex flex-col flex-1 overflow-hidden" style={{ background: 'var(--muted)' }}>
             <SlideCanvas />
+            <AnimationTimeline />
             <SpeakerNotes />
           </div>
           <AnimationsPanel />
           <TextEffectsPanel />
           <DesignPanel />
+          <ThemeDesigner />
+          <ShapeDrawingTools />
+          <ImageEditor />
+          <TransitionPanel />
           <AIPanel />
           {showCollabComments && <CollabCommentsSidebar />}
           {showCollabHistory && <VersionHistoryPanel />}
