@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Search, FileText, Table2, Presentation, GitBranch, BarChart3 } from "lucide-react";
+import { Search, FileText, Table2, Presentation as PresentationIcon, GitBranch, BarChart3 } from "lucide-react";
 import WordTemplates from "./components/WordTemplates";
 import ExcelTemplates from "./components/ExcelTemplates";
 import PptTemplates from "./components/PptTemplates";
+import SpreadsheetTemplates from "./components/SpreadsheetTemplates";
+import PresentationTemplates from "./components/PresentationTemplates";
 import FlowchartTemplates from "./components/FlowchartTemplates";
 import InfographicTemplates from "./components/InfographicTemplates";
 
@@ -407,7 +409,7 @@ const tabs = [
   { key: "all", label: "All Templates", icon: null },
   { key: "word", label: "Word", icon: FileText },
   { key: "excel", label: "Excel", icon: Table2 },
-  { key: "ppt", label: "PPT", icon: Presentation },
+  { key: "ppt", label: "PPT", icon: PresentationIcon },
   { key: "flowchart", label: "Flowcharts", icon: GitBranch },
   { key: "infographic", label: "Infographics", icon: BarChart3 },
 ] as const;
@@ -463,7 +465,9 @@ export default function TemplatesPage() {
       <div className="space-y-8">
         {(activeTab === "all" || activeTab === "word") && <WordTemplates />}
         {(activeTab === "all" || activeTab === "excel") && <ExcelTemplates />}
+        {(activeTab === "all" || activeTab === "excel") && <SpreadsheetTemplates />}
         {(activeTab === "all" || activeTab === "ppt") && <PptTemplates />}
+        {(activeTab === "all" || activeTab === "ppt") && <PresentationTemplates />}
         {(activeTab === "all" || activeTab === "flowchart") && <FlowchartTemplates />}
         {(activeTab === "all" || activeTab === "infographic") && <InfographicTemplates />}
       </div>

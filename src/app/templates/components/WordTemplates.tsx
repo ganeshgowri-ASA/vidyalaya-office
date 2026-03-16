@@ -42,11 +42,11 @@ export default function WordTemplates() {
         <FileText size={16} />
         Word Templates
         <span className="ml-1 rounded-full px-2 py-0.5 text-xs" style={{ backgroundColor: "var(--secondary)", color: "var(--secondary-foreground)" }}>
-          {wordTemplates.length}
+          {templates.length}
         </span>
       </h2>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3">
-        {wordTemplates.map((t) => (
+        {templates.map((t) => (
           <div
             key={t.name}
             className="rounded-lg border px-4 py-3 transition-all hover:border-[var(--primary)] group"
@@ -70,12 +70,13 @@ export default function WordTemplates() {
                 <Eye size={10} className="inline mr-1" />Preview
               </button>
             </div>
-            {preview === t.name && wordContent[t.name] && (
+            {preview === t.name && (
               <div
                 className="mt-2 max-h-48 overflow-y-auto rounded border p-2 text-[10px]"
-                style={{ borderColor: "var(--border)", backgroundColor: "var(--muted)" }}
-                dangerouslySetInnerHTML={{ __html: wordContent[t.name].slice(0, 1500) + "..." }}
-              />
+                style={{ borderColor: "var(--border)", backgroundColor: "var(--muted)", color: "var(--muted-foreground)" }}
+              >
+                {t.desc}
+              </div>
             )}
           </div>
         ))}
