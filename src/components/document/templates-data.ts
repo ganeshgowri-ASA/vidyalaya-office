@@ -752,650 +752,1127 @@ export const TEMPLATES: DocTemplate[] = [
     id: "annual-report",
     name: "Annual Report",
     icon: "📈",
-    description: "Corporate annual report with financial statements, business segments, governance, and sustainability.",
-    content: `<div style="text-align:center;padding:80px 0;background:linear-gradient(135deg,#1a237e 0%,#283593 100%);color:white;margin:-20px -20px 20px -20px;">
-<p style="font-size:14px;letter-spacing:6px;text-transform:uppercase;opacity:0.8;">Acme Technologies Inc.</p>
-<h1 style="font-size:42px;margin:16px 0 8px 0;font-weight:300;">Annual Report</h1>
-<h2 style="font-size:28px;font-weight:300;opacity:0.9;">Fiscal Year 2025</h2>
-<p style="margin-top:32px;opacity:0.7;font-size:13px;">Empowering Innovation | Driving Growth | Creating Value</p>
+    description: "Comprehensive annual report with financial statements, business segments, governance, and auditor report.",
+    content: `<div style="text-align:center;padding:60px 20px;border:4px double #1a237e;margin-bottom:30px;">
+<p style="font-size:14px;color:#1a237e;letter-spacing:4px;margin-bottom:20px;">ACME TECHNOLOGIES INC.</p>
+<h1 style="font-size:42px;color:#1a237e;margin-bottom:10px;font-family:Georgia,serif;">Annual Report</h1>
+<h2 style="font-size:28px;color:#1a237e;font-weight:normal;margin-bottom:20px;">Fiscal Year 2025</h2>
+<hr style="width:60%;border:1px solid #1a237e;margin:20px auto;"/>
+<p style="color:#555;font-size:14px;">Driving Innovation. Delivering Results. Building the Future.</p>
+<p style="color:#999;font-size:12px;margin-top:30px;">Published: March 2026</p>
 </div>
-<h2 style="color:#1a237e;font-size:20px;margin-top:40px;">Chairman's Letter to Shareholders</h2>
-<p>Dear Shareholders,</p>
-<p>I am pleased to report that fiscal year 2025 was a transformative year for Acme Technologies Inc. We achieved record revenue of $45.8 million, representing a 19.9% increase over the prior year, while expanding our operating margins by 3.2 percentage points. These results reflect the successful execution of our strategic plan, the dedication of our 280 employees worldwide, and the trust placed in us by over 500 enterprise clients across 12 countries. Our investments in artificial intelligence, cloud-native architecture, and international expansion are yielding measurable returns and positioning us for sustained long-term growth.</p>
-<p>The technology landscape continues to evolve at an unprecedented pace, with artificial intelligence emerging as the defining force of our era. We have embraced this transformation wholeheartedly, integrating AI capabilities across our entire product portfolio. Our AI Copilot feature, launched in Q3, has already been adopted by 40% of our enterprise clients, driving a 25% increase in user engagement and opening new revenue streams. We also expanded our global footprint with the opening of our Singapore office, establishing a strong presence in the high-growth Asia-Pacific market.</p>
-<p>Looking ahead to 2026, we remain committed to our mission of empowering organizations with intelligent, scalable technology solutions. We will continue investing in innovation, expanding our partner ecosystem, and deepening relationships with our customers. I am confident that the foundation we have built positions Acme Technologies for an exciting and prosperous future.</p>
-<p style="margin-top:24px;">Sincerely,</p>
-<p><strong>Dr. Robert J. Harrison</strong><br/>Chairman of the Board and Chief Executive Officer<br/>Acme Technologies Inc.</p>
-<hr style="border:1px solid #ddd;margin:32px 0;"/>
-<h2 style="color:#1a237e;">Company Overview</h2>
-<p>Acme Technologies Inc. is a leading enterprise software company delivering AI-powered solutions that help organizations optimize operations, enhance customer experiences, and accelerate digital transformation. Founded in 2015 in San Francisco, the company has grown from a 5-person startup to a global organization serving Fortune 500 companies, mid-market enterprises, and government agencies across North America, Europe, and Asia-Pacific.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#1a237e;color:white;"><th style="border:1px solid #ddd;padding:10px;text-align:left;" colspan="2">Key Company Facts</th></tr></thead>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#1a237e;border-bottom:3px solid #1a237e;padding-bottom:8px;font-size:24px;">Chairman&#39;s Letter to Shareholders</h1>
+<p>Dear Valued Shareholders,</p>
+<p>It is with great pride and optimism that I present to you the Annual Report for Acme Technologies Inc. for the fiscal year ending December 31, 2025. This year has been one of remarkable transformation and achievement for our company. We have navigated a rapidly evolving technological landscape with agility and purpose, delivering record revenues of $2.84 billion while simultaneously investing heavily in the research and development initiatives that will drive our growth for years to come. Our commitment to innovation has been recognized by the industry, as we were named among the top 50 most innovative companies globally for the third consecutive year. Our workforce has grown to over 8,500 talented professionals across 14 countries, each contributing to our shared vision of making technology more accessible, intelligent, and impactful.</p>
+<p>Our strategic priorities for 2025 centered on three pillars: expanding our cloud services portfolio, deepening our artificial intelligence capabilities, and strengthening our enterprise solutions business. I am pleased to report that we made significant progress on all three fronts. Our Cloud Services division grew by 34% year-over-year, driven by strong demand for our hybrid cloud management platform and our newly launched serverless computing framework. Our AI and Analytics segment continued its impressive trajectory, with revenue surpassing $500 million for the first time, fueled by enterprise adoption of our machine learning operations platform and generative AI solutions. Our Enterprise Solutions division, the bedrock of our business, delivered steady 12% growth through strategic contract renewals and expansion into new vertical markets including healthcare and financial services.</p>
+<p>Looking ahead to 2026, we are more confident than ever in our strategic direction. We plan to invest $420 million in research and development, with a particular focus on quantum computing readiness, edge AI deployment, and next-generation cybersecurity solutions. We remain committed to our sustainability goals, having reduced our carbon footprint by 28% since 2022 and achieving 65% renewable energy usage across our global operations. On behalf of the Board of Directors and the entire Acme Technologies team, I thank you for your continued trust and investment in our company. Together, we are building the future of technology.</p>
+<p style="margin-top:30px;">Sincerely,</p>
+<p style="margin-bottom:0;"><strong>Robert J. Harrison</strong></p>
+<p style="margin-top:2px;color:#666;">Chairman of the Board &amp; Chief Executive Officer</p>
+<p style="color:#666;">Acme Technologies Inc.</p>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#1a237e;border-bottom:3px solid #1a237e;padding-bottom:8px;font-size:24px;">Company Overview</h1>
+<p>Acme Technologies Inc. is a global leader in enterprise software, cloud computing, and artificial intelligence solutions. Founded in 2003, the company has grown from a small startup in Silicon Valley to a multinational corporation serving over 12,000 enterprise clients across 45 countries. Our mission is to empower organizations with intelligent, scalable, and secure technology solutions that drive digital transformation and create lasting competitive advantages. We operate through three primary business segments: Enterprise Solutions, Cloud Services, and AI &amp; Analytics, each serving distinct but complementary market needs. Our solutions are trusted by Fortune 500 companies, government agencies, leading healthcare institutions, and innovative startups alike.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#1a237e;color:white;">
+<th style="border:1px solid #1a237e;padding:10px;text-align:left;">Key Fact</th>
+<th style="border:1px solid #1a237e;padding:10px;text-align:left;">Details</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;width:40%;background:#f5f5f5;"><strong>Founded</strong></td><td style="border:1px solid #ddd;padding:8px;">2015, San Francisco, California</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>Headquarters</strong></td><td style="border:1px solid #ddd;padding:8px;">San Francisco, CA, USA</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>Global Offices</strong></td><td style="border:1px solid #ddd;padding:8px;">San Francisco, New York, London, Singapore</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>Employees</strong></td><td style="border:1px solid #ddd;padding:8px;">280 (as of December 31, 2025)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>Enterprise Clients</strong></td><td style="border:1px solid #ddd;padding:8px;">500+ across 12 countries</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;background:#f5f5f5;"><strong>Annual Revenue</strong></td><td style="border:1px solid #ddd;padding:8px;">$45.8 million (FY2025)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">Founded</td><td style="border:1px solid #ddd;padding:10px;">2003, San Jose, California</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">Headquarters</td><td style="border:1px solid #ddd;padding:10px;">San Jose, California, USA</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">Global Offices</td><td style="border:1px solid #ddd;padding:10px;">14 countries across North America, Europe, and Asia-Pacific</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">Employees</td><td style="border:1px solid #ddd;padding:10px;">8,500+ worldwide</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">Annual Revenue (FY2025)</td><td style="border:1px solid #ddd;padding:10px;">$2.84 billion</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">Clients</td><td style="border:1px solid #ddd;padding:10px;">12,000+ enterprise clients in 45 countries</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">Stock Exchange</td><td style="border:1px solid #ddd;padding:10px;">NASDAQ: ACMT</td></tr>
 </tbody>
 </table>
-<h2 style="color:#1a237e;">Financial Highlights</h2>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#1a237e;color:white;"><th style="border:1px solid #ddd;padding:10px;text-align:left;">Metric</th><th style="border:1px solid #ddd;padding:10px;text-align:right;">FY 2024</th><th style="border:1px solid #ddd;padding:10px;text-align:right;">FY 2025</th><th style="border:1px solid #ddd;padding:10px;text-align:right;">Change</th></tr></thead>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#1a237e;border-bottom:3px solid #1a237e;padding-bottom:8px;font-size:24px;">Financial Highlights</h1>
+<p>Fiscal year 2025 was a landmark year for Acme Technologies, with the company achieving record revenue and strong profitability across all business segments. The following table summarizes our key financial metrics with year-over-year comparisons:</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#1a237e;color:white;">
+<th style="border:1px solid #1a237e;padding:10px;text-align:left;">Metric</th>
+<th style="border:1px solid #1a237e;padding:10px;text-align:right;">FY 2025</th>
+<th style="border:1px solid #1a237e;padding:10px;text-align:right;">FY 2024</th>
+<th style="border:1px solid #1a237e;padding:10px;text-align:right;">Change</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Total Revenue</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$38.2M</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$45.8M</td><td style="border:1px solid #ddd;padding:8px;text-align:right;color:green;">+19.9%</td></tr>
-<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:8px;">Gross Profit</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$27.5M</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$34.4M</td><td style="border:1px solid #ddd;padding:8px;text-align:right;color:green;">+25.1%</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Net Income</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$8.8M</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$12.4M</td><td style="border:1px solid #ddd;padding:8px;text-align:right;color:green;">+40.9%</td></tr>
-<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:8px;">Earnings Per Share</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1.76</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$2.48</td><td style="border:1px solid #ddd;padding:8px;text-align:right;color:green;">+40.9%</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Total Assets</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$62.3M</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$78.5M</td><td style="border:1px solid #ddd;padding:8px;text-align:right;color:green;">+26.0%</td></tr>
-<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:8px;">Return on Equity (ROE)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">18.2%</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">22.7%</td><td style="border:1px solid #ddd;padding:8px;text-align:right;color:green;">+4.5pp</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Total Revenue</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$2,840M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$2,410M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;color:#2e7d32;">+17.8%</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;">Gross Profit</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$1,846M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$1,542M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;color:#2e7d32;">+19.7%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Operating Income</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$568M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$458M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;color:#2e7d32;">+24.0%</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;">Net Income</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$412M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$328M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;color:#2e7d32;">+25.6%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Earnings Per Share (EPS)</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$4.12</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$3.28</td><td style="border:1px solid #ddd;padding:10px;text-align:right;color:#2e7d32;">+25.6%</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;">Total Assets</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$5,120M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$4,580M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;color:#2e7d32;">+11.8%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Return on Equity (ROE)</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">18.4%</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">15.9%</td><td style="border:1px solid #ddd;padding:10px;text-align:right;color:#2e7d32;">+2.5 pts</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;">Free Cash Flow</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$624M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$498M</td><td style="border:1px solid #ddd;padding:10px;text-align:right;color:#2e7d32;">+25.3%</td></tr>
 </tbody>
 </table>
-<h2 style="color:#1a237e;">Business Segments Review</h2>
-<h3 style="color:#1a237e;">Enterprise Solutions (55% of Revenue — $25.2M)</h3>
-<p>Our Enterprise Solutions segment delivered strong performance with revenue growing 16.2% year-over-year. The segment benefited from the launch of AI Copilot, expansion of our analytics suite, and increased adoption among Fortune 500 clients. Key wins included multi-year contracts with three new Fortune 100 companies, contributing $4.2M in new annual recurring revenue. Customer retention in this segment remained best-in-class at 96.3%.</p>
-<h3 style="color:#1a237e;">Cloud Services (30% of Revenue — $13.7M)</h3>
-<p>Cloud Services was our fastest-growing segment at 28.3% year-over-year growth. The migration of existing on-premise customers to our cloud platform accelerated, with 85% of new customers choosing cloud-first deployments. Infrastructure costs per customer decreased by 18% through optimization of our multi-cloud architecture and negotiated volume discounts with AWS and GCP. We achieved SOC 2 Type II certification and ISO 27001 compliance during the year.</p>
-<h3 style="color:#1a237e;">AI &amp; Analytics (15% of Revenue — $6.9M)</h3>
-<p>The AI &amp; Analytics segment, which includes professional services and consulting engagements, grew 14.8% year-over-year. This segment saw increasing demand for AI implementation services as enterprises seek expert guidance in deploying machine learning solutions. Average project size increased by 22% to $185,000, reflecting the growing complexity and strategic importance of AI initiatives for our clients.</p>
-<h2 style="color:#1a237e;">Corporate Governance</h2>
-<p>Acme Technologies maintains the highest standards of corporate governance, with an experienced and diverse Board of Directors providing strategic oversight and fiduciary responsibility. The Board comprises seven members, including four independent directors, and operates through three standing committees.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#1a237e;color:white;"><th style="border:1px solid #ddd;padding:8px;">Name</th><th style="border:1px solid #ddd;padding:8px;">Role</th><th style="border:1px solid #ddd;padding:8px;">Committee</th><th style="border:1px solid #ddd;padding:8px;">Since</th></tr></thead>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#1a237e;border-bottom:3px solid #1a237e;padding-bottom:8px;font-size:24px;">Business Segments Review</h1>
+
+<h2 style="color:#1a237e;">Enterprise Solutions</h2>
+<p>The Enterprise Solutions segment remains the foundation of our business, delivering comprehensive software platforms for resource planning, supply chain management, human capital management, and customer relationship management. In FY2025, this segment generated revenue of <strong>$1,280 million</strong>, representing a 12% increase over the prior year. Growth was driven by a 95% client retention rate, successful expansion into the healthcare and public sector verticals, and the launch of our next-generation ERP platform which saw rapid adoption among mid-market enterprises. We secured 340 new enterprise clients during the year and expanded existing contracts with several Fortune 100 companies. The segment&#39;s operating margin improved to 22.5%, up from 20.8% in FY2024, reflecting operational efficiencies and economies of scale.</p>
+
+<h2 style="color:#1a237e;">Cloud Services</h2>
+<p>Our Cloud Services segment experienced the strongest growth across the organization, with revenue reaching <strong>$1,050 million</strong>, a 34% increase year-over-year. This growth was fueled by the successful launch of our hybrid cloud management platform, AcmeCloud Nexus, which enables enterprises to seamlessly manage workloads across public, private, and edge cloud environments. Our managed Kubernetes service saw 156% growth in active deployments, and our serverless computing framework, launched in Q2 2025, already serves over 2,000 enterprise workloads. The segment also benefited from strategic partnerships with major hyperscalers, allowing us to offer integrated solutions that simplify multi-cloud adoption. Cloud Services operating margin reached 19.8%, reflecting continued investment in infrastructure and platform development.</p>
+
+<h2 style="color:#1a237e;">AI &amp; Analytics</h2>
+<p>The AI &amp; Analytics segment crossed a significant milestone in FY2025, surpassing $500 million in annual revenue for the first time with total revenue of <strong>$510 million</strong>, representing 42% year-over-year growth. This segment provides enterprise-grade machine learning operations (MLOps) platforms, business intelligence tools, natural language processing APIs, and generative AI solutions. Key growth drivers included the launch of AcmeAI Studio, our no-code AI model building platform that democratizes machine learning for business users, and our enterprise generative AI assistant which has been adopted by over 800 organizations. The segment secured several transformative deals in the financial services and pharmaceutical sectors, where our predictive analytics solutions are being used for risk modeling and drug discovery acceleration. Operating margin for the segment was 15.2%, reflecting higher R&amp;D investment as we continue to scale our AI capabilities.</p>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#1a237e;border-bottom:3px solid #1a237e;padding-bottom:8px;font-size:24px;">Corporate Governance</h1>
+<p>Acme Technologies Inc. is committed to maintaining the highest standards of corporate governance. Our Board of Directors provides independent oversight of management and ensures that the company operates in the best interests of shareholders, employees, customers, and other stakeholders. The Board consists of nine members, seven of whom are independent directors. The Board meets at least six times annually and conducts an annual self-evaluation to ensure effectiveness. Our governance framework is built on the principles of transparency, accountability, ethical conduct, and responsible risk management.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#1a237e;color:white;">
+<th style="border:1px solid #1a237e;padding:10px;text-align:left;">Name</th>
+<th style="border:1px solid #1a237e;padding:10px;text-align:left;">Role</th>
+<th style="border:1px solid #1a237e;padding:10px;text-align:left;">Committee</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Dr. Robert J. Harrison</td><td style="border:1px solid #ddd;padding:8px;">Chairman &amp; CEO</td><td style="border:1px solid #ddd;padding:8px;">Executive</td><td style="border:1px solid #ddd;padding:8px;">2015</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Margaret Chen</td><td style="border:1px solid #ddd;padding:8px;">Independent Director</td><td style="border:1px solid #ddd;padding:8px;">Audit (Chair)</td><td style="border:1px solid #ddd;padding:8px;">2019</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">James Okafor</td><td style="border:1px solid #ddd;padding:8px;">Independent Director</td><td style="border:1px solid #ddd;padding:8px;">Compensation (Chair)</td><td style="border:1px solid #ddd;padding:8px;">2020</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Dr. Priya Anand</td><td style="border:1px solid #ddd;padding:8px;">Independent Director</td><td style="border:1px solid #ddd;padding:8px;">Nomination, Audit</td><td style="border:1px solid #ddd;padding:8px;">2021</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Thomas Mueller</td><td style="border:1px solid #ddd;padding:8px;">Independent Director</td><td style="border:1px solid #ddd;padding:8px;">Compensation, Nomination</td><td style="border:1px solid #ddd;padding:8px;">2022</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Robert J. Harrison</td><td style="border:1px solid #ddd;padding:10px;">Chairman &amp; CEO</td><td style="border:1px solid #ddd;padding:10px;">Executive Committee (Chair)</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;">Dr. Margaret Liu</td><td style="border:1px solid #ddd;padding:10px;">Lead Independent Director</td><td style="border:1px solid #ddd;padding:10px;">Governance &amp; Nominating (Chair)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">James Whitfield</td><td style="border:1px solid #ddd;padding:10px;">Independent Director</td><td style="border:1px solid #ddd;padding:10px;">Audit Committee (Chair)</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;">Priya Narayanan</td><td style="border:1px solid #ddd;padding:10px;">Independent Director</td><td style="border:1px solid #ddd;padding:10px;">Compensation Committee (Chair)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Michael Torres</td><td style="border:1px solid #ddd;padding:10px;">Independent Director</td><td style="border:1px solid #ddd;padding:10px;">Risk &amp; Technology Committee (Chair)</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;">Susan Park</td><td style="border:1px solid #ddd;padding:10px;">Independent Director</td><td style="border:1px solid #ddd;padding:10px;">Audit Committee</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">David Okonkwo</td><td style="border:1px solid #ddd;padding:10px;">Independent Director</td><td style="border:1px solid #ddd;padding:10px;">Compensation Committee</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;">Elena Kozlova</td><td style="border:1px solid #ddd;padding:10px;">Independent Director</td><td style="border:1px solid #ddd;padding:10px;">Governance &amp; Nominating</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Thomas Wright</td><td style="border:1px solid #ddd;padding:10px;">President &amp; COO</td><td style="border:1px solid #ddd;padding:10px;">Executive Committee</td></tr>
 </tbody>
 </table>
-<h2 style="color:#1a237e;">Sustainability &amp; Corporate Social Responsibility</h2>
-<p>Acme Technologies is committed to sustainable business practices and positive social impact. In 2025, we achieved carbon neutrality for all global operations through a combination of renewable energy procurement (85% of total consumption), operational efficiency improvements, and verified carbon offset programs. Our Singapore office was built to LEED Gold standards, and all offices participate in zero-waste-to-landfill programs.</p>
-<p>Through the Acme Foundation, we invested $450,000 in education and technology access programs, providing coding bootcamps for 200 underrepresented students and donating software licenses to 50 nonprofit organizations. Our employee volunteer program logged 3,200 hours of community service, and we maintained a 40% gender diversity ratio across our global workforce with 35% representation at the director level and above.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#2e7d32;color:white;"><th style="border:1px solid #ddd;padding:8px;">Environmental Metric</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">2024</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">2025</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">Target 2026</th></tr></thead>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#1a237e;border-bottom:3px solid #1a237e;padding-bottom:8px;font-size:24px;">Sustainability &amp; Corporate Social Responsibility</h1>
+<p>At Acme Technologies, sustainability is not merely a corporate obligation but a core business imperative woven into our strategic planning and daily operations. In FY2025, we made substantial progress toward our 2030 sustainability goals, reducing our total carbon emissions by 28% compared to our 2022 baseline and increasing our renewable energy consumption to 65% across all global facilities. We invested $18 million in energy efficiency upgrades to our data centers, including advanced liquid cooling systems that reduced energy consumption per compute unit by 35%. Our San Jose headquarters achieved LEED Platinum certification, and two additional offices in London and Singapore earned LEED Gold certifications during the year. We are on track to achieve carbon neutrality across Scope 1 and Scope 2 emissions by 2028, two years ahead of our original target.</p>
+<p>Our social responsibility initiatives continued to expand in FY2025. Through the Acme Foundation, we invested $12 million in STEM education programs reaching over 50,000 students in underserved communities across 8 countries. Our employee volunteer program logged over 45,000 hours of community service, and our technology donation program provided software licenses and hardware to 200 nonprofit organizations. We also strengthened our commitment to diversity, equity, and inclusion, achieving 42% gender diversity across our global workforce and 38% representation of underrepresented groups in technical roles. Our employee engagement score reached 4.3 out of 5.0, reflecting a positive and inclusive workplace culture.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#1a237e;color:white;">
+<th style="border:1px solid #1a237e;padding:10px;text-align:left;">Environmental Metric</th>
+<th style="border:1px solid #1a237e;padding:10px;text-align:right;">FY 2025</th>
+<th style="border:1px solid #1a237e;padding:10px;text-align:right;">FY 2024</th>
+<th style="border:1px solid #1a237e;padding:10px;text-align:right;">Target 2030</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Carbon Emissions (tCO2e)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">1,240</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">0 (net)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">0 (net)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Renewable Energy %</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">72%</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">85%</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">95%</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Waste Diverted from Landfill</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">88%</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">94%</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">98%</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Community Investment</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$320K</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$450K</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$600K</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Carbon Emissions (tCO2e)</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">18,400</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">21,200</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">0 (Net Zero)</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;">Renewable Energy Usage</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">65%</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">52%</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">100%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Water Consumption (megaliters)</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">142</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">158</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">100</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:10px;">E-Waste Recycled</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">94%</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">89%</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">100%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Data Center PUE</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">1.18</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">1.25</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">1.10</td></tr>
 </tbody>
 </table>
-<h2 style="color:#1a237e;">Consolidated Financial Statements</h2>
-<h3>Consolidated Balance Sheet (as of December 31, 2025)</h3>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;text-align:left;" colspan="2">Assets</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">Amount ($000)</th></tr></thead>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#1a237e;border-bottom:3px solid #1a237e;padding-bottom:8px;font-size:24px;">Financial Statements</h1>
+
+<h2 style="color:#1a237e;">Consolidated Balance Sheet</h2>
+<p style="color:#666;font-style:italic;">As of December 31, 2025 (in millions USD)</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#1a237e;color:white;">
+<th style="border:1px solid #1a237e;padding:8px;text-align:left;">Item</th>
+<th style="border:1px solid #1a237e;padding:8px;text-align:right;">FY 2025</th>
+<th style="border:1px solid #1a237e;padding:8px;text-align:right;">FY 2024</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;" colspan="2">Cash and Cash Equivalents</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">18,500</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;" colspan="2">Accounts Receivable</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">8,200</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;" colspan="2">Prepaid Expenses</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">2,100</td></tr>
-<tr style="background:#f9f9f9;font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;" colspan="2">Total Current Assets</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">28,800</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;" colspan="2">Property and Equipment (net)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">12,400</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;" colspan="2">Intangible Assets</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">22,800</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;" colspan="2">Right-of-Use Assets</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">8,500</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;" colspan="2">Other Non-Current Assets</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">6,000</td></tr>
-<tr style="background:#e8f5e9;font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;" colspan="2">Total Assets</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">78,500</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;" colspan="3">Assets</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Cash and Cash Equivalents</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$892</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$724</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Accounts Receivable</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$468</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$402</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Short-term Investments</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$310</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$285</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Property &amp; Equipment (net)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1,240</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1,105</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Goodwill &amp; Intangibles</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1,580</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1,490</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Other Assets</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$630</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$574</td></tr>
+<tr style="background:#e8eaf6;font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;">Total Assets</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$5,120</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$4,580</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;" colspan="3">Liabilities &amp; Equity</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Accounts Payable</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$312</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$278</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Accrued Liabilities</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$245</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$218</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Deferred Revenue</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$486</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$425</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Long-term Debt</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$820</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$750</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Other Liabilities</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$318</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$292</td></tr>
+<tr style="background:#e8eaf6;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">Total Liabilities</td><td style="border:1px solid #ddd;padding:8px;text-align:right;font-weight:bold;">$2,181</td><td style="border:1px solid #ddd;padding:8px;text-align:right;font-weight:bold;">$1,963</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Common Stock &amp; APIC</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1,245</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1,198</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Retained Earnings</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1,694</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1,419</td></tr>
+<tr style="background:#e8eaf6;font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;">Total Stockholders&#39; Equity</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$2,939</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$2,617</td></tr>
+<tr style="background:#1a237e;color:white;font-weight:bold;"><td style="border:1px solid #1a237e;padding:8px;">Total Liabilities &amp; Equity</td><td style="border:1px solid #1a237e;padding:8px;text-align:right;">$5,120</td><td style="border:1px solid #1a237e;padding:8px;text-align:right;">$4,580</td></tr>
 </tbody>
 </table>
-<h3>Consolidated Income Statement (FY 2025)</h3>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;text-align:left;">Line Item</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">FY 2025 ($000)</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">FY 2024 ($000)</th></tr></thead>
+
+<div style="page-break-before:always;"></div>
+
+<h2 style="color:#1a237e;">Consolidated Income Statement</h2>
+<p style="color:#666;font-style:italic;">For the fiscal year ended December 31, 2025 (in millions USD)</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#1a237e;color:white;">
+<th style="border:1px solid #1a237e;padding:8px;text-align:left;">Item</th>
+<th style="border:1px solid #1a237e;padding:8px;text-align:right;">FY 2025</th>
+<th style="border:1px solid #1a237e;padding:8px;text-align:right;">FY 2024</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Revenue</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">45,800</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">38,200</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Cost of Revenue</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">(11,400)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">(10,700)</td></tr>
-<tr style="font-weight:bold;background:#f9f9f9;"><td style="border:1px solid #ddd;padding:8px;">Gross Profit</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">34,400</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">27,500</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Operating Expenses</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">(19,800)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">(17,200)</td></tr>
-<tr style="font-weight:bold;background:#f9f9f9;"><td style="border:1px solid #ddd;padding:8px;">Operating Income</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">14,600</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">10,300</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Income Tax Expense</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">(2,200)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">(1,500)</td></tr>
-<tr style="font-weight:bold;background:#e8f5e9;"><td style="border:1px solid #ddd;padding:8px;">Net Income</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">12,400</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">8,800</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Total Revenue</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$2,840</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$2,410</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;">Cost of Revenue</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($994)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($868)</td></tr>
+<tr style="font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;">Gross Profit</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1,846</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$1,542</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;">Research &amp; Development</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($398)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($342)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Sales &amp; Marketing</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($512)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($445)</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;">General &amp; Administrative</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($368)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($297)</td></tr>
+<tr style="font-weight:bold;background:#e8eaf6;"><td style="border:1px solid #ddd;padding:8px;">Operating Income</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$568</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$458</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Interest &amp; Other Income</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$32</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$24</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;">Income Tax Expense</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($188)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($154)</td></tr>
+<tr style="font-weight:bold;background:#1a237e;color:white;"><td style="border:1px solid #1a237e;padding:8px;">Net Income</td><td style="border:1px solid #1a237e;padding:8px;text-align:right;">$412</td><td style="border:1px solid #1a237e;padding:8px;text-align:right;">$328</td></tr>
 </tbody>
 </table>
-<h3>Consolidated Cash Flow Statement (FY 2025)</h3>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;text-align:left;">Category</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">Amount ($000)</th></tr></thead>
+
+<h2 style="color:#1a237e;">Consolidated Cash Flow Statement</h2>
+<p style="color:#666;font-style:italic;">For the fiscal year ended December 31, 2025 (in millions USD)</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#1a237e;color:white;">
+<th style="border:1px solid #1a237e;padding:8px;text-align:left;">Item</th>
+<th style="border:1px solid #1a237e;padding:8px;text-align:right;">FY 2025</th>
+<th style="border:1px solid #1a237e;padding:8px;text-align:right;">FY 2024</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Cash from Operating Activities</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">16,200</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Cash used in Investing Activities</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">(8,400)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Cash from Financing Activities</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">(2,800)</td></tr>
-<tr style="font-weight:bold;background:#e8f5e9;"><td style="border:1px solid #ddd;padding:8px;">Net Increase in Cash</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">5,000</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Cash at Beginning of Year</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">13,500</td></tr>
-<tr style="font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;">Cash at End of Year</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">18,500</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;" colspan="3">Operating Activities</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Net Income</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$412</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$328</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Depreciation &amp; Amortization</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$284</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$248</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Stock-Based Compensation</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$142</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$118</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Changes in Working Capital</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($48)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($32)</td></tr>
+<tr style="background:#e8eaf6;font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;">Net Cash from Operations</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$790</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$662</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;" colspan="3">Investing Activities</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Capital Expenditures</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($166)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($142)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Acquisitions</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($210)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($95)</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Purchases of Investments</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($85)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($72)</td></tr>
+<tr style="background:#e8eaf6;font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;">Net Cash from Investing</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($461)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($309)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;" colspan="3">Financing Activities</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Share Repurchases</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($125)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($100)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Dividends Paid</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($82)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($74)</td></tr>
+<tr style="background:#f5f7ff;"><td style="border:1px solid #ddd;padding:8px;padding-left:20px;">Debt Proceeds (net)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$46</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$28</td></tr>
+<tr style="background:#e8eaf6;font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;">Net Cash from Financing</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($161)</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">($146)</td></tr>
+<tr style="background:#1a237e;color:white;font-weight:bold;"><td style="border:1px solid #1a237e;padding:8px;">Net Change in Cash</td><td style="border:1px solid #1a237e;padding:8px;text-align:right;">$168</td><td style="border:1px solid #1a237e;padding:8px;text-align:right;">$207</td></tr>
 </tbody>
 </table>
-<h2 style="color:#1a237e;">Independent Auditor's Report</h2>
-<p><strong>To the Shareholders and Board of Directors of Acme Technologies Inc.:</strong></p>
-<p>We have audited the accompanying consolidated financial statements of Acme Technologies Inc. and its subsidiaries, which comprise the consolidated balance sheet as of December 31, 2025, the consolidated statements of income, comprehensive income, stockholders' equity, and cash flows for the year then ended, and the related notes to the consolidated financial statements. In our opinion, the consolidated financial statements present fairly, in all material respects, the financial position of the Company as of December 31, 2025, and the results of its operations and its cash flows for the year then ended in accordance with U.S. Generally Accepted Accounting Principles (GAAP).</p>
-<p>Our audit was conducted in accordance with the standards of the Public Company Accounting Oversight Board (PCAOB). We believe that the audit evidence we have obtained is sufficient and appropriate to provide a basis for our opinion. We have served as the Company's auditor since 2020.</p>
-<p style="margin-top:16px;"><strong>Sterling &amp; Associates LLP</strong><br/>Certified Public Accountants<br/>San Francisco, California<br/>February 28, 2026</p>
-<h2 style="color:#1a237e;">Notes to Financial Statements</h2>
-<p><strong>Note 1 — Basis of Presentation:</strong> The consolidated financial statements include the accounts of Acme Technologies Inc. and its wholly-owned subsidiaries. All significant intercompany balances and transactions have been eliminated in consolidation.</p>
-<p><strong>Note 2 — Revenue Recognition:</strong> The Company recognizes revenue in accordance with ASC 606. SaaS subscription revenue is recognized ratably over the contract term. Professional services revenue is recognized over time as services are performed.</p>
-<p><strong>Note 3 — Stock-Based Compensation:</strong> Stock-based compensation expense of $3.2M was recognized in FY2025, related to employee stock options and restricted stock units granted under the 2020 Equity Incentive Plan.</p>
-<p><strong>Note 4 — Intangible Assets:</strong> Intangible assets consist primarily of developed technology ($14.2M), customer relationships ($5.8M), and trademarks ($2.8M) acquired through business combinations, amortized over their estimated useful lives of 5-10 years.</p>
-<p><strong>Note 5 — Leases:</strong> The Company leases office space in four locations under operating lease agreements with remaining terms of 2-7 years. Total lease expense for FY2025 was $3.8M.</p>
-<p style="color:#888;font-size:11px;text-align:center;margin-top:32px;">--- End of Annual Report --- Acme Technologies Inc. | NYSE: ACME ---</p>`,
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#1a237e;border-bottom:3px solid #1a237e;padding-bottom:8px;font-size:24px;">Independent Auditor&#39;s Report</h1>
+<p><strong>To the Board of Directors and Shareholders of Acme Technologies Inc.</strong></p>
+<p>We have audited the accompanying consolidated financial statements of Acme Technologies Inc. and its subsidiaries (the &quot;Company&quot;), which comprise the consolidated balance sheet as of December 31, 2025, the related consolidated statements of income, comprehensive income, stockholders&#39; equity, and cash flows for the fiscal year then ended, and the related notes to the consolidated financial statements. In our opinion, the consolidated financial statements present fairly, in all material respects, the financial position of the Company as of December 31, 2025, and the results of its operations and its cash flows for the year then ended in conformity with accounting principles generally accepted in the United States of America (U.S. GAAP). We conducted our audit in accordance with the standards of the Public Company Accounting Oversight Board (United States). Those standards require that we plan and perform the audit to obtain reasonable assurance about whether the financial statements are free of material misstatement, whether due to error or fraud.</p>
+<p>Our audit included performing procedures to assess the risks of material misstatement of the financial statements, whether due to error or fraud, and performing procedures that respond to those risks. Such procedures included examining, on a test basis, evidence regarding the amounts and disclosures in the financial statements. Our audit also included evaluating the accounting principles used and significant estimates made by management, as well as evaluating the overall presentation of the financial statements. We believe that our audit provides a reasonable basis for our opinion. We have served as the Company&#39;s auditor since 2015.</p>
+<p style="margin-top:20px;"><strong>Deloitte &amp; Touche LLP</strong></p>
+<p style="color:#666;">San Jose, California<br/>February 15, 2026</p>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#1a237e;border-bottom:3px solid #1a237e;padding-bottom:8px;font-size:24px;">Notes to Financial Statements</h1>
+
+<h3 style="color:#1a237e;">Note 1: Summary of Significant Accounting Policies</h3>
+<p>The consolidated financial statements include the accounts of Acme Technologies Inc. and all wholly-owned subsidiaries. All intercompany transactions and balances have been eliminated in consolidation. Revenue is recognized in accordance with ASC 606, with software license revenue recognized at the point in time when the license is delivered and control transfers to the customer, and subscription and cloud services revenue recognized ratably over the service period. The Company uses the modified retrospective method for revenue recognition and applies the portfolio approach where contracts have similar characteristics.</p>
+
+<h3 style="color:#1a237e;">Note 2: Revenue Recognition</h3>
+<p>The Company generates revenue from three primary sources: software licenses and subscriptions ($1,680M), cloud and hosting services ($845M), and professional services and support ($315M). Subscription revenue, which represents the largest and fastest-growing category, is recognized ratably over the contract term, typically 12 to 36 months. Performance obligations for multi-element arrangements are identified and allocated based on standalone selling prices. Deferred revenue of $486M as of December 31, 2025 represents amounts billed in advance for subscription services and maintenance contracts not yet delivered.</p>
+
+<h3 style="color:#1a237e;">Note 3: Goodwill and Intangible Assets</h3>
+<p>Goodwill of $1,580M as of December 31, 2025 is primarily attributable to the acquisitions of CloudMatrix Inc. (2021, $620M), DataStream Analytics (2023, $445M), and SecureNet Solutions (2025, $210M). Goodwill is tested for impairment annually or more frequently if events indicate potential impairment. No impairment charges were recorded during FY2025. Intangible assets consist of acquired technology ($285M), customer relationships ($195M), and trade names ($42M), amortized over useful lives of 3 to 10 years.</p>
+
+<h3 style="color:#1a237e;">Note 4: Debt and Credit Facilities</h3>
+<p>Long-term debt of $820M consists of $500M in senior unsecured notes bearing interest at 3.75% due 2030, and a $320M term loan bearing interest at SOFR plus 1.50% due 2028. The Company maintains a $400M revolving credit facility, of which $0 was drawn as of December 31, 2025. All debt covenants were in compliance as of the balance sheet date. Interest expense for FY2025 was $34M.</p>
+
+<h3 style="color:#1a237e;">Note 5: Income Taxes</h3>
+<p>The Company&#39;s effective tax rate for FY2025 was 31.3%, compared to 31.9% in FY2024. The effective rate differs from the U.S. federal statutory rate of 21% primarily due to state income taxes (4.2%), foreign tax rate differentials (3.8%), and non-deductible stock-based compensation (2.8%), partially offset by research and development tax credits (-1.5%) and foreign-derived intangible income deduction (-0.8%). Deferred tax assets of $142M relate primarily to stock-based compensation, accrued liabilities, and net operating loss carryforwards from acquired entities.</p>
+
+<h3 style="color:#1a237e;">Note 6: Stock-Based Compensation</h3>
+<p>Stock-based compensation expense was $142M for FY2025, consisting of restricted stock units ($98M), stock options ($28M), and employee stock purchase plan ($16M). As of December 31, 2025, there was $215M of total unrecognized compensation cost related to unvested stock awards, expected to be recognized over a weighted-average period of 2.4 years. The Company granted 2.1 million RSUs and 0.8 million stock options during FY2025.</p>
+
+<h3 style="color:#1a237e;">Note 7: Commitments and Contingencies</h3>
+<p>The Company has operating lease commitments totaling $342M, with $78M due within one year. The Company is involved in various legal proceedings arising in the ordinary course of business. While the outcome of these matters cannot be predicted with certainty, management believes that the resolution of these proceedings will not have a material adverse effect on the Company&#39;s financial position or results of operations. The Company maintains adequate insurance coverage and has established reserves of $12M for estimated probable losses related to pending litigation.</p>`,
   },
   {
     id: "legal-contract",
     name: "Legal Contract",
     icon: "⚖️",
-    description: "Service agreement with terms, payment, confidentiality, IP, dispute resolution, and signatures.",
-    content: `<div style="text-align:center;padding:40px 0;border-bottom:3px double #333;">
-<h1 style="font-size:28px;color:#333;letter-spacing:2px;">SERVICE AGREEMENT</h1>
-<p style="color:#666;font-size:13px;">Agreement No.: SA-2026-0042</p>
-<p style="color:#666;font-size:13px;">Effective Date: March 1, 2026</p>
+    description: "Formal service agreement with articles covering definitions, scope, confidentiality, IP, liability, and dispute resolution.",
+    content: `<div style="text-align:center;margin-bottom:30px;">
+<h1 style="font-size:28px;color:#333;margin-bottom:5px;">SERVICE AGREEMENT</h1>
+<p style="color:#666;font-size:14px;">Agreement No. SA-2025-04172</p>
+<p style="color:#666;font-size:14px;">Effective Date: January 15, 2025</p>
+<hr style="border:2px solid #333;margin:20px 0;"/>
 </div>
-<p style="margin-top:24px;">This Service Agreement ("Agreement") is entered into as of the Effective Date set forth above by and between the following parties:</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<tr><td style="border:1px solid #ddd;padding:12px;width:50%;vertical-align:top;"><strong>PARTY A (Service Provider):</strong><br/>Acme Technologies Inc.<br/>123 Innovation Drive, Suite 500<br/>San Francisco, CA 94105, USA<br/>Tax ID: 82-1234567<br/>Represented by: Dr. Robert J. Harrison, CEO</td>
-<td style="border:1px solid #ddd;padding:12px;width:50%;vertical-align:top;"><strong>PARTY B (Client):</strong><br/>Global Enterprises Corp.<br/>456 Commerce Avenue, Floor 12<br/>New York, NY 10001, USA<br/>Tax ID: 13-9876543<br/>Represented by: Jennifer Morrison, VP Operations</td></tr>
-</table>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">RECITALS</h2>
-<p>WHEREAS, Party A is engaged in the business of providing enterprise software solutions, cloud computing services, and related professional services to corporate clients;</p>
-<p>WHEREAS, Party B desires to engage Party A to provide certain software services and related support as described herein; and</p>
-<p>WHEREAS, both parties wish to set forth the terms and conditions governing the provision of such services;</p>
-<p>NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the parties agree as follows:</p>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 1: Definitions</h2>
-<p>The following terms shall have the meanings set forth below when used in this Agreement:</p>
+
+<h2 style="color:#333;font-size:18px;">PARTIES</h2>
+<p>This Service Agreement (&quot;Agreement&quot;) is entered into as of January 15, 2025 (&quot;Effective Date&quot;), by and between:</p>
+<p><strong>Party A:</strong> Acme Technologies Inc., a Delaware corporation with its principal place of business at 1500 Innovation Drive, San Jose, California 95134 (&quot;Service Provider&quot;)</p>
+<p><strong>Party B:</strong> Client Corp., a New York corporation with its principal place of business at 200 Park Avenue, Suite 3000, New York, New York 10166 (&quot;Client&quot;)</p>
+<p>Party A and Party B may be individually referred to as a &quot;Party&quot; and collectively as the &quot;Parties.&quot;</p>
+
+<h2 style="color:#333;font-size:18px;">RECITALS</h2>
+<p><strong>WHEREAS,</strong> Service Provider is engaged in the business of providing enterprise software development, cloud infrastructure management, and technology consulting services, and possesses the technical expertise, personnel, and resources necessary to perform the services described herein;</p>
+<p><strong>WHEREAS,</strong> Client desires to engage Service Provider to design, develop, deploy, and maintain a custom customer relationship management (CRM) platform integrated with artificial intelligence capabilities to support Client&#39;s business operations across its North American divisions; and</p>
+<p><strong>WHEREAS,</strong> the Parties wish to set forth the terms and conditions under which Service Provider shall provide such services to Client, including the scope of work, compensation, intellectual property rights, confidentiality obligations, and other material terms;</p>
+<p><strong>NOW, THEREFORE,</strong> in consideration of the mutual covenants and agreements contained herein, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the Parties agree as follows:</p>
+
+<div style="page-break-before:always;"></div>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 1: DEFINITIONS</h2>
+<p>For purposes of this Agreement, the following terms shall have the meanings set forth below:</p>
 <ol>
-<li><strong>"Authorized Users"</strong> means employees, contractors, and agents of Party B who are authorized to access and use the Services, not to exceed the number specified in Schedule A.</li>
-<li><strong>"Confidential Information"</strong> means any non-public information disclosed by either party to the other, whether orally, in writing, or by inspection, including but not limited to trade secrets, business plans, financial data, customer lists, and technical specifications.</li>
-<li><strong>"Deliverables"</strong> means any work product, reports, documentation, or other materials created by Party A in the course of performing the Services.</li>
-<li><strong>"Effective Date"</strong> means March 1, 2026, the date on which this Agreement becomes binding on both parties.</li>
-<li><strong>"Intellectual Property"</strong> means all patents, copyrights, trademarks, trade secrets, and other proprietary rights in any jurisdiction worldwide.</li>
-<li><strong>"Service Level Agreement (SLA)"</strong> means the performance standards and uptime guarantees set forth in Schedule B attached hereto.</li>
-<li><strong>"Services"</strong> means the software platform access, implementation services, technical support, and maintenance services described in Schedule A.</li>
-<li><strong>"Term"</strong> means the initial term and any renewal periods as described in Article 3.</li>
+<li><strong>&quot;Confidential Information&quot;</strong> means any and all non-public information, whether written, oral, electronic, or visual, disclosed by either Party to the other in connection with this Agreement, including but not limited to trade secrets, business plans, financial data, customer lists, technical specifications, source code, algorithms, and proprietary methodologies.</li>
+<li><strong>&quot;Deliverables&quot;</strong> means all work products, software, documentation, reports, designs, data, and other materials created by Service Provider in the performance of the Services under this Agreement, as specified in the applicable Statement of Work.</li>
+<li><strong>&quot;Intellectual Property&quot;</strong> means all patents, copyrights, trademarks, trade secrets, know-how, inventions, designs, software, algorithms, databases, and any other intellectual property rights, whether registered or unregistered.</li>
+<li><strong>&quot;Services&quot;</strong> means the professional services, software development, consulting, implementation, training, and support services to be provided by Service Provider to Client as described in Article 2 and the applicable Statement of Work.</li>
+<li><strong>&quot;Statement of Work&quot;</strong> or <strong>&quot;SOW&quot;</strong> means a written document executed by both Parties that describes specific services, deliverables, timelines, milestones, acceptance criteria, and fees applicable to a particular engagement under this Agreement.</li>
+<li><strong>&quot;Acceptance Criteria&quot;</strong> means the specific, measurable standards and requirements that Deliverables must meet to be accepted by Client, as defined in the applicable Statement of Work.</li>
+<li><strong>&quot;Change Order&quot;</strong> means a written amendment to an existing Statement of Work, executed by both Parties, that modifies the scope, timeline, or fees for the Services described therein.</li>
+<li><strong>&quot;Personnel&quot;</strong> means the employees, contractors, agents, and subcontractors of Service Provider who are assigned to perform the Services under this Agreement.</li>
+<li><strong>&quot;Service Level Agreement&quot;</strong> or <strong>&quot;SLA&quot;</strong> means the performance standards, uptime guarantees, response times, and remedies set forth in Exhibit B attached hereto.</li>
 </ol>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 2: Scope of Services</h2>
-<p>Party A shall provide Party B with the following services during the Term of this Agreement, subject to the terms and conditions set forth herein. The detailed service specifications, including feature descriptions, user limits, data storage allowances, and integration capabilities, are set forth in Schedule A, which is incorporated herein by reference.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;text-align:left;">Service Component</th><th style="border:1px solid #ddd;padding:8px;text-align:left;">Description</th><th style="border:1px solid #ddd;padding:8px;text-align:center;">Tier</th></tr></thead>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 2: SCOPE OF SERVICES</h2>
+<p>Service Provider shall provide to Client the following services in accordance with the terms and conditions of this Agreement and the applicable Statement of Work. The Services shall be performed in a professional and workmanlike manner, consistent with industry standards and best practices. Service Provider shall assign qualified Personnel with appropriate skills and experience to perform the Services. The scope of Services includes, but is not limited to, the following:</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#333;color:white;">
+<th style="border:1px solid #333;padding:10px;text-align:left;">Phase</th>
+<th style="border:1px solid #333;padding:10px;text-align:left;">Service Description</th>
+<th style="border:1px solid #333;padding:10px;text-align:left;">Timeline</th>
+<th style="border:1px solid #333;padding:10px;text-align:right;">Fee</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Enterprise Platform License</td><td style="border:1px solid #ddd;padding:8px;">Full access to Acme Enterprise Suite v5.0 for up to 500 Authorized Users</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Premium</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Implementation Services</td><td style="border:1px solid #ddd;padding:8px;">Configuration, data migration, system integration, and user training</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Included</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Technical Support</td><td style="border:1px solid #ddd;padding:8px;">24/7 priority support with dedicated account manager and 1-hour response SLA</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Premium</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Maintenance &amp; Updates</td><td style="border:1px solid #ddd;padding:8px;">All software updates, security patches, and feature releases during the Term</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Included</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Data Storage</td><td style="border:1px solid #ddd;padding:8px;">Up to 5TB of cloud storage with automated backup and disaster recovery</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Premium</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Phase 1</td><td style="border:1px solid #ddd;padding:10px;">Requirements analysis, system architecture design, and project planning</td><td style="border:1px solid #ddd;padding:10px;">Months 1-2</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$85,000</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:10px;">Phase 2</td><td style="border:1px solid #ddd;padding:10px;">Core CRM platform development, database design, and API development</td><td style="border:1px solid #ddd;padding:10px;">Months 3-6</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$240,000</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Phase 3</td><td style="border:1px solid #ddd;padding:10px;">AI module integration, predictive analytics, and NLP features</td><td style="border:1px solid #ddd;padding:10px;">Months 7-9</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$180,000</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:10px;">Phase 4</td><td style="border:1px solid #ddd;padding:10px;">User acceptance testing, deployment, data migration, and go-live support</td><td style="border:1px solid #ddd;padding:10px;">Months 10-11</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$120,000</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Phase 5</td><td style="border:1px solid #ddd;padding:10px;">Post-deployment support, training, documentation, and warranty period</td><td style="border:1px solid #ddd;padding:10px;">Month 12</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$55,000</td></tr>
+<tr style="font-weight:bold;background:#f0f0f0;"><td style="border:1px solid #ddd;padding:10px;" colspan="3">Total Contract Value</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$680,000</td></tr>
 </tbody>
 </table>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 3: Term and Renewal</h2>
-<p>3.1 <strong>Initial Term.</strong> This Agreement shall commence on the Effective Date and continue for a period of thirty-six (36) months ("Initial Term"), unless earlier terminated in accordance with Article 10.</p>
-<p>3.2 <strong>Renewal.</strong> Upon expiration of the Initial Term, this Agreement shall automatically renew for successive twelve (12) month periods ("Renewal Terms"), unless either party provides written notice of non-renewal at least ninety (90) days prior to the expiration of the then-current term.</p>
-<p>3.3 <strong>Price Adjustments.</strong> Service fees for Renewal Terms may be adjusted by Party A by providing written notice at least sixty (60) days prior to the start of each Renewal Term, provided that any increase shall not exceed five percent (5%) per annum or the Consumer Price Index (CPI) increase, whichever is greater.</p>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 4: Compensation and Payment</h2>
-<p>4.1 <strong>Service Fees.</strong> Party B shall pay Party A the fees set forth in the payment schedule below. All fees are in United States Dollars (USD) and are exclusive of applicable taxes.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;">Payment Component</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">Amount</th><th style="border:1px solid #ddd;padding:8px;">Schedule</th></tr></thead>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 3: TERM AND RENEWAL</h2>
+<p>This Agreement shall commence on the Effective Date and shall continue for an initial term of twelve (12) months, unless earlier terminated in accordance with Article 10 (&quot;Initial Term&quot;). Upon expiration of the Initial Term, this Agreement shall automatically renew for successive one-year periods (&quot;Renewal Terms&quot;) unless either Party provides written notice of non-renewal at least sixty (60) days prior to the end of the then-current term. The Initial Term and any Renewal Terms shall collectively be referred to as the &quot;Term.&quot; Fees for any Renewal Term shall be subject to an annual adjustment not to exceed five percent (5%) of the prior term&#39;s fees, with written notice provided at least thirty (30) days prior to the start of the Renewal Term.</p>
+
+<div style="page-break-before:always;"></div>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 4: COMPENSATION AND PAYMENT</h2>
+<p>Client shall pay Service Provider the fees set forth in the applicable Statement of Work in accordance with the following payment schedule. All payments shall be made in United States Dollars and are due within thirty (30) days of receipt of a valid invoice. Late payments shall accrue interest at the rate of one and one-half percent (1.5%) per month or the maximum rate permitted by applicable law, whichever is less. Client shall reimburse Service Provider for reasonable, pre-approved travel and out-of-pocket expenses incurred in connection with the Services, provided such expenses are documented with receipts and do not exceed $5,000 per month without prior written approval.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#333;color:white;">
+<th style="border:1px solid #333;padding:10px;text-align:left;">Milestone</th>
+<th style="border:1px solid #333;padding:10px;text-align:left;">Payment Trigger</th>
+<th style="border:1px solid #333;padding:10px;text-align:right;">Amount</th>
+<th style="border:1px solid #333;padding:10px;text-align:right;">Due Date</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Platform License Fee</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$250,000</td><td style="border:1px solid #ddd;padding:8px;">Annual (due upon signing)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Implementation Fee</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$75,000</td><td style="border:1px solid #ddd;padding:8px;">50% upon signing, 50% upon go-live</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Premium Support</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$48,000</td><td style="border:1px solid #ddd;padding:8px;">Quarterly ($12,000/quarter)</td></tr>
-<tr style="font-weight:bold;background:#f5f5f5;"><td style="border:1px solid #ddd;padding:8px;">Total First-Year Cost</td><td style="border:1px solid #ddd;padding:8px;text-align:right;">$373,000</td><td style="border:1px solid #ddd;padding:8px;">—</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Contract Signing</td><td style="border:1px solid #ddd;padding:10px;">Execution of Agreement</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$102,000</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">Jan 15, 2025</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:10px;">Phase 1 Completion</td><td style="border:1px solid #ddd;padding:10px;">Approval of architecture documents</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$85,000</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">Mar 15, 2025</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Phase 2 Midpoint</td><td style="border:1px solid #ddd;padding:10px;">Core module demo acceptance</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$136,000</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">May 15, 2025</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:10px;">Phase 2 Completion</td><td style="border:1px solid #ddd;padding:10px;">Platform UAT sign-off</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$136,000</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">Jul 15, 2025</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">Phase 3 Completion</td><td style="border:1px solid #ddd;padding:10px;">AI modules acceptance</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$136,000</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">Oct 15, 2025</td></tr>
+<tr style="background:#f9f9f9;"><td style="border:1px solid #ddd;padding:10px;">Go-Live &amp; Final</td><td style="border:1px solid #ddd;padding:10px;">Production deployment</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">$85,000</td><td style="border:1px solid #ddd;padding:10px;text-align:right;">Jan 15, 2026</td></tr>
 </tbody>
 </table>
-<p>4.2 <strong>Payment Terms.</strong> All invoices are due and payable within thirty (30) days of the invoice date. Late payments shall bear interest at the rate of 1.5% per month or the maximum rate permitted by applicable law, whichever is less.</p>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 5: Confidentiality</h2>
-<p>5.1 Each party agrees to hold the other party's Confidential Information in strict confidence and not to disclose such information to any third party without the prior written consent of the disclosing party, except to employees, contractors, and advisors who have a need to know and are bound by confidentiality obligations no less restrictive than those set forth herein.</p>
-<p>5.2 The obligations of confidentiality shall not apply to information that: (a) is or becomes publicly available through no fault of the receiving party; (b) was known to the receiving party prior to disclosure; (c) is independently developed by the receiving party without reference to the Confidential Information; or (d) is required to be disclosed by law, regulation, or court order, provided that the receiving party gives prompt written notice to the disclosing party to enable it to seek a protective order.</p>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 6: Intellectual Property Rights</h2>
-<p>6.1 <strong>Party A IP.</strong> Party A retains all right, title, and interest in and to the Services, including all software, documentation, methodologies, and other Intellectual Property. Nothing in this Agreement shall be construed as transferring any ownership rights in Party A's Intellectual Property to Party B.</p>
-<p>6.2 <strong>License Grant.</strong> Subject to the terms of this Agreement, Party A grants Party B a non-exclusive, non-transferable, limited license to access and use the Services during the Term solely for Party B's internal business purposes.</p>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 7: Representations and Warranties</h2>
-<p>Each party represents and warrants that:</p>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 5: CONFIDENTIALITY</h2>
+<p>Each Party (the &quot;Receiving Party&quot;) agrees to hold in strict confidence all Confidential Information disclosed by the other Party (the &quot;Disclosing Party&quot;) and to use such Confidential Information solely for the purpose of performing its obligations or exercising its rights under this Agreement. The Receiving Party shall protect the Confidential Information using the same degree of care it uses to protect its own confidential information of a similar nature, but in no event less than a reasonable degree of care. The Receiving Party shall limit access to the Confidential Information to those of its employees, contractors, and agents who have a need to know such information for purposes of this Agreement and who are bound by confidentiality obligations no less restrictive than those set forth herein.</p>
+<p>The obligations of confidentiality shall not apply to information that: (a) is or becomes publicly available through no fault of the Receiving Party; (b) was rightfully in the Receiving Party&#39;s possession prior to disclosure by the Disclosing Party; (c) is independently developed by the Receiving Party without reference to the Confidential Information; or (d) is required to be disclosed by law, regulation, or court order, provided that the Receiving Party gives the Disclosing Party prompt written notice and cooperates in any effort to obtain protective treatment. The obligations under this Article shall survive the termination or expiration of this Agreement for a period of five (5) years.</p>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 6: INTELLECTUAL PROPERTY RIGHTS</h2>
+<p>All Deliverables created by Service Provider specifically for Client under this Agreement shall be considered &quot;works made for hire&quot; to the fullest extent permitted by law, and all right, title, and interest in such Deliverables, including all Intellectual Property rights therein, shall vest exclusively in Client upon full payment of all applicable fees. To the extent any Deliverable does not qualify as a work made for hire, Service Provider hereby irrevocably assigns to Client all right, title, and interest in and to such Deliverable, including all Intellectual Property rights. Service Provider shall execute all documents and take all actions reasonably requested by Client to perfect Client&#39;s ownership of the Deliverables.</p>
+<p>Notwithstanding the foregoing, Service Provider retains all right, title, and interest in its pre-existing intellectual property, including tools, libraries, frameworks, methodologies, and know-how that existed prior to or were developed independently of this Agreement (&quot;Service Provider IP&quot;). To the extent any Service Provider IP is incorporated into the Deliverables, Service Provider hereby grants Client a perpetual, irrevocable, worldwide, royalty-free, non-exclusive license to use, modify, and distribute such Service Provider IP solely as embedded within and as part of the Deliverables. Each Party represents and warrants that it has the right to grant the licenses and assignments described in this Article.</p>
+
+<div style="page-break-before:always;"></div>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 7: REPRESENTATIONS AND WARRANTIES</h2>
+<p>Each Party represents and warrants to the other that:</p>
 <ol>
-<li>It is duly organized, validly existing, and in good standing under the laws of its jurisdiction of organization;</li>
-<li>It has full power and authority to enter into this Agreement and to perform its obligations hereunder;</li>
-<li>The execution and performance of this Agreement does not conflict with any other agreement to which it is a party;</li>
-<li>It shall comply with all applicable laws, regulations, and industry standards in performing its obligations;</li>
-<li>Party A additionally warrants that the Services shall perform materially in accordance with the documentation and shall not infringe upon any third-party Intellectual Property rights.</li>
+<li>It is duly organized, validly existing, and in good standing under the laws of its state of incorporation and has full corporate power and authority to enter into this Agreement and perform its obligations hereunder.</li>
+<li>The execution, delivery, and performance of this Agreement have been duly authorized by all necessary corporate action and do not conflict with any other agreement to which it is a party.</li>
+<li>Service Provider warrants that the Services shall be performed in a professional manner consistent with generally accepted industry standards and practices by qualified personnel with appropriate skills and experience.</li>
+<li>Service Provider warrants that the Deliverables shall conform to the specifications and Acceptance Criteria set forth in the applicable Statement of Work for a period of ninety (90) days following acceptance (&quot;Warranty Period&quot;).</li>
+<li>Service Provider warrants that the Deliverables will not infringe upon or misappropriate any third-party Intellectual Property rights, and that Service Provider has the right to assign or license all components of the Deliverables as contemplated by this Agreement.</li>
+<li>Service Provider warrants that it shall comply with all applicable laws, regulations, and industry standards in the performance of the Services, including but not limited to data protection, export control, and employment laws.</li>
+<li>Client warrants that it shall provide timely access to all necessary systems, data, personnel, and resources required for Service Provider to perform the Services as described in the applicable Statement of Work.</li>
 </ol>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 8: Indemnification</h2>
-<p>Each party ("Indemnifying Party") shall indemnify, defend, and hold harmless the other party and its officers, directors, employees, and agents ("Indemnified Party") from and against any and all claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys' fees) arising out of or relating to: (a) any breach of this Agreement by the Indemnifying Party; (b) any negligent or willful act or omission of the Indemnifying Party; or (c) any infringement of third-party Intellectual Property rights caused by the Indemnifying Party.</p>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 9: Limitation of Liability</h2>
-<p>EXCEPT FOR OBLIGATIONS UNDER ARTICLES 5 (CONFIDENTIALITY) AND 8 (INDEMNIFICATION), IN NO EVENT SHALL EITHER PARTY BE LIABLE TO THE OTHER FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, REGARDLESS OF THE CAUSE OF ACTION OR THE THEORY OF LIABILITY. THE TOTAL CUMULATIVE LIABILITY OF EITHER PARTY SHALL NOT EXCEED THE TOTAL FEES PAID OR PAYABLE BY PARTY B DURING THE TWELVE (12) MONTH PERIOD IMMEDIATELY PRECEDING THE EVENT GIVING RISE TO SUCH LIABILITY.</p>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 10: Termination</h2>
-<p>10.1 This Agreement may be terminated: (a) by either party upon ninety (90) days written notice for convenience; (b) by either party immediately upon written notice if the other party commits a material breach and fails to cure such breach within thirty (30) days of receiving written notice; (c) immediately by either party if the other party becomes insolvent, files for bankruptcy, or ceases to operate in the ordinary course of business.</p>
-<p>10.2 Upon termination, Party A shall provide Party B with a data export in a standard machine-readable format within thirty (30) days, after which Party A shall securely delete all of Party B's data from its systems.</p>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 11: Dispute Resolution</h2>
-<p>11.1 <strong>Negotiation.</strong> The parties shall first attempt to resolve any dispute through good-faith negotiation between senior executives for a period of thirty (30) days.</p>
-<p>11.2 <strong>Mediation.</strong> If negotiation fails, the parties shall submit the dispute to mediation administered by the American Arbitration Association (AAA) in San Francisco, CA.</p>
-<p>11.3 <strong>Arbitration.</strong> If mediation fails to resolve the dispute within sixty (60) days, the dispute shall be resolved by binding arbitration administered by the AAA under its Commercial Arbitration Rules, with one arbitrator, in San Francisco, CA. The decision of the arbitrator shall be final and binding.</p>
-<p>11.4 <strong>Governing Law.</strong> This Agreement shall be governed by the laws of the State of California, without regard to its conflict of laws principles.</p>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 12: Force Majeure</h2>
-<p>Neither party shall be liable for any failure or delay in performing its obligations under this Agreement to the extent such failure or delay results from circumstances beyond the reasonable control of such party, including but not limited to acts of God, natural disasters, war, terrorism, epidemics, government actions, power failures, internet or telecommunications failures, or cyber attacks. The affected party shall provide prompt written notice to the other party and shall use commercially reasonable efforts to mitigate the impact. If a force majeure event continues for more than ninety (90) consecutive days, either party may terminate this Agreement upon written notice.</p>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Article 13: General Provisions</h2>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 8: INDEMNIFICATION</h2>
+<p>Each Party (&quot;Indemnifying Party&quot;) shall defend, indemnify, and hold harmless the other Party and its officers, directors, employees, agents, successors, and assigns (&quot;Indemnified Party&quot;) from and against any and all claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys&#39; fees) arising out of or relating to: (a) any breach of the Indemnifying Party&#39;s representations, warranties, or obligations under this Agreement; (b) any negligent or willful misconduct of the Indemnifying Party or its Personnel in connection with the performance of this Agreement; or (c) any claim that the Deliverables or Services infringe upon or misappropriate any third-party Intellectual Property rights (applicable to Service Provider only). The Indemnified Party shall provide prompt written notice of any claim, cooperate with the Indemnifying Party in the defense thereof, and not settle any claim without the Indemnifying Party&#39;s prior written consent.</p>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 9: LIMITATION OF LIABILITY</h2>
+<p>EXCEPT FOR BREACHES OF CONFIDENTIALITY OBLIGATIONS (ARTICLE 5), INTELLECTUAL PROPERTY INFRINGEMENT INDEMNIFICATION (ARTICLE 8), AND LIABILITIES ARISING FROM GROSS NEGLIGENCE OR WILLFUL MISCONDUCT, IN NO EVENT SHALL EITHER PARTY&#39;S AGGREGATE LIABILITY UNDER THIS AGREEMENT EXCEED THE TOTAL FEES PAID OR PAYABLE BY CLIENT TO SERVICE PROVIDER DURING THE TWELVE (12) MONTH PERIOD IMMEDIATELY PRECEDING THE EVENT GIVING RISE TO THE CLAIM. IN NO EVENT SHALL EITHER PARTY BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, PUNITIVE, OR EXEMPLARY DAMAGES, INCLUDING BUT NOT LIMITED TO DAMAGES FOR LOSS OF PROFITS, REVENUE, GOODWILL, DATA, OR BUSINESS OPPORTUNITY, REGARDLESS OF WHETHER SUCH DAMAGES WERE FORESEEABLE OR WHETHER THE PARTY WAS ADVISED OF THE POSSIBILITY THEREOF.</p>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 10: TERMINATION</h2>
+<p>This Agreement may be terminated under the following conditions:</p>
+<ul>
+<li><strong>Termination for Convenience:</strong> Either Party may terminate this Agreement upon ninety (90) days prior written notice to the other Party.</li>
+<li><strong>Termination for Cause:</strong> Either Party may terminate this Agreement immediately upon written notice if the other Party commits a material breach and fails to cure such breach within thirty (30) days after receipt of written notice specifying the breach.</li>
+<li><strong>Termination for Insolvency:</strong> Either Party may terminate this Agreement immediately upon written notice if the other Party becomes insolvent, files for bankruptcy, or has a receiver appointed for a substantial part of its assets.</li>
+<li><strong>Effect of Termination:</strong> Upon termination, Client shall pay for all Services satisfactorily performed through the effective date of termination. Service Provider shall deliver all completed and in-progress Deliverables to Client.</li>
+<li><strong>Survival:</strong> Articles 5, 6, 7, 8, 9, 11, and 13 shall survive the termination or expiration of this Agreement.</li>
+</ul>
+
+<div style="page-break-before:always;"></div>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 11: DISPUTE RESOLUTION</h2>
+<p>The Parties shall attempt to resolve any dispute arising out of or relating to this Agreement through good-faith negotiation between senior executives of each Party for a period of thirty (30) days. If the dispute is not resolved through negotiation, the Parties agree to submit the dispute to mediation administered by the American Arbitration Association (&quot;AAA&quot;) in accordance with its Commercial Mediation Procedures. If mediation is unsuccessful within sixty (60) days, the dispute shall be resolved by binding arbitration administered by the AAA in accordance with its Commercial Arbitration Rules. The arbitration shall be conducted by a panel of three (3) arbitrators in San Jose, California. The arbitrators&#39; award shall be final and binding, and judgment upon the award may be entered in any court of competent jurisdiction. Each Party shall bear its own costs and attorneys&#39; fees in connection with any arbitration, unless the arbitrators determine otherwise. This Agreement shall be governed by and construed in accordance with the laws of the State of California, without regard to its conflict of laws principles.</p>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 12: FORCE MAJEURE</h2>
+<p>Neither Party shall be liable for any delay or failure to perform its obligations under this Agreement to the extent such delay or failure is caused by circumstances beyond the Party&#39;s reasonable control, including but not limited to acts of God, natural disasters, epidemics, pandemics, war, terrorism, riots, government actions, power failures, internet or telecommunications failures, or cyberattacks (&quot;Force Majeure Event&quot;). The affected Party shall promptly notify the other Party of the Force Majeure Event and use commercially reasonable efforts to mitigate its effects. If a Force Majeure Event continues for more than ninety (90) consecutive days, either Party may terminate this Agreement upon written notice without further liability, except for payment of fees for Services already performed.</p>
+
+<h2 style="color:#333;font-size:18px;">ARTICLE 13: GENERAL PROVISIONS</h2>
 <ol>
-<li><strong>Entire Agreement.</strong> This Agreement, including all Schedules and Exhibits, constitutes the entire agreement between the parties and supersedes all prior negotiations, representations, and agreements.</li>
-<li><strong>Amendments.</strong> This Agreement may not be amended except by a written instrument signed by authorized representatives of both parties.</li>
-<li><strong>Assignment.</strong> Neither party may assign this Agreement without the prior written consent of the other party, except in connection with a merger, acquisition, or sale of all or substantially all of its assets.</li>
-<li><strong>Notices.</strong> All notices shall be in writing and delivered by certified mail, overnight courier, or email to the addresses set forth above, with confirmation of receipt.</li>
-<li><strong>Severability.</strong> If any provision of this Agreement is found to be invalid or unenforceable, the remaining provisions shall continue in full force and effect.</li>
-<li><strong>Waiver.</strong> No waiver of any provision shall be effective unless in writing and signed by the waiving party. No failure to exercise any right shall constitute a waiver of such right.</li>
-<li><strong>Counterparts.</strong> This Agreement may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one and the same instrument.</li>
+<li><strong>Entire Agreement:</strong> This Agreement, together with all Statements of Work, exhibits, and schedules attached hereto, constitutes the entire agreement between the Parties with respect to the subject matter hereof and supersedes all prior and contemporaneous agreements, proposals, negotiations, and communications, whether oral or written.</li>
+<li><strong>Amendments:</strong> No amendment, modification, or waiver of any provision of this Agreement shall be effective unless made in writing and signed by authorized representatives of both Parties.</li>
+<li><strong>Assignment:</strong> Neither Party may assign or transfer this Agreement or any of its rights or obligations hereunder without the prior written consent of the other Party, except that either Party may assign this Agreement to an affiliate or in connection with a merger, acquisition, or sale of substantially all of its assets.</li>
+<li><strong>Notices:</strong> All notices required or permitted under this Agreement shall be in writing and shall be deemed given when delivered personally, sent by certified mail (return receipt requested), or sent by nationally recognized overnight courier to the addresses set forth in the preamble of this Agreement.</li>
+<li><strong>Severability:</strong> If any provision of this Agreement is held to be invalid, illegal, or unenforceable, the remaining provisions shall continue in full force and effect, and the invalid provision shall be modified to the minimum extent necessary to make it valid and enforceable.</li>
+<li><strong>Waiver:</strong> The failure of either Party to enforce any right or provision of this Agreement shall not constitute a waiver of such right or provision. Any waiver must be in writing and signed by the waiving Party.</li>
+<li><strong>Independent Contractors:</strong> The relationship between the Parties is that of independent contractors. Nothing in this Agreement shall be construed as creating a partnership, joint venture, employment, or agency relationship between the Parties.</li>
 </ol>
-<h2 style="color:#333;border-bottom:1px solid #333;padding-bottom:4px;">Signatures</h2>
-<p style="margin-top:16px;">IN WITNESS WHEREOF, the parties hereto have executed this Agreement as of the Effective Date.</p>
-<table style="width:100%;border-collapse:collapse;margin:24px 0;">
+
+<div style="page-break-before:always;"></div>
+
+<h2 style="color:#333;font-size:18px;">SIGNATURE BLOCK</h2>
+<p><strong>IN WITNESS WHEREOF,</strong> the Parties have executed this Service Agreement as of the Effective Date set forth above.</p>
+<table style="width:100%;border-collapse:collapse;margin:30px 0;">
 <tr>
-<td style="padding:16px;width:50%;vertical-align:top;">
-<p><strong>PARTY A: Acme Technologies Inc.</strong></p>
-<p style="margin-top:40px;">Signature: _________________________</p>
-<p>Name: Dr. Robert J. Harrison</p>
-<p>Title: Chief Executive Officer</p>
-<p>Date: _________________________</p>
+<td style="width:48%;padding:20px;vertical-align:top;">
+<p style="font-weight:bold;color:#333;margin-bottom:20px;">PARTY A: ACME TECHNOLOGIES INC.</p>
+<p style="margin-bottom:30px;">Signature: ___________________________</p>
+<p style="margin-bottom:10px;">Name: Robert J. Harrison</p>
+<p style="margin-bottom:10px;">Title: Chief Executive Officer</p>
+<p>Date: ___________________________</p>
 </td>
-<td style="padding:16px;width:50%;vertical-align:top;">
-<p><strong>PARTY B: Global Enterprises Corp.</strong></p>
-<p style="margin-top:40px;">Signature: _________________________</p>
-<p>Name: Jennifer Morrison</p>
-<p>Title: Vice President, Operations</p>
-<p>Date: _________________________</p>
+<td style="width:4%;"></td>
+<td style="width:48%;padding:20px;vertical-align:top;">
+<p style="font-weight:bold;color:#333;margin-bottom:20px;">PARTY B: CLIENT CORP.</p>
+<p style="margin-bottom:30px;">Signature: ___________________________</p>
+<p style="margin-bottom:10px;">Name: Victoria Chen</p>
+<p style="margin-bottom:10px;">Title: Chief Operating Officer</p>
+<p>Date: ___________________________</p>
 </td>
 </tr>
 </table>`,
   },
   {
-    id: "technical-spec",
+    id: "technical-specification",
     name: "Technical Specification",
-    icon: "🔧",
-    description: "Technical specification with requirements, architecture, API specs, data models, and testing strategy.",
-    content: `<div style="border:2px solid #00695c;padding:20px;margin-bottom:20px;">
-<h1 style="text-align:center;color:#00695c;font-size:24px;">Technical Specification Document</h1>
-<h2 style="text-align:center;font-weight:normal;color:#555;">Customer Support Platform v2.0</h2>
-<table style="width:100%;margin-top:16px;border-collapse:collapse;">
-<tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Document ID:</strong></td><td style="padding:6px;border:1px solid #ddd;">TECH-CSP-002</td><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Version:</strong></td><td style="padding:6px;border:1px solid #ddd;">2.0</td></tr>
-<tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Author:</strong></td><td style="padding:6px;border:1px solid #ddd;">Mike Chen, Tech Lead</td><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Date:</strong></td><td style="padding:6px;border:1px solid #ddd;">March 1, 2026</td></tr>
-<tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Status:</strong></td><td style="padding:6px;border:1px solid #ddd;">Approved</td><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Reviewers:</strong></td><td style="padding:6px;border:1px solid #ddd;">Dr. Emily Zhang, Marcus Thompson</td></tr>
+    icon: "⚙️",
+    description: "Detailed technical specification document with requirements, API specs, data models, and deployment architecture.",
+    content: `<div style="border:2px solid #00695c;padding:20px;margin-bottom:30px;">
+<h1 style="text-align:center;color:#00695c;font-size:26px;margin-bottom:5px;">Customer Support Platform</h1>
+<h2 style="text-align:center;color:#00695c;font-weight:normal;font-size:18px;margin-bottom:20px;">Technical Specification v2.0</h2>
+<table style="width:100%;border-collapse:collapse;">
+<tr><td style="padding:6px;width:130px;font-weight:bold;color:#00695c;">Version:</td><td style="padding:6px;">2.0</td><td style="padding:6px;width:130px;font-weight:bold;color:#00695c;">Status:</td><td style="padding:6px;">Approved</td></tr>
+<tr><td style="padding:6px;font-weight:bold;color:#00695c;">Date:</td><td style="padding:6px;">January 10, 2025</td><td style="padding:6px;font-weight:bold;color:#00695c;">Classification:</td><td style="padding:6px;">Internal - Confidential</td></tr>
+<tr><td style="padding:6px;font-weight:bold;color:#00695c;">Author:</td><td style="padding:6px;">Elena Vasquez, Tech Lead</td><td style="padding:6px;font-weight:bold;color:#00695c;">Approved By:</td><td style="padding:6px;">James Okonkwo, PM</td></tr>
+<tr><td style="padding:6px;font-weight:bold;color:#00695c;">Reviewers:</td><td style="padding:6px;" colspan="3">Dr. Sarah Mitchell (ML), Kevin Park (Security), Rachel Adams (QA)</td></tr>
 </table>
 </div>
-<h2 style="color:#00695c;border-bottom:2px solid #00695c;padding-bottom:4px;">1. Overview</h2>
-<p>This document provides the complete technical specification for the Customer Support Platform v2.0, an AI-powered system designed to automate customer support interactions through natural language understanding, intelligent routing, and knowledge-based response generation. The platform integrates with existing CRM systems (Salesforce, HubSpot), supports multi-channel communication (web chat, email, SMS), and provides real-time analytics for operations management.</p>
-<p>The system architecture follows a microservices pattern deployed on AWS ECS, with event-driven communication through Amazon SQS/SNS. The AI engine leverages a fine-tuned large language model with retrieval-augmented generation (RAG) for accurate, context-aware response generation. This specification covers functional and non-functional requirements, system architecture, API specifications, data models, security considerations, testing strategy, and deployment architecture.</p>
-<h2 style="color:#00695c;border-bottom:2px solid #00695c;padding-bottom:4px;">2. Requirements</h2>
-<h3 style="color:#00695c;">2.1 Functional Requirements</h3>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:12px;">
-<thead><tr style="background:#00695c;color:white;"><th style="border:1px solid #ddd;padding:6px;">ID</th><th style="border:1px solid #ddd;padding:6px;">Requirement</th><th style="border:1px solid #ddd;padding:6px;">Priority</th><th style="border:1px solid #ddd;padding:6px;">Status</th></tr></thead>
-<tbody>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-001</td><td style="border:1px solid #ddd;padding:6px;">System shall accept and process customer messages via web chat widget</td><td style="border:1px solid #ddd;padding:6px;">P0</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-002</td><td style="border:1px solid #ddd;padding:6px;">System shall generate AI responses using RAG within 3 seconds</td><td style="border:1px solid #ddd;padding:6px;">P0</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-003</td><td style="border:1px solid #ddd;padding:6px;">System shall escalate to human agents when confidence score is below 0.7</td><td style="border:1px solid #ddd;padding:6px;">P0</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-004</td><td style="border:1px solid #ddd;padding:6px;">System shall support conversation history and context retention across sessions</td><td style="border:1px solid #ddd;padding:6px;">P0</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-005</td><td style="border:1px solid #ddd;padding:6px;">System shall sync tickets bidirectionally with Salesforce and HubSpot CRM</td><td style="border:1px solid #ddd;padding:6px;">P1</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-006</td><td style="border:1px solid #ddd;padding:6px;">System shall process inbound emails and generate automated replies</td><td style="border:1px solid #ddd;padding:6px;">P1</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-007</td><td style="border:1px solid #ddd;padding:6px;">System shall provide real-time analytics dashboard with KPI metrics</td><td style="border:1px solid #ddd;padding:6px;">P1</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-008</td><td style="border:1px solid #ddd;padding:6px;">System shall support multi-language responses (EN, ES, FR, DE, JA)</td><td style="border:1px solid #ddd;padding:6px;">P2</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-009</td><td style="border:1px solid #ddd;padding:6px;">System shall allow agents to review and edit AI responses before sending</td><td style="border:1px solid #ddd;padding:6px;">P1</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-010</td><td style="border:1px solid #ddd;padding:6px;">System shall provide SMS support via Twilio integration</td><td style="border:1px solid #ddd;padding:6px;">P2</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-011</td><td style="border:1px solid #ddd;padding:6px;">System shall auto-categorize tickets using ML classification</td><td style="border:1px solid #ddd;padding:6px;">P1</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">FR-012</td><td style="border:1px solid #ddd;padding:6px;">System shall support file attachments up to 25MB per message</td><td style="border:1px solid #ddd;padding:6px;">P1</td><td style="border:1px solid #ddd;padding:6px;">Approved</td></tr>
-</tbody>
-</table>
-<h3 style="color:#00695c;">2.2 Non-Functional Requirements</h3>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:12px;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;">ID</th><th style="border:1px solid #ddd;padding:6px;">Category</th><th style="border:1px solid #ddd;padding:6px;">Requirement</th><th style="border:1px solid #ddd;padding:6px;">Target</th></tr></thead>
-<tbody>
-<tr><td style="border:1px solid #ddd;padding:6px;">NFR-001</td><td style="border:1px solid #ddd;padding:6px;">Performance</td><td style="border:1px solid #ddd;padding:6px;">API response time (p95)</td><td style="border:1px solid #ddd;padding:6px;">&lt; 200ms</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">NFR-002</td><td style="border:1px solid #ddd;padding:6px;">Performance</td><td style="border:1px solid #ddd;padding:6px;">AI response generation time (p95)</td><td style="border:1px solid #ddd;padding:6px;">&lt; 3 seconds</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">NFR-003</td><td style="border:1px solid #ddd;padding:6px;">Availability</td><td style="border:1px solid #ddd;padding:6px;">System uptime SLA</td><td style="border:1px solid #ddd;padding:6px;">99.95%</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">NFR-004</td><td style="border:1px solid #ddd;padding:6px;">Scalability</td><td style="border:1px solid #ddd;padding:6px;">Concurrent conversations supported</td><td style="border:1px solid #ddd;padding:6px;">10,000+</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">NFR-005</td><td style="border:1px solid #ddd;padding:6px;">Security</td><td style="border:1px solid #ddd;padding:6px;">Data encryption at rest and in transit</td><td style="border:1px solid #ddd;padding:6px;">AES-256 / TLS 1.3</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">NFR-006</td><td style="border:1px solid #ddd;padding:6px;">Compliance</td><td style="border:1px solid #ddd;padding:6px;">Regulatory compliance</td><td style="border:1px solid #ddd;padding:6px;">SOC 2, GDPR, CCPA</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">NFR-007</td><td style="border:1px solid #ddd;padding:6px;">Reliability</td><td style="border:1px solid #ddd;padding:6px;">Recovery Time Objective (RTO)</td><td style="border:1px solid #ddd;padding:6px;">&lt; 15 minutes</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">NFR-008</td><td style="border:1px solid #ddd;padding:6px;">Maintainability</td><td style="border:1px solid #ddd;padding:6px;">Code coverage minimum</td><td style="border:1px solid #ddd;padding:6px;">&gt; 85%</td></tr>
-</tbody>
-</table>
-<h2 style="color:#00695c;border-bottom:2px solid #00695c;padding-bottom:4px;">3. System Architecture</h2>
-<p>The platform follows a microservices architecture with five core services communicating through asynchronous message queues (SQS/SNS) for event-driven workflows and synchronous REST/gRPC APIs for real-time operations. All services are containerized using Docker and deployed on AWS ECS with Fargate, behind an Application Load Balancer with AWS WAF for security.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#00695c;color:white;"><th style="border:1px solid #ddd;padding:8px;">Component</th><th style="border:1px solid #ddd;padding:8px;">Technology</th><th style="border:1px solid #ddd;padding:8px;">Description</th></tr></thead>
-<tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Conversation Service</td><td style="border:1px solid #ddd;padding:8px;">Node.js / TypeScript</td><td style="border:1px solid #ddd;padding:8px;">Manages chat sessions, message routing, WebSocket connections, and conversation state</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">AI Engine</td><td style="border:1px solid #ddd;padding:8px;">Python / FastAPI</td><td style="border:1px solid #ddd;padding:8px;">LLM inference, RAG retrieval, response generation, confidence scoring</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Knowledge Service</td><td style="border:1px solid #ddd;padding:8px;">Python / FastAPI</td><td style="border:1px solid #ddd;padding:8px;">Vector database management, document indexing, semantic search (Pinecone)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Integration Gateway</td><td style="border:1px solid #ddd;padding:8px;">Node.js / NestJS</td><td style="border:1px solid #ddd;padding:8px;">CRM sync, email processing, SMS gateway, third-party API adapter layer</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Analytics Service</td><td style="border:1px solid #ddd;padding:8px;">Python / FastAPI</td><td style="border:1px solid #ddd;padding:8px;">Event processing, metric aggregation, dashboard data API, reporting engine</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">API Gateway</td><td style="border:1px solid #ddd;padding:8px;">AWS ALB + WAF</td><td style="border:1px solid #ddd;padding:8px;">Load balancing, SSL termination, rate limiting, request routing</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Primary Database</td><td style="border:1px solid #ddd;padding:8px;">PostgreSQL (RDS)</td><td style="border:1px solid #ddd;padding:8px;">Conversations, users, tickets, configuration data with read replicas</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Cache Layer</td><td style="border:1px solid #ddd;padding:8px;">Redis (ElastiCache)</td><td style="border:1px solid #ddd;padding:8px;">Session state, response caching, rate limiting counters, real-time metrics</td></tr>
-</tbody>
-</table>
-<h2 style="color:#00695c;border-bottom:2px solid #00695c;padding-bottom:4px;">4. API Specifications</h2>
-<h3 style="color:#00695c;">4.1 REST API Endpoints</h3>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:11px;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;">Method</th><th style="border:1px solid #ddd;padding:6px;">Endpoint</th><th style="border:1px solid #ddd;padding:6px;">Description</th><th style="border:1px solid #ddd;padding:6px;">Auth</th></tr></thead>
-<tbody>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#2e7d32;font-weight:bold;">POST</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/conversations</td><td style="border:1px solid #ddd;padding:6px;">Create a new conversation session</td><td style="border:1px solid #ddd;padding:6px;">API Key</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#1565C0;font-weight:bold;">GET</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/conversations/:id</td><td style="border:1px solid #ddd;padding:6px;">Retrieve conversation with messages</td><td style="border:1px solid #ddd;padding:6px;">JWT</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#2e7d32;font-weight:bold;">POST</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/conversations/:id/messages</td><td style="border:1px solid #ddd;padding:6px;">Send a message and receive AI response</td><td style="border:1px solid #ddd;padding:6px;">JWT</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#ef6c00;font-weight:bold;">PATCH</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/conversations/:id/escalate</td><td style="border:1px solid #ddd;padding:6px;">Escalate conversation to human agent</td><td style="border:1px solid #ddd;padding:6px;">JWT</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#1565C0;font-weight:bold;">GET</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/tickets</td><td style="border:1px solid #ddd;padding:6px;">List tickets with filtering and pagination</td><td style="border:1px solid #ddd;padding:6px;">JWT</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#2e7d32;font-weight:bold;">POST</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/tickets</td><td style="border:1px solid #ddd;padding:6px;">Create a support ticket from conversation</td><td style="border:1px solid #ddd;padding:6px;">JWT</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#1565C0;font-weight:bold;">GET</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/knowledge/search</td><td style="border:1px solid #ddd;padding:6px;">Semantic search across knowledge base</td><td style="border:1px solid #ddd;padding:6px;">API Key</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#2e7d32;font-weight:bold;">POST</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/knowledge/documents</td><td style="border:1px solid #ddd;padding:6px;">Upload and index a knowledge document</td><td style="border:1px solid #ddd;padding:6px;">JWT (Admin)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#1565C0;font-weight:bold;">GET</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/analytics/dashboard</td><td style="border:1px solid #ddd;padding:6px;">Retrieve dashboard metrics and KPIs</td><td style="border:1px solid #ddd;padding:6px;">JWT</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#1565C0;font-weight:bold;">GET</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/analytics/reports/:type</td><td style="border:1px solid #ddd;padding:6px;">Generate analytics report (daily/weekly)</td><td style="border:1px solid #ddd;padding:6px;">JWT</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;color:#1565C0;font-weight:bold;">GET</td><td style="border:1px solid #ddd;padding:6px;font-family:monospace;">/api/v2/agents</td><td style="border:1px solid #ddd;padding:6px;">List human agents with status and workload</td><td style="border:1px solid #ddd;padding:6px;">JWT (Admin)</td></tr>
-</tbody>
-</table>
-<h3 style="color:#00695c;">4.2 Request/Response Examples</h3>
-<p><strong>POST /api/v2/conversations/:id/messages — Send Message</strong></p>
-<blockquote style="background:#f5f5f5;padding:12px;border-left:3px solid #00695c;font-family:monospace;font-size:11px;white-space:pre-wrap;">Request:
-{ "content": "How do I reset my password?", "channel": "web_chat", "metadata": { "page_url": "/account/settings" } }
 
-Response (200 OK):
-{ "id": "msg_a1b2c3", "conversation_id": "conv_x1y2z3", "content": "To reset your password, go to Settings &gt; Security &gt; Change Password...", "source": "ai", "confidence": 0.94, "knowledge_refs": ["doc_pwd_001", "doc_pwd_003"], "created_at": "2026-03-10T14:30:00Z" }</blockquote>
-<h3 style="color:#00695c;">4.3 Error Codes</h3>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:12px;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;">Code</th><th style="border:1px solid #ddd;padding:6px;">Status</th><th style="border:1px solid #ddd;padding:6px;">Description</th></tr></thead>
+<h1 style="color:#00695c;border-bottom:3px solid #00695c;padding-bottom:8px;">1. Overview</h1>
+<p>This document provides the comprehensive technical specification for the Customer Support Platform (CSP), an AI-powered customer service solution designed to handle multi-channel customer inquiries through intelligent automation and seamless human agent escalation. The platform integrates natural language processing, machine learning, and real-time analytics to deliver personalized, efficient, and accurate support experiences across web chat, email, mobile, and social media channels.</p>
+<p>The Customer Support Platform operates within a microservices architecture deployed on AWS cloud infrastructure. It interfaces with existing enterprise systems including the CRM (Salesforce), knowledge base (Confluence), ticketing system (Jira Service Management), and communication platforms (Slack, Microsoft Teams). The system is designed to handle a peak load of 10,000 concurrent sessions with sub-second response times for AI-generated replies and a target first-contact resolution rate of 75% without human intervention.</p>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#00695c;border-bottom:3px solid #00695c;padding-bottom:8px;">2. Requirements</h1>
+
+<h2 style="color:#00695c;">2.1 Functional Requirements</h2>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">ID</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Requirement</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:center;">Priority</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:center;">Status</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:6px;">400</td><td style="border:1px solid #ddd;padding:6px;">Bad Request</td><td style="border:1px solid #ddd;padding:6px;">Invalid request body or parameters</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">401</td><td style="border:1px solid #ddd;padding:6px;">Unauthorized</td><td style="border:1px solid #ddd;padding:6px;">Missing or invalid authentication token</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">403</td><td style="border:1px solid #ddd;padding:6px;">Forbidden</td><td style="border:1px solid #ddd;padding:6px;">Insufficient permissions for the requested action</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">404</td><td style="border:1px solid #ddd;padding:6px;">Not Found</td><td style="border:1px solid #ddd;padding:6px;">Requested resource does not exist</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">429</td><td style="border:1px solid #ddd;padding:6px;">Rate Limited</td><td style="border:1px solid #ddd;padding:6px;">API rate limit exceeded (100 req/min per key)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">503</td><td style="border:1px solid #ddd;padding:6px;">Service Unavailable</td><td style="border:1px solid #ddd;padding:6px;">AI engine temporarily unavailable; retry with backoff</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">FR-001</td><td style="border:1px solid #ddd;padding:8px;">System shall accept customer inquiries via web chat widget with real-time messaging</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P0</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">FR-002</td><td style="border:1px solid #ddd;padding:8px;">System shall classify incoming tickets by category, sentiment, and urgency using NLP</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P0</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">FR-003</td><td style="border:1px solid #ddd;padding:8px;">System shall generate AI-powered responses using RAG pipeline with knowledge base</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P0</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">FR-004</td><td style="border:1px solid #ddd;padding:8px;">System shall escalate conversations to human agents when confidence score is below threshold</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P0</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">FR-005</td><td style="border:1px solid #ddd;padding:8px;">System shall support email channel ingestion with automatic thread grouping</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P1</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">FR-006</td><td style="border:1px solid #ddd;padding:8px;">System shall provide real-time analytics dashboard for supervisors and managers</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P1</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">FR-007</td><td style="border:1px solid #ddd;padding:8px;">System shall maintain conversation history and context across sessions for each customer</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P0</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">FR-008</td><td style="border:1px solid #ddd;padding:8px;">System shall integrate with Salesforce CRM for customer data and ticket synchronization</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P1</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">FR-009</td><td style="border:1px solid #ddd;padding:8px;">System shall support multi-language interactions in English, Spanish, French, German, and Japanese</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P2</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Planned</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">FR-010</td><td style="border:1px solid #ddd;padding:8px;">System shall provide customer satisfaction surveys at conversation close with CSAT scoring</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P1</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">FR-011</td><td style="border:1px solid #ddd;padding:8px;">System shall support file attachment uploads (images, PDFs, logs) up to 25MB per file</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P1</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">FR-012</td><td style="border:1px solid #ddd;padding:8px;">System shall provide agent routing based on skill matching, availability, and workload balancing</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">P0</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Approved</td></tr>
 </tbody>
 </table>
-<h2 style="color:#00695c;border-bottom:2px solid #00695c;padding-bottom:4px;">5. Data Models</h2>
-<h3 style="color:#00695c;">Conversation Entity</h3>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:12px;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;">Field</th><th style="border:1px solid #ddd;padding:6px;">Type</th><th style="border:1px solid #ddd;padding:6px;">Constraints</th><th style="border:1px solid #ddd;padding:6px;">Description</th></tr></thead>
+
+<h2 style="color:#00695c;">2.2 Non-Functional Requirements</h2>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">ID</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Category</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Requirement</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Target</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:6px;">id</td><td style="border:1px solid #ddd;padding:6px;">UUID</td><td style="border:1px solid #ddd;padding:6px;">PK, NOT NULL</td><td style="border:1px solid #ddd;padding:6px;">Unique conversation identifier</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">customer_id</td><td style="border:1px solid #ddd;padding:6px;">UUID</td><td style="border:1px solid #ddd;padding:6px;">FK, NOT NULL, INDEX</td><td style="border:1px solid #ddd;padding:6px;">Reference to customer entity</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">agent_id</td><td style="border:1px solid #ddd;padding:6px;">UUID</td><td style="border:1px solid #ddd;padding:6px;">FK, NULLABLE</td><td style="border:1px solid #ddd;padding:6px;">Assigned human agent (if escalated)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">channel</td><td style="border:1px solid #ddd;padding:6px;">ENUM</td><td style="border:1px solid #ddd;padding:6px;">NOT NULL</td><td style="border:1px solid #ddd;padding:6px;">web_chat, email, sms, social</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">status</td><td style="border:1px solid #ddd;padding:6px;">ENUM</td><td style="border:1px solid #ddd;padding:6px;">NOT NULL, INDEX</td><td style="border:1px solid #ddd;padding:6px;">open, escalated, resolved, closed</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">category</td><td style="border:1px solid #ddd;padding:6px;">VARCHAR(100)</td><td style="border:1px solid #ddd;padding:6px;">NULLABLE, INDEX</td><td style="border:1px solid #ddd;padding:6px;">ML-classified ticket category</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">satisfaction_score</td><td style="border:1px solid #ddd;padding:6px;">DECIMAL(2,1)</td><td style="border:1px solid #ddd;padding:6px;">NULLABLE</td><td style="border:1px solid #ddd;padding:6px;">Post-interaction CSAT rating (1.0-5.0)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">created_at</td><td style="border:1px solid #ddd;padding:6px;">TIMESTAMPTZ</td><td style="border:1px solid #ddd;padding:6px;">NOT NULL, INDEX</td><td style="border:1px solid #ddd;padding:6px;">Conversation creation timestamp</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">NFR-001</td><td style="border:1px solid #ddd;padding:8px;">Performance</td><td style="border:1px solid #ddd;padding:8px;">AI response generation latency</td><td style="border:1px solid #ddd;padding:8px;">&lt; 800ms (p95)</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">NFR-002</td><td style="border:1px solid #ddd;padding:8px;">Performance</td><td style="border:1px solid #ddd;padding:8px;">API endpoint response time</td><td style="border:1px solid #ddd;padding:8px;">&lt; 200ms (p99)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">NFR-003</td><td style="border:1px solid #ddd;padding:8px;">Availability</td><td style="border:1px solid #ddd;padding:8px;">System uptime SLA</td><td style="border:1px solid #ddd;padding:8px;">99.95%</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">NFR-004</td><td style="border:1px solid #ddd;padding:8px;">Scalability</td><td style="border:1px solid #ddd;padding:8px;">Concurrent active sessions</td><td style="border:1px solid #ddd;padding:8px;">10,000+</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">NFR-005</td><td style="border:1px solid #ddd;padding:8px;">Security</td><td style="border:1px solid #ddd;padding:8px;">Data encryption at rest and in transit</td><td style="border:1px solid #ddd;padding:8px;">AES-256, TLS 1.3</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">NFR-006</td><td style="border:1px solid #ddd;padding:8px;">Compliance</td><td style="border:1px solid #ddd;padding:8px;">Regulatory compliance</td><td style="border:1px solid #ddd;padding:8px;">SOC 2, GDPR, CCPA</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">NFR-007</td><td style="border:1px solid #ddd;padding:8px;">Reliability</td><td style="border:1px solid #ddd;padding:8px;">Recovery Time Objective (RTO)</td><td style="border:1px solid #ddd;padding:8px;">&lt; 15 minutes</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">NFR-008</td><td style="border:1px solid #ddd;padding:8px;">Reliability</td><td style="border:1px solid #ddd;padding:8px;">Recovery Point Objective (RPO)</td><td style="border:1px solid #ddd;padding:8px;">&lt; 1 minute</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">NFR-009</td><td style="border:1px solid #ddd;padding:8px;">Maintainability</td><td style="border:1px solid #ddd;padding:8px;">Code test coverage</td><td style="border:1px solid #ddd;padding:8px;">&gt; 85%</td></tr>
 </tbody>
 </table>
-<h3 style="color:#00695c;">Message Entity</h3>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:12px;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;">Field</th><th style="border:1px solid #ddd;padding:6px;">Type</th><th style="border:1px solid #ddd;padding:6px;">Constraints</th><th style="border:1px solid #ddd;padding:6px;">Description</th></tr></thead>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#00695c;border-bottom:3px solid #00695c;padding-bottom:8px;">3. System Architecture</h1>
+<p>The Customer Support Platform follows a microservices architecture deployed on Amazon Web Services (AWS). The system is composed of seven core services, each responsible for a distinct domain. Services communicate asynchronously via Amazon SQS and SNS for event-driven workflows and synchronously via REST APIs for real-time interactions. All services are containerized using Docker and orchestrated with Amazon ECS with Fargate launch type, enabling automatic scaling and zero-downtime deployments. A shared API Gateway (AWS API Gateway) provides unified authentication, rate limiting, and request routing for all external-facing endpoints.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Component</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Technology</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Description</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:6px;">id</td><td style="border:1px solid #ddd;padding:6px;">UUID</td><td style="border:1px solid #ddd;padding:6px;">PK, NOT NULL</td><td style="border:1px solid #ddd;padding:6px;">Unique message identifier</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">conversation_id</td><td style="border:1px solid #ddd;padding:6px;">UUID</td><td style="border:1px solid #ddd;padding:6px;">FK, NOT NULL, INDEX</td><td style="border:1px solid #ddd;padding:6px;">Parent conversation reference</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">content</td><td style="border:1px solid #ddd;padding:6px;">TEXT</td><td style="border:1px solid #ddd;padding:6px;">NOT NULL</td><td style="border:1px solid #ddd;padding:6px;">Message text content</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">source</td><td style="border:1px solid #ddd;padding:6px;">ENUM</td><td style="border:1px solid #ddd;padding:6px;">NOT NULL</td><td style="border:1px solid #ddd;padding:6px;">customer, ai, agent, system</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">confidence</td><td style="border:1px solid #ddd;padding:6px;">DECIMAL(3,2)</td><td style="border:1px solid #ddd;padding:6px;">NULLABLE</td><td style="border:1px solid #ddd;padding:6px;">AI confidence score (0.00-1.00)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">created_at</td><td style="border:1px solid #ddd;padding:6px;">TIMESTAMPTZ</td><td style="border:1px solid #ddd;padding:6px;">NOT NULL, INDEX</td><td style="border:1px solid #ddd;padding:6px;">Message timestamp</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">API Gateway</td><td style="border:1px solid #ddd;padding:8px;">AWS API Gateway</td><td style="border:1px solid #ddd;padding:8px;">Request routing, authentication, rate limiting, and SSL termination</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Conversation Service</td><td style="border:1px solid #ddd;padding:8px;">Node.js / TypeScript</td><td style="border:1px solid #ddd;padding:8px;">WebSocket-based real-time messaging, session management, and conversation state</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">AI Response Engine</td><td style="border:1px solid #ddd;padding:8px;">Python / FastAPI</td><td style="border:1px solid #ddd;padding:8px;">RAG pipeline, LLM integration, intent classification, and response generation</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Routing Service</td><td style="border:1px solid #ddd;padding:8px;">Go</td><td style="border:1px solid #ddd;padding:8px;">Agent skill matching, workload balancing, and queue management</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Analytics Service</td><td style="border:1px solid #ddd;padding:8px;">Python / FastAPI</td><td style="border:1px solid #ddd;padding:8px;">Real-time metrics aggregation, reporting, and dashboard data serving</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Integration Service</td><td style="border:1px solid #ddd;padding:8px;">Node.js / TypeScript</td><td style="border:1px solid #ddd;padding:8px;">CRM, ticketing, and third-party system connectors</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Notification Service</td><td style="border:1px solid #ddd;padding:8px;">Node.js / TypeScript</td><td style="border:1px solid #ddd;padding:8px;">Email, SMS, push notification delivery and template management</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Primary Database</td><td style="border:1px solid #ddd;padding:8px;">PostgreSQL (RDS)</td><td style="border:1px solid #ddd;padding:8px;">Transactional data storage with multi-AZ deployment and read replicas</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Vector Database</td><td style="border:1px solid #ddd;padding:8px;">Pinecone</td><td style="border:1px solid #ddd;padding:8px;">Knowledge base embeddings for semantic search in RAG pipeline</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Cache Layer</td><td style="border:1px solid #ddd;padding:8px;">Redis (ElastiCache)</td><td style="border:1px solid #ddd;padding:8px;">Session cache, rate limiting counters, and frequently accessed data</td></tr>
 </tbody>
 </table>
-<h2 style="color:#00695c;border-bottom:2px solid #00695c;padding-bottom:4px;">6. Security Architecture</h2>
-<p>The platform implements defense-in-depth security with multiple layers of protection. All data is encrypted at rest using AES-256 and in transit using TLS 1.3. PII is handled in compliance with GDPR and CCPA requirements, with automatic detection and redaction capabilities for sensitive data in conversation logs.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:12px;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;">Control</th><th style="border:1px solid #ddd;padding:6px;">Implementation</th><th style="border:1px solid #ddd;padding:6px;">Standard</th></tr></thead>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#00695c;border-bottom:3px solid #00695c;padding-bottom:8px;">4. API Specifications</h1>
+
+<h2 style="color:#00695c;">4.1 REST API Endpoints</h2>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;">Method</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Endpoint</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Description</th>
+<th style="border:1px solid #00695c;padding:8px;">Auth</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:6px;">Authentication</td><td style="border:1px solid #ddd;padding:6px;">JWT + OAuth 2.0 with MFA for admin access</td><td style="border:1px solid #ddd;padding:6px;">OWASP ASVS L2</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">Authorization</td><td style="border:1px solid #ddd;padding:6px;">Role-based access control (RBAC) with least-privilege</td><td style="border:1px solid #ddd;padding:6px;">SOC 2</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">Encryption</td><td style="border:1px solid #ddd;padding:6px;">AES-256 at rest, TLS 1.3 in transit, KMS key mgmt</td><td style="border:1px solid #ddd;padding:6px;">NIST 800-53</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">PII Protection</td><td style="border:1px solid #ddd;padding:6px;">Auto-detection, tokenization, right-to-erasure support</td><td style="border:1px solid #ddd;padding:6px;">GDPR Art. 17</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">Audit Logging</td><td style="border:1px solid #ddd;padding:6px;">All API calls logged with CloudTrail, 1-year retention</td><td style="border:1px solid #ddd;padding:6px;">SOC 2</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#2e7d32;">POST</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/conversations</td><td style="border:1px solid #ddd;padding:8px;">Create a new conversation session</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">API Key</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#1565c0;">GET</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/conversations/:id</td><td style="border:1px solid #ddd;padding:8px;">Retrieve conversation details and messages</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">JWT</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#2e7d32;">POST</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/conversations/:id/messages</td><td style="border:1px solid #ddd;padding:8px;">Send a message in an existing conversation</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">JWT</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#e65100;">PUT</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/conversations/:id/escalate</td><td style="border:1px solid #ddd;padding:8px;">Escalate conversation to human agent</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">JWT</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#e65100;">PUT</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/conversations/:id/close</td><td style="border:1px solid #ddd;padding:8px;">Close a conversation and trigger CSAT survey</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">JWT</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#1565c0;">GET</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/tickets</td><td style="border:1px solid #ddd;padding:8px;">List support tickets with filters and pagination</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">JWT</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#2e7d32;">POST</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/tickets</td><td style="border:1px solid #ddd;padding:8px;">Create a support ticket from email or form</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">API Key</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#1565c0;">GET</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/agents</td><td style="border:1px solid #ddd;padding:8px;">List available agents with status and skills</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">JWT</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#e65100;">PUT</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/agents/:id/status</td><td style="border:1px solid #ddd;padding:8px;">Update agent availability status</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">JWT</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#1565c0;">GET</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/analytics/dashboard</td><td style="border:1px solid #ddd;padding:8px;">Retrieve real-time dashboard metrics</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">JWT</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#1565c0;">GET</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/analytics/reports</td><td style="border:1px solid #ddd;padding:8px;">Generate and retrieve historical reports</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">JWT</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#2e7d32;">POST</td><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">/api/v2/knowledge/search</td><td style="border:1px solid #ddd;padding:8px;">Semantic search across knowledge base articles</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">JWT</td></tr>
 </tbody>
 </table>
-<h2 style="color:#00695c;border-bottom:2px solid #00695c;padding-bottom:4px;">7. Testing Strategy</h2>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;">Test Type</th><th style="border:1px solid #ddd;padding:8px;">Scope</th><th style="border:1px solid #ddd;padding:8px;">Tools</th><th style="border:1px solid #ddd;padding:8px;">Coverage Target</th></tr></thead>
+
+<h2 style="color:#00695c;">4.2 Request/Response Examples</h2>
+
+<h3 style="color:#00695c;">POST /api/v2/conversations</h3>
+<blockquote style="background:#f5f5f5;border-left:4px solid #00695c;padding:15px;margin:15px 0;font-family:monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto;">Request:
+{
+  &quot;customer_id&quot;: &quot;cust_8a4f2e1b&quot;,
+  &quot;channel&quot;: &quot;web_chat&quot;,
+  &quot;initial_message&quot;: &quot;I need help resetting my account password&quot;,
+  &quot;metadata&quot;: {
+    &quot;page_url&quot;: &quot;https://app.example.com/settings&quot;,
+    &quot;browser&quot;: &quot;Chrome 120&quot;
+  }
+}
+
+Response (201 Created):
+{
+  &quot;conversation_id&quot;: &quot;conv_9x7k3m2p&quot;,
+  &quot;status&quot;: &quot;active&quot;,
+  &quot;assigned_to&quot;: &quot;ai_agent&quot;,
+  &quot;ai_response&quot;: {
+    &quot;message&quot;: &quot;I can help you reset your password. For security, I will send a reset link to your registered email. Shall I proceed?&quot;,
+    &quot;confidence&quot;: 0.94,
+    &quot;sources&quot;: [&quot;KB-1042&quot;, &quot;KB-1044&quot;]
+  },
+  &quot;created_at&quot;: &quot;2025-01-10T14:30:00Z&quot;
+}</blockquote>
+
+<h3 style="color:#00695c;">GET /api/v2/analytics/dashboard</h3>
+<blockquote style="background:#f5f5f5;border-left:4px solid #00695c;padding:15px;margin:15px 0;font-family:monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto;">Response (200 OK):
+{
+  &quot;period&quot;: &quot;today&quot;,
+  &quot;metrics&quot;: {
+    &quot;total_conversations&quot;: 1247,
+    &quot;ai_resolved&quot;: 892,
+    &quot;human_resolved&quot;: 298,
+    &quot;pending&quot;: 57,
+    &quot;avg_response_time_ms&quot;: 620,
+    &quot;avg_resolution_time_min&quot;: 4.2,
+    &quot;csat_score&quot;: 4.6,
+    &quot;first_contact_resolution_rate&quot;: 0.78
+  },
+  &quot;agents_online&quot;: 24,
+  &quot;queue_depth&quot;: 12
+}</blockquote>
+
+<h2 style="color:#00695c;">4.3 Error Codes</h2>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;">Code</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Status</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Description</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Unit Tests</td><td style="border:1px solid #ddd;padding:8px;">Individual functions, methods, components</td><td style="border:1px solid #ddd;padding:8px;">Jest, pytest</td><td style="border:1px solid #ddd;padding:8px;">&gt; 85%</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Integration Tests</td><td style="border:1px solid #ddd;padding:8px;">Service interactions, API contracts, DB queries</td><td style="border:1px solid #ddd;padding:8px;">Supertest, pytest</td><td style="border:1px solid #ddd;padding:8px;">&gt; 75%</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">E2E Tests</td><td style="border:1px solid #ddd;padding:8px;">Complete user flows across services</td><td style="border:1px solid #ddd;padding:8px;">Cypress, Playwright</td><td style="border:1px solid #ddd;padding:8px;">Critical paths</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Load Tests</td><td style="border:1px solid #ddd;padding:8px;">Performance under peak concurrent load</td><td style="border:1px solid #ddd;padding:8px;">k6, Artillery</td><td style="border:1px solid #ddd;padding:8px;">2x peak load</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Security Tests</td><td style="border:1px solid #ddd;padding:8px;">OWASP Top 10, penetration testing</td><td style="border:1px solid #ddd;padding:8px;">Snyk, Burp Suite</td><td style="border:1px solid #ddd;padding:8px;">Zero critical</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">AI Model Eval</td><td style="border:1px solid #ddd;padding:8px;">Accuracy, relevance, safety, hallucination</td><td style="border:1px solid #ddd;padding:8px;">Custom eval suite</td><td style="border:1px solid #ddd;padding:8px;">&gt; 90% accuracy</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">400</td><td style="border:1px solid #ddd;padding:8px;">Bad Request</td><td style="border:1px solid #ddd;padding:8px;">Invalid request body or missing required parameters</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;text-align:center;">401</td><td style="border:1px solid #ddd;padding:8px;">Unauthorized</td><td style="border:1px solid #ddd;padding:8px;">Missing or invalid authentication token</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">403</td><td style="border:1px solid #ddd;padding:8px;">Forbidden</td><td style="border:1px solid #ddd;padding:8px;">Insufficient permissions for the requested resource</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;text-align:center;">404</td><td style="border:1px solid #ddd;padding:8px;">Not Found</td><td style="border:1px solid #ddd;padding:8px;">Resource (conversation, ticket, agent) not found</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">409</td><td style="border:1px solid #ddd;padding:8px;">Conflict</td><td style="border:1px solid #ddd;padding:8px;">Conversation already closed or agent already assigned</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;text-align:center;">429</td><td style="border:1px solid #ddd;padding:8px;">Too Many Requests</td><td style="border:1px solid #ddd;padding:8px;">Rate limit exceeded (100 req/min per API key)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">500</td><td style="border:1px solid #ddd;padding:8px;">Internal Server Error</td><td style="border:1px solid #ddd;padding:8px;">Unexpected server error with correlation ID for debugging</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;text-align:center;">503</td><td style="border:1px solid #ddd;padding:8px;">Service Unavailable</td><td style="border:1px solid #ddd;padding:8px;">Service temporarily unavailable due to maintenance or overload</td></tr>
 </tbody>
 </table>
-<h2 style="color:#00695c;border-bottom:2px solid #00695c;padding-bottom:4px;">8. Deployment Architecture</h2>
-<p>The platform is deployed across three environments with progressive promotion through CI/CD pipelines. Blue-green deployments are used for zero-downtime releases, with automated canary analysis before full traffic cutover.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;">Environment</th><th style="border:1px solid #ddd;padding:8px;">Infrastructure</th><th style="border:1px solid #ddd;padding:8px;">Purpose</th></tr></thead>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#00695c;border-bottom:3px solid #00695c;padding-bottom:8px;">5. Data Models</h1>
+
+<h2 style="color:#00695c;">5.1 Conversation Entity</h2>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Field</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Type</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Constraints</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Description</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Development</td><td style="border:1px solid #ddd;padding:8px;">ECS Fargate (2 tasks), RDS db.t3.medium, Redis cache.t3.small</td><td style="border:1px solid #ddd;padding:8px;">Feature development and integration testing</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Staging</td><td style="border:1px solid #ddd;padding:8px;">ECS Fargate (4 tasks), RDS db.r6g.large, Redis cache.r6g.large</td><td style="border:1px solid #ddd;padding:8px;">QA validation, UAT, performance testing</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Production</td><td style="border:1px solid #ddd;padding:8px;">ECS Fargate (8+ tasks, auto-scaling), RDS db.r6g.xlarge Multi-AZ, Redis cluster</td><td style="border:1px solid #ddd;padding:8px;">Live customer traffic, 99.95% SLA</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">id</td><td style="border:1px solid #ddd;padding:8px;">UUID</td><td style="border:1px solid #ddd;padding:8px;">PK, NOT NULL</td><td style="border:1px solid #ddd;padding:8px;">Unique conversation identifier</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">customer_id</td><td style="border:1px solid #ddd;padding:8px;">UUID</td><td style="border:1px solid #ddd;padding:8px;">FK, NOT NULL, INDEX</td><td style="border:1px solid #ddd;padding:8px;">Reference to customer entity</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">agent_id</td><td style="border:1px solid #ddd;padding:8px;">UUID</td><td style="border:1px solid #ddd;padding:8px;">FK, NULLABLE</td><td style="border:1px solid #ddd;padding:8px;">Assigned human agent (null for AI-only)</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">channel</td><td style="border:1px solid #ddd;padding:8px;">ENUM</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL</td><td style="border:1px solid #ddd;padding:8px;">web_chat, email, mobile, social</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">status</td><td style="border:1px solid #ddd;padding:8px;">ENUM</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL, DEFAULT active</td><td style="border:1px solid #ddd;padding:8px;">active, waiting, escalated, closed</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">category</td><td style="border:1px solid #ddd;padding:8px;">VARCHAR(100)</td><td style="border:1px solid #ddd;padding:8px;">NULLABLE, INDEX</td><td style="border:1px solid #ddd;padding:8px;">AI-classified ticket category</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">sentiment_score</td><td style="border:1px solid #ddd;padding:8px;">DECIMAL(3,2)</td><td style="border:1px solid #ddd;padding:8px;">NULLABLE</td><td style="border:1px solid #ddd;padding:8px;">Customer sentiment (-1.0 to 1.0)</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">csat_rating</td><td style="border:1px solid #ddd;padding:8px;">INTEGER</td><td style="border:1px solid #ddd;padding:8px;">NULLABLE, CHECK(1-5)</td><td style="border:1px solid #ddd;padding:8px;">Customer satisfaction rating</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">created_at</td><td style="border:1px solid #ddd;padding:8px;">TIMESTAMP</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL, DEFAULT NOW</td><td style="border:1px solid #ddd;padding:8px;">Conversation creation timestamp</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">closed_at</td><td style="border:1px solid #ddd;padding:8px;">TIMESTAMP</td><td style="border:1px solid #ddd;padding:8px;">NULLABLE</td><td style="border:1px solid #ddd;padding:8px;">Conversation close timestamp</td></tr>
 </tbody>
 </table>
-<h2 style="color:#00695c;border-bottom:2px solid #00695c;padding-bottom:4px;">9. Appendix: Glossary</h2>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:12px;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;">Term</th><th style="border:1px solid #ddd;padding:6px;">Definition</th></tr></thead>
+
+<h2 style="color:#00695c;">5.2 Message Entity</h2>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Field</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Type</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Constraints</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Description</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:6px;">RAG</td><td style="border:1px solid #ddd;padding:6px;">Retrieval-Augmented Generation — combining LLM with external knowledge retrieval</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">LLM</td><td style="border:1px solid #ddd;padding:6px;">Large Language Model — neural network trained on large text corpora</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">CSAT</td><td style="border:1px solid #ddd;padding:6px;">Customer Satisfaction Score — post-interaction rating (1-5 scale)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">NPS</td><td style="border:1px solid #ddd;padding:6px;">Net Promoter Score — customer loyalty metric (-100 to +100)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">SLA</td><td style="border:1px solid #ddd;padding:6px;">Service Level Agreement — contractual performance guarantees</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">PII</td><td style="border:1px solid #ddd;padding:6px;">Personally Identifiable Information — data that can identify an individual</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">id</td><td style="border:1px solid #ddd;padding:8px;">UUID</td><td style="border:1px solid #ddd;padding:8px;">PK, NOT NULL</td><td style="border:1px solid #ddd;padding:8px;">Unique message identifier</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">conversation_id</td><td style="border:1px solid #ddd;padding:8px;">UUID</td><td style="border:1px solid #ddd;padding:8px;">FK, NOT NULL, INDEX</td><td style="border:1px solid #ddd;padding:8px;">Parent conversation reference</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">sender_type</td><td style="border:1px solid #ddd;padding:8px;">ENUM</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL</td><td style="border:1px solid #ddd;padding:8px;">customer, ai_agent, human_agent, system</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">content</td><td style="border:1px solid #ddd;padding:8px;">TEXT</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL</td><td style="border:1px solid #ddd;padding:8px;">Message content (max 10,000 chars)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">confidence</td><td style="border:1px solid #ddd;padding:8px;">DECIMAL(3,2)</td><td style="border:1px solid #ddd;padding:8px;">NULLABLE</td><td style="border:1px solid #ddd;padding:8px;">AI confidence score (0.0 to 1.0)</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">attachments</td><td style="border:1px solid #ddd;padding:8px;">JSONB</td><td style="border:1px solid #ddd;padding:8px;">NULLABLE</td><td style="border:1px solid #ddd;padding:8px;">Array of file attachment metadata</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">created_at</td><td style="border:1px solid #ddd;padding:8px;">TIMESTAMP</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL, DEFAULT NOW</td><td style="border:1px solid #ddd;padding:8px;">Message timestamp</td></tr>
 </tbody>
 </table>
-<p style="color:#888;font-size:11px;text-align:center;margin-top:24px;">--- End of Technical Specification --- Document ID: TECH-CSP-002 v2.0 ---</p>`,
+
+<h2 style="color:#00695c;">5.3 Agent Entity</h2>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Field</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Type</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Constraints</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">id</td><td style="border:1px solid #ddd;padding:8px;">UUID</td><td style="border:1px solid #ddd;padding:8px;">PK, NOT NULL</td><td style="border:1px solid #ddd;padding:8px;">Unique agent identifier</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">name</td><td style="border:1px solid #ddd;padding:8px;">VARCHAR(200)</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL</td><td style="border:1px solid #ddd;padding:8px;">Agent full name</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">email</td><td style="border:1px solid #ddd;padding:8px;">VARCHAR(255)</td><td style="border:1px solid #ddd;padding:8px;">UNIQUE, NOT NULL</td><td style="border:1px solid #ddd;padding:8px;">Agent email address</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">status</td><td style="border:1px solid #ddd;padding:8px;">ENUM</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL, DEFAULT offline</td><td style="border:1px solid #ddd;padding:8px;">online, busy, away, offline</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">skills</td><td style="border:1px solid #ddd;padding:8px;">TEXT[]</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL</td><td style="border:1px solid #ddd;padding:8px;">Array of skill tags for routing</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">max_concurrent</td><td style="border:1px solid #ddd;padding:8px;">INTEGER</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL, DEFAULT 5</td><td style="border:1px solid #ddd;padding:8px;">Max simultaneous conversations</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-family:monospace;">active_count</td><td style="border:1px solid #ddd;padding:8px;">INTEGER</td><td style="border:1px solid #ddd;padding:8px;">NOT NULL, DEFAULT 0</td><td style="border:1px solid #ddd;padding:8px;">Current active conversations</td></tr>
+</tbody>
+</table>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#00695c;border-bottom:3px solid #00695c;padding-bottom:8px;">6. Security Architecture</h1>
+<p>The Customer Support Platform implements a defense-in-depth security strategy with multiple layers of protection. All external communication is encrypted using TLS 1.3, and all data at rest is encrypted using AES-256. Authentication for API consumers uses short-lived JWT tokens issued by an OAuth 2.0 authorization server (Auth0), with API keys available for server-to-server integrations. Role-based access control (RBAC) is enforced at the API Gateway level and within individual services. All PII data is processed through a dedicated PII detection and redaction pipeline before storage, and sensitive fields are additionally encrypted at the application level using envelope encryption with AWS KMS-managed keys.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Control</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Implementation</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Standard</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:8px;">Authentication</td><td style="border:1px solid #ddd;padding:8px;">OAuth 2.0 / JWT with RS256 signing, 15-min token expiry</td><td style="border:1px solid #ddd;padding:8px;">OWASP ASVS L2</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Authorization</td><td style="border:1px solid #ddd;padding:8px;">Role-based access control (RBAC) with least-privilege principle</td><td style="border:1px solid #ddd;padding:8px;">NIST AC-6</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Encryption in Transit</td><td style="border:1px solid #ddd;padding:8px;">TLS 1.3 for all connections, certificate pinning for mobile</td><td style="border:1px solid #ddd;padding:8px;">PCI DSS 4.1</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Encryption at Rest</td><td style="border:1px solid #ddd;padding:8px;">AES-256 with AWS KMS envelope encryption</td><td style="border:1px solid #ddd;padding:8px;">PCI DSS 3.4</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">PII Protection</td><td style="border:1px solid #ddd;padding:8px;">Automated PII detection, redaction, and tokenization pipeline</td><td style="border:1px solid #ddd;padding:8px;">GDPR Art. 25</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Rate Limiting</td><td style="border:1px solid #ddd;padding:8px;">100 req/min per API key, 1000 req/min per account</td><td style="border:1px solid #ddd;padding:8px;">OWASP API4</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Audit Logging</td><td style="border:1px solid #ddd;padding:8px;">All API calls logged with correlation IDs, 90-day retention</td><td style="border:1px solid #ddd;padding:8px;">SOC 2 CC7.2</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Vulnerability Scanning</td><td style="border:1px solid #ddd;padding:8px;">Weekly automated scans with Snyk and OWASP ZAP</td><td style="border:1px solid #ddd;padding:8px;">NIST RA-5</td></tr>
+</tbody>
+</table>
+
+<h1 style="color:#00695c;border-bottom:3px solid #00695c;padding-bottom:8px;">7. Testing Strategy</h1>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Test Type</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Scope</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Tools</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:center;">Coverage Target</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:8px;">Unit Tests</td><td style="border:1px solid #ddd;padding:8px;">Individual functions, classes, and modules</td><td style="border:1px solid #ddd;padding:8px;">Jest, Pytest</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">90%</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Integration Tests</td><td style="border:1px solid #ddd;padding:8px;">Service-to-service and database interactions</td><td style="border:1px solid #ddd;padding:8px;">Supertest, Testcontainers</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">80%</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">E2E Tests</td><td style="border:1px solid #ddd;padding:8px;">Full user flows across all services</td><td style="border:1px solid #ddd;padding:8px;">Playwright, Cypress</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">Critical paths</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">Load Tests</td><td style="border:1px solid #ddd;padding:8px;">API endpoints under simulated traffic</td><td style="border:1px solid #ddd;padding:8px;">k6, Artillery</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">10K concurrent</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Security Tests</td><td style="border:1px solid #ddd;padding:8px;">OWASP Top 10 vulnerabilities and auth flows</td><td style="border:1px solid #ddd;padding:8px;">OWASP ZAP, Snyk</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">All endpoints</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;">AI Model Tests</td><td style="border:1px solid #ddd;padding:8px;">Response accuracy, hallucination detection</td><td style="border:1px solid #ddd;padding:8px;">Custom eval framework</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">95% accuracy</td></tr>
+</tbody>
+</table>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#00695c;border-bottom:3px solid #00695c;padding-bottom:8px;">8. Deployment Architecture</h1>
+<p>The platform uses a multi-environment deployment strategy with automated CI/CD pipelines via GitHub Actions. Each environment is isolated in its own AWS VPC with appropriate network segmentation. Deployments follow a blue-green strategy with automated rollback capabilities. Infrastructure is defined as code using Terraform, ensuring consistency and reproducibility across environments. Database migrations are managed with Flyway and applied automatically during the deployment pipeline with backward-compatibility validation.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Environment</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Purpose</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Compute</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Database</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">Development</td><td style="border:1px solid #ddd;padding:8px;">Feature development and testing</td><td style="border:1px solid #ddd;padding:8px;">ECS Fargate (2 vCPU, 4GB per service)</td><td style="border:1px solid #ddd;padding:8px;">RDS db.t3.medium (single-AZ)</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">Staging</td><td style="border:1px solid #ddd;padding:8px;">Pre-production validation and UAT</td><td style="border:1px solid #ddd;padding:8px;">ECS Fargate (4 vCPU, 8GB per service)</td><td style="border:1px solid #ddd;padding:8px;">RDS db.r6g.large (multi-AZ)</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">Production</td><td style="border:1px solid #ddd;padding:8px;">Live customer-facing environment</td><td style="border:1px solid #ddd;padding:8px;">ECS Fargate (8 vCPU, 16GB, auto-scaling 2-20 tasks)</td><td style="border:1px solid #ddd;padding:8px;">RDS db.r6g.xlarge (multi-AZ, 2 read replicas)</td></tr>
+</tbody>
+</table>
+
+<h1 style="color:#00695c;border-bottom:3px solid #00695c;padding-bottom:8px;">9. Appendix: Glossary</h1>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#00695c;color:white;">
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Term</th>
+<th style="border:1px solid #00695c;padding:8px;text-align:left;">Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">RAG</td><td style="border:1px solid #ddd;padding:8px;">Retrieval-Augmented Generation: technique combining document retrieval with LLM generation</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">LLM</td><td style="border:1px solid #ddd;padding:8px;">Large Language Model: AI model trained on large text datasets for natural language tasks</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">CSAT</td><td style="border:1px solid #ddd;padding:8px;">Customer Satisfaction: metric measuring customer happiness typically on a 1-5 scale</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">PII</td><td style="border:1px solid #ddd;padding:8px;">Personally Identifiable Information: data that can identify an individual</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">PUE</td><td style="border:1px solid #ddd;padding:8px;">Power Usage Effectiveness: ratio of total data center energy to IT equipment energy</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">SLA</td><td style="border:1px solid #ddd;padding:8px;">Service Level Agreement: contractual performance and availability commitments</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">RBAC</td><td style="border:1px solid #ddd;padding:8px;">Role-Based Access Control: authorization method restricting access based on user roles</td></tr>
+<tr style="background:#f0f7f5;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">RTO/RPO</td><td style="border:1px solid #ddd;padding:8px;">Recovery Time/Point Objective: maximum acceptable downtime and data loss targets</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">WebSocket</td><td style="border:1px solid #ddd;padding:8px;">Full-duplex communication protocol enabling real-time bidirectional data transfer</td></tr>
+</tbody>
+</table>`,
   },
   {
     id: "training-manual",
     name: "Training Manual",
-    icon: "📚",
-    description: "Employee training manual with modules, exercises, assessment questions, and feedback form.",
-    content: `<div style="text-align:center;padding:60px 0;border-bottom:4px solid #2e7d32;background:#f1f8e9;margin:-20px -20px 20px -20px;">
-<p style="color:#2e7d32;font-size:14px;letter-spacing:3px;text-transform:uppercase;">[Company Logo Placeholder]</p>
-<h1 style="font-size:32px;color:#1b5e20;margin:16px 0 8px 0;">Employee Onboarding Training Manual</h1>
-<h2 style="font-size:20px;font-weight:normal;color:#2e7d32;">Software Development Team</h2>
-<p style="color:#555;margin-top:20px;">Version 3.0 | Effective: March 2026</p>
-<p style="color:#555;">Prepared by: Engineering Excellence Team</p>
+    icon: "🎓",
+    description: "Comprehensive employee onboarding training manual for software development teams with modules, exercises, and assessments.",
+    content: `<div style="text-align:center;padding:60px 20px;border:3px solid #2e7d32;margin-bottom:30px;">
+<div style="width:100px;height:100px;background:#2e7d32;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;">
+<p style="color:white;font-size:36px;font-weight:bold;margin:0;line-height:100px;">AT</p>
 </div>
-<h2 style="color:#2e7d32;">Table of Contents</h2>
-<ol style="color:#333;">
-<li>Course Overview</li>
-<li>Learning Objectives</li>
-<li>Module 1: Development Environment Setup</li>
-<li>Module 2: Code Standards &amp; Best Practices</li>
-<li>Module 3: CI/CD Pipeline</li>
-<li>Module 4: Testing Practices</li>
-<li>Assessment</li>
-<li>Glossary</li>
-<li>Additional Resources</li>
-<li>Feedback Form</li>
-</ol>
-<hr style="border:1px solid #ddd;margin:24px 0;"/>
-<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">1. Course Overview</h2>
-<p><strong>Purpose:</strong> This training manual provides new software developers with the foundational knowledge, tools, and processes required to become productive members of the engineering team at Acme Technologies Inc. Upon completion, you will be equipped to contribute to our codebase following established standards, use our development tools effectively, understand our CI/CD pipeline, and write high-quality tests.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<tr><td style="padding:8px;border:1px solid #ddd;background:#f5f5f5;width:30%;"><strong>Duration:</strong></td><td style="padding:8px;border:1px solid #ddd;">5 business days (40 hours total)</td></tr>
-<tr><td style="padding:8px;border:1px solid #ddd;background:#f5f5f5;"><strong>Format:</strong></td><td style="padding:8px;border:1px solid #ddd;">Self-paced modules with hands-on exercises and mentor check-ins</td></tr>
-<tr><td style="padding:8px;border:1px solid #ddd;background:#f5f5f5;"><strong>Prerequisites:</strong></td><td style="padding:8px;border:1px solid #ddd;">Basic programming proficiency, familiarity with Git, and a computer with admin access</td></tr>
-<tr><td style="padding:8px;border:1px solid #ddd;background:#f5f5f5;"><strong>Target Audience:</strong></td><td style="padding:8px;border:1px solid #ddd;">New software developers and engineers joining the development team</td></tr>
-<tr><td style="padding:8px;border:1px solid #ddd;background:#f5f5f5;"><strong>Completion Criteria:</strong></td><td style="padding:8px;border:1px solid #ddd;">Complete all exercises, pass assessment with 80%+ score, submit first PR</td></tr>
+<h1 style="font-size:28px;color:#2e7d32;margin-bottom:5px;">Employee Onboarding Training Manual</h1>
+<h2 style="font-size:20px;color:#333;font-weight:normal;margin-bottom:5px;">Software Development Team</h2>
+<hr style="width:40%;border:1px solid #2e7d32;margin:20px auto;"/>
+<p style="color:#666;">Version 3.0 | March 2026</p>
+<p style="color:#666;">Acme Technologies Inc. — Engineering Department</p>
+<p style="color:#999;font-size:12px;margin-top:20px;">CONFIDENTIAL — For Internal Use Only</p>
+</div>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">Table of Contents</h1>
+<table style="width:100%;border:none;">
+<tr><td style="padding:6px 10px;border:none;">1. Course Overview</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">3</td></tr>
+<tr><td style="padding:6px 10px;border:none;">2. Learning Objectives</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">4</td></tr>
+<tr><td style="padding:6px 10px;border:none;">3. Module 1: Development Environment Setup</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">5</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">3.1 Required Software</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">5</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">3.2 Installation Steps</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">6</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">3.3 Configuration</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">6</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">Exercise 1</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">7</td></tr>
+<tr><td style="padding:6px 10px;border:none;">4. Module 2: Code Standards &amp; Best Practices</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">8</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">4.1 Coding Guidelines</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">8</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">4.2 Code Review Process</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">9</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">Exercise 2</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">10</td></tr>
+<tr><td style="padding:6px 10px;border:none;">5. Module 3: CI/CD Pipeline</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">11</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">5.1 Pipeline Overview</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">11</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">5.2 Deployment Process</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">12</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">Exercise 3</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">12</td></tr>
+<tr><td style="padding:6px 10px;border:none;">6. Module 4: Testing Practices</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">13</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">6.1 Testing Pyramid</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">13</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">6.2 Writing Effective Tests</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">14</td></tr>
+<tr><td style="padding:6px 10px;border:none;padding-left:30px;">Exercise 4</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">14</td></tr>
+<tr><td style="padding:6px 10px;border:none;">7. Assessment</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">15</td></tr>
+<tr><td style="padding:6px 10px;border:none;">8. Glossary</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">16</td></tr>
+<tr><td style="padding:6px 10px;border:none;">9. Additional Resources</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">17</td></tr>
+<tr><td style="padding:6px 10px;border:none;">10. Feedback Form</td><td style="padding:6px 10px;border:none;text-align:right;color:#666;">18</td></tr>
 </table>
-<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">2. Learning Objectives</h2>
-<p>Upon completion of this training program, participants will be able to:</p>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">1. Course Overview</h1>
+<p>Welcome to the Acme Technologies Software Development Team! This training manual is designed to provide you with a comprehensive introduction to our development practices, tools, workflows, and standards. Whether you are a junior developer or a seasoned engineer joining our team, this manual will help you get up to speed quickly and begin contributing effectively to our projects. The training program covers everything from setting up your local development environment to understanding our CI/CD pipeline, code review processes, and testing methodologies.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<tr><td style="padding:10px;width:150px;font-weight:bold;color:#2e7d32;border-bottom:1px solid #e0e0e0;">Duration:</td><td style="padding:10px;border-bottom:1px solid #e0e0e0;">5 business days (40 hours)</td></tr>
+<tr><td style="padding:10px;font-weight:bold;color:#2e7d32;border-bottom:1px solid #e0e0e0;">Format:</td><td style="padding:10px;border-bottom:1px solid #e0e0e0;">Self-paced with mentor check-ins</td></tr>
+<tr><td style="padding:10px;font-weight:bold;color:#2e7d32;border-bottom:1px solid #e0e0e0;">Prerequisites:</td><td style="padding:10px;border-bottom:1px solid #e0e0e0;">Proficiency in at least one programming language (JavaScript/TypeScript preferred), basic understanding of Git version control, familiarity with command-line interfaces</td></tr>
+<tr><td style="padding:10px;font-weight:bold;color:#2e7d32;border-bottom:1px solid #e0e0e0;">Completion:</td><td style="padding:10px;border-bottom:1px solid #e0e0e0;">Pass the final assessment with 80% or higher score</td></tr>
+<tr><td style="padding:10px;font-weight:bold;color:#2e7d32;">Mentor:</td><td style="padding:10px;">You will be assigned a team mentor who will guide you through the training and answer questions</td></tr>
+</table>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">2. Learning Objectives</h1>
+<p>Upon completing this training program, you will be able to:</p>
 <ol>
-<li>Set up and configure the complete development environment including IDE, runtime dependencies, and Docker containers</li>
-<li>Navigate the monorepo structure and understand the relationship between services, libraries, and shared modules</li>
-<li>Write code that adheres to the team's coding standards, including TypeScript/Python style guides and architectural patterns</li>
-<li>Use the Git branching strategy (Git Flow) and create properly formatted pull requests with meaningful descriptions</li>
-<li>Participate effectively in code reviews as both reviewer and author, providing constructive and actionable feedback</li>
-<li>Understand and use the CI/CD pipeline including build, test, staging deployment, and production release processes</li>
-<li>Write comprehensive unit tests, integration tests, and end-to-end tests following the testing pyramid approach</li>
-<li>Use monitoring and observability tools (Datadog, Grafana) to debug issues and understand system behavior</li>
-<li>Follow security best practices including secure coding guidelines, secret management, and vulnerability remediation</li>
-<li>Participate in Agile ceremonies (standups, sprint planning, retrospectives) and use Jira for task management</li>
+<li>Set up and configure a complete local development environment with all required tools, SDKs, and IDE plugins used by the engineering team</li>
+<li>Understand and apply the team&#39;s coding standards, naming conventions, and file organization patterns across frontend and backend projects</li>
+<li>Navigate the Git branching strategy including feature branches, release branches, and hotfix workflows following our established Git Flow model</li>
+<li>Participate effectively in the code review process as both a submitter and reviewer, providing constructive and actionable feedback</li>
+<li>Build, test, and deploy applications using our CI/CD pipeline, understanding each stage from commit to production deployment</li>
+<li>Write comprehensive unit tests, integration tests, and end-to-end tests following the testing pyramid methodology and achieving required coverage thresholds</li>
+<li>Use our internal documentation system, knowledge base, and communication channels to find information and collaborate with team members effectively</li>
+<li>Understand the security best practices and compliance requirements that apply to all code written within the organization, including OWASP Top 10 mitigation strategies</li>
+<li>Configure and use monitoring and logging tools to debug issues and track application performance in development and staging environments</li>
+<li>Contribute to sprint ceremonies including daily standups, sprint planning, retrospectives, and backlog grooming sessions following Agile/Scrum methodology</li>
 </ol>
-<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">3. Module 1: Development Environment Setup</h2>
-<h3 style="color:#2e7d32;">3.1 Required Software</h3>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#2e7d32;color:white;"><th style="border:1px solid #ddd;padding:8px;">Software</th><th style="border:1px solid #ddd;padding:8px;">Version</th><th style="border:1px solid #ddd;padding:8px;">Purpose</th></tr></thead>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">3. Module 1: Development Environment Setup</h1>
+
+<h2 style="color:#2e7d32;">3.1 Required Software</h2>
+<p>The following software must be installed on your development workstation. Use the versions specified below to ensure compatibility with our build system and CI/CD pipeline. Your IT administrator will provide you with a pre-configured laptop; however, you are responsible for verifying and updating these tools as needed.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#2e7d32;color:white;">
+<th style="border:1px solid #2e7d32;padding:8px;text-align:left;">Software</th>
+<th style="border:1px solid #2e7d32;padding:8px;text-align:left;">Version</th>
+<th style="border:1px solid #2e7d32;padding:8px;text-align:left;">Purpose</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Visual Studio Code</td><td style="border:1px solid #ddd;padding:8px;">Latest</td><td style="border:1px solid #ddd;padding:8px;">Primary IDE with team-shared settings and extensions</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Node.js</td><td style="border:1px solid #ddd;padding:8px;">20.x LTS</td><td style="border:1px solid #ddd;padding:8px;">JavaScript/TypeScript runtime for frontend and backend services</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Python</td><td style="border:1px solid #ddd;padding:8px;">3.11+</td><td style="border:1px solid #ddd;padding:8px;">Runtime for ML services, data pipelines, and analytics</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Docker Desktop</td><td style="border:1px solid #ddd;padding:8px;">Latest</td><td style="border:1px solid #ddd;padding:8px;">Container runtime for local development and service dependencies</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Git</td><td style="border:1px solid #ddd;padding:8px;">2.40+</td><td style="border:1px solid #ddd;padding:8px;">Version control (configured with SSH keys for GitHub)</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">PostgreSQL Client</td><td style="border:1px solid #ddd;padding:8px;">15+</td><td style="border:1px solid #ddd;padding:8px;">Database client for local development and debugging</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">AWS CLI</td><td style="border:1px solid #ddd;padding:8px;">v2</td><td style="border:1px solid #ddd;padding:8px;">AWS service interaction for staging/production debugging</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Node.js</td><td style="border:1px solid #ddd;padding:8px;">v20.11 LTS</td><td style="border:1px solid #ddd;padding:8px;">JavaScript runtime for backend and build tools</td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:8px;">Python</td><td style="border:1px solid #ddd;padding:8px;">3.12.x</td><td style="border:1px solid #ddd;padding:8px;">ML services and scripting</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Docker Desktop</td><td style="border:1px solid #ddd;padding:8px;">4.28+</td><td style="border:1px solid #ddd;padding:8px;">Container runtime for local development and testing</td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:8px;">Git</td><td style="border:1px solid #ddd;padding:8px;">2.43+</td><td style="border:1px solid #ddd;padding:8px;">Version control system</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">VS Code</td><td style="border:1px solid #ddd;padding:8px;">Latest</td><td style="border:1px solid #ddd;padding:8px;">Primary IDE with team-configured extensions</td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:8px;">PostgreSQL</td><td style="border:1px solid #ddd;padding:8px;">16.x</td><td style="border:1px solid #ddd;padding:8px;">Local database for development</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Redis</td><td style="border:1px solid #ddd;padding:8px;">7.2+</td><td style="border:1px solid #ddd;padding:8px;">Local cache and session store</td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:8px;">AWS CLI</td><td style="border:1px solid #ddd;padding:8px;">2.15+</td><td style="border:1px solid #ddd;padding:8px;">Cloud service management and deployment</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Terraform</td><td style="border:1px solid #ddd;padding:8px;">1.7+</td><td style="border:1px solid #ddd;padding:8px;">Infrastructure as code tooling</td></tr>
 </tbody>
 </table>
-<h3 style="color:#2e7d32;">3.2 Installation Steps</h3>
+
+<h2 style="color:#2e7d32;">3.2 Installation Steps</h2>
 <ol>
-<li><strong>Clone the monorepo:</strong> Access the GitHub organization (github.com/acme-tech), accept the invitation, and clone the main repository. Run <code>git clone git@github.com:acme-tech/platform.git</code></li>
-<li><strong>Install Node.js dependencies:</strong> Navigate to the project root and run <code>npm install</code>. This installs all workspace dependencies across services.</li>
-<li><strong>Set up Python virtual environment:</strong> Run <code>python -m venv .venv &amp;&amp; source .venv/bin/activate &amp;&amp; pip install -r requirements.txt</code></li>
-<li><strong>Start Docker services:</strong> Run <code>docker-compose up -d</code> to start PostgreSQL, Redis, and Elasticsearch containers for local development.</li>
-<li><strong>Configure environment variables:</strong> Copy <code>.env.example</code> to <code>.env.local</code> and fill in your development credentials (ask your mentor for access tokens).</li>
-<li><strong>Run database migrations:</strong> Execute <code>npm run db:migrate</code> to set up your local database schema with seed data.</li>
-<li><strong>Verify setup:</strong> Run <code>npm run dev</code> and confirm the application is accessible at http://localhost:3000.</li>
+<li><strong>Install Node.js:</strong> Download Node.js v20.11 LTS from the official website or use nvm (Node Version Manager) for version management. Verify installation by running <em>node --version</em> and <em>npm --version</em> in your terminal.</li>
+<li><strong>Install Python:</strong> Download Python 3.12 from python.org or use pyenv. Create a virtual environment for each project using <em>python -m venv .venv</em>. Verify with <em>python --version</em>.</li>
+<li><strong>Install Docker Desktop:</strong> Download from docker.com. Ensure at least 8GB of RAM is allocated to Docker. Enable Kubernetes in Docker Desktop settings for local cluster testing.</li>
+<li><strong>Install Git:</strong> Install via your package manager (brew install git on macOS). Configure your identity: <em>git config --global user.name</em> and <em>git config --global user.email</em> with your company email address.</li>
+<li><strong>Install VS Code:</strong> Download from code.visualstudio.com. Import the team settings file from the shared drive: <em>File &gt; Preferences &gt; Settings &gt; Import Profile</em>. This will install all required extensions automatically.</li>
+<li><strong>Install PostgreSQL:</strong> Use Docker for local development: <em>docker run -d --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=devpass postgres:16</em>. Alternatively, install natively using your package manager.</li>
+<li><strong>Configure AWS CLI:</strong> Run <em>aws configure sso</em> and enter the SSO URL provided by your team lead. Select the development account profile.</li>
 </ol>
-<h3 style="color:#2e7d32;">3.3 IDE Configuration</h3>
-<p>Install the following VS Code extensions (a shared <code>.vscode/extensions.json</code> file will prompt you automatically): ESLint, Prettier, GitLens, Docker, Python, Prisma, and Tailwind CSS IntelliSense. The team's shared settings in <code>.vscode/settings.json</code> configure format-on-save, lint-on-type, and consistent indentation across all team members.</p>
-<div style="background:#e8f5e9;border:2px solid #2e7d32;border-radius:8px;padding:16px;margin:16px 0;">
-<h4 style="color:#2e7d32;margin-top:0;">Exercise 1: Environment Verification</h4>
-<p><strong>Objective:</strong> Verify your development environment is fully configured.</p>
+
+<h2 style="color:#2e7d32;">3.3 Configuration</h2>
 <ol>
-<li>Start all Docker services and confirm they are running with <code>docker ps</code></li>
-<li>Run the full test suite: <code>npm test</code> — all tests should pass</li>
-<li>Start the development server and navigate to http://localhost:3000</li>
-<li>Create a test branch, make a small change to any README file, commit, and push</li>
-<li>Screenshot your running application and share with your mentor on Slack</li>
+<li><strong>Clone the repository:</strong> Navigate to your workspace directory and clone the main repository using the SSH URL provided in your onboarding email. Run <em>git clone git@github.com:acmetech/platform.git</em>.</li>
+<li><strong>Install dependencies:</strong> Navigate to the project root and run <em>npm install</em> to install all Node.js dependencies. For Python services, activate the virtual environment and run <em>pip install -r requirements.txt</em>.</li>
+<li><strong>Set up environment variables:</strong> Copy the example environment file with <em>cp .env.example .env.local</em>. Fill in the required values using the credentials provided by your team lead. Never commit .env files to version control.</li>
+<li><strong>Start local services:</strong> Run <em>docker-compose up -d</em> to start PostgreSQL, Redis, and other dependent services. Run <em>npm run db:migrate</em> to apply database migrations. Run <em>npm run db:seed</em> to populate development data.</li>
+<li><strong>Verify setup:</strong> Run <em>npm run dev</em> to start the development server. Open your browser to http://localhost:3000 and verify the application loads correctly. Run <em>npm test</em> to verify all tests pass.</li>
 </ol>
-<p><strong>Time estimate:</strong> 30 minutes | <strong>Mentor check-in required</strong></p>
+
+<div style="page-break-before:always;"></div>
+
+<div style="border:2px solid #2e7d32;border-radius:8px;padding:20px;margin:20px 0;background:#f1f8e9;">
+<h3 style="color:#2e7d32;margin-top:0;">Exercise 1: Environment Verification</h3>
+<p><strong>Objective:</strong> Verify that your development environment is correctly configured and all tools are functioning properly.</p>
+<p><strong>Instructions:</strong></p>
+<ol>
+<li>Open a terminal and run the verification script: <em>npm run verify-setup</em></li>
+<li>Take a screenshot of the successful output showing all green checkmarks</li>
+<li>Create a new branch named <em>onboarding/your-name</em> from the main branch</li>
+<li>Add a new file at <em>team/your-name.json</em> with your name, role, and start date</li>
+<li>Commit and push the branch, then create a pull request</li>
+</ol>
+<p><strong>Expected Duration:</strong> 30 minutes</p>
+<p><strong>Completion Criteria:</strong> All setup checks pass, PR is created and approved by your mentor</p>
 </div>
-<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">4. Module 2: Code Standards &amp; Best Practices</h2>
-<h3 style="color:#2e7d32;">4.1 Coding Guidelines</h3>
-<p>Our team follows strict coding standards to maintain consistency, readability, and maintainability across the codebase. The key principles are:</p>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">4. Module 2: Code Standards &amp; Best Practices</h1>
+
+<h2 style="color:#2e7d32;">4.1 Coding Guidelines</h2>
+<p>All code written at Acme Technologies must adhere to the following standards. These guidelines ensure consistency, readability, and maintainability across our codebase. Automated linting and formatting tools enforce many of these rules, but developers are expected to understand the reasoning behind them.</p>
 <ul>
-<li><strong>TypeScript Strict Mode:</strong> All TypeScript code must compile with strict mode enabled. Use explicit types for function parameters and return values. Avoid <code>any</code> type — use <code>unknown</code> with type guards instead.</li>
-<li><strong>Naming Conventions:</strong> Use camelCase for variables and functions, PascalCase for classes and types, UPPER_SNAKE_CASE for constants, and kebab-case for file names.</li>
-<li><strong>Function Length:</strong> Functions should not exceed 30 lines. If a function is longer, refactor it into smaller, focused helper functions with descriptive names.</li>
-<li><strong>Error Handling:</strong> Always handle errors explicitly. Use custom error classes that extend the base Error class. Never swallow errors silently.</li>
-<li><strong>Documentation:</strong> Public APIs must have JSDoc comments. Complex business logic should include inline comments explaining the "why," not the "what."</li>
-<li><strong>No Magic Numbers/Strings:</strong> Extract all literal values into named constants or configuration files.</li>
+<li><strong>Naming Conventions:</strong> Use camelCase for variables and functions, PascalCase for classes and React components, UPPER_SNAKE_CASE for constants, and kebab-case for file names. Database columns should use snake_case.</li>
+<li><strong>File Organization:</strong> Follow the feature-based folder structure. Each feature should have its own directory containing components, hooks, utilities, tests, and types. Shared utilities belong in the <em>src/shared</em> directory.</li>
+<li><strong>TypeScript:</strong> All new code must be written in TypeScript with strict mode enabled. Avoid using <em>any</em> type; prefer <em>unknown</em> with type guards. Define interfaces for all API responses and component props. Use discriminated unions for complex state management.</li>
+<li><strong>Error Handling:</strong> Always handle errors explicitly. Use custom error classes that extend a base ApplicationError class. Log errors with contextual information using structured logging. Never swallow errors silently or use empty catch blocks.</li>
+<li><strong>Comments and Documentation:</strong> Write self-documenting code with descriptive variable and function names. Use JSDoc comments for all public APIs and exported functions. Document complex business logic with inline comments explaining the &quot;why&quot; not the &quot;what.&quot;</li>
+<li><strong>Security:</strong> Never hardcode secrets, API keys, or credentials in source code. Always validate and sanitize user inputs. Use parameterized queries for database operations. Follow the principle of least privilege for API permissions.</li>
+<li><strong>Performance:</strong> Avoid premature optimization but be mindful of common performance pitfalls such as N+1 queries, unnecessary re-renders in React, memory leaks in event listeners, and blocking the event loop in Node.js.</li>
 </ul>
-<h3 style="color:#2e7d32;">4.2 Code Review Process</h3>
+
+<h2 style="color:#2e7d32;">4.2 Code Review Process</h2>
+<p>Code reviews are a critical part of our development workflow. Every change must be reviewed and approved before merging into the main branch. Follow these steps for a smooth code review process:</p>
 <ol>
-<li><strong>Create a feature branch:</strong> Branch from <code>develop</code> using the naming convention <code>feature/JIRA-123-short-description</code></li>
-<li><strong>Write code with tests:</strong> All new code must include unit tests. Aim for the tests to be written first (TDD) where practical.</li>
-<li><strong>Create a Pull Request:</strong> Use the PR template, fill in the description, link the Jira ticket, add screenshots for UI changes, and request reviews from at least 2 team members.</li>
-<li><strong>Address feedback:</strong> Respond to all review comments. Use "Resolve conversation" only after implementing the suggested change or providing a clear rationale for disagreeing.</li>
-<li><strong>Merge after approval:</strong> Once 2 approvals are received and CI is green, squash-merge into the target branch.</li>
+<li><strong>Create a Pull Request:</strong> Push your feature branch and create a PR with a descriptive title, summary of changes, testing instructions, and screenshots (for UI changes). Link the relevant Jira ticket in the PR description.</li>
+<li><strong>Automated Checks:</strong> The CI pipeline will automatically run linting, type checking, unit tests, integration tests, and security scanning. All checks must pass before requesting review.</li>
+<li><strong>Request Review:</strong> Assign at least two reviewers: one from your immediate team and one from the code owners of the affected files. Use the GitHub CODEOWNERS file to identify appropriate reviewers.</li>
+<li><strong>Address Feedback:</strong> Respond to all comments within 24 hours. Make requested changes in new commits (do not force-push during review). Mark conversations as resolved only after the reviewer confirms the fix.</li>
+<li><strong>Merge:</strong> Once all reviewers approve and all CI checks pass, use the &quot;Squash and Merge&quot; strategy with a clean commit message following the Conventional Commits format (e.g., feat: add user profile page, fix: resolve login timeout issue).</li>
 </ol>
-<div style="background:#e8f5e9;border:2px solid #2e7d32;border-radius:8px;padding:16px;margin:16px 0;">
-<h4 style="color:#2e7d32;margin-top:0;">Exercise 2: Code Review Practice</h4>
-<p><strong>Objective:</strong> Practice the code review process by reviewing a sample PR and submitting your own.</p>
+
+<div style="page-break-before:always;"></div>
+
+<div style="border:2px solid #2e7d32;border-radius:8px;padding:20px;margin:20px 0;background:#f1f8e9;">
+<h3 style="color:#2e7d32;margin-top:0;">Exercise 2: Code Review Practice</h3>
+<p><strong>Objective:</strong> Practice the code review process by reviewing a sample pull request and submitting your own code change.</p>
+<p><strong>Instructions:</strong></p>
 <ol>
-<li>Review the sample PR at <code>github.com/acme-tech/platform/pull/training-review</code> — leave at least 3 substantive comments</li>
-<li>Create a new feature branch and implement the task assigned by your mentor</li>
-<li>Submit a PR following the team's PR template and guidelines</li>
-<li>Address any review feedback within 4 hours of receiving it</li>
+<li>Navigate to the training repository and find PR #42 titled &quot;Training: Sample Review Exercise&quot;</li>
+<li>Review the code changes, identify at least 3 issues (bugs, style violations, or improvements)</li>
+<li>Leave constructive comments on the PR using the &quot;Suggest Changes&quot; feature where applicable</li>
+<li>Create your own feature branch and implement a small utility function with proper TypeScript types, error handling, JSDoc comments, and unit tests</li>
+<li>Submit a PR and have your mentor review it</li>
 </ol>
-<p><strong>Time estimate:</strong> 2 hours | <strong>Mentor review required</strong></p>
+<p><strong>Expected Duration:</strong> 2 hours</p>
+<p><strong>Completion Criteria:</strong> Identified at least 3 valid issues in the sample PR, your PR follows all coding guidelines and passes CI checks</p>
 </div>
-<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">5. Module 3: CI/CD Pipeline</h2>
-<h3 style="color:#2e7d32;">5.1 Pipeline Overview</h3>
-<p>Our CI/CD pipeline is built on GitHub Actions with the following stages that execute automatically on every push and pull request:</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#2e7d32;color:white;"><th style="border:1px solid #ddd;padding:8px;">Stage</th><th style="border:1px solid #ddd;padding:8px;">Duration</th><th style="border:1px solid #ddd;padding:8px;">Actions</th><th style="border:1px solid #ddd;padding:8px;">Gate Criteria</th></tr></thead>
-<tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">1. Lint &amp; Format</td><td style="border:1px solid #ddd;padding:8px;">~1 min</td><td style="border:1px solid #ddd;padding:8px;">ESLint, Prettier, TypeScript compiler</td><td style="border:1px solid #ddd;padding:8px;">Zero errors</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">2. Unit Tests</td><td style="border:1px solid #ddd;padding:8px;">~3 min</td><td style="border:1px solid #ddd;padding:8px;">Jest, pytest with coverage report</td><td style="border:1px solid #ddd;padding:8px;">&gt; 85% coverage</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">3. Integration Tests</td><td style="border:1px solid #ddd;padding:8px;">~5 min</td><td style="border:1px solid #ddd;padding:8px;">API contract tests, DB integration</td><td style="border:1px solid #ddd;padding:8px;">100% pass</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">4. Security Scan</td><td style="border:1px solid #ddd;padding:8px;">~2 min</td><td style="border:1px solid #ddd;padding:8px;">Snyk, SonarQube, dependency audit</td><td style="border:1px solid #ddd;padding:8px;">Zero critical/high</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">5. Build &amp; Push</td><td style="border:1px solid #ddd;padding:8px;">~3 min</td><td style="border:1px solid #ddd;padding:8px;">Docker build, push to ECR</td><td style="border:1px solid #ddd;padding:8px;">Build succeeds</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">6. Deploy Staging</td><td style="border:1px solid #ddd;padding:8px;">~5 min</td><td style="border:1px solid #ddd;padding:8px;">ECS service update, health check</td><td style="border:1px solid #ddd;padding:8px;">Health checks pass</td></tr>
-</tbody>
-</table>
-<h3 style="color:#2e7d32;">5.2 Deployment Process</h3>
-<p>Production deployments follow the blue-green strategy outlined in SOP IT-DEP-001. Key steps: merge to <code>main</code> triggers the pipeline, Docker images are built and pushed to ECR, ArgoCD detects the change and deploys to the green environment, smoke tests run automatically, and traffic is gradually shifted from blue to green over a 15-minute canary period.</p>
-<div style="background:#e8f5e9;border:2px solid #2e7d32;border-radius:8px;padding:16px;margin:16px 0;">
-<h4 style="color:#2e7d32;margin-top:0;">Exercise 3: CI/CD Pipeline Exploration</h4>
-<p><strong>Objective:</strong> Understand the CI/CD pipeline by observing a build and deployment cycle.</p>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">5. Module 3: CI/CD Pipeline</h1>
+
+<h2 style="color:#2e7d32;">5.1 Pipeline Overview</h2>
+<p>Our CI/CD pipeline is built on GitHub Actions and consists of the following stages. Understanding each stage will help you debug build failures and optimize your development workflow.</p>
 <ol>
-<li>Push your Exercise 2 branch and observe the GitHub Actions pipeline execution</li>
-<li>Identify each stage and note the duration and any warnings</li>
-<li>Intentionally introduce a lint error, push, and observe the pipeline failure</li>
-<li>Fix the error and confirm the pipeline passes on the subsequent push</li>
-<li>Document your observations in a short summary (1 paragraph) shared with your mentor</li>
+<li><strong>Source Stage:</strong> Triggered on every push to a feature branch or pull request. The pipeline checks out the code and determines which services have changed to enable selective builds.</li>
+<li><strong>Lint &amp; Format:</strong> Runs ESLint, Prettier, and TypeScript compiler checks. This stage catches syntax errors, style violations, and type errors before any tests run. Failures here typically indicate code that doesn&#39;t match our style configuration.</li>
+<li><strong>Unit Tests:</strong> Executes all unit tests using Jest (TypeScript) and Pytest (Python). Tests run in parallel across multiple workers. Code coverage reports are generated and must meet the 85% threshold.</li>
+<li><strong>Integration Tests:</strong> Spins up dependent services (database, cache, message queue) using Docker containers and runs integration test suites. This stage validates service-to-service communication and database operations.</li>
+<li><strong>Security Scan:</strong> Runs Snyk for dependency vulnerability scanning and SonarQube for static code analysis. Any critical or high severity vulnerabilities will block the pipeline.</li>
+<li><strong>Build &amp; Package:</strong> Compiles the application, creates Docker images, and pushes them to Amazon ECR with appropriate tags (commit SHA and branch name).</li>
+<li><strong>Deploy to Staging:</strong> Automatically deploys to the staging environment for branches merged into main. Runs smoke tests to verify the deployment is healthy.</li>
+<li><strong>Deploy to Production:</strong> Triggered manually via a release workflow. Uses blue-green deployment strategy with automated rollback on health check failures.</li>
 </ol>
-<p><strong>Time estimate:</strong> 1.5 hours</p>
+
+<h2 style="color:#2e7d32;">5.2 Deployment Process</h2>
+<ol>
+<li>Ensure your PR is merged into the main branch and the staging deployment is successful</li>
+<li>Create a release tag following semantic versioning: <em>git tag v1.2.3</em> and push the tag</li>
+<li>Navigate to GitHub Actions and manually trigger the &quot;Production Deploy&quot; workflow selecting the release tag</li>
+<li>Monitor the deployment progress in the Actions tab and verify in the Datadog dashboard</li>
+<li>After deployment, verify critical user flows in production and confirm metrics are normal</li>
+<li>If issues are detected, trigger the &quot;Rollback&quot; workflow which will automatically revert to the previous version</li>
+</ol>
+
+<div style="border:2px solid #2e7d32;border-radius:8px;padding:20px;margin:20px 0;background:#f1f8e9;">
+<h3 style="color:#2e7d32;margin-top:0;">Exercise 3: Pipeline Exploration</h3>
+<p><strong>Objective:</strong> Understand the CI/CD pipeline by triggering a build and analyzing the output.</p>
+<p><strong>Instructions:</strong></p>
+<ol>
+<li>Push a small change (such as a README update) to your onboarding branch</li>
+<li>Navigate to the GitHub Actions tab and observe the pipeline stages executing</li>
+<li>Review the logs for each stage and note the duration of each step</li>
+<li>Intentionally introduce a linting error, push, and observe the pipeline failure</li>
+<li>Fix the error, push again, and confirm the pipeline passes</li>
+<li>Document the pipeline stages and their approximate durations in a short summary</li>
+</ol>
+<p><strong>Expected Duration:</strong> 1.5 hours</p>
+<p><strong>Completion Criteria:</strong> Successfully triggered a pipeline run, observed a failure, fixed it, and documented the process</p>
 </div>
-<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">6. Module 4: Testing Practices</h2>
-<h3 style="color:#2e7d32;">6.1 Testing Pyramid</h3>
-<p>We follow the testing pyramid approach with a large base of fast unit tests, a middle layer of integration tests, and a small top layer of end-to-end tests. The rationale: unit tests are fast, reliable, and provide precise failure localization; integration tests verify service boundaries and data flows; E2E tests validate critical user journeys but are slower and more brittle.</p>
-<h3 style="color:#2e7d32;">6.2 Writing Effective Tests</h3>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">6. Module 4: Testing Practices</h1>
+
+<h2 style="color:#2e7d32;">6.1 Testing Pyramid</h2>
+<p>Our testing strategy follows the testing pyramid model, which emphasizes having a large base of fast, isolated unit tests, a smaller layer of integration tests that verify component interactions, and a thin layer of end-to-end tests that validate complete user workflows. This approach ensures fast feedback during development while maintaining confidence in the overall system behavior.</p>
 <ul>
-<li><strong>Arrange-Act-Assert (AAA):</strong> Structure every test with clear setup, execution, and verification phases</li>
-<li><strong>One assertion per test:</strong> Each test should verify a single behavior. Multiple assertions make failure diagnosis difficult.</li>
-<li><strong>Descriptive test names:</strong> Use the format "should [expected behavior] when [condition]" — e.g., <code>should return 404 when user not found</code></li>
-<li><strong>Test behavior, not implementation:</strong> Test what the code does, not how it does it. This makes tests resilient to refactoring.</li>
-<li><strong>Mock external dependencies:</strong> Use dependency injection and mocks for databases, APIs, and file systems to keep unit tests fast and isolated.</li>
-<li><strong>Avoid test interdependence:</strong> Each test must be able to run independently in any order. Never rely on state from a previous test.</li>
+<li><strong>Unit Tests (Base - 70% of tests):</strong> Test individual functions, classes, and components in isolation. Mock all external dependencies. These tests should run in milliseconds and provide fast feedback. Target: 90% code coverage for new code.</li>
+<li><strong>Integration Tests (Middle - 20% of tests):</strong> Test interactions between services, database queries, and API endpoints with real dependencies (using Testcontainers). These tests validate that components work correctly together.</li>
+<li><strong>End-to-End Tests (Top - 10% of tests):</strong> Test complete user workflows from the UI through the backend. Use Playwright for browser automation. Focus only on critical business flows (login, checkout, data submission) as these tests are slower and more brittle.</li>
 </ul>
-<div style="background:#e8f5e9;border:2px solid #2e7d32;border-radius:8px;padding:16px;margin:16px 0;">
-<h4 style="color:#2e7d32;margin-top:0;">Exercise 4: Writing Tests</h4>
-<p><strong>Objective:</strong> Practice writing tests at different levels of the testing pyramid.</p>
-<ol>
-<li>Write 5 unit tests for an existing utility function (assigned by mentor)</li>
-<li>Write 2 integration tests that verify an API endpoint's request/response contract</li>
-<li>Write 1 E2E test using Cypress that covers a critical user flow</li>
-<li>Run all tests and confirm they pass with <code>npm test -- --coverage</code></li>
-<li>Submit your tests as a PR for review</li>
-</ol>
-<p><strong>Time estimate:</strong> 3 hours | <strong>Mentor review required</strong></p>
-</div>
-<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">7. Assessment</h2>
-<p>Complete the following assessment to verify your understanding of the training material. A score of 80% or above is required to pass.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#2e7d32;color:white;"><th style="border:1px solid #ddd;padding:8px;text-align:center;width:30px;">#</th><th style="border:1px solid #ddd;padding:8px;">Question</th><th style="border:1px solid #ddd;padding:8px;text-align:center;width:100px;">Your Answer</th></tr></thead>
-<tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">1</td><td style="border:1px solid #ddd;padding:8px;">What command starts the local Docker development services?</td><td style="border:1px solid #ddd;padding:8px;"></td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">2</td><td style="border:1px solid #ddd;padding:8px;">What is the minimum number of PR approvals required before merging?</td><td style="border:1px solid #ddd;padding:8px;"></td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">3</td><td style="border:1px solid #ddd;padding:8px;">What naming convention is used for feature branches?</td><td style="border:1px solid #ddd;padding:8px;"></td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">4</td><td style="border:1px solid #ddd;padding:8px;">What is the minimum code coverage target for unit tests?</td><td style="border:1px solid #ddd;padding:8px;"></td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">5</td><td style="border:1px solid #ddd;padding:8px;">Name the three levels of the testing pyramid from bottom to top.</td><td style="border:1px solid #ddd;padding:8px;"></td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">6</td><td style="border:1px solid #ddd;padding:8px;">What deployment strategy does the team use for production releases?</td><td style="border:1px solid #ddd;padding:8px;"></td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">7</td><td style="border:1px solid #ddd;padding:8px;">What format should test names follow?</td><td style="border:1px solid #ddd;padding:8px;"></td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">8</td><td style="border:1px solid #ddd;padding:8px;">What CI/CD platform does the team use?</td><td style="border:1px solid #ddd;padding:8px;"></td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">9</td><td style="border:1px solid #ddd;padding:8px;">Why should tests avoid using the <code>any</code> TypeScript type?</td><td style="border:1px solid #ddd;padding:8px;"></td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">10</td><td style="border:1px solid #ddd;padding:8px;">What is the maximum acceptable function length in lines of code?</td><td style="border:1px solid #ddd;padding:8px;"></td></tr>
-</tbody>
-</table>
-<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">8. Glossary</h2>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:12px;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;">Term</th><th style="border:1px solid #ddd;padding:6px;">Definition</th></tr></thead>
-<tbody>
-<tr><td style="border:1px solid #ddd;padding:6px;">CI/CD</td><td style="border:1px solid #ddd;padding:6px;">Continuous Integration / Continuous Deployment — automated build, test, and deploy pipeline</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">TDD</td><td style="border:1px solid #ddd;padding:6px;">Test-Driven Development — writing tests before implementation code</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">PR</td><td style="border:1px solid #ddd;padding:6px;">Pull Request — a code review mechanism in Git-based workflows</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">Monorepo</td><td style="border:1px solid #ddd;padding:6px;">A single repository containing multiple projects, services, or packages</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">ECR</td><td style="border:1px solid #ddd;padding:6px;">Elastic Container Registry — AWS service for storing Docker container images</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">ECS</td><td style="border:1px solid #ddd;padding:6px;">Elastic Container Service — AWS container orchestration platform</td></tr>
-<tr><td style="border:1px solid #ddd;padding:6px;">ArgoCD</td><td style="border:1px solid #ddd;padding:6px;">GitOps continuous delivery tool for Kubernetes/ECS deployments</td></tr>
-</tbody>
-</table>
-<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">9. Additional Resources</h2>
+
+<h2 style="color:#2e7d32;">6.2 Writing Effective Tests</h2>
 <ul>
-<li><strong>Internal Wiki:</strong> confluence.acme-tech.com/engineering — Architecture decisions, runbooks, and team norms</li>
-<li><strong>Style Guide:</strong> github.com/acme-tech/style-guide — Complete TypeScript and Python coding standards</li>
-<li><strong>Book: Clean Code</strong> by Robert C. Martin — Required reading for all engineers</li>
-<li><strong>Book: Designing Data-Intensive Applications</strong> by Martin Kleppmann — Recommended for backend engineers</li>
-<li><strong>Course: Testing JavaScript</strong> by Kent C. Dodds — Comprehensive testing best practices</li>
-<li><strong>Mentor Office Hours:</strong> Wednesdays 2-3 PM — Drop-in session for onboarding questions</li>
+<li><strong>Follow the AAA Pattern:</strong> Arrange (set up test data and preconditions), Act (execute the function or action being tested), Assert (verify the expected outcome). Keep each section clearly separated.</li>
+<li><strong>Test Behavior, Not Implementation:</strong> Tests should verify what a function does, not how it does it. This makes tests resilient to refactoring. Test the public API of modules, not internal helper functions.</li>
+<li><strong>Use Descriptive Test Names:</strong> Test names should describe the scenario and expected outcome: &quot;should return 404 when user is not found&quot; is better than &quot;test getUserById error.&quot;</li>
+<li><strong>Keep Tests Independent:</strong> Each test should set up its own state and not depend on the execution order or results of other tests. Use beforeEach for common setup and afterEach for cleanup.</li>
+<li><strong>Test Edge Cases:</strong> Include tests for boundary conditions, empty inputs, null values, maximum lengths, and error scenarios. Happy path testing alone is insufficient.</li>
+<li><strong>Avoid Test Duplication:</strong> Use parameterized tests (test.each in Jest) for testing multiple inputs with the same logic. Extract common test utilities into shared test helpers.</li>
 </ul>
-<h2 style="color:#2e7d32;border-bottom:2px solid #2e7d32;padding-bottom:4px;">10. Feedback Form</h2>
-<p>Please provide feedback on this training program to help us improve the onboarding experience for future team members.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;text-align:left;">Question</th><th style="border:1px solid #ddd;padding:8px;text-align:center;width:60px;">1</th><th style="border:1px solid #ddd;padding:8px;text-align:center;width:60px;">2</th><th style="border:1px solid #ddd;padding:8px;text-align:center;width:60px;">3</th><th style="border:1px solid #ddd;padding:8px;text-align:center;width:60px;">4</th><th style="border:1px solid #ddd;padding:8px;text-align:center;width:60px;">5</th></tr></thead>
+
+<div style="border:2px solid #2e7d32;border-radius:8px;padding:20px;margin:20px 0;background:#f1f8e9;">
+<h3 style="color:#2e7d32;margin-top:0;">Exercise 4: Writing Tests</h3>
+<p><strong>Objective:</strong> Write a comprehensive test suite for an existing utility module.</p>
+<p><strong>Instructions:</strong></p>
+<ol>
+<li>Open the file <em>src/shared/utils/validation.ts</em> in the training repository</li>
+<li>Read through the existing functions: validateEmail, validatePassword, validatePhoneNumber, and sanitizeInput</li>
+<li>Write a complete test suite covering: valid inputs, invalid inputs, edge cases, boundary conditions, and error handling</li>
+<li>Aim for 95% code coverage of the validation module</li>
+<li>Run your tests with <em>npm test -- --coverage --watch</em> and iterate until coverage targets are met</li>
+</ol>
+<p><strong>Expected Duration:</strong> 2.5 hours</p>
+<p><strong>Completion Criteria:</strong> Test suite passes, achieves 95%+ coverage, includes at least 20 test cases covering edge cases</p>
+</div>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">7. Assessment</h1>
+<p>Complete the following assessment to demonstrate your understanding of the training material. You must score 80% or higher (8 out of 10 correct) to pass. Discuss your answers with your mentor after submission.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#2e7d32;color:white;">
+<th style="border:1px solid #2e7d32;padding:10px;text-align:center;width:40px;">#</th>
+<th style="border:1px solid #2e7d32;padding:10px;text-align:left;">Question</th>
+<th style="border:1px solid #2e7d32;padding:10px;text-align:center;width:120px;">Your Answer</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd;padding:8px;">Overall quality of training materials</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Clarity of instructions and exercises</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Relevance of content to your daily work</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Mentor support and availability</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td></tr>
-<tr><td style="border:1px solid #ddd;padding:8px;">Pace and duration of the program</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">[ ]</td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;text-align:center;">1</td><td style="border:1px solid #ddd;padding:10px;">What is the required Node.js version for our development environment?</td><td style="border:1px solid #ddd;padding:10px;"></td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:10px;text-align:center;">2</td><td style="border:1px solid #ddd;padding:10px;">Which naming convention should be used for React component files?</td><td style="border:1px solid #ddd;padding:10px;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;text-align:center;">3</td><td style="border:1px solid #ddd;padding:10px;">How many reviewers are required to approve a pull request before merging?</td><td style="border:1px solid #ddd;padding:10px;"></td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:10px;text-align:center;">4</td><td style="border:1px solid #ddd;padding:10px;">What merge strategy do we use for pull requests (merge commit, squash, or rebase)?</td><td style="border:1px solid #ddd;padding:10px;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;text-align:center;">5</td><td style="border:1px solid #ddd;padding:10px;">What is the minimum unit test code coverage threshold required by the CI pipeline?</td><td style="border:1px solid #ddd;padding:10px;"></td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:10px;text-align:center;">6</td><td style="border:1px solid #ddd;padding:10px;">Name the three levels of the testing pyramid from bottom to top.</td><td style="border:1px solid #ddd;padding:10px;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;text-align:center;">7</td><td style="border:1px solid #ddd;padding:10px;">What deployment strategy does our production environment use?</td><td style="border:1px solid #ddd;padding:10px;"></td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:10px;text-align:center;">8</td><td style="border:1px solid #ddd;padding:10px;">What does the AAA pattern stand for in testing?</td><td style="border:1px solid #ddd;padding:10px;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;text-align:center;">9</td><td style="border:1px solid #ddd;padding:10px;">Which security scanning tools are integrated into our CI pipeline?</td><td style="border:1px solid #ddd;padding:10px;"></td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:10px;text-align:center;">10</td><td style="border:1px solid #ddd;padding:10px;">What commit message format must be used when squash-merging pull requests?</td><td style="border:1px solid #ddd;padding:10px;"></td></tr>
 </tbody>
 </table>
-<p><strong>Additional comments or suggestions:</strong></p>
-<p style="border:1px solid #ddd;padding:40px 8px;color:#aaa;">Write your feedback here...</p>
-<p style="color:#888;font-size:11px;text-align:center;margin-top:32px;">--- End of Training Manual --- Version 3.0 | Acme Technologies Inc. ---</p>`,
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">8. Glossary</h1>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#2e7d32;color:white;">
+<th style="border:1px solid #2e7d32;padding:8px;text-align:left;">Term</th>
+<th style="border:1px solid #2e7d32;padding:8px;text-align:left;">Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">CI/CD</td><td style="border:1px solid #ddd;padding:8px;">Continuous Integration / Continuous Deployment: automated practice of building, testing, and deploying code changes</td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">ESLint</td><td style="border:1px solid #ddd;padding:8px;">A static code analysis tool for identifying problematic patterns in JavaScript/TypeScript code</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">Git Flow</td><td style="border:1px solid #ddd;padding:8px;">A branching model that defines strict branch types: main, develop, feature, release, and hotfix</td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">Jest</td><td style="border:1px solid #ddd;padding:8px;">A JavaScript testing framework with built-in assertions, mocking, and code coverage support</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">Playwright</td><td style="border:1px solid #ddd;padding:8px;">A browser automation framework for end-to-end testing across Chromium, Firefox, and WebKit</td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">Semantic Versioning</td><td style="border:1px solid #ddd;padding:8px;">Versioning scheme using MAJOR.MINOR.PATCH format to communicate the nature of changes</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">Snyk</td><td style="border:1px solid #ddd;padding:8px;">A security platform that scans dependencies for known vulnerabilities</td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">SonarQube</td><td style="border:1px solid #ddd;padding:8px;">A platform for continuous inspection of code quality and security</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">Testcontainers</td><td style="border:1px solid #ddd;padding:8px;">A library that provides lightweight, throwaway Docker containers for integration testing</td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:8px;font-weight:bold;">TypeScript</td><td style="border:1px solid #ddd;padding:8px;">A strongly-typed superset of JavaScript that compiles to plain JavaScript</td></tr>
+</tbody>
+</table>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">9. Additional Resources</h1>
+<ul>
+<li><strong>Internal Wiki:</strong> https://wiki.acmetech.internal — Engineering handbook, architecture decision records, and runbooks</li>
+<li><strong>Coding Standards:</strong> https://github.com/acmetech/coding-standards — Full coding standards documentation with examples</li>
+<li><strong>Book:</strong> &quot;Clean Code&quot; by Robert C. Martin — Required reading for all engineers (copy provided by the company)</li>
+<li><strong>Book:</strong> &quot;The Pragmatic Programmer&quot; by David Thomas and Andrew Hunt — Recommended for practical development insights</li>
+<li><strong>TypeScript Handbook:</strong> https://www.typescriptlang.org/docs/handbook/ — Official TypeScript documentation</li>
+<li><strong>Testing Best Practices:</strong> https://github.com/goldbergyoni/javascript-testing-best-practices — Comprehensive testing guide</li>
+<li><strong>OWASP Top 10:</strong> https://owasp.org/www-project-top-ten/ — Essential security reference for web applications</li>
+<li><strong>Slack Channels:</strong> #engineering-help, #code-review, #ci-cd-support, #new-hires — Join these channels on your first day</li>
+<li><strong>Mentorship Program:</strong> https://wiki.acmetech.internal/mentorship — Sign up for ongoing mentorship after onboarding</li>
+</ul>
+
+<div style="page-break-before:always;"></div>
+
+<h1 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;">10. Feedback Form</h1>
+<p>Your feedback helps us improve the onboarding experience for future team members. Please take a few minutes to complete this form and return it to your mentor or the Engineering Manager.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+<thead>
+<tr style="background:#2e7d32;color:white;">
+<th style="border:1px solid #2e7d32;padding:10px;text-align:left;">Question</th>
+<th style="border:1px solid #2e7d32;padding:10px;text-align:center;width:60px;">1</th>
+<th style="border:1px solid #2e7d32;padding:10px;text-align:center;width:60px;">2</th>
+<th style="border:1px solid #2e7d32;padding:10px;text-align:center;width:60px;">3</th>
+<th style="border:1px solid #2e7d32;padding:10px;text-align:center;width:60px;">4</th>
+<th style="border:1px solid #2e7d32;padding:10px;text-align:center;width:60px;">5</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:10px;">How clear and well-organized was the training material?</td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:10px;">How useful were the hands-on exercises?</td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">How well did the training prepare you for your role?</td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:10px;">Was the duration of the training program appropriate?</td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td></tr>
+<tr><td style="border:1px solid #ddd;padding:10px;">How helpful was your assigned mentor during onboarding?</td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td></tr>
+<tr style="background:#f1f8e9;"><td style="border:1px solid #ddd;padding:10px;">Would you recommend this training to other new hires?</td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td><td style="border:1px solid #ddd;padding:10px;text-align:center;"></td></tr>
+</tbody>
+</table>
+<p style="margin-top:20px;"><strong>Additional Comments or Suggestions:</strong></p>
+<div style="border:1px solid #ddd;min-height:100px;padding:10px;margin-top:10px;"></div>
+<p style="margin-top:20px;color:#666;font-style:italic;">Scale: 1 = Strongly Disagree, 2 = Disagree, 3 = Neutral, 4 = Agree, 5 = Strongly Agree</p>`,
   },
 ];
