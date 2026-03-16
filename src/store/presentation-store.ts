@@ -40,12 +40,27 @@ export interface ElementAnimation {
   order: number;
 }
 
+export interface TableCellStyle {
+  backgroundColor?: string;
+  color?: string;
+  fontWeight?: string;
+  fontStyle?: string;
+  textAlign?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  padding?: number;
+}
+
 export interface TableData {
   rows: number;
   cols: number;
   cells: string[][];
   headerRow?: boolean;
   tableStyle?: 'default' | 'striped' | 'bordered' | 'minimal' | 'colorful';
+  cellStyles?: Record<string, TableCellStyle>;
+  columnWidths?: number[];
+  rowHeights?: number[];
+  mergedCells?: Array<{ row: number; col: number; rowSpan: number; colSpan: number }>;
 }
 
 export interface ChartData {
@@ -73,6 +88,23 @@ export interface MediaData {
   muted?: boolean;
 }
 
+export interface ImageFilters {
+  brightness?: number;
+  contrast?: number;
+  blur?: number;
+  saturate?: number;
+  grayscale?: number;
+  sepia?: number;
+  hueRotate?: number;
+}
+
+export interface ImageCrop {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface SlideElement {
   id: string;
   type: 'text' | 'image' | 'shape' | 'table' | 'chart' | 'media';
@@ -88,6 +120,8 @@ export interface SlideElement {
   chartData?: ChartData;
   textEffect?: TextEffect;
   mediaData?: MediaData;
+  imageFilters?: ImageFilters;
+  imageCrop?: ImageCrop;
   style: {
     fontSize?: number;
     fontWeight?: string;
@@ -102,6 +136,7 @@ export interface SlideElement {
     borderRadius?: string;
     borderColor?: string;
     borderWidth?: number;
+    borderStyle?: string;
     opacity?: number;
     shadow?: boolean;
     shadowColor?: string;
@@ -113,6 +148,8 @@ export interface SlideElement {
     glowColor?: string;
     rotateX?: number;
     rotateY?: number;
+    fillGradient?: string;
+    effect3D?: string;
   };
   animation?: ElementAnimation;
 }
@@ -128,6 +165,15 @@ export type SlideTransitionType =
   | 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'split' | 'push'
   | 'cover' | 'dissolve' | 'morph' | 'reveal' | 'cut' | 'uncover' | 'random';
 
+export interface PlaceholderPosition {
+  id: string;
+  type: 'title' | 'subtitle' | 'body' | 'footer' | 'date' | 'slideNumber' | 'image' | 'logo';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface SlideMaster {
   id: string;
   name: string;
@@ -137,6 +183,12 @@ export interface SlideMaster {
   accentColor: string;
   fontFamily: string;
   headingFont: string;
+  placeholders?: PlaceholderPosition[];
+  logoUrl?: string;
+  logoPosition?: { x: number; y: number; width: number; height: number };
+  borderStyle?: string;
+  headerHeight?: number;
+  footerHeight?: number;
 }
 
 export interface SlideSection {
@@ -145,6 +197,8 @@ export interface SlideSection {
   slideIds: string[];
   collapsed?: boolean;
 }
+
+export type TransitionSound = 'none' | 'click' | 'whoosh' | 'chime' | 'drum' | 'applause';
 
 export interface Slide {
   id: string;
@@ -155,12 +209,40 @@ export interface Slide {
   transition?: SlideTransitionType;
   transitionDuration?: number;
   transitionTiming?: SlideTransitionTiming;
+  transitionSound?: TransitionSound;
   hidden?: boolean;
   slideNumberVisible?: boolean;
   dateTimeVisible?: boolean;
   footerText?: string;
   masterId?: string;
   sectionId?: string;
+}
+
+export interface ThemeColorScheme {
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  surface: string;
+  text: string;
+  textSecondary: string;
+}
+
+export interface ThemeFontPair {
+  heading: string;
+  body: string;
+}
+
+export interface ThemeBackgroundStyle {
+  type: 'solid' | 'gradient' | 'pattern' | 'image';
+  value: string;
+}
+
+export interface ThemeEffectPreset {
+  name: string;
+  shadow?: string;
+  borderRadius?: string;
+  opacity?: number;
 }
 
 export interface PresentationTheme {
@@ -171,6 +253,11 @@ export interface PresentationTheme {
   accentColor?: string;
   fontFamily?: string;
   headingFont?: string;
+  colorScheme?: ThemeColorScheme;
+  fontPair?: ThemeFontPair;
+  backgroundStyle?: ThemeBackgroundStyle;
+  effectPreset?: ThemeEffectPreset;
+  category?: string;
 }
 
 export interface DesignSuggestion {
@@ -197,6 +284,11 @@ export interface PresentationState {
   showMediaPanel: boolean;
   showTextEffectsPanel: boolean;
   showExportPanel: boolean;
+  showThemeDesigner: boolean;
+  showShapeDrawingTools: boolean;
+  showImageEditor: boolean;
+  showTransitionPanel: boolean;
+  showAnimationTimeline: boolean;
   canvasZoom: number;
   showGrid: boolean;
   showRuler: boolean;
@@ -214,6 +306,7 @@ export interface PresentationState {
   sections: SlideSection[];
   slideShowAnnotations: Array<{ slideIndex: number; points: Array<{ x: number; y: number }>; color: string; tool: 'pen' | 'highlighter' }>;
   presenterViewMode: boolean;
+  customThemes: PresentationTheme[];
 }
 
 export interface PresentationActions {
@@ -284,6 +377,17 @@ export interface PresentationActions {
   clearSlideShowAnnotations: () => void;
   setPresenterViewMode: (on: boolean) => void;
   updateElementTextEffect: (slideIndex: number, elementId: string, textEffect: TextEffect | undefined) => void;
+  setShowThemeDesigner: (on: boolean) => void;
+  setShowShapeDrawingTools: (on: boolean) => void;
+  setShowImageEditor: (on: boolean) => void;
+  setShowTransitionPanel: (on: boolean) => void;
+  setShowAnimationTimeline: (on: boolean) => void;
+  addCustomTheme: (theme: PresentationTheme) => void;
+  updateImageFilters: (slideIndex: number, elementId: string, filters: ImageFilters) => void;
+  updateImageCrop: (slideIndex: number, elementId: string, crop: ImageCrop) => void;
+  updateTableCellStyle: (slideIndex: number, elementId: string, cellKey: string, style: TableCellStyle) => void;
+  updateSlideTransitionSound: (index: number, sound: TransitionSound) => void;
+  updateSlideMasterPlaceholders: (masterId: string, placeholders: PlaceholderPosition[]) => void;
 }
 
 // ── Animation Definitions ───────────────────────────────────────────────────
@@ -318,14 +422,22 @@ export const ANIMATION_DEFINITIONS: Record<AnimationCategory, { value: Animation
 // ── Themes ──────────────────────────────────────────────────────────────────────
 
 export const PRESENTATION_THEMES: PresentationTheme[] = [
-  { name: 'Corporate Blue', background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)', titleColor: '#ffffff', textColor: '#e0e7ff', accentColor: '#3b82f6', fontFamily: 'Arial', headingFont: 'Arial' },
-  { name: 'Nature Green', background: 'linear-gradient(135deg, #14532d 0%, #22c55e 100%)', titleColor: '#ffffff', textColor: '#dcfce7', accentColor: '#22c55e', fontFamily: 'Georgia', headingFont: 'Georgia' },
-  { name: 'Minimal White', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', titleColor: '#1e293b', textColor: '#475569', accentColor: '#3b82f6', fontFamily: 'Helvetica', headingFont: 'Helvetica' },
-  { name: 'Dark Elegance', background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%)', titleColor: '#f1f5f9', textColor: '#94a3b8', accentColor: '#a855f7', fontFamily: 'Georgia', headingFont: 'Georgia' },
-  { name: 'Sunset', background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', titleColor: '#ffffff', textColor: '#fef3c7', accentColor: '#f59e0b', fontFamily: 'Verdana', headingFont: 'Verdana' },
-  { name: 'Ocean', background: 'linear-gradient(135deg, #0c4a6e 0%, #06b6d4 100%)', titleColor: '#ffffff', textColor: '#cffafe', accentColor: '#06b6d4', fontFamily: 'Arial', headingFont: 'Arial' },
-  { name: 'Tech', background: 'linear-gradient(135deg, #18181b 0%, #3f3f46 100%)', titleColor: '#22d3ee', textColor: '#a1a1aa', accentColor: '#22d3ee', fontFamily: 'Courier New', headingFont: 'Courier New' },
-  { name: 'Creative', background: 'linear-gradient(135deg, #7c3aed 0%, #f472b6 100%)', titleColor: '#ffffff', textColor: '#fde68a', accentColor: '#f472b6', fontFamily: 'Trebuchet MS', headingFont: 'Trebuchet MS' },
+  { name: 'Corporate Blue', background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)', titleColor: '#ffffff', textColor: '#e0e7ff', accentColor: '#3b82f6', fontFamily: 'Arial', headingFont: 'Arial', category: 'Professional', colorScheme: { primary: '#2563eb', secondary: '#1e3a5f', accent: '#3b82f6', background: '#1e3a5f', surface: '#2563eb', text: '#ffffff', textSecondary: '#e0e7ff' }, fontPair: { heading: 'Arial', body: 'Arial' } },
+  { name: 'Nature Green', background: 'linear-gradient(135deg, #14532d 0%, #22c55e 100%)', titleColor: '#ffffff', textColor: '#dcfce7', accentColor: '#22c55e', fontFamily: 'Georgia', headingFont: 'Georgia', category: 'Nature' },
+  { name: 'Minimal White', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', titleColor: '#1e293b', textColor: '#475569', accentColor: '#3b82f6', fontFamily: 'Helvetica', headingFont: 'Helvetica', category: 'Minimal' },
+  { name: 'Dark Elegance', background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%)', titleColor: '#f1f5f9', textColor: '#94a3b8', accentColor: '#a855f7', fontFamily: 'Georgia', headingFont: 'Georgia', category: 'Dark' },
+  { name: 'Sunset', background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', titleColor: '#ffffff', textColor: '#fef3c7', accentColor: '#f59e0b', fontFamily: 'Verdana', headingFont: 'Verdana', category: 'Vibrant' },
+  { name: 'Ocean', background: 'linear-gradient(135deg, #0c4a6e 0%, #06b6d4 100%)', titleColor: '#ffffff', textColor: '#cffafe', accentColor: '#06b6d4', fontFamily: 'Arial', headingFont: 'Arial', category: 'Nature' },
+  { name: 'Tech', background: 'linear-gradient(135deg, #18181b 0%, #3f3f46 100%)', titleColor: '#22d3ee', textColor: '#a1a1aa', accentColor: '#22d3ee', fontFamily: 'Courier New', headingFont: 'Courier New', category: 'Dark' },
+  { name: 'Creative', background: 'linear-gradient(135deg, #7c3aed 0%, #f472b6 100%)', titleColor: '#ffffff', textColor: '#fde68a', accentColor: '#f472b6', fontFamily: 'Trebuchet MS', headingFont: 'Trebuchet MS', category: 'Creative' },
+  { name: 'Aurora', background: 'linear-gradient(135deg, #0d1b2a 0%, #1b2838 30%, #415a77 60%, #778da9 100%)', titleColor: '#e0e1dd', textColor: '#a8dadc', accentColor: '#457b9d', fontFamily: 'Georgia', headingFont: 'Georgia', category: 'Dark' },
+  { name: 'Rose Gold', background: 'linear-gradient(135deg, #2d1b2e 0%, #5c2d50 50%, #b76e79 100%)', titleColor: '#ffd7d7', textColor: '#e8b4b8', accentColor: '#d4a5a5', fontFamily: 'Georgia', headingFont: 'Georgia', category: 'Elegant' },
+  { name: 'Arctic', background: 'linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 50%, #bee3db 100%)', titleColor: '#2b2d42', textColor: '#495057', accentColor: '#3d5a80', fontFamily: 'Helvetica', headingFont: 'Helvetica', category: 'Minimal' },
+  { name: 'Midnight Purple', background: 'linear-gradient(135deg, #0d0221 0%, #150050 50%, #3f0071 100%)', titleColor: '#fb2576', textColor: '#d8b4fe', accentColor: '#a855f7', fontFamily: 'Trebuchet MS', headingFont: 'Trebuchet MS', category: 'Dark' },
+  { name: 'Warm Earth', background: 'linear-gradient(135deg, #3c1518 0%, #69140e 30%, #a44200 60%, #d58936 100%)', titleColor: '#f2f0d8', textColor: '#e0d8b0', accentColor: '#d58936', fontFamily: 'Georgia', headingFont: 'Georgia', category: 'Warm' },
+  { name: 'Neon City', background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #16003b 100%)', titleColor: '#00ff88', textColor: '#e0e0e0', accentColor: '#ff006e', fontFamily: 'Arial', headingFont: 'Arial', category: 'Creative' },
+  { name: 'Clean Slate', background: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)', titleColor: '#1a1a1a', textColor: '#4a4a4a', accentColor: '#2563eb', fontFamily: 'Helvetica', headingFont: 'Helvetica', category: 'Minimal' },
+  { name: 'Forest', background: 'linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%)', titleColor: '#d8f3dc', textColor: '#b7e4c7', accentColor: '#95d5b2', fontFamily: 'Georgia', headingFont: 'Georgia', category: 'Nature' },
 ];
 
 // ── Gradient presets ───────────────────────────────────────────────────────────
@@ -484,6 +596,11 @@ export const usePresentationStore = create<PresentationState & PresentationActio
   showMediaPanel: false,
   showTextEffectsPanel: false,
   showExportPanel: false,
+  showThemeDesigner: false,
+  showShapeDrawingTools: false,
+  showImageEditor: false,
+  showTransitionPanel: false,
+  showAnimationTimeline: false,
   canvasZoom: 100,
   showGrid: false,
   showRuler: false,
@@ -501,6 +618,7 @@ export const usePresentationStore = create<PresentationState & PresentationActio
   sections: [],
   slideShowAnnotations: [],
   presenterViewMode: false,
+  customThemes: [],
 
   pushUndo: () =>
     set((state) => ({
@@ -641,6 +759,11 @@ export const usePresentationStore = create<PresentationState & PresentationActio
   setShowMediaPanel: (on) => set({ showMediaPanel: on }),
   setShowTextEffectsPanel: (on) => set({ showTextEffectsPanel: on }),
   setShowExportPanel: (on) => set({ showExportPanel: on }),
+  setShowThemeDesigner: (on) => set({ showThemeDesigner: on }),
+  setShowShapeDrawingTools: (on) => set({ showShapeDrawingTools: on }),
+  setShowImageEditor: (on) => set({ showImageEditor: on }),
+  setShowTransitionPanel: (on) => set({ showTransitionPanel: on }),
+  setShowAnimationTimeline: (on) => set({ showAnimationTimeline: on }),
   setCanvasZoom: (zoom) => set({ canvasZoom: zoom }),
   setShowGrid: (on) => set({ showGrid: on }),
   setShowRuler: (on) => set({ showRuler: on }),
@@ -1052,4 +1175,58 @@ export const usePresentationStore = create<PresentationState & PresentationActio
       );
       return { slides };
     }),
+
+  addCustomTheme: (theme) =>
+    set((state) => ({
+      customThemes: [...state.customThemes, theme],
+    })),
+
+  updateImageFilters: (slideIndex, elementId, filters) =>
+    set((state) => {
+      const slides = state.slides.map((s, i) =>
+        i === slideIndex
+          ? { ...s, elements: s.elements.map((el) => el.id === elementId ? { ...el, imageFilters: filters } : el) }
+          : s,
+      );
+      return { slides };
+    }),
+
+  updateImageCrop: (slideIndex, elementId, crop) =>
+    set((state) => {
+      const slides = state.slides.map((s, i) =>
+        i === slideIndex
+          ? { ...s, elements: s.elements.map((el) => el.id === elementId ? { ...el, imageCrop: crop } : el) }
+          : s,
+      );
+      return { slides };
+    }),
+
+  updateTableCellStyle: (slideIndex, elementId, cellKey, style) =>
+    set((state) => {
+      const slides = state.slides.map((s, i) => {
+        if (i !== slideIndex) return s;
+        return {
+          ...s,
+          elements: s.elements.map((el) => {
+            if (el.id !== elementId || !el.tableData) return el;
+            const cellStyles = { ...(el.tableData.cellStyles || {}), [cellKey]: { ...(el.tableData.cellStyles?.[cellKey] || {}), ...style } };
+            return { ...el, tableData: { ...el.tableData, cellStyles } };
+          }),
+        };
+      });
+      return { slides };
+    }),
+
+  updateSlideTransitionSound: (index, sound) =>
+    set((state) => {
+      const slides = state.slides.map((s, i) =>
+        i === index ? { ...s, transitionSound: sound } : s,
+      );
+      return { slides };
+    }),
+
+  updateSlideMasterPlaceholders: (masterId, placeholders) =>
+    set((state) => ({
+      slideMasters: state.slideMasters.map(m => m.id === masterId ? { ...m, placeholders } : m),
+    })),
 }));
