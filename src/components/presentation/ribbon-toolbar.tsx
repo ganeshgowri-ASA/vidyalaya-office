@@ -17,6 +17,15 @@ import {
   AlignVerticalDistributeCenter, Group, Ungroup,
   ArrowLeft, ArrowUpRight, Heart, Cloud,
   Pen, Highlighter, MousePointer, ChevronsUp, ChevronsDown,
+  Volume2, Clock, Zap, SkipForward, Repeat, Shuffle,
+  MoveRight, MoveLeft, MoveUp, MoveDown, RotateCw,
+  ZoomIn, ZoomOut, FlipHorizontal, FlipVertical,
+  Waves, Hexagon as HexagonIcon, Crosshair, Wind,
+  Paintbrush as BrushIcon, Eraser, Move, Navigation,
+  Radio, Tv, Users, Globe, Mic, Camera, Video as VideoIcon,
+  PlayCircle, StopCircle, SkipBack, FastForward,
+  ChevronRight, ChevronLeft, ChevronUp, ListOrdered,
+  MousePointerClick, Hourglass, LayoutList, Rewind,
 } from 'lucide-react';
 import {
   ShapePicker, IconPicker,
@@ -790,74 +799,195 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
 
       case 'transitions':
         return (
-          <div className="flex items-end gap-0.5">
-            <RibbonGroup label="Transition">
-              <div className="flex items-center gap-1 flex-wrap">
-                {TRANSITION_TYPES.slice(0, 8).map((t) => (
-                  <button key={t.value} onClick={() => { pushUndo(); updateSlideTransition(activeSlideIndex, t.value); }}
-                    className="px-2 py-1.5 rounded text-[10px] border transition-all hover:scale-105"
-                    style={{
-                      borderColor: (slide?.transition || 'none') === t.value ? 'var(--primary)' : 'var(--border)',
-                      background: (slide?.transition || 'none') === t.value ? 'var(--primary)' : 'var(--card)',
-                      color: (slide?.transition || 'none') === t.value ? 'var(--primary-foreground)' : 'var(--card-foreground)',
-                    }}>
-                    {t.label}
-                  </button>
-                ))}
-                <RibbonButton icon={<SlidersHorizontal size={14} />} label="More..." onClick={() => setShowTransitionPanel(!showTransitionPanel)} active={showTransitionPanel} small />
+          <div className="flex items-end gap-0.5 overflow-x-auto">
+            {/* Preview group */}
+            <RibbonGroup label="Preview">
+              <RibbonButton
+                icon={<Play size={18} />}
+                label="Preview"
+                onClick={() => { setPresenterMode(true); }}
+                title="Preview transition on current slide"
+              />
+            </RibbonGroup>
+            <RibbonDivider />
+
+            {/* Transition to This Slide group */}
+            <RibbonGroup label="Transition to This Slide">
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-0.5 flex-wrap max-w-[420px]">
+                  {[
+                    { value: 'none' as SlideTransitionType, label: 'None', icon: '⬜' },
+                    { value: 'cut' as SlideTransitionType, label: 'Cut', icon: '✂' },
+                    { value: 'fade' as SlideTransitionType, label: 'Fade', icon: '🌫' },
+                    { value: 'push' as SlideTransitionType, label: 'Push', icon: '▶' },
+                    { value: 'wipe' as SlideTransitionType, label: 'Wipe', icon: '⬛' },
+                    { value: 'split' as SlideTransitionType, label: 'Split', icon: '↔' },
+                    { value: 'reveal' as SlideTransitionType, label: 'Reveal', icon: '👁' },
+                    { value: 'dissolve' as SlideTransitionType, label: 'Dissolve', icon: '✦' },
+                    { value: 'cover' as SlideTransitionType, label: 'Cover', icon: '▩' },
+                    { value: 'uncover' as SlideTransitionType, label: 'Uncover', icon: '▨' },
+                    { value: 'zoom' as SlideTransitionType, label: 'Zoom', icon: '🔍' },
+                    { value: 'morph' as SlideTransitionType, label: 'Morph', icon: '🔄' },
+                    { value: 'random' as SlideTransitionType, label: 'Random', icon: '🎲' },
+                  ].map((t) => (
+                    <button
+                      key={t.value}
+                      onClick={() => { pushUndo(); updateSlideTransition(activeSlideIndex, t.value); }}
+                      className="flex flex-col items-center justify-center rounded border transition-all hover:scale-105 cursor-pointer"
+                      style={{
+                        borderColor: (slide?.transition || 'none') === t.value ? 'var(--primary)' : 'var(--border)',
+                        background: (slide?.transition || 'none') === t.value ? 'var(--accent)' : 'var(--card)',
+                        color: (slide?.transition || 'none') === t.value ? 'var(--primary)' : 'var(--card-foreground)',
+                        width: 44, height: 36, fontSize: 9,
+                      }}
+                      title={t.label}
+                    >
+                      <span style={{ fontSize: 14, lineHeight: 1 }}>{t.icon}</span>
+                      <span style={{ fontSize: 8, marginTop: 1 }}>{t.label}</span>
+                    </button>
+                  ))}
+                  <div className="flex flex-col items-center">
+                    <button
+                      onClick={() => setShowTransitionPanel(!showTransitionPanel)}
+                      className="flex flex-col items-center justify-center rounded border hover:opacity-80"
+                      style={{ borderColor: 'var(--border)', background: showTransitionPanel ? 'var(--accent)' : 'var(--card)', width: 44, height: 36 }}
+                      title="More transitions"
+                    >
+                      <ChevronDown size={12} style={{ color: 'var(--card-foreground)' }} />
+                      <span style={{ fontSize: 8, color: 'var(--card-foreground)' }}>More</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </RibbonGroup>
             <RibbonDivider />
 
-            <RibbonGroup label="Duration">
-              <div className="flex flex-col gap-1 min-w-[120px]">
-                <label className="text-[10px] opacity-60">Duration: {(slide?.transitionDuration ?? 0.6).toFixed(1)}s</label>
-                <input type="range" min={0.1} max={3} step={0.1} value={slide?.transitionDuration ?? 0.6}
-                  onChange={(e) => updateSlideTransitionDuration(activeSlideIndex, parseFloat(e.target.value))}
-                  className="w-full h-1 rounded appearance-none cursor-pointer" style={{ accentColor: 'var(--primary)' }} />
-                <button onClick={() => applyTransitionToAll(slide?.transition || 'none', slide?.transitionDuration)}
-                  className="text-[10px] px-2 py-1 rounded border hover:opacity-80"
-                  style={{ borderColor: 'var(--border)', color: 'var(--card-foreground)', background: 'var(--card)' }}>
-                  Apply to All Slides
-                </button>
+            {/* Effect Options group */}
+            <RibbonGroup label="Effect Options">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] opacity-60 w-12">Direction</span>
+                  <select
+                    className="text-[10px] px-1 py-0.5 rounded border"
+                    style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: 9 }}
+                    onChange={(e) => console.log('Transition direction:', e.target.value)}
+                    defaultValue="from-left"
+                  >
+                    <option value="from-left">From Left</option>
+                    <option value="from-right">From Right</option>
+                    <option value="from-top">From Top</option>
+                    <option value="from-bottom">From Bottom</option>
+                    <option value="from-top-left">From Top-Left</option>
+                    <option value="from-top-right">From Top-Right</option>
+                    <option value="from-bottom-left">From Bottom-Left</option>
+                    <option value="from-bottom-right">From Bottom-Right</option>
+                    <option value="horizontal">Horizontal</option>
+                    <option value="vertical">Vertical</option>
+                    <option value="center">Center</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] opacity-60 w-12">Variant</span>
+                  <select
+                    className="text-[10px] px-1 py-0.5 rounded border"
+                    style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: 9 }}
+                    onChange={(e) => console.log('Transition variant:', e.target.value)}
+                    defaultValue="smooth"
+                  >
+                    <option value="smooth">Smooth</option>
+                    <option value="glitter">Glitter</option>
+                    <option value="honeycomb">Honeycomb</option>
+                    <option value="checkerboard">Checkerboard</option>
+                    <option value="stripes">Stripes</option>
+                    <option value="diamonds">Diamonds</option>
+                  </select>
+                </div>
               </div>
             </RibbonGroup>
             <RibbonDivider />
 
+            {/* Timing group */}
             <RibbonGroup label="Timing">
-              <div className="flex flex-col gap-1 min-w-[180px]">
-                <div className="flex items-center gap-2">
-                  <label className="text-[10px] opacity-60 w-20">Auto-advance</label>
-                  <button onClick={() => updateSlideTransitionTiming(activeSlideIndex, { autoAdvance: !(timing?.autoAdvance ?? false) })}
-                    className="w-8 h-4 rounded-full transition-colors relative"
-                    style={{ background: timing?.autoAdvance ? 'var(--primary)' : 'var(--muted)' }}>
-                    <div className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform"
-                      style={{ left: timing?.autoAdvance ? 16 : 2 }} />
-                  </button>
-                  {timing?.autoAdvance && <span className="text-[10px] opacity-60">{timing.autoAdvanceSeconds ?? 5}s</span>}
+              <div className="flex flex-col gap-1 min-w-[200px]">
+                <div className="flex items-center gap-1">
+                  <Volume2 size={10} style={{ opacity: 0.6 }} />
+                  <select
+                    className="text-[10px] px-1 py-0.5 rounded border flex-1"
+                    style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: 9 }}
+                    onChange={(e) => console.log('Transition sound:', e.target.value)}
+                    defaultValue="no-sound"
+                  >
+                    <option value="no-sound">No Sound</option>
+                    <option value="applause">Applause</option>
+                    <option value="chime">Chime</option>
+                    <option value="camera">Camera</option>
+                    <option value="cash-register">Cash Register</option>
+                    <option value="click">Click</option>
+                    <option value="drum-roll">Drum Roll</option>
+                    <option value="explosion">Explosion</option>
+                    <option value="laser">Laser</option>
+                    <option value="type">Typewriter</option>
+                    <option value="wind">Wind</option>
+                  </select>
                 </div>
-                {timing?.autoAdvance && (
-                  <input type="range" min={1} max={30} step={1} value={timing.autoAdvanceSeconds ?? 5}
-                    onChange={(e) => updateSlideTransitionTiming(activeSlideIndex, { autoAdvanceSeconds: parseInt(e.target.value) })}
-                    className="w-full h-1 rounded appearance-none cursor-pointer" style={{ accentColor: 'var(--primary)' }} />
-                )}
-                <div className="flex items-center gap-2">
-                  <label className="text-[10px] opacity-60 w-20">On click</label>
-                  <button onClick={() => updateSlideTransitionTiming(activeSlideIndex, { onClickAdvance: !(timing?.onClickAdvance ?? true) })}
-                    className="w-8 h-4 rounded-full transition-colors relative"
-                    style={{ background: (timing?.onClickAdvance ?? true) ? 'var(--primary)' : 'var(--muted)' }}>
-                    <div className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform"
-                      style={{ left: (timing?.onClickAdvance ?? true) ? 16 : 2 }} />
+                <div className="flex items-center gap-1">
+                  <Clock size={10} style={{ opacity: 0.6 }} />
+                  <span className="text-[9px] opacity-60">Duration</span>
+                  <button
+                    onClick={() => updateSlideTransitionDuration(activeSlideIndex, Math.max(0.5, (slide?.transitionDuration ?? 0.6) - 0.25))}
+                    className="w-4 h-4 rounded border flex items-center justify-center hover:opacity-80"
+                    style={{ borderColor: 'var(--border)', color: 'var(--card-foreground)' }}
+                  >
+                    <Minus size={8} />
+                  </button>
+                  <span className="text-[10px] w-8 text-center" style={{ color: 'var(--card-foreground)' }}>
+                    {(slide?.transitionDuration ?? 0.6).toFixed(2)}s
+                  </span>
+                  <button
+                    onClick={() => updateSlideTransitionDuration(activeSlideIndex, Math.min(5, (slide?.transitionDuration ?? 0.6) + 0.25))}
+                    className="w-4 h-4 rounded border flex items-center justify-center hover:opacity-80"
+                    style={{ borderColor: 'var(--border)', color: 'var(--card-foreground)' }}
+                  >
+                    <Plus size={8} />
                   </button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-[10px] opacity-60 w-20">Loop</label>
-                  <button onClick={() => updateSlideTransitionTiming(activeSlideIndex, { loop: !(timing?.loop ?? false) })}
-                    className="w-8 h-4 rounded-full transition-colors relative"
-                    style={{ background: timing?.loop ? 'var(--primary)' : 'var(--muted)' }}>
-                    <div className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform"
-                      style={{ left: timing?.loop ? 16 : 2 }} />
-                  </button>
+                <button
+                  onClick={() => applyTransitionToAll(slide?.transition || 'none', slide?.transitionDuration)}
+                  className="text-[10px] px-2 py-0.5 rounded border hover:opacity-80 text-left"
+                  style={{ borderColor: 'var(--border)', color: 'var(--card-foreground)', background: 'var(--card)' }}
+                >
+                  Apply To All
+                </button>
+                <div className="flex flex-col gap-0.5">
+                  <label className="flex items-center gap-1 text-[9px] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="w-2.5 h-2.5"
+                      checked={timing?.onClickAdvance ?? true}
+                      onChange={(e) => updateSlideTransitionTiming(activeSlideIndex, { onClickAdvance: e.target.checked })}
+                    />
+                    <span style={{ color: 'var(--card-foreground)' }}>On Mouse Click</span>
+                  </label>
+                  <label className="flex items-center gap-1 text-[9px] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="w-2.5 h-2.5"
+                      checked={timing?.autoAdvance ?? false}
+                      onChange={(e) => updateSlideTransitionTiming(activeSlideIndex, { autoAdvance: e.target.checked })}
+                    />
+                    <span style={{ color: 'var(--card-foreground)' }}>After</span>
+                    <input
+                      type="text"
+                      className="w-10 px-0.5 rounded border text-[9px] text-center"
+                      style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--card-foreground)' }}
+                      value={`${timing?.autoAdvanceSeconds ?? 5}s`}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val)) updateSlideTransitionTiming(activeSlideIndex, { autoAdvanceSeconds: val });
+                      }}
+                      disabled={!(timing?.autoAdvance ?? false)}
+                    />
+                  </label>
                 </div>
               </div>
             </RibbonGroup>
@@ -866,67 +996,481 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
 
       case 'animations':
         return (
-          <div className="flex items-end gap-0.5">
-            <RibbonGroup label="Animation">
-              <RibbonButton icon={<Sparkles size={18} />} label="Animations Panel"
-                onClick={() => setShowAnimationsPanel(!showAnimationsPanel)}
-                active={showAnimationsPanel} />
-              <RibbonButton icon={<Timer size={16} />} label="Timeline"
-                onClick={() => setShowAnimationTimeline(!showAnimationTimeline)}
-                active={showAnimationTimeline} />
+          <div className="flex items-end gap-0.5 overflow-x-auto">
+            {/* Preview group */}
+            <RibbonGroup label="Preview">
+              <RibbonButton
+                icon={<Play size={18} />}
+                label="Preview"
+                onClick={() => setShowAnimationsPanel(true)}
+                title="Preview animations on current slide"
+              />
+              <RibbonButton
+                icon={<Paintbrush size={14} />}
+                label="Anim. Painter"
+                onClick={() => alert('Animation Painter: Click another element to copy animation')}
+                small
+                title="Copy animation from one element and apply to another"
+              />
             </RibbonGroup>
             <RibbonDivider />
-            <RibbonGroup label="Quick Animations">
-              {selectedElement ? (
-                <div className="flex items-center gap-1">
-                  {(['fadeIn', 'flyIn', 'zoom', 'bounce', 'spin', 'pulse', 'fadeOut'] as const).map((t) => (
-                    <button key={t} onClick={() => {
-                      pushUndo();
-                      const category = ['fadeOut'].includes(t) ? 'exit' as const : ['pulse'].includes(t) ? 'emphasis' as const : 'entrance' as const;
-                      store.updateElementAnimation(activeSlideIndex, selectedElement.id, {
-                        type: t, category, duration: 0.5, delay: 0, trigger: 'onClick', order: 1,
-                      });
-                    }}
-                      className="px-2 py-1.5 rounded text-[10px] border"
+
+            {/* Animation group - grid of effects */}
+            <RibbonGroup label="Animation">
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-0.5 flex-wrap max-w-[380px]">
+                  {/* Entrance animations */}
+                  {[
+                    { type: 'fadeIn' as const, label: 'Fade', category: 'entrance' as const, icon: '◌' },
+                    { type: 'flyIn' as const, label: 'Fly In', category: 'entrance' as const, icon: '→' },
+                    { type: 'zoom' as const, label: 'Zoom', category: 'entrance' as const, icon: '⊕' },
+                    { type: 'bounce' as const, label: 'Bounce', category: 'entrance' as const, icon: '⤸' },
+                    { type: 'spin' as const, label: 'Swivel', category: 'entrance' as const, icon: '↻' },
+                    { type: 'pulse' as const, label: 'Pulse', category: 'emphasis' as const, icon: '◉' },
+                    { type: 'fadeOut' as const, label: 'Fade Out', category: 'exit' as const, icon: '◎' },
+                  ].map((anim) => (
+                    <button
+                      key={anim.type}
+                      onClick={() => {
+                        if (!selectedElement) return;
+                        pushUndo();
+                        store.updateElementAnimation(activeSlideIndex, selectedElement.id, {
+                          type: anim.type, category: anim.category, duration: 0.5, delay: 0, trigger: 'onClick', order: 1,
+                        });
+                      }}
+                      disabled={!selectedElement}
+                      className="flex flex-col items-center justify-center rounded border transition-all hover:scale-105"
                       style={{
-                        borderColor: selectedElement.animation?.type === t ? 'var(--primary)' : 'var(--border)',
-                        background: selectedElement.animation?.type === t ? 'var(--primary)' : 'var(--card)',
-                        color: selectedElement.animation?.type === t ? 'var(--primary-foreground)' : 'var(--card-foreground)',
-                      }}>
-                      {t.charAt(0).toUpperCase() + t.slice(1).replace(/([A-Z])/g, ' $1')}
+                        borderColor: selectedElement?.animation?.type === anim.type ? 'var(--primary)' : 'var(--border)',
+                        background: selectedElement?.animation?.type === anim.type ? 'var(--accent)' : 'var(--card)',
+                        color: selectedElement?.animation?.type === anim.type ? 'var(--primary)' : 'var(--card-foreground)',
+                        width: 44, height: 36, opacity: selectedElement ? 1 : 0.5,
+                        borderWidth: selectedElement?.animation?.type === anim.type ? 2 : 1,
+                      }}
+                      title={`${anim.category.charAt(0).toUpperCase() + anim.category.slice(1)}: ${anim.label}`}
+                    >
+                      <span style={{ fontSize: 13, lineHeight: 1 }}>{anim.icon}</span>
+                      <span style={{ fontSize: 8, marginTop: 1 }}>{anim.label}</span>
                     </button>
                   ))}
-                  {selectedElement.animation && (
-                    <button onClick={() => { pushUndo(); store.updateElementAnimation(activeSlideIndex, selectedElement.id, undefined); }}
-                      className="px-2 py-1.5 rounded text-[10px] border"
-                      style={{ borderColor: 'var(--border)', color: '#ef4444', background: 'var(--card)' }}>
-                      Remove
+                  {/* More animations dropdown */}
+                  <div className="relative">
+                    <button
+                      className="flex flex-col items-center justify-center rounded border hover:opacity-80"
+                      style={{ borderColor: 'var(--border)', background: 'var(--card)', width: 44, height: 36 }}
+                      onClick={() => setShowAnimationsPanel(!showAnimationsPanel)}
+                      title="More animations"
+                    >
+                      <ChevronDown size={12} style={{ color: 'var(--card-foreground)' }} />
+                      <span style={{ fontSize: 8, color: 'var(--card-foreground)' }}>More</span>
+                    </button>
+                  </div>
+                  {/* Remove animation */}
+                  {selectedElement?.animation && (
+                    <button
+                      onClick={() => { pushUndo(); store.updateElementAnimation(activeSlideIndex, selectedElement.id, undefined); }}
+                      className="flex flex-col items-center justify-center rounded border hover:opacity-80"
+                      style={{ borderColor: '#ef4444', background: 'var(--card)', color: '#ef4444', width: 44, height: 36, fontSize: 8 }}
+                      title="Remove animation"
+                    >
+                      <Eraser size={12} />
+                      <span style={{ fontSize: 8, marginTop: 1 }}>Remove</span>
                     </button>
                   )}
                 </div>
-              ) : (
-                <span className="text-[10px] opacity-50 px-2">Select an element to animate</span>
-              )}
+                {!selectedElement && (
+                  <span className="text-[9px] opacity-50 px-1">Select an element to animate</span>
+                )}
+              </div>
+            </RibbonGroup>
+            <RibbonDivider />
+
+            {/* Effect Options group */}
+            <RibbonGroup label="Effect Options">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] opacity-60 w-14">Direction</span>
+                  <select
+                    className="text-[10px] px-1 py-0.5 rounded border"
+                    style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: 9 }}
+                    onChange={(e) => console.log('Animation direction:', e.target.value)}
+                    defaultValue="from-bottom"
+                    disabled={!selectedElement}
+                  >
+                    <option value="from-bottom">From Bottom</option>
+                    <option value="from-top">From Top</option>
+                    <option value="from-left">From Left</option>
+                    <option value="from-right">From Right</option>
+                    <option value="from-top-left">From Top-Left</option>
+                    <option value="from-top-right">From Top-Right</option>
+                    <option value="from-bottom-left">From Bottom-Left</option>
+                    <option value="from-bottom-right">From Bottom-Right</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] opacity-60 w-14">Sequence</span>
+                  <select
+                    className="text-[10px] px-1 py-0.5 rounded border"
+                    style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: 9 }}
+                    onChange={(e) => console.log('Animation sequence:', e.target.value)}
+                    defaultValue="together"
+                    disabled={!selectedElement}
+                  >
+                    <option value="together">As One Object</option>
+                    <option value="one-by-one">By 1st Level Paragraph</option>
+                    <option value="all-at-once">All at Once</option>
+                  </select>
+                </div>
+              </div>
+            </RibbonGroup>
+            <RibbonDivider />
+
+            {/* Advanced Animation group */}
+            <RibbonGroup label="Advanced Animation">
+              <div className="flex flex-col gap-0.5">
+                <RibbonButton
+                  icon={<Plus size={14} />}
+                  label="Add Animation"
+                  onClick={() => setShowAnimationsPanel(true)}
+                  small
+                  disabled={!selectedElement}
+                  title="Add another animation effect to this element"
+                />
+                <RibbonButton
+                  icon={<ListOrdered size={14} />}
+                  label="Anim. Pane"
+                  onClick={() => setShowAnimationTimeline(!showAnimationTimeline)}
+                  active={showAnimationTimeline}
+                  small
+                  title="Open Animation Pane"
+                />
+                <div className="flex items-center gap-0.5">
+                  <span className="text-[9px] opacity-60">Trigger</span>
+                  <select
+                    className="text-[9px] px-1 py-0.5 rounded border"
+                    style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: 9 }}
+                    onChange={(e) => {
+                      if (selectedElement?.animation) {
+                        pushUndo();
+                        store.updateElementAnimation(activeSlideIndex, selectedElement.id, {
+                          ...selectedElement.animation,
+                          trigger: e.target.value as 'onClick' | 'withPrevious' | 'afterPrevious',
+                        });
+                      }
+                    }}
+                    value={selectedElement?.animation?.trigger || 'onClick'}
+                    disabled={!selectedElement?.animation}
+                  >
+                    <option value="onClick">On Click</option>
+                    <option value="withPrevious">With Previous</option>
+                    <option value="afterPrevious">After Previous</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-col gap-0.5 ml-1">
+                <RibbonButton
+                  icon={<ArrowUp size={12} />}
+                  label="Move Earlier"
+                  onClick={() => console.log('Move animation earlier')}
+                  small
+                  disabled={!selectedElement?.animation}
+                  title="Move animation earlier in sequence"
+                />
+                <RibbonButton
+                  icon={<ArrowDown size={12} />}
+                  label="Move Later"
+                  onClick={() => console.log('Move animation later')}
+                  small
+                  disabled={!selectedElement?.animation}
+                  title="Move animation later in sequence"
+                />
+              </div>
+            </RibbonGroup>
+            <RibbonDivider />
+
+            {/* Timing group */}
+            <RibbonGroup label="Timing">
+              <div className="flex flex-col gap-1 min-w-[150px]">
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] opacity-60 w-10">Start</span>
+                  <select
+                    className="text-[9px] px-1 py-0.5 rounded border flex-1"
+                    style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: 9 }}
+                    onChange={(e) => {
+                      if (selectedElement?.animation) {
+                        pushUndo();
+                        store.updateElementAnimation(activeSlideIndex, selectedElement.id, {
+                          ...selectedElement.animation,
+                          trigger: e.target.value as 'onClick' | 'withPrevious' | 'afterPrevious',
+                        });
+                      }
+                    }}
+                    value={selectedElement?.animation?.trigger || 'onClick'}
+                    disabled={!selectedElement?.animation}
+                  >
+                    <option value="onClick">On Click</option>
+                    <option value="withPrevious">With Previous</option>
+                    <option value="afterPrevious">After Previous</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] opacity-60 w-10">Duration</span>
+                  <button
+                    onClick={() => {
+                      if (selectedElement?.animation) {
+                        pushUndo();
+                        store.updateElementAnimation(activeSlideIndex, selectedElement.id, {
+                          ...selectedElement.animation,
+                          duration: Math.max(0.1, (selectedElement.animation.duration ?? 0.5) - 0.25),
+                        });
+                      }
+                    }}
+                    className="w-4 h-4 rounded border flex items-center justify-center hover:opacity-80"
+                    style={{ borderColor: 'var(--border)', color: 'var(--card-foreground)' }}
+                    disabled={!selectedElement?.animation}
+                  >
+                    <Minus size={8} />
+                  </button>
+                  <span className="text-[9px] w-8 text-center" style={{ color: 'var(--card-foreground)' }}>
+                    {(selectedElement?.animation?.duration ?? 0.5).toFixed(2)}s
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (selectedElement?.animation) {
+                        pushUndo();
+                        store.updateElementAnimation(activeSlideIndex, selectedElement.id, {
+                          ...selectedElement.animation,
+                          duration: Math.min(10, (selectedElement.animation.duration ?? 0.5) + 0.25),
+                        });
+                      }
+                    }}
+                    className="w-4 h-4 rounded border flex items-center justify-center hover:opacity-80"
+                    style={{ borderColor: 'var(--border)', color: 'var(--card-foreground)' }}
+                    disabled={!selectedElement?.animation}
+                  >
+                    <Plus size={8} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] opacity-60 w-10">Delay</span>
+                  <button
+                    onClick={() => {
+                      if (selectedElement?.animation) {
+                        pushUndo();
+                        store.updateElementAnimation(activeSlideIndex, selectedElement.id, {
+                          ...selectedElement.animation,
+                          delay: Math.max(0, (selectedElement.animation.delay ?? 0) - 0.25),
+                        });
+                      }
+                    }}
+                    className="w-4 h-4 rounded border flex items-center justify-center hover:opacity-80"
+                    style={{ borderColor: 'var(--border)', color: 'var(--card-foreground)' }}
+                    disabled={!selectedElement?.animation}
+                  >
+                    <Minus size={8} />
+                  </button>
+                  <span className="text-[9px] w-8 text-center" style={{ color: 'var(--card-foreground)' }}>
+                    {(selectedElement?.animation?.delay ?? 0).toFixed(2)}s
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (selectedElement?.animation) {
+                        pushUndo();
+                        store.updateElementAnimation(activeSlideIndex, selectedElement.id, {
+                          ...selectedElement.animation,
+                          delay: Math.min(10, (selectedElement.animation.delay ?? 0) + 0.25),
+                        });
+                      }
+                    }}
+                    className="w-4 h-4 rounded border flex items-center justify-center hover:opacity-80"
+                    style={{ borderColor: 'var(--border)', color: 'var(--card-foreground)' }}
+                    disabled={!selectedElement?.animation}
+                  >
+                    <Plus size={8} />
+                  </button>
+                </div>
+              </div>
             </RibbonGroup>
           </div>
         );
 
       case 'slideshow':
         return (
-          <div className="flex items-end gap-0.5">
+          <div className="flex items-end gap-0.5 overflow-x-auto">
+            {/* Start Slide Show group */}
             <RibbonGroup label="Start Slide Show">
-              <RibbonButton icon={<Play size={18} />} label="From Beginning" onClick={() => { store.setActiveSlide(0); setPresenterMode(true); }} />
-              <RibbonButton icon={<Monitor size={18} />} label="From Current" onClick={() => setPresenterMode(true)} />
+              <div className="flex items-center gap-0.5">
+                {/* Large "From Beginning" button */}
+                <button
+                  onClick={() => { store.setActiveSlide(0); setPresenterMode(true); }}
+                  className="flex flex-col items-center justify-center rounded px-2 py-1 hover:opacity-80 transition-opacity"
+                  style={{ color: 'var(--topbar-foreground)', minWidth: 52, minHeight: 52 }}
+                  title="Start from the very beginning (F5)"
+                >
+                  <PlayCircle size={22} />
+                  <span className="text-[9px] mt-0.5 text-center leading-tight whitespace-nowrap">From<br />Beginning</span>
+                </button>
+                <div className="flex flex-col gap-0.5">
+                  <RibbonButton
+                    icon={<SkipForward size={14} />}
+                    label="From Current"
+                    onClick={() => setPresenterMode(true)}
+                    small
+                    title="Start from current slide (Shift+F5)"
+                  />
+                  <div className="relative">
+                    <button
+                      className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] hover:opacity-80"
+                      style={{ color: 'var(--topbar-foreground)' }}
+                      onClick={() => alert('Custom Slide Show: Create a custom presentation with a subset of slides')}
+                      title="Custom Slide Show"
+                    >
+                      <LayoutList size={12} />
+                      <span>Custom Show</span>
+                      <ChevronDown size={9} />
+                    </button>
+                  </div>
+                  <RibbonButton
+                    icon={<Globe size={12} />}
+                    label="Present Online"
+                    onClick={() => alert('Present Online: Share your presentation via a web link')}
+                    small
+                    title="Present this slide show online"
+                  />
+                </div>
+              </div>
             </RibbonGroup>
             <RibbonDivider />
-            <RibbonGroup label="Presenter">
-              <RibbonButton icon={<Rows3 size={16} />} label="Presenter View" onClick={() => { setPresenterViewMode(true); store.setActiveSlide(0); setPresenterMode(true); }} />
+
+            {/* Set Up group */}
+            <RibbonGroup label="Set Up">
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-0.5">
+                  <RibbonButton
+                    icon={<Settings2 size={14} />}
+                    label="Set Up Show"
+                    onClick={() => alert('Set Up Slide Show: Configure slide show settings, loop, narration, etc.')}
+                    small
+                    title="Set up the slide show options"
+                  />
+                  <RibbonButton
+                    icon={<EyeOff size={14} />}
+                    label="Hide Slide"
+                    onClick={() => console.log('Hide slide', activeSlideIndex)}
+                    small
+                    title="Hide this slide from the slide show"
+                  />
+                </div>
+                <div className="flex items-center gap-0.5">
+                  <RibbonButton
+                    icon={<Timer size={14} />}
+                    label="Rehearse"
+                    onClick={() => alert('Rehearse Timings: Run through your presentation and record timing for each slide')}
+                    small
+                    title="Rehearse slide show timings"
+                  />
+                  <div className="relative flex items-center">
+                    <RibbonButton
+                      icon={<Camera size={14} />}
+                      label="Record"
+                      onClick={() => alert('Record Slide Show: Record narration, timings, and pointer movements')}
+                      small
+                      title="Record slide show"
+                    />
+                    <button
+                      onClick={() => alert('Record from: Beginning or Current Slide')}
+                      className="p-0.5 rounded hover:opacity-80"
+                      style={{ color: 'var(--topbar-foreground)' }}
+                      title="Record options"
+                    >
+                      <ChevronDown size={9} />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <label className="flex items-center gap-1 text-[9px] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="w-2.5 h-2.5"
+                      defaultChecked={true}
+                      onChange={(e) => console.log('Play narrations:', e.target.checked)}
+                    />
+                    <span style={{ color: 'var(--card-foreground)' }}>Play Narrations</span>
+                  </label>
+                  <label className="flex items-center gap-1 text-[9px] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="w-2.5 h-2.5"
+                      defaultChecked={false}
+                      onChange={(e) => console.log('Use timings:', e.target.checked)}
+                    />
+                    <span style={{ color: 'var(--card-foreground)' }}>Use Timings</span>
+                  </label>
+                  <label className="flex items-center gap-1 text-[9px] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="w-2.5 h-2.5"
+                      defaultChecked={true}
+                      onChange={(e) => console.log('Show media controls:', e.target.checked)}
+                    />
+                    <span style={{ color: 'var(--card-foreground)' }}>Show Media Controls</span>
+                  </label>
+                </div>
+              </div>
             </RibbonGroup>
             <RibbonDivider />
-            <RibbonGroup label="Tools">
-              <RibbonButton icon={<Pen size={16} />} label="Pen" title="Use P key during slideshow" small />
-              <RibbonButton icon={<Highlighter size={16} />} label="Highlighter" title="Use H key during slideshow" small />
-              <RibbonButton icon={<MousePointer size={16} />} label="Laser" title="Use L key during slideshow" small />
+
+            {/* Monitors group */}
+            <RibbonGroup label="Monitors">
+              <div className="flex flex-col gap-1 min-w-[140px]">
+                <div className="flex items-center gap-1">
+                  <Monitor size={10} style={{ opacity: 0.6 }} />
+                  <select
+                    className="text-[9px] px-1 py-0.5 rounded border flex-1"
+                    style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: 9 }}
+                    onChange={(e) => console.log('Monitor:', e.target.value)}
+                    defaultValue="automatic"
+                  >
+                    <option value="automatic">Automatic</option>
+                    <option value="primary">Primary Monitor</option>
+                    <option value="secondary">Secondary Monitor</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Tv size={10} style={{ opacity: 0.6 }} />
+                  <select
+                    className="text-[9px] px-1 py-0.5 rounded border flex-1"
+                    style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: 9 }}
+                    onChange={(e) => console.log('Resolution:', e.target.value)}
+                    defaultValue="auto"
+                  >
+                    <option value="auto">Use Current Resolution</option>
+                    <option value="1024x768">1024×768</option>
+                    <option value="1280x720">1280×720 (720p)</option>
+                    <option value="1920x1080">1920×1080 (1080p)</option>
+                  </select>
+                </div>
+                <label className="flex items-center gap-1 text-[9px] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-2.5 h-2.5"
+                    defaultChecked={false}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setPresenterViewMode(true);
+                      }
+                    }}
+                  />
+                  <span style={{ color: 'var(--card-foreground)' }}>Use Presenter View</span>
+                </label>
+                <RibbonButton
+                  icon={<Rows3 size={12} />}
+                  label="Presenter View"
+                  onClick={() => { setPresenterViewMode(true); store.setActiveSlide(0); setPresenterMode(true); }}
+                  small
+                  title="Open Presenter View with speaker notes and slide preview"
+                />
+              </div>
             </RibbonGroup>
           </div>
         );

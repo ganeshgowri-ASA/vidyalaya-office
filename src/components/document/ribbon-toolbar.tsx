@@ -3,9 +3,14 @@
 import React from "react";
 import {
   Sparkles, LayoutTemplate, Terminal, Code,
+  Shield, FileCode, Search, Globe, Key, Link,
+  Lock, UserX, FileScan, Settings2, PlugZap,
+  Type, FileType, ImageIcon, List, Calendar, CheckSquare,
+  AlignLeft, ToggleLeft, ChevronDown, Paintbrush, SlidersHorizontal,
+  FileJson, Layers, Map, Play, Mic, ShieldAlert,
 } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
-import { ToolbarButton, ToolbarSeparator } from "./toolbar-button";
+import { ToolbarButton, ToolbarSeparator, RibbonGroup } from "./toolbar-button";
 import { HomeTab } from "./ribbon-home-tab";
 import { InsertTab } from "./ribbon-insert-tab";
 import { DesignTab } from "./ribbon-design-tab";
@@ -90,8 +95,8 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
         />
       </div>
 
-      {/* Toolbar content */}
-      <div className="flex flex-wrap items-start gap-0.5 px-2 py-1 min-h-[52px]">
+      {/* Toolbar content — taller min-height to accommodate stacked groups */}
+      <div className="flex flex-wrap items-start gap-0.5 px-2 py-1 min-h-[68px]">
         {activeTab === "home" && <HomeTab />}
         {activeTab === "insert" && <InsertTab />}
         {activeTab === "design" && <DesignTab />}
@@ -104,12 +109,58 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
         {activeTab === "smartart-design" && <ImageFormatTab />}
         {activeTab === "developer" && (
           <>
-            {onToggleDeveloper && (
-              <ToolbarButton icon={<Terminal size={15} />} label="Developer Tools" title="Open Developer Panel" onClick={onToggleDeveloper} />
-            )}
-            <ToolbarSeparator />
-            <ToolbarButton icon={<Code size={15} />} label="Macro Editor" title="Open Macro Editor" onClick={() => onToggleDeveloper?.()} />
-            <ToolbarButton icon={<Terminal size={15} />} label="Console" title="Developer Console" onClick={() => onToggleDeveloper?.()} />
+            <RibbonGroup label="Code">
+              <ToolbarButton icon={<FileCode size={15} />} label="Visual Basic" title="VBA Editor" size="lg" onClick={() => onToggleDeveloper?.()} />
+              <div className="flex flex-col gap-0.5">
+                <ToolbarButton icon={<Play size={14} />} label="Macros" title="View and run macros" size="sm" onClick={() => onToggleDeveloper?.()} />
+                <ToolbarButton icon={<Mic size={14} />} label="Record Macro" title="Record a new macro" size="sm" onClick={() => onToggleDeveloper?.()} />
+                <ToolbarButton icon={<ShieldAlert size={14} />} label="Macro Security" title="Macro security settings" size="sm" onClick={() => onToggleDeveloper?.()} />
+              </div>
+            </RibbonGroup>
+            <RibbonGroup label="Add-ins">
+              <ToolbarButton icon={<PlugZap size={15} />} label="Add-ins" title="Add-ins Manager" size="lg" onClick={() => onToggleDeveloper?.()} />
+              <ToolbarButton icon={<Settings2 size={15} />} label="COM Add-ins" title="COM Add-ins" size="md" onClick={() => onToggleDeveloper?.()} />
+            </RibbonGroup>
+            <RibbonGroup label="Controls">
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-0.5">
+                  <ToolbarButton icon={<Type size={13} />} title="Rich Text Content Control" onClick={() => onToggleDeveloper?.()} />
+                  <ToolbarButton icon={<FileType size={13} />} title="Plain Text Content Control" onClick={() => onToggleDeveloper?.()} />
+                  <ToolbarButton icon={<ImageIcon size={13} />} title="Picture Content Control" onClick={() => onToggleDeveloper?.()} />
+                </div>
+                <div className="flex items-center gap-0.5">
+                  <ToolbarButton icon={<ChevronDown size={13} />} title="Combo Box" onClick={() => onToggleDeveloper?.()} />
+                  <ToolbarButton icon={<Calendar size={13} />} title="Date Picker" onClick={() => onToggleDeveloper?.()} />
+                  <ToolbarButton icon={<CheckSquare size={13} />} title="Check Box" onClick={() => onToggleDeveloper?.()} />
+                </div>
+              </div>
+              <ToolbarSeparator />
+              <div className="flex flex-col gap-0.5">
+                <ToolbarButton icon={<AlignLeft size={13} />} label="Legacy Forms" title="Legacy Form Fields" size="sm" onClick={() => onToggleDeveloper?.()} />
+                <ToolbarButton icon={<Paintbrush size={13} />} label="Design Mode" title="Toggle Design Mode" size="sm" onClick={() => onToggleDeveloper?.()} />
+                <ToolbarButton icon={<SlidersHorizontal size={13} />} label="Properties" title="Properties" size="sm" onClick={() => onToggleDeveloper?.()} />
+              </div>
+            </RibbonGroup>
+            <RibbonGroup label="XML">
+              <div className="flex flex-col gap-0.5">
+                <ToolbarButton icon={<FileJson size={14} />} label="Schema" title="XML Schema" size="sm" onClick={() => onToggleDeveloper?.()} />
+                <ToolbarButton icon={<Layers size={14} />} label="Expansion Packs" title="XML Expansion Packs" size="sm" onClick={() => onToggleDeveloper?.()} />
+                <ToolbarButton icon={<Map size={14} />} label="XML Mapping" title="XML Mapping Pane" size="sm" onClick={() => onToggleDeveloper?.()} />
+              </div>
+            </RibbonGroup>
+            <RibbonGroup label="Protect">
+              <div className="flex flex-col gap-0.5">
+                <ToolbarButton icon={<Lock size={14} />} label="Restrict Editing" title="Restrict document editing" size="sm" onClick={() => onToggleDeveloper?.()} />
+                <ToolbarButton icon={<UserX size={14} />} label="Block Authors" title="Block Authors" size="sm" onClick={() => onToggleDeveloper?.()} />
+              </div>
+            </RibbonGroup>
+            <RibbonGroup label="Tools">
+              <ToolbarButton icon={<FileScan size={15} />} label="Doc Inspector" title="Document Inspector" size="lg" onClick={() => onToggleDeveloper?.()} />
+              <div className="flex flex-col gap-0.5">
+                <ToolbarButton icon={<Globe size={14} />} label="API Config" title="API Configuration" size="sm" onClick={() => onToggleDeveloper?.()} />
+                <ToolbarButton icon={<Terminal size={14} />} label="Dev Console" title="Developer Console" size="sm" onClick={() => onToggleDeveloper?.()} />
+              </div>
+            </RibbonGroup>
           </>
         )}
       </div>

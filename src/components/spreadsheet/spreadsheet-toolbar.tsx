@@ -625,33 +625,76 @@ export function SpreadsheetToolbar({
       </RibbonGroup>
 
       <RibbonGroup label="Charts">
-        <ToolBtn title="Column Chart" onClick={() => openChartModal("bar")}><BarChart3 size={14} /></ToolBtn>
-        <ToolBtn title="Line Chart" onClick={() => openChartModal("line")}><LineChart size={14} /></ToolBtn>
-        <ToolBtn title="Pie Chart" onClick={() => openChartModal("pie")}><PieChart size={14} /></ToolBtn>
-        <ToolBtn title="Scatter Chart" onClick={() => openChartModal("scatter")}><ScatterChart size={14} /></ToolBtn>
-        <ToolBtn title="Area Chart" onClick={() => openChartModal("area")}><AreaChart size={14} /></ToolBtn>
-        <DropdownBtn icon={<BarChart3 size={14} />} title="More Charts">
+        <DropdownBtn icon={<BarChart3 size={14} />} title="Column/Bar Charts" label="Column">
           {(close) => (
             <>
-              <DropdownHeader>Circular</DropdownHeader>
-              <DropdownItem onClick={() => { openChartModal("doughnut"); close(); }}>Doughnut</DropdownItem>
+              <DropdownHeader>Column</DropdownHeader>
+              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Clustered Column</DropdownItem>
+              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Stacked Column</DropdownItem>
+              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>100% Stacked Column</DropdownItem>
               <DropdownDivider />
-              <DropdownHeader>Specialty</DropdownHeader>
-              <DropdownItem onClick={() => { openChartModal("radar"); close(); }}>Radar/Spider</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("bubble"); close(); }}>Bubble</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("waterfall"); close(); }}>Waterfall</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("funnel"); close(); }}>Funnel</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("treemap"); close(); }}>Treemap</DropdownItem>
+              <DropdownHeader>Bar</DropdownHeader>
+              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Clustered Bar</DropdownItem>
+              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Stacked Bar</DropdownItem>
+              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>100% Stacked Bar</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<LineChart size={14} />} title="Line/Area Charts" label="Line">
+          {(close) => (
+            <>
+              <DropdownHeader>Line</DropdownHeader>
+              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line"); close(); }}>Line</DropdownItem>
+              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line"); close(); }}>Stacked Line</DropdownItem>
+              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line"); close(); }}>Line with Markers</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Area</DropdownHeader>
+              <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area"); close(); }}>Area</DropdownItem>
+              <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area"); close(); }}>Stacked Area</DropdownItem>
+              <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area"); close(); }}>100% Stacked Area</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<PieChart size={14} />} title="Pie/Doughnut Charts" label="Pie">
+          {(close) => (
+            <>
+              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("pie"); close(); }}>Pie</DropdownItem>
+              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("pie"); close(); }}>3-D Pie</DropdownItem>
+              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("doughnut"); close(); }}>Doughnut</DropdownItem>
+              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("pie"); close(); }}>Pie of Pie</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<ScatterChart size={14} />} title="Scatter/Bubble Charts" label="XY">
+          {(close) => (
+            <>
+              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("scatter"); close(); }}>Scatter</DropdownItem>
+              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("scatter"); close(); }}>Scatter with Lines</DropdownItem>
+              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("bubble"); close(); }}>Bubble</DropdownItem>
+              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("bubble"); close(); }}>3-D Bubble</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<BarChart3 size={14} />} title="Other Charts" label="More">
+          {(close) => (
+            <>
+              <DropdownHeader>Statistical</DropdownHeader>
               <DropdownItem onClick={() => { openChartModal("histogram"); close(); }}>Histogram</DropdownItem>
               <DropdownItem onClick={() => { openChartModal("boxwhisker"); close(); }}>Box & Whisker</DropdownItem>
               <DropdownDivider />
-              <DropdownHeader>Financial</DropdownHeader>
-              <DropdownItem onClick={() => { openChartModal("stock"); close(); }}>Stock (OHLC)</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("gantt"); close(); }}>Gantt Chart</DropdownItem>
+              <DropdownHeader>Hierarchy</DropdownHeader>
+              <DropdownItem onClick={() => { openChartModal("treemap"); close(); }}>Treemap</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("treemap"); close(); }}>Sunburst</DropdownItem>
               <DropdownDivider />
-              <DropdownHeader>Analysis</DropdownHeader>
-              <DropdownItem onClick={() => { openChartModal("butterfly"); close(); }}>Butterfly/Tornado</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("logarithmic"); close(); }}>Logarithmic Scale</DropdownItem>
+              <DropdownHeader>Waterfall</DropdownHeader>
+              <DropdownItem onClick={() => { openChartModal("waterfall"); close(); }}>Waterfall</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("funnel"); close(); }}>Funnel</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Other</DropdownHeader>
+              <DropdownItem onClick={() => { openChartModal("radar"); close(); }}>Radar</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("stock"); close(); }}>Stock (OHLC)</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("radar"); close(); }}>Surface</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("bar"); close(); }}>Combo Chart</DropdownItem>
             </>
           )}
         </DropdownBtn>
@@ -808,7 +851,32 @@ export function SpreadsheetToolbar({
       </RibbonGroup>
 
       <RibbonGroup label="Formula Auditing">
+        <ToolBtn title="Trace Precedents" onClick={() => alert("Trace Precedents: shows arrows to cells that provide data to this formula")}><ArrowUp size={14} /></ToolBtn>
+        <ToolBtn title="Trace Dependents" onClick={() => alert("Trace Dependents: shows arrows to cells that depend on this cell")}><ArrowDown size={14} /></ToolBtn>
+        <ToolBtn title="Remove Arrows" onClick={() => alert("All trace arrows removed")}><Minus size={14} /></ToolBtn>
+        <Separator />
         <ToolBtn title="Show Formulas" active={showFormulas} onClick={toggleShowFormulas}><Eye size={14} /></ToolBtn>
+        <ToolBtn title="Error Checking" onClick={() => alert("Error Checking: scans cells for formula errors")}><ShieldCheck size={14} /></ToolBtn>
+        <ToolBtn title="Evaluate Formula" onClick={() => {
+          if (!activeCell) return;
+          const raw = getCellRaw(activeCell.col, activeCell.row);
+          const display = getCellDisplay(activeCell.col, activeCell.row);
+          alert(`Formula: ${raw}\nResult: ${display}`);
+        }}><Calculator size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Calculation">
+        <ToolBtn title="Calculate Now (F9)" onClick={() => alert("Workbook recalculated")}><Redo2 size={14} /></ToolBtn>
+        <ToolBtn title="Calculate Sheet" onClick={() => alert("Active sheet recalculated")}><FileSpreadsheet size={14} /></ToolBtn>
+        <DropdownBtn icon={<Settings2 size={14} />} title="Calculation Options">
+          {(close) => (
+            <>
+              <DropdownItem onClick={close}>Automatic</DropdownItem>
+              <DropdownItem onClick={close}>Automatic Except Data Tables</DropdownItem>
+              <DropdownItem onClick={close}>Manual</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
       </RibbonGroup>
     </div>
   );
@@ -818,7 +886,23 @@ export function SpreadsheetToolbar({
       <RibbonGroup label="Get & Transform">
         <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
         <ToolBtn title="From Text/CSV" onClick={() => csvInputRef.current?.click()}><Upload size={14} /></ToolBtn>
-        <ToolBtn title="From Web" onClick={() => {}}><Link size={14} /></ToolBtn>
+        <ToolBtn title="From Web" onClick={() => alert("Import data from a web URL")}><Link size={14} /></ToolBtn>
+        <DropdownBtn icon={<FileText size={14} />} title="From Other Sources">
+          {(close) => (
+            <>
+              <DropdownItem onClick={close}>From SQL Server</DropdownItem>
+              <DropdownItem onClick={close}>From Analysis Services</DropdownItem>
+              <DropdownItem onClick={close}>From XML</DropdownItem>
+              <DropdownItem onClick={close}>From JSON</DropdownItem>
+              <DropdownItem onClick={close}>From OData Feed</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Queries & Connections">
+        <ToolBtn title="Refresh All" onClick={() => alert("All data connections refreshed")}><Redo2 size={14} /></ToolBtn>
+        <ToolBtn title="Connections" onClick={() => alert("Manage workbook connections")}><Link size={14} /></ToolBtn>
       </RibbonGroup>
 
       <RibbonGroup label="Sort & Filter">
@@ -866,6 +950,9 @@ export function SpreadsheetToolbar({
       </RibbonGroup>
 
       <RibbonGroup label="Data Tools">
+        <ToolBtn title="Text to Columns" onClick={() => alert("Text to Columns: Split cell content by delimiter")}><Columns3 size={14} /></ToolBtn>
+        <ToolBtn title="Flash Fill" onClick={() => alert("Flash Fill: Auto-fill values based on pattern")}><Sparkles size={14} /></ToolBtn>
+        <Separator />
         <ToolBtn title="Data Validation" onClick={() => onOpenValidation?.()}><ShieldCheck size={14} /></ToolBtn>
         <ToolBtn title="Conditional Formatting" onClick={() => onOpenCondFormatDialog?.()}><Highlighter size={14} /></ToolBtn>
         <ToolBtn title="Remove Duplicates" onClick={() => {
@@ -886,9 +973,24 @@ export function SpreadsheetToolbar({
         }}><Minus size={14} /></ToolBtn>
       </RibbonGroup>
 
-      <RibbonGroup label="Analysis">
-        <ToolBtn title="Goal Seek / Solver" onClick={() => onOpenGoalSeek?.()}><Calculator size={14} /></ToolBtn>
+      <RibbonGroup label="What-If Analysis">
+        <DropdownBtn icon={<Calculator size={14} />} title="What-If Analysis">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { onOpenGoalSeek?.(); close(); }}>Goal Seek...</DropdownItem>
+              <DropdownItem onClick={() => { alert("Scenario Manager: Create and compare scenarios"); close(); }}>Scenario Manager...</DropdownItem>
+              <DropdownItem onClick={() => { alert("Data Table: Calculate results for multiple inputs"); close(); }}>Data Table...</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
         <ToolBtn title="Statistical Analysis" onClick={() => onOpenStatistics?.()}><Sigma size={14} /></ToolBtn>
+        <ToolBtn title="Consolidate" onClick={() => alert("Consolidate data from multiple ranges")}><LayoutGrid size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Outline">
+        <ToolBtn title="Group" onClick={() => alert("Group selected rows/columns")}><Plus size={14} /></ToolBtn>
+        <ToolBtn title="Ungroup" onClick={() => alert("Ungroup selected rows/columns")}><Minus size={14} /></ToolBtn>
+        <ToolBtn title="Subtotal" onClick={() => alert("Add subtotals to a list")}><Sigma size={14} /></ToolBtn>
       </RibbonGroup>
     </div>
   );
