@@ -24,6 +24,14 @@ import { exportAsHTML, exportAsText } from "@/components/document/export-utils";
 import { SmartArtInfographicsModal } from "@/components/document/smartart-infographics-modal";
 import { EquationEditor } from "@/components/document/equation-editor";
 import { CitationManagerModal } from "@/components/document/citation-manager";
+import { TableOfContentsPanel } from "@/components/document/table-of-contents";
+import { FootnotesEndnotesPanel } from "@/components/document/footnotes-endnotes";
+import { WatermarkDialog } from "@/components/document/watermark-dialog";
+import { ColumnsDialog } from "@/components/document/columns-dialog";
+import { WordCountStatisticsPanel } from "@/components/document/word-count-statistics";
+import { SpellingGrammarPanel } from "@/components/document/spelling-grammar";
+import { OutlineNavigationPanel } from "@/components/document/outline-navigation";
+import { BookmarksCrossRefPanel } from "@/components/document/bookmarks-crossref";
 import {
   CollaborationToolbar,
   CollabCommentsSidebar,
@@ -42,6 +50,8 @@ export default function DocumentPage() {
     showMailMerge, setShowMailMerge,
     showDocProperties, setShowDocProperties,
     showKeyboardShortcuts, setShowKeyboardShortcuts,
+    showTocPanel, showFootnotesPanel, showOutlinePanel,
+    showStatisticsPanel, showSpellingPanel, showBookmarksPanel,
   } = useDocumentStore();
 
   const {
@@ -258,8 +268,17 @@ export default function DocumentPage() {
 
       {/* Main content area */}
       <div className="relative flex flex-1 overflow-hidden">
+        {/* Table of Contents Panel */}
+        {showTocPanel && <TableOfContentsPanel />}
+
+        {/* Outline/Navigation Panel */}
+        {showOutlinePanel && <OutlineNavigationPanel />}
+
+        {/* Footnotes Panel */}
+        {showFootnotesPanel && <FootnotesEndnotesPanel />}
+
         {/* Navigation Pane */}
-        {showNavigationPane && <NavigationPane />}
+        {showNavigationPane && !showOutlinePanel && <NavigationPane />}
 
         {/* Styles Panel */}
         {showStylesPanel && <StylesPanel />}
@@ -287,6 +306,15 @@ export default function DocumentPage() {
           onRestore={handleVersionRestore}
           documentName={fileName}
         />
+
+        {/* Word Count Statistics Panel */}
+        {showStatisticsPanel && <WordCountStatisticsPanel />}
+
+        {/* Spelling & Grammar Panel */}
+        {showSpellingPanel && <SpellingGrammarPanel />}
+
+        {/* Bookmarks & Cross-references Panel */}
+        {showBookmarksPanel && <BookmarksCrossRefPanel />}
 
         {/* AI Panel */}
         <AIPanel />
@@ -334,6 +362,10 @@ export default function DocumentPage() {
         open={showKeyboardShortcuts}
         onClose={() => setShowKeyboardShortcuts(false)}
       />
+      {/* Watermark Dialog */}
+      <WatermarkDialog />
+      {/* Columns Dialog */}
+      <ColumnsDialog />
       {/* Collaboration modals */}
       <ShareDialog />
     </div>

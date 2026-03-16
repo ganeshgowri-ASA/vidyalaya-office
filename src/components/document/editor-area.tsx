@@ -240,6 +240,7 @@ export function EditorArea() {
     watermarkDirection, watermarkOpacity, watermarkImageUrl, useImageWatermark,
     showLineNumbers, setParagraphCount,
     pageNumberPosition, pageNumberFormat, differentFirstPage, showHeaderFooter: showHF,
+    watermarkPosition, watermarkRotation, watermarkFontSize, columnSpacing,
   } = useDocumentStore();
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -422,7 +423,7 @@ export function EditorArea() {
           fontSize: currentFontSize + "pt",
           lineHeight: lineSpacing,
           columnCount: columns,
-          columnGap: "2em",
+          columnGap: `${columnSpacing}em`,
           border: viewMode === "print" ? undefined : "none",
           boxShadow: viewMode === "print" ? undefined : "none",
           marginBottom: viewMode === "print" ? "24px" : "0",
@@ -443,8 +444,14 @@ export function EditorArea() {
         {/* Watermark */}
         {showWatermark && (
           <div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-            style={{ zIndex: 0 }}
+            className="absolute inset-0 pointer-events-none select-none"
+            style={{
+              zIndex: 0,
+              display: "flex",
+              alignItems: watermarkPosition.includes("top") ? "flex-start" : watermarkPosition.includes("bottom") ? "flex-end" : "center",
+              justifyContent: watermarkPosition.includes("left") ? "flex-start" : watermarkPosition.includes("right") ? "flex-end" : "center",
+              padding: watermarkPosition !== "center" ? "40px" : undefined,
+            }}
           >
             {useImageWatermark && watermarkImageUrl ? (
               <img
@@ -454,7 +461,7 @@ export function EditorArea() {
                   maxWidth: "60%",
                   maxHeight: "60%",
                   opacity: watermarkOpacity,
-                  transform: watermarkDirection === "diagonal" ? "rotate(-45deg)" : "none",
+                  transform: `rotate(${watermarkRotation}deg)`,
                   userSelect: "none",
                   pointerEvents: "none",
                 }}
@@ -462,10 +469,10 @@ export function EditorArea() {
             ) : watermarkText ? (
               <span
                 style={{
-                  fontSize: 72,
+                  fontSize: watermarkFontSize,
                   fontWeight: 700,
                   color: `rgba(200, 200, 200, ${watermarkOpacity})`,
-                  transform: watermarkDirection === "diagonal" ? "rotate(-45deg)" : "none",
+                  transform: `rotate(${watermarkRotation}deg)`,
                   whiteSpace: "nowrap",
                   letterSpacing: 8,
                   userSelect: "none",

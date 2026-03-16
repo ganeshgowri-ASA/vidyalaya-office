@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import {
   Columns3, Settings2, Stamp, Frame, ChevronDown, FileText,
-  Minus, RotateCw, Maximize2, SeparatorHorizontal,
+  Minus, RotateCw, Maximize2, SeparatorHorizontal, Droplets,
 } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
 import { ToolbarButton, ToolbarSeparator, ToolbarDropdown } from "./toolbar-button";
@@ -27,6 +27,7 @@ export function LayoutTab({ onPageSetup, onHeaderFooterEditor }: LayoutTabProps)
     indentRight, setIndentRight,
     spacingBefore, setSpacingBefore,
     spacingAfter, setSpacingAfter,
+    setShowWatermarkDialog, setShowColumnsDialog,
   } = useDocumentStore();
 
   const [showBreaks, setShowBreaks] = useState(false);
@@ -159,6 +160,10 @@ export function LayoutTab({ onPageSetup, onHeaderFooterEditor }: LayoutTabProps)
           {onPageSetup && (
             <ToolbarButton icon={<Settings2 size={14} />} label="Page Setup" title="Page Setup Dialog" onClick={onPageSetup} />
           )}
+          {/* Watermark */}
+          <ToolbarButton icon={<Droplets size={14} />} label="Watermark" title="Watermark Settings" onClick={() => setShowWatermarkDialog(true)} />
+          {/* Advanced Columns */}
+          <ToolbarButton icon={<Columns3 size={14} />} label="More Cols" title="Column Layout Settings" onClick={() => setShowColumnsDialog(true)} />
           {/* Header/Footer */}
           <ToolbarButton icon={<Stamp size={14} />} label="Header/Footer" title="Toggle Header & Footer" active={showHeaderFooter} onClick={toggleHeaderFooter} />
           {onHeaderFooterEditor && (
