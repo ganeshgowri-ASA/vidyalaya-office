@@ -6,6 +6,10 @@ import { useState } from "react";
 
 const templates = [
   { name: "IEEE Paper", desc: "IEEE conference paper format with abstract, keywords, and two-column layout" },
+  { name: "Springer", desc: "Springer journal article format with structured abstract, keywords, and references" },
+  { name: "Wiley", desc: "Wiley journal format with research highlights, graphical abstract, and citations" },
+  { name: "ScienceDirect", desc: "ScienceDirect/Elsevier journal format with highlights, methodology, and data sections" },
+  { name: "SPIE", desc: "SPIE optical engineering and photonics journal format with abstract and technical sections" },
   { name: "CV", desc: "Professional CV/Resume with sections for experience, education, and skills" },
   { name: "Business Report", desc: "Formal business report with executive summary and analysis sections" },
   { name: "SOP", desc: "Standard operating procedure with step-by-step instructions and compliance" },
@@ -32,10 +36,8 @@ export default function WordTemplates() {
       "Technical Spec": "Technical Specification",
     };
     const key = keyMap[name] || name;
-    const stored = localStorage.getItem("vidyalaya-doc-content");
-    if (!stored) {
-      localStorage.setItem("vidyalaya-template-hint", key);
-    }
+    localStorage.setItem("vidyalaya-template-hint", key);
+    router.push(`/document?template=${encodeURIComponent(key)}`);
   };
 
   return (
