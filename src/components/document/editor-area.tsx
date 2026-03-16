@@ -286,6 +286,18 @@ export function EditorArea() {
         } else {
           setSelectedSmartArt(false);
         }
+      } else if (target.closest(".smartart-container") || target.closest("[data-smartart]")) {
+        // Clicked inside inline SVG SmartArt - mark as selected, text is selectable
+        const container = (target.closest(".smartart-container") || target.closest("[data-smartart]")) as HTMLElement;
+        const editor = document.getElementById("doc-editor");
+        if (editor) {
+          editor.querySelectorAll(".smartart-container").forEach(el => { (el as HTMLElement).style.outline = ""; });
+          editor.querySelectorAll("img").forEach(img => { img.dataset.selected = "false"; img.style.outline = ""; });
+        }
+        container.style.outline = "2px solid #4472C4";
+        setSelectedSmartArt(true);
+        setSelectedImage(false);
+        setSelectedTable(false);
       } else if (target instanceof HTMLTableCellElement || target.closest("table")) {
         setSelectedTable(true);
         setSelectedImage(false);
@@ -295,6 +307,7 @@ export function EditorArea() {
         const editor = document.getElementById("doc-editor");
         if (editor) {
           editor.querySelectorAll("img").forEach(img => { img.dataset.selected = "false"; img.style.outline = ""; });
+          editor.querySelectorAll(".smartart-container").forEach(el => { (el as HTMLElement).style.outline = ""; });
         }
         setSelectedTable(false);
         setSelectedImage(false);
