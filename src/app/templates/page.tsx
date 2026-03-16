@@ -19,6 +19,14 @@ const tabs = [
 
 type Tab = (typeof tabs)[number]["key"];
 
+const tabs = [
+  { id: "word", label: "Word", icon: FileText, count: 6 },
+  { id: "excel", label: "Excel", icon: Table2, count: 8 },
+  { id: "ppt", label: "Presentations", icon: PresentationIcon, count: 5 },
+  { id: "flowchart", label: "Flowcharts", icon: GitBranch, count: 6 },
+  { id: "all", label: "All Quick Templates", icon: FileText, count: 39 },
+];
+
 export default function TemplatesPage() {
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [search, setSearch] = useState("");

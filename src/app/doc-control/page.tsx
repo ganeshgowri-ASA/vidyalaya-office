@@ -159,6 +159,8 @@ export default function DocControlPage() {
   const [selectedDoc, setSelectedDoc] = useState<DocRecord | null>(null);
   const [archiveTab, setArchiveTab] = useState<"active" | "archived" | "deleted">("archived");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showChangeRequest, setShowChangeRequest] = useState(false);
+  const [showNewDocDialog, setShowNewDocDialog] = useState(false);
 
   // New Document Dialog
   const [showNewDoc, setShowNewDoc] = useState(false);
@@ -456,6 +458,10 @@ export default function DocControlPage() {
               </select>
               <button onClick={() => setShowNewDoc(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-white" style={{ backgroundColor: "var(--primary)" }}>
                 <Plus size={12} /> New Document
+              </button>
+              <button onClick={() => setShowChangeRequest(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs"
+                style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>
+                <GitPullRequest size={12} /> Change Request
               </button>
               {selectedIds.size > 0 && (
                 <div className="flex gap-1">
@@ -853,6 +859,22 @@ export default function DocControlPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Change Request Dialog */}
+      {showChangeRequest && (
+        <ChangeRequestForm
+          onClose={() => setShowChangeRequest(false)}
+          onSubmit={(data) => {
+            console.log("Change request submitted:", data);
+            setShowChangeRequest(false);
+          }}
+        />
+      )}
+
+      {/* New Document Dialog */}
+      {showNewDocDialog && (
+        <NewDocumentDialog onClose={() => setShowNewDocDialog(false)} />
       )}
     </div>
   );
