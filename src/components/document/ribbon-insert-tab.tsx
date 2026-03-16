@@ -585,6 +585,16 @@ export function InsertTab() {
         <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Symbols</span>
       </div>
 
+      {/* ===== MAIL MERGE ===== */}
+      <div className="flex flex-col items-center border-r pr-2 mr-1" style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-center gap-0.5">
+          <ToolbarButton icon={<Mail size={14} />} label="Mail Merge" title="Mail Merge" onClick={() => {
+            useDocumentStore.getState().setShowMailMerge(true);
+          }} />
+        </div>
+        <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Mailings</span>
+      </div>
+
       {/* ===== MEDIA & WATERMARK ===== */}
       <div className="flex flex-col items-center">
         <div className="flex items-center gap-0.5">

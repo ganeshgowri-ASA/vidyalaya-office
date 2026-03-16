@@ -14,6 +14,8 @@ export function DesignTab() {
     currentTheme, setCurrentTheme,
     showWatermark, toggleWatermark, setWatermarkText,
     pageColor, setPageColor,
+    watermarkDirection, setWatermarkDirection, watermarkOpacity, setWatermarkOpacity,
+    setWatermarkImageUrl, setUseImageWatermark,
   } = useDocumentStore();
 
   const [showThemes, setShowThemes] = useState(false);
@@ -144,6 +146,45 @@ export function DesignTab() {
                   }}>
                   Custom Watermark...
                 </button>
+                <button className="w-full text-left text-xs px-3 py-1 rounded hover:bg-[var(--muted)]"
+                  style={{ color: "var(--foreground)" }}
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = "image/*";
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        setWatermarkImageUrl(ev.target?.result as string);
+                        setUseImageWatermark(true);
+                        if (!showWatermark) toggleWatermark();
+                      };
+                      reader.readAsDataURL(file);
+                    };
+                    input.click();
+                    setShowWatermarkMenu(false);
+                  }}>
+                  Image Watermark...
+                </button>
+                <hr className="my-1" style={{ borderColor: "var(--border)" }} />
+                <div className="px-3 py-1">
+                  <div className="text-[9px] mb-1" style={{ color: "var(--muted-foreground)" }}>Direction</div>
+                  <div className="flex gap-1">
+                    <button onClick={() => setWatermarkDirection("diagonal")}
+                      className={`px-2 py-0.5 rounded text-[10px] border ${watermarkDirection === "diagonal" ? "border-[var(--primary)]" : "border-[var(--border)]"}`}
+                      style={{ color: "var(--foreground)" }}>Diagonal</button>
+                    <button onClick={() => setWatermarkDirection("horizontal")}
+                      className={`px-2 py-0.5 rounded text-[10px] border ${watermarkDirection === "horizontal" ? "border-[var(--primary)]" : "border-[var(--border)]"}`}
+                      style={{ color: "var(--foreground)" }}>Horizontal</button>
+                  </div>
+                  <div className="text-[9px] mt-1.5 mb-0.5" style={{ color: "var(--muted-foreground)" }}>Opacity: {Math.round(watermarkOpacity * 100)}%</div>
+                  <input type="range" min={0.05} max={0.8} step={0.05} value={watermarkOpacity}
+                    onChange={(e) => setWatermarkOpacity(parseFloat(e.target.value))}
+                    className="w-full h-1" style={{ accentColor: "var(--primary)" }} />
+                </div>
+                <hr className="my-1" style={{ borderColor: "var(--border)" }} />
                 <button className="w-full text-left text-xs px-3 py-1 rounded hover:bg-[var(--muted)]"
                   style={{ color: showWatermark ? "var(--primary)" : "var(--foreground)" }}
                   onClick={() => { toggleWatermark(); setShowWatermarkMenu(false); }}>

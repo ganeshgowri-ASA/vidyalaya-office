@@ -22,9 +22,11 @@ interface RibbonToolbarProps {
   onHeaderFooterEditor?: () => void;
   onToggleVersionControl?: () => void;
   onToggleDeveloper?: () => void;
+  onShowDocProperties?: () => void;
+  onShowKeyboardShortcuts?: () => void;
 }
 
-export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersionControl, onToggleDeveloper }: RibbonToolbarProps = {}) {
+export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersionControl, onToggleDeveloper, onShowDocProperties, onShowKeyboardShortcuts }: RibbonToolbarProps = {}) {
   const {
     activeTab, setActiveTab,
     toggleAI, showAI,
@@ -96,7 +98,7 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
         {activeTab === "layout" && <LayoutTab onPageSetup={onPageSetup} onHeaderFooterEditor={onHeaderFooterEditor} />}
         {activeTab === "references" && <ReferencesTab />}
         {activeTab === "review" && <ReviewTab />}
-        {activeTab === "view" && <ViewTab onToggleVersionControl={onToggleVersionControl} onToggleDeveloper={onToggleDeveloper} />}
+        {activeTab === "view" && <ViewTab onToggleVersionControl={onToggleVersionControl} onToggleDeveloper={onToggleDeveloper} onShowDocProperties={onShowDocProperties} onShowKeyboardShortcuts={onShowKeyboardShortcuts} />}
         {activeTab === "table-design" && <TableDesignTab />}
         {activeTab === "image-format" && <ImageFormatTab />}
         {activeTab === "smartart-design" && <ImageFormatTab />}

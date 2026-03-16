@@ -25,6 +25,36 @@ export type LineSpacing = "1" | "1.15" | "1.5" | "2" | "2.5" | "3";
 export type TabKey = "home" | "insert" | "design" | "layout" | "references" | "review" | "view" | "developer" | "table-design" | "image-format" | "smartart-design";
 export type ViewMode = "print" | "read" | "web" | "outline" | "draft";
 export type Orientation = "portrait" | "landscape";
+export type WatermarkDirection = "diagonal" | "horizontal";
+
+export interface DocumentProperties {
+  title: string;
+  author: string;
+  subject: string;
+  keywords: string;
+  comments: string;
+  category: string;
+  created: string;
+  modified: string;
+}
+
+export interface TrackChange {
+  id: string;
+  type: "insert" | "delete" | "format";
+  content: string;
+  author: string;
+  timestamp: string;
+  accepted: boolean | null;
+}
+
+export interface MailMergeField {
+  name: string;
+  value: string;
+}
+
+export interface MailMergeRecord {
+  [key: string]: string;
+}
 
 export interface Comment {
   id: string;
@@ -93,6 +123,27 @@ interface DocumentState {
   citations: Citation[];
   citationStyle: CitationStyle;
 
+  // Enhanced features
+  showMailMerge: boolean;
+  mailMergeData: MailMergeRecord[];
+  mailMergeFields: string[];
+  showDocProperties: boolean;
+  documentProperties: DocumentProperties;
+  showKeyboardShortcuts: boolean;
+  showLineNumbers: boolean;
+  watermarkDirection: WatermarkDirection;
+  watermarkOpacity: number;
+  watermarkImageUrl: string;
+  useImageWatermark: boolean;
+  pageNumberFormat: string;
+  pageNumberPosition: "top" | "bottom";
+  differentFirstPage: boolean;
+  showRevisionHistory: boolean;
+  trackChangesList: TrackChange[];
+  paragraphCount: number;
+  autoSaveEnabled: boolean;
+  autoSaveInterval: number;
+
   setFileName: (name: string) => void;
   setActiveTab: (tab: TabKey) => void;
   toggleAI: () => void;
@@ -154,6 +205,29 @@ interface DocumentState {
   removeCitation: (id: string) => void;
   updateCitation: (id: string, citation: Partial<Citation>) => void;
   setCitationStyle: (style: CitationStyle) => void;
+
+  // Enhanced feature actions
+  setShowMailMerge: (show: boolean) => void;
+  setMailMergeData: (data: MailMergeRecord[]) => void;
+  setMailMergeFields: (fields: string[]) => void;
+  setShowDocProperties: (show: boolean) => void;
+  setDocumentProperties: (props: Partial<DocumentProperties>) => void;
+  setShowKeyboardShortcuts: (show: boolean) => void;
+  toggleLineNumbers: () => void;
+  setWatermarkDirection: (dir: WatermarkDirection) => void;
+  setWatermarkOpacity: (opacity: number) => void;
+  setWatermarkImageUrl: (url: string) => void;
+  setUseImageWatermark: (use: boolean) => void;
+  setPageNumberFormat: (format: string) => void;
+  setPageNumberPosition: (pos: "top" | "bottom") => void;
+  setDifferentFirstPage: (v: boolean) => void;
+  setShowRevisionHistory: (show: boolean) => void;
+  addTrackChange: (change: TrackChange) => void;
+  acceptTrackChange: (id: string) => void;
+  rejectTrackChange: (id: string) => void;
+  setParagraphCount: (count: number) => void;
+  setAutoSaveEnabled: (enabled: boolean) => void;
+  setAutoSaveInterval: (interval: number) => void;
 }
 
 export const useDocumentStore = create<DocumentState>((set) => ({
@@ -213,6 +287,36 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   showCitationManager: false,
   citations: [],
   citationStyle: "APA",
+
+  // Enhanced features defaults
+  showMailMerge: false,
+  mailMergeData: [],
+  mailMergeFields: [],
+  showDocProperties: false,
+  documentProperties: {
+    title: "",
+    author: "Current User",
+    subject: "",
+    keywords: "",
+    comments: "",
+    category: "",
+    created: new Date().toISOString(),
+    modified: new Date().toISOString(),
+  },
+  showKeyboardShortcuts: false,
+  showLineNumbers: false,
+  watermarkDirection: "diagonal" as WatermarkDirection,
+  watermarkOpacity: 0.3,
+  watermarkImageUrl: "",
+  useImageWatermark: false,
+  pageNumberFormat: "1",
+  pageNumberPosition: "bottom" as const,
+  differentFirstPage: false,
+  showRevisionHistory: false,
+  trackChangesList: [],
+  paragraphCount: 0,
+  autoSaveEnabled: true,
+  autoSaveInterval: 15000,
 
   setFileName: (name) => set({ fileName: name }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -288,4 +392,31 @@ export const useDocumentStore = create<DocumentState>((set) => ({
     citations: s.citations.map((c) => (c.id === id ? { ...c, ...updates } : c)),
   })),
   setCitationStyle: (style) => set({ citationStyle: style }),
+
+  // Enhanced feature actions
+  setShowMailMerge: (show) => set({ showMailMerge: show }),
+  setMailMergeData: (data) => set({ mailMergeData: data }),
+  setMailMergeFields: (fields) => set({ mailMergeFields: fields }),
+  setShowDocProperties: (show) => set({ showDocProperties: show }),
+  setDocumentProperties: (props) => set((s) => ({ documentProperties: { ...s.documentProperties, ...props, modified: new Date().toISOString() } })),
+  setShowKeyboardShortcuts: (show) => set({ showKeyboardShortcuts: show }),
+  toggleLineNumbers: () => set((s) => ({ showLineNumbers: !s.showLineNumbers })),
+  setWatermarkDirection: (dir) => set({ watermarkDirection: dir }),
+  setWatermarkOpacity: (opacity) => set({ watermarkOpacity: opacity }),
+  setWatermarkImageUrl: (url) => set({ watermarkImageUrl: url }),
+  setUseImageWatermark: (use) => set({ useImageWatermark: use }),
+  setPageNumberFormat: (format) => set({ pageNumberFormat: format }),
+  setPageNumberPosition: (pos) => set({ pageNumberPosition: pos }),
+  setDifferentFirstPage: (v) => set({ differentFirstPage: v }),
+  setShowRevisionHistory: (show) => set({ showRevisionHistory: show }),
+  addTrackChange: (change) => set((s) => ({ trackChangesList: [...s.trackChangesList, change] })),
+  acceptTrackChange: (id) => set((s) => ({
+    trackChangesList: s.trackChangesList.map((c) => c.id === id ? { ...c, accepted: true } : c),
+  })),
+  rejectTrackChange: (id) => set((s) => ({
+    trackChangesList: s.trackChangesList.map((c) => c.id === id ? { ...c, accepted: false } : c),
+  })),
+  setParagraphCount: (count) => set({ paragraphCount: count }),
+  setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
+  setAutoSaveInterval: (interval) => set({ autoSaveInterval: interval }),
 }));
