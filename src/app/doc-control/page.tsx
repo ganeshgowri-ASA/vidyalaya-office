@@ -4,8 +4,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Search, Plus, Filter, ChevronDown, ChevronRight, X, Edit3, Trash2, Archive,
   RotateCcw, Shield, Clock, User, Calendar, Building2, FileText, Tag,
-  CheckCircle2, AlertCircle, XCircle, Eye, History, Download,
+  CheckCircle2, AlertCircle, XCircle, Eye, History, Download, GitPullRequest,
 } from "lucide-react";
+import ChangeRequestForm from "./components/ChangeRequestForm";
+import NewDocumentDialog from "./components/NewDocumentDialog";
+import DocumentRoutePath from "./components/DocumentRoutePath";
 
 // Types
 interface DocRecord {
@@ -134,6 +137,8 @@ export default function DocControlPage() {
   const [showNewDoc, setShowNewDoc] = useState(false);
   const [showNewDept, setShowNewDept] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showChangeRequest, setShowChangeRequest] = useState(false);
+  const [showNewDocDialog, setShowNewDocDialog] = useState(false);
 
   // New doc form
   const [newDocName, setNewDocName] = useState("");
@@ -352,9 +357,13 @@ export default function DocControlPage() {
                 <option value="All">All Statuses</option>
                 {STATUSES.filter((s) => s !== "Archived" && s !== "Deleted").map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
-              <button onClick={() => setShowNewDoc(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-white"
+              <button onClick={() => setShowNewDocDialog(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-white"
                 style={{ backgroundColor: "var(--primary)" }}>
                 <Plus size={12} /> New Document
+              </button>
+              <button onClick={() => setShowChangeRequest(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs"
+                style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>
+                <GitPullRequest size={12} /> Change Request
               </button>
               {selectedIds.size > 0 && (
                 <div className="flex gap-1">
@@ -663,6 +672,10 @@ export default function DocControlPage() {
                   <label className="text-[10px] uppercase" style={{ color: "var(--muted-foreground)" }}>Route Path</label>
                   <div className="text-xs mt-0.5 font-mono" style={{ color: "var(--foreground)" }}>{selectedDoc.routePath}</div>
                 </div>
+                <div className="col-span-3">
+                  <label className="text-[10px] uppercase mb-1 block" style={{ color: "var(--muted-foreground)" }}>Document Workflow</label>
+                  <DocumentRoutePath currentStage={selectedDoc.status} />
+                </div>
                 <div>
                   <label className="text-[10px] uppercase" style={{ color: "var(--muted-foreground)" }}>Classification</label>
                   <div className="text-xs mt-0.5" style={{ color: "var(--foreground)" }}>{selectedDoc.classification}</div>
@@ -788,6 +801,22 @@ export default function DocControlPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Change Request Dialog */}
+      {showChangeRequest && (
+        <ChangeRequestForm
+          onClose={() => setShowChangeRequest(false)}
+          onSubmit={(data) => {
+            console.log("Change request submitted:", data);
+            setShowChangeRequest(false);
+          }}
+        />
+      )}
+
+      {/* New Document Dialog */}
+      {showNewDocDialog && (
+        <NewDocumentDialog onClose={() => setShowNewDocDialog(false)} />
       )}
     </div>
   );

@@ -1,7 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Table2, Presentation as PresentationIcon } from "lucide-react";
+import { FileText, Table2, Presentation as PresentationIcon, GitBranch } from "lucide-react";
+import WordTemplates from "./components/WordTemplates";
+import ExcelTemplates from "./components/ExcelTemplates";
+import PptTemplates from "./components/PptTemplates";
+import FlowchartTemplates from "./components/FlowchartTemplates";
 
 // ── Word Template Content (HTML) ───────────────────────────────────────────────
 
@@ -390,8 +395,17 @@ const categories = [
   { title: "PPT Templates", icon: PresentationIcon, templates: pptTemplates, count: 11, type: "ppt" as const },
 ];
 
+const tabs = [
+  { id: "word", label: "Word", icon: FileText, count: 6 },
+  { id: "excel", label: "Excel", icon: Table2, count: 8 },
+  { id: "ppt", label: "Presentations", icon: PresentationIcon, count: 5 },
+  { id: "flowchart", label: "Flowcharts", icon: GitBranch, count: 6 },
+  { id: "all", label: "All Quick Templates", icon: FileText, count: 39 },
+];
+
 export default function TemplatesPage() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState("word");
 
   const handleTemplateClick = (name: string, type: "word" | "excel" | "ppt") => {
     if (type === "word") {
@@ -416,7 +430,7 @@ export default function TemplatesPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
           Templates
@@ -426,38 +440,71 @@ export default function TemplatesPage() {
         </p>
       </div>
 
-      {categories.map((cat) => (
-        <section key={cat.title}>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-            <cat.icon size={16} />
-            {cat.title}
-            <span className="ml-1 rounded-full px-2 py-0.5 text-xs" style={{ backgroundColor: "var(--secondary)", color: "var(--secondary-foreground)" }}>
-              {cat.count}
+      {/* Category Tabs */}
+      <div className="flex gap-1 overflow-x-auto rounded-lg p-1" style={{ backgroundColor: "var(--secondary)" }}>
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-all"
+            style={{
+              backgroundColor: activeTab === tab.id ? "var(--card)" : "transparent",
+              color: activeTab === tab.id ? "var(--foreground)" : "var(--muted-foreground)",
+              boxShadow: activeTab === tab.id ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+            }}
+          >
+            <tab.icon size={14} />
+            {tab.label}
+            <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ backgroundColor: "var(--secondary)", color: "var(--muted-foreground)" }}>
+              {tab.count}
             </span>
-          </h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
-            {cat.templates.map((tmpl) => (
-              <button
-                key={tmpl}
-                onClick={() => handleTemplateClick(tmpl, cat.type)}
-                className="rounded-lg border px-4 py-3 text-left transition-all hover:scale-[1.02] hover:border-[var(--primary)] group"
-                style={{
-                  backgroundColor: "var(--card)",
-                  borderColor: "var(--border)",
-                  color: "var(--card-foreground)",
-                }}
-              >
-                <div className="text-sm font-medium group-hover:text-[var(--primary)]">{tmpl}</div>
-                {descriptions[tmpl] && (
-                  <div className="text-[10px] mt-1 line-clamp-2" style={{ color: "var(--muted-foreground)" }}>
-                    {descriptions[tmpl]}
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </section>
-      ))}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "word" && <WordTemplates />}
+      {activeTab === "excel" && <ExcelTemplates />}
+      {activeTab === "ppt" && <PptTemplates />}
+      {activeTab === "flowchart" && <FlowchartTemplates />}
+
+      {/* All Quick Templates (legacy grid view) */}
+      {activeTab === "all" && (
+        <div className="space-y-8">
+          {categories.map((cat) => (
+            <section key={cat.title}>
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+                <cat.icon size={16} />
+                {cat.title}
+                <span className="ml-1 rounded-full px-2 py-0.5 text-xs" style={{ backgroundColor: "var(--secondary)", color: "var(--secondary-foreground)" }}>
+                  {cat.count}
+                </span>
+              </h2>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
+                {cat.templates.map((tmpl) => (
+                  <button
+                    key={tmpl}
+                    onClick={() => handleTemplateClick(tmpl, cat.type)}
+                    className="rounded-lg border px-4 py-3 text-left transition-all hover:scale-[1.02] hover:border-[var(--primary)] group"
+                    style={{
+                      backgroundColor: "var(--card)",
+                      borderColor: "var(--border)",
+                      color: "var(--card-foreground)",
+                    }}
+                  >
+                    <div className="text-sm font-medium group-hover:text-[var(--primary)]">{tmpl}</div>
+                    {descriptions[tmpl] && (
+                      <div className="text-[10px] mt-1 line-clamp-2" style={{ color: "var(--muted-foreground)" }}>
+                        {descriptions[tmpl]}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
