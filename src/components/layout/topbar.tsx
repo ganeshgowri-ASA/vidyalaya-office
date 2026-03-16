@@ -16,9 +16,11 @@ import {
   Settings,
   Search,
   Check,
+  Sparkles,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { useThemeStore, themes } from "@/store/theme-store";
+import { useAIChatStore } from "@/store/ai-chat-store";
 import { formatDate } from "@/lib/utils";
 import type { ThemeName } from "@/types";
 
@@ -44,6 +46,8 @@ export function Topbar() {
   const pathname = usePathname();
   const { toggleSidebar, notifications, markNotificationRead, markAllNotificationsRead, recentFiles, setShowKeyboardShortcuts, searchQuery, setSearchQuery } = useAppStore();
   const { themeName, setTheme } = useThemeStore();
+  const toggleAIChat = useAIChatStore((s) => s.togglePanel);
+  const aiChatOpen = useAIChatStore((s) => s.isOpen);
   const [themeOpen, setThemeOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -124,8 +128,22 @@ export function Topbar() {
         </div>
       </div>
 
-      {/* Right: search, recent, notifications, theme, export, profile */}
+      {/* Right: AI chat, search, recent, notifications, theme, export, profile */}
       <div className="flex items-center gap-1.5">
+        {/* AI Assistant toggle */}
+        <button
+          onClick={toggleAIChat}
+          className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors hover:opacity-80"
+          title="AI Assistant (Ctrl+.)"
+          style={{
+            backgroundColor: aiChatOpen ? "var(--primary)" : undefined,
+            color: aiChatOpen ? "var(--primary-foreground)" : undefined,
+          }}
+        >
+          <Sparkles size={16} />
+          <span className="hidden sm:inline text-xs font-medium">AI</span>
+        </button>
+
         {/* Quick Search */}
         <div ref={searchRef} className="relative">
           <button
