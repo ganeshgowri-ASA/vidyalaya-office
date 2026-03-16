@@ -12,15 +12,15 @@ import {
   Square, Fullscreen, LayoutGrid, Eye, Wrench, Award,
 } from "lucide-react";
 import { PDFDocument, degrees, PageSizes } from "pdf-lib";
-import { RibbonToolbar } from "@/components/pdf";
-import { SearchPanel } from "@/components/pdf";
-import { PropertiesPanel } from "@/components/pdf";
-import { HeaderFooterModal } from "@/components/pdf";
-import { PrintModal } from "@/components/pdf";
-import { ExportModal } from "@/components/pdf";
+import {
+  RibbonToolbar, SearchPanel, PropertiesPanel, HeaderFooterModal,
+  PrintModal, ExportModal, BookmarksPanel, OrganizePagesPanel,
+  SignaturePanel, RedactionPanel, EditSidebar, WatermarkModal,
+  FormFillingPanel,
+} from "@/components/pdf";
 import type {
   RibbonTabId, HeaderFooterConfig, PrintOptions, ExportOptions,
-  SecurityConfig, DocumentProperties, SearchResult,
+  SecurityConfig, DocumentProperties, SearchResult, Bookmark,
 } from "@/components/pdf/types";
 
 // Local component imports
@@ -41,16 +41,19 @@ import type { CreatorElement } from "./components/PdfSecurity";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TabId = "view" | "edit" | "merge" | "split" | "convert" | "compress" | "forms" | "compare" | "ocr" | "create";
+type TabId = "view" | "edit" | "annotate" | "signature" | "merge" | "split" | "convert" | "compress" | "forms" | "pages" | "redact" | "bookmarks" | "compare" | "ocr" | "create";
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "view", label: "View", icon: FileText },
   { id: "edit", label: "Edit", icon: Pencil },
+  { id: "annotate", label: "Annotate", icon: Highlighter },
+  { id: "signature", label: "Signature", icon: PenTool },
+  { id: "forms", label: "Forms", icon: FormInput },
+  { id: "pages", label: "Pages", icon: LayoutGrid },
   { id: "merge", label: "Merge", icon: FilePlus },
   { id: "split", label: "Split", icon: Scissors },
-  { id: "convert", label: "Convert", icon: FileOutput },
-  { id: "compress", label: "Compress", icon: Minimize2 },
-  { id: "forms", label: "Forms", icon: FormInput },
+  { id: "redact", label: "Redact", icon: EyeOff },
+  { id: "bookmarks", label: "Bookmarks", icon: BookOpen },
   { id: "compare", label: "Compare", icon: Columns2 },
   { id: "ocr", label: "OCR", icon: ScanText },
   { id: "create", label: "Create", icon: FilePlus2 },
@@ -215,6 +218,43 @@ export default function PdfToolsPage() {
   const [creatorElements, setCreatorElements] = useState<CreatorElement[]>([]);
   const [selectedCreatorElement, setSelectedCreatorElement] = useState<string | null>(null);
 
+  // ── Bookmarks ──
+  const [showBookmarks, setShowBookmarks] = useState(false);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+
+  // ── Page Organization ──
+  const [pageOrder, setPageOrder] = useState<number[]>([]);
+  const [thumbnails, setThumbnails] = useState<string[]>([]);
+
+  // ── Signature ──
+  const [signatureMode, setSignatureMode] = useState<"draw" | "type" | "upload">("draw");
+  const [typedSignatureText, setTypedSignatureText] = useState("");
+  const [typedSignatureFont, setTypedSignatureFont] = useState("Dancing Script");
+  const [uploadedSignatureDataUrl, setUploadedSignatureDataUrl] = useState<string | null>(null);
+
+  // ── Redaction ──
+  const [redactionsApplied, setRedactionsApplied] = useState(false);
+
+  // ── Annotation tools state (for EditSidebar) ──
+  const [editMode, setEditMode] = useState("none");
+  const [fontSize, setFontSize] = useState(16);
+  const [fontFamily, setFontFamily] = useState("sans-serif");
+  const [drawColor, setDrawColor] = useState("#ff0000");
+  const [strokeWidth, setStrokeWidth] = useState(2);
+  const [selectedStamp, setSelectedStamp] = useState("Approved");
+  const [activeShape, setActiveShape] = useState("rectangle");
+  const [stickyNoteColor, setStickyNoteColor] = useState("#fff9c4");
+  const [fillColor, setFillColor] = useState("transparent");
+  const [fillOpacity, setFillOpacity] = useState(0.3);
+  const [measureUnit, setMeasureUnit] = useState("px");
+  const [imageToAdd, setImageToAdd] = useState<string | null>(null);
+
+  // ── Watermark position ──
+  const [watermarkPosition, setWatermarkPosition] = useState("center");
+
+  // ── Form filling mode ──
+  const [formMode, setFormMode] = useState<"fill" | "build">("build");
+
   // ─── PDF load handler ─────────────────────────────────────────────────────
 
   const loadPdf = useCallback(async (data: ArrayBuffer, name: string) => {
@@ -234,6 +274,27 @@ export default function PdfToolsPage() {
     setCertSignatureApplied(false);
     setOcrComplete(false);
     setFlattenApplied(false);
+    setRedactionsApplied(false);
+    setBookmarks([]);
+    // Initialize page order
+    setPageOrder(Array.from({ length: doc.numPages }, (_, i) => i));
+    // Generate thumbnails
+    const thumbs: string[] = [];
+    for (let i = 1; i <= doc.numPages; i++) {
+      try {
+        const page = await doc.getPage(i);
+        const vp = page.getViewport({ scale: 0.2 });
+        const canvas = document.createElement("canvas");
+        canvas.width = vp.width;
+        canvas.height = vp.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          await (page.render({ canvasContext: ctx, viewport: vp } as any).promise);
+          thumbs[i - 1] = canvas.toDataURL("image/png");
+        }
+      } catch { thumbs[i - 1] = ""; }
+    }
+    setThumbnails(thumbs);
   }, []);
 
   const handleFileUpload = async (file: File) => {
@@ -760,6 +821,140 @@ export default function PdfToolsPage() {
     a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
   }
 
+  // ─── Page Organization handlers ────────────────────────────────────────────
+
+  const handleReorderPages = async (newOrder: number[]) => {
+    if (!pdfBytes) return;
+    try {
+      const src = await PDFDocument.load(pdfBytes);
+      const dest = await PDFDocument.create();
+      const pages = await dest.copyPages(src, newOrder);
+      pages.forEach((p) => dest.addPage(p));
+      const bytes = await dest.save();
+      setPageOrder(Array.from({ length: newOrder.length }, (_, i) => i));
+      await loadPdf(bytes.buffer as ArrayBuffer, pdfName);
+    } catch (err) { console.error("Reorder failed:", err); }
+  };
+
+  const handleDeletePages = async (pagesToDelete: number[]) => {
+    if (!pdfBytes) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const sorted = [...pagesToDelete].sort((a, b) => b - a);
+      for (const p of sorted) doc.removePage(p);
+      const bytes = await doc.save();
+      await loadPdf(bytes.buffer as ArrayBuffer, pdfName);
+    } catch (err) { console.error("Delete pages failed:", err); }
+  };
+
+  const handleRotatePages = async (pagesToRotate: number[], degs: number) => {
+    if (!pdfBytes) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const pages = doc.getPages();
+      for (const idx of pagesToRotate) {
+        if (idx >= 0 && idx < pages.length) {
+          const page = pages[idx];
+          const current = page.getRotation().angle;
+          page.setRotation(degrees(current + degs));
+        }
+      }
+      setPageRotations((prev) => {
+        const next = { ...prev };
+        for (const idx of pagesToRotate) next[idx] = (next[idx] || 0) + degs;
+        return next;
+      });
+      const bytes = await doc.save();
+      await loadPdf(bytes.buffer as ArrayBuffer, pdfName);
+    } catch (err) { console.error("Rotate failed:", err); }
+  };
+
+  const handleInsertBlankPage = async (afterPage: number) => {
+    if (!pdfBytes) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const refPage = doc.getPages()[Math.min(afterPage, doc.getPageCount() - 1)];
+      const { width, height } = refPage ? refPage.getSize() : { width: 595, height: 842 };
+      doc.insertPage(afterPage + 1, [width, height]);
+      const bytes = await doc.save();
+      await loadPdf(bytes.buffer as ArrayBuffer, pdfName);
+    } catch (err) { console.error("Insert blank failed:", err); }
+  };
+
+  const handleExtractPages = async (pages: number[]) => {
+    if (!pdfBytes || pages.length === 0) return;
+    try {
+      const src = await PDFDocument.load(pdfBytes);
+      const dest = await PDFDocument.create();
+      const copied = await dest.copyPages(src, pages);
+      copied.forEach((p) => dest.addPage(p));
+      const bytes = await dest.save();
+      downloadBlob(new Blob([bytes as BlobPart], { type: "application/pdf" }), "extracted_pages.pdf");
+    } catch (err) { console.error("Extract failed:", err); }
+  };
+
+  // ─── Bookmark handlers ──────────────────────────────────────────────────────
+
+  const handleAddBookmark = (bookmark: Bookmark) => {
+    setBookmarks((prev) => [...prev, bookmark]);
+  };
+
+  const handleRemoveBookmark = (id: string) => {
+    setBookmarks((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  const handleUpdateBookmark = (id: string, updates: Partial<Bookmark>) => {
+    setBookmarks((prev) => prev.map((b) => b.id === id ? { ...b, ...updates } : b));
+  };
+
+  // ─── Signature handler ──────────────────────────────────────────────────────
+
+  const handleSignatureReady = (dataUrl: string) => {
+    const ann: Annotation = {
+      id: uid(), type: "signature", page: currentPage,
+      x: 100, y: 300, width: 200, height: 80,
+      signatureDataUrl: dataUrl,
+    };
+    setAnnotations((prev) => [...prev, ann]);
+  };
+
+  // ─── Redaction handlers ─────────────────────────────────────────────────────
+
+  const handleApplyRedactions = async () => {
+    if (!pdfBytes) return;
+    const redactionAnns = annotations.filter((a) => a.type === "redaction");
+    if (redactionAnns.length === 0) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      const pages = doc.getPages();
+      for (const ann of redactionAnns) {
+        const pageIdx = ann.page - 1;
+        if (pageIdx >= 0 && pageIdx < pages.length) {
+          const page = pages[pageIdx];
+          const { height } = page.getSize();
+          page.drawRectangle({
+            x: ann.x, y: height - ann.y - (ann.height ?? 20),
+            width: ann.width ?? 100, height: ann.height ?? 20,
+            color: { type: 1 as any, red: 0, green: 0, blue: 0 } as any,
+          });
+        }
+      }
+      const bytes = await doc.save();
+      await loadPdf(bytes.buffer as ArrayBuffer, pdfName);
+      setAnnotations((prev) => prev.filter((a) => a.type !== "redaction"));
+      setRedactionsApplied(true);
+    } catch (err) { console.error("Redaction failed:", err); }
+  };
+
+  const handleSearchRedact = (term: string) => {
+    if (!term.trim()) return;
+    const ann: Annotation = {
+      id: uid(), type: "redaction", page: currentPage,
+      x: 50, y: 100, width: term.length * 8, height: 20,
+    };
+    setAnnotations((prev) => [...prev, ann]);
+  };
+
   // ─── Ribbon tab mapping ────────────────────────────────────────────────────
 
   const handleRibbonTabChange = (tab: RibbonTabId) => {
@@ -767,9 +962,9 @@ export default function PdfToolsPage() {
     switch (tab) {
       case "home": setActiveTab("view"); break;
       case "edit": setActiveTab("edit"); break;
-      case "annotate": setActiveTab("edit"); break;
+      case "annotate": setActiveTab("annotate"); break;
       case "forms": setActiveTab("forms"); break;
-      case "organize": setActiveTab("view"); break;
+      case "organize": setActiveTab("pages"); break;
       case "convert": setActiveTab("convert"); break;
       case "security": setActiveTab("view"); break;
       case "review": setActiveTab("compare"); break;
@@ -823,14 +1018,15 @@ export default function PdfToolsPage() {
       case "annotate":
         return (
           <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
-            <button style={btnStyle} onClick={() => setActiveTab("edit")}><Highlighter size={14} /> Highlight</button>
-            <button style={btnStyle} onClick={() => setActiveTab("edit")}><Underline size={14} /> Underline</button>
-            <button style={btnStyle} onClick={() => setActiveTab("edit")}><Strikethrough size={14} /> Strikethrough</button>
-            <button style={btnStyle} onClick={() => setActiveTab("edit")}><StickyNote size={14} /> Sticky Note</button>
+            <button style={btnStyle} onClick={() => { setActiveTab("annotate"); setEditMode("highlight"); }}><Highlighter size={14} /> Highlight</button>
+            <button style={btnStyle} onClick={() => { setActiveTab("annotate"); setEditMode("underline"); }}><Underline size={14} /> Underline</button>
+            <button style={btnStyle} onClick={() => { setActiveTab("annotate"); setEditMode("strikethrough"); }}><Strikethrough size={14} /> Strikethrough</button>
+            <button style={btnStyle} onClick={() => { setActiveTab("annotate"); setEditMode("sticky-note"); }}><StickyNote size={14} /> Sticky Note</button>
+            <button style={btnStyle} onClick={() => { setActiveTab("annotate"); setEditMode("draw"); }}><Pencil size={14} /> Draw</button>
+            <button style={btnStyle} onClick={() => { setActiveTab("annotate"); setEditMode("text"); }}><Type size={14} /> Text Box</button>
             <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
-            <button style={btnStyle} onClick={() => setActiveTab("edit")}><Stamp size={14} /> Stamps</button>
-            <button style={btnStyle} onClick={() => setActiveTab("edit")}><Pencil size={14} /> Signature</button>
-            <button style={btnStyle} onClick={() => setActiveTab("edit")}><EyeOff size={14} /> Redact</button>
+            <button style={btnStyle} onClick={() => setActiveTab("signature")}><PenTool size={14} /> Signature</button>
+            <button style={btnStyle} onClick={() => setActiveTab("redact")}><EyeOff size={14} /> Redact</button>
             <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
             <button style={btnStyle} onClick={flattenAnnotations} disabled={annotations.length === 0}><Layers size={14} /> Flatten</button>
             <button style={btnStyle} onClick={() => setAnnotations((prev) => prev.slice(0, -1))} disabled={annotations.length === 0}><Undo2 size={14} /> Undo</button>
@@ -852,10 +1048,13 @@ export default function PdfToolsPage() {
       case "organize":
         return (
           <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={btnStyle} onClick={() => setActiveTab("pages")}><LayoutGrid size={14} /> Organize Pages</button>
             <button style={btnStyle} onClick={() => setActiveTab("merge")}><FilePlus size={14} /> Merge PDFs</button>
             <button style={btnStyle} onClick={() => setActiveTab("split")}><Scissors size={14} /> Split PDF</button>
             <button style={btnStyle} onClick={() => setActiveTab("compress")}><Minimize2 size={14} /> Compress</button>
             <button style={btnStyle} onClick={() => setActiveTab("create")}><FilePlus2 size={14} /> Create PDF</button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+            <button style={btnStyle} onClick={() => setActiveTab("bookmarks")}><BookOpen size={14} /> Bookmarks</button>
             {pdfDoc && (
               <>
                 <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
@@ -887,7 +1086,7 @@ export default function PdfToolsPage() {
             <button style={{ ...btnStyle, ...(certSignatureApplied ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowCertModal(true)}>
               <ShieldCheck size={14} /> {certSignatureApplied ? "Cert Applied" : "Digital Certificate"}
             </button>
-            <button style={btnStyle} onClick={() => setActiveTab("edit")}><EyeOff size={14} /> Redact</button>
+            <button style={btnStyle} onClick={() => setActiveTab("redact")}><EyeOff size={14} /> Redact</button>
           </div>
         );
       case "review":
@@ -935,6 +1134,166 @@ export default function PdfToolsPage() {
             certificateInfo={certificateInfo} ocrProcessing={ocrProcessing} ocrComplete={ocrComplete}
             flattenApplied={flattenApplied}
           />
+        );
+      case "annotate":
+        return (
+          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+            <EditSidebar
+              editMode={editMode}
+              onEditModeChange={setEditMode}
+              fontSize={fontSize}
+              onFontSizeChange={setFontSize}
+              fontFamily={fontFamily}
+              onFontFamilyChange={setFontFamily}
+              drawColor={drawColor}
+              onDrawColorChange={setDrawColor}
+              strokeWidth={strokeWidth}
+              onStrokeWidthChange={setStrokeWidth}
+              selectedStamp={selectedStamp}
+              onStampSelect={setSelectedStamp}
+              activeShape={activeShape}
+              onShapeSelect={setActiveShape}
+              stickyNoteColor={stickyNoteColor}
+              onStickyNoteColorChange={setStickyNoteColor}
+              fillColor={fillColor}
+              onFillColorChange={setFillColor}
+              fillOpacity={fillOpacity}
+              onFillOpacityChange={setFillOpacity}
+              measureUnit={measureUnit}
+              onMeasureUnitChange={setMeasureUnit}
+              onImageUpload={setImageToAdd}
+              onUndo={() => setAnnotations((prev) => prev.slice(0, -1))}
+              onFlatten={flattenAnnotations}
+              flattenApplied={flattenApplied}
+              annotationCount={annotations.length}
+            />
+            <div style={{ flex: 1, overflow: "auto" }}>
+              <PdfEditor
+                pdfLoaded={!!pdfDoc} currentPage={currentPage} totalPages={totalPages} zoom={zoom}
+                onPageChange={setCurrentPage} onZoomChange={setZoom}
+                annotations={annotations} onAnnotationsChange={setAnnotations}
+                mainCanvasRef={mainCanvasRef} overlayCanvasRef={overlayCanvasRef}
+                containerRef={containerRef} renderAnnotations={renderAnnotations}
+                onAddPageNumbers={addPageNumbers} onShowWatermark={() => setShowWatermarkModal(true)}
+                onShowHeaderFooter={() => setShowHeaderFooter(true)}
+                onShowCertModal={() => setShowCertModal(true)}
+                onRunOcr={runOcr} onFlattenAnnotations={flattenAnnotations}
+                pageNumbersAdded={pageNumbersAdded} watermarkApplied={watermarkApplied}
+                headerFooterApplied={headerFooterApplied} certSignatureApplied={certSignatureApplied}
+                certificateInfo={certificateInfo} ocrProcessing={ocrProcessing} ocrComplete={ocrComplete}
+                flattenApplied={flattenApplied}
+              />
+            </div>
+          </div>
+        );
+      case "signature":
+        return (
+          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+            <SignaturePanel
+              mode={signatureMode}
+              onModeChange={setSignatureMode}
+              typedText={typedSignatureText}
+              onTypedTextChange={setTypedSignatureText}
+              typedFont={typedSignatureFont}
+              onTypedFontChange={setTypedSignatureFont}
+              uploadedDataUrl={uploadedSignatureDataUrl}
+              onUploadedDataUrlChange={setUploadedSignatureDataUrl}
+              onSignatureReady={handleSignatureReady}
+              showCertModal={showCertModal}
+              onToggleCertModal={() => setShowCertModal(!showCertModal)}
+              certificateInfo={certificateInfo}
+              onCertificateInfoChange={setCertificateInfo}
+              onApplyCertificate={applyCertSignature}
+              certApplied={certSignatureApplied}
+            />
+            <div style={{ flex: 1, overflow: "auto" }}>
+              <PdfEditor
+                pdfLoaded={!!pdfDoc} currentPage={currentPage} totalPages={totalPages} zoom={zoom}
+                onPageChange={setCurrentPage} onZoomChange={setZoom}
+                annotations={annotations} onAnnotationsChange={setAnnotations}
+                mainCanvasRef={mainCanvasRef} overlayCanvasRef={overlayCanvasRef}
+                containerRef={containerRef} renderAnnotations={renderAnnotations}
+                onAddPageNumbers={addPageNumbers} onShowWatermark={() => setShowWatermarkModal(true)}
+                onShowHeaderFooter={() => setShowHeaderFooter(true)}
+                onShowCertModal={() => setShowCertModal(true)}
+                onRunOcr={runOcr} onFlattenAnnotations={flattenAnnotations}
+                pageNumbersAdded={pageNumbersAdded} watermarkApplied={watermarkApplied}
+                headerFooterApplied={headerFooterApplied} certSignatureApplied={certSignatureApplied}
+                certificateInfo={certificateInfo} ocrProcessing={ocrProcessing} ocrComplete={ocrComplete}
+                flattenApplied={flattenApplied}
+              />
+            </div>
+          </div>
+        );
+      case "pages":
+        return (
+          <OrganizePagesPanel
+            thumbnails={thumbnails}
+            pageOrder={pageOrder}
+            pageRotations={pageRotations}
+            totalPages={totalPages}
+            onReorderPages={handleReorderPages}
+            onDeletePages={handleDeletePages}
+            onRotatePages={handleRotatePages}
+            onInsertBlankPage={handleInsertBlankPage}
+            onExtractPages={handleExtractPages}
+          />
+        );
+      case "redact":
+        return (
+          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+            <div style={{ width: 300, flexShrink: 0, overflowY: "auto", borderRight: "1px solid var(--border)" }}>
+              <RedactionPanel
+                annotations={annotations}
+                onApplyRedactions={handleApplyRedactions}
+                onSearchRedact={handleSearchRedact}
+                redactionsApplied={redactionsApplied}
+                pdfLoaded={!!pdfDoc}
+              />
+            </div>
+            <div style={{ flex: 1, overflow: "auto" }}>
+              <PdfEditor
+                pdfLoaded={!!pdfDoc} currentPage={currentPage} totalPages={totalPages} zoom={zoom}
+                onPageChange={setCurrentPage} onZoomChange={setZoom}
+                annotations={annotations} onAnnotationsChange={setAnnotations}
+                mainCanvasRef={mainCanvasRef} overlayCanvasRef={overlayCanvasRef}
+                containerRef={containerRef} renderAnnotations={renderAnnotations}
+                onAddPageNumbers={addPageNumbers} onShowWatermark={() => setShowWatermarkModal(true)}
+                onShowHeaderFooter={() => setShowHeaderFooter(true)}
+                onShowCertModal={() => setShowCertModal(true)}
+                onRunOcr={runOcr} onFlattenAnnotations={flattenAnnotations}
+                pageNumbersAdded={pageNumbersAdded} watermarkApplied={watermarkApplied}
+                headerFooterApplied={headerFooterApplied} certSignatureApplied={certSignatureApplied}
+                certificateInfo={certificateInfo} ocrProcessing={ocrProcessing} ocrComplete={ocrComplete}
+                flattenApplied={flattenApplied}
+              />
+            </div>
+          </div>
+        );
+      case "bookmarks":
+        return (
+          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+            <BookmarksPanel
+              bookmarks={bookmarks}
+              currentPage={currentPage}
+              onNavigate={setCurrentPage}
+              onAddBookmark={handleAddBookmark}
+              onRemoveBookmark={handleRemoveBookmark}
+              onUpdateBookmark={handleUpdateBookmark}
+              onClose={() => setActiveTab("view")}
+              totalPages={totalPages}
+            />
+            <div style={{ flex: 1, overflow: "auto" }}>
+              <PdfViewer
+                externalPdfDoc={pdfDoc} externalPdfBytes={pdfBytes} externalPdfName={pdfName}
+                onPdfLoaded={(doc, bytes, name) => { setPdfDoc(doc); setPdfBytes(bytes); setPdfName(name); setTotalPages(doc.numPages); setCurrentPage(1); setAnnotations([]); setZoom(100); }}
+                onShowSearch={() => setShowSearch(!showSearch)}
+                onShowProperties={() => setShowProperties(!showProperties)}
+                onShowPrint={() => setShowPrint(true)}
+                onShowExport={() => setShowExport(true)}
+              />
+            </div>
+          </div>
         );
       case "merge":
         return (
@@ -1031,59 +1390,6 @@ export default function PdfToolsPage() {
     }
   };
 
-  // ─── Watermark Modal ───────────────────────────────────────────────────────
-
-  const renderWatermarkModal = () => {
-    if (!showWatermarkModal) return null;
-    return (
-      <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => setShowWatermarkModal(false)}>
-        <div className="flex flex-col gap-4 p-6" style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.3)", width: 420 }} onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold" style={{ color: "var(--foreground)" }}><Droplets size={18} style={{ display: "inline", marginRight: 8 }} />Add Watermark</h3>
-            <button style={{ border: "none", background: "none", cursor: "pointer" }} onClick={() => setShowWatermarkModal(false)}><X size={18} style={{ color: "var(--muted-foreground)" }} /></button>
-          </div>
-          <div className="flex gap-2">
-            {(["text", "image"] as const).map((t) => (
-              <button key={t} style={{ ...btnStyle, flex: 1, justifyContent: "center", backgroundColor: watermarkConfig.type === t ? "var(--primary)" : "var(--card)", color: watermarkConfig.type === t ? "var(--primary-foreground)" : "var(--card-foreground)" }}
-                onClick={() => setWatermarkConfig((c) => ({ ...c, type: t }))}>
-                {t === "text" ? <Type size={14} /> : <Image size={14} />} {t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            ))}
-          </div>
-          {watermarkConfig.type === "text" && (
-            <>
-              <div className="flex flex-col gap-1"><label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Text</label>
-                <input type="text" value={watermarkConfig.text} onChange={(e) => setWatermarkConfig((c) => ({ ...c, text: e.target.value }))} style={inputStyle} /></div>
-              <div className="flex gap-3">
-                <div className="flex flex-col gap-1 flex-1"><label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Font Size</label>
-                  <input type="number" value={watermarkConfig.fontSize} onChange={(e) => setWatermarkConfig((c) => ({ ...c, fontSize: Number(e.target.value) }))} style={inputStyle} min={12} max={120} /></div>
-                <div className="flex flex-col gap-1 flex-1"><label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Rotation (°)</label>
-                  <input type="number" value={watermarkConfig.rotation} onChange={(e) => setWatermarkConfig((c) => ({ ...c, rotation: Number(e.target.value) }))} style={inputStyle} min={-180} max={180} /></div>
-              </div>
-              <div className="flex gap-3">
-                <div className="flex flex-col gap-1 flex-1"><label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Opacity: {Math.round(watermarkConfig.opacity * 100)}%</label>
-                  <input type="range" min={5} max={100} value={Math.round(watermarkConfig.opacity * 100)} onChange={(e) => setWatermarkConfig((c) => ({ ...c, opacity: Number(e.target.value) / 100 }))} style={{ accentColor: "var(--primary)" }} /></div>
-                <div className="flex flex-col gap-1"><label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Color</label>
-                  <input type="color" value={watermarkConfig.color} onChange={(e) => setWatermarkConfig((c) => ({ ...c, color: e.target.value }))} style={{ width: 30, height: 30, border: "none", cursor: "pointer" }} /></div>
-              </div>
-            </>
-          )}
-          {watermarkConfig.type === "image" && (
-            <div className="flex flex-col gap-2">
-              <p style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Image watermark requires server-side processing.</p>
-              <div className="flex flex-col gap-1"><label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Opacity: {Math.round(watermarkConfig.opacity * 100)}%</label>
-                <input type="range" min={5} max={100} value={Math.round(watermarkConfig.opacity * 100)} onChange={(e) => setWatermarkConfig((c) => ({ ...c, opacity: Number(e.target.value) / 100 }))} style={{ accentColor: "var(--primary)" }} /></div>
-            </div>
-          )}
-          <div className="flex items-center justify-center" style={{ height: 80, backgroundColor: "var(--secondary)", borderRadius: 8, overflow: "hidden", position: "relative" }}>
-            <span style={{ fontSize: Math.min(watermarkConfig.fontSize / 2, 28), color: watermarkConfig.color, opacity: watermarkConfig.opacity, transform: `rotate(${watermarkConfig.rotation}deg)`, fontWeight: "bold" }}>{watermarkConfig.text || "Preview"}</span>
-          </div>
-          <button style={btnPrimaryStyle} onClick={applyWatermark}><Droplets size={16} /> Apply Watermark</button>
-        </div>
-      </div>
-    );
-  };
-
   // ─── Certificate Modal ─────────────────────────────────────────────────────
 
   const renderCertModal = () => {
@@ -1157,7 +1463,17 @@ export default function PdfToolsPage() {
       </div>
 
       {/* Modals */}
-      {renderWatermarkModal()}
+      {showWatermarkModal && (
+        <WatermarkModal
+          config={watermarkConfig}
+          onConfigChange={setWatermarkConfig}
+          position={watermarkPosition}
+          onPositionChange={setWatermarkPosition}
+          onApply={applyWatermark}
+          onClose={() => setShowWatermarkModal(false)}
+          applied={watermarkApplied}
+        />
+      )}
       {renderCertModal()}
       {showHeaderFooter && <HeaderFooterModal config={headerFooterConfig} onConfigChange={setHeaderFooterConfig} onApply={applyHeaderFooter} onClose={() => setShowHeaderFooter(false)} />}
       {showPrint && <PrintModal options={printOptions} totalPages={totalPages} onOptionsChange={setPrintOptions} onPrint={handlePrint} onClose={() => setShowPrint(false)} />}
