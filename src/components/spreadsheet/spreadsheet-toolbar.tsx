@@ -206,6 +206,7 @@ export function SpreadsheetToolbar({
   onExportExcel, onImportCSV,
   onOpenFindReplace, onOpenNamedRanges, onOpenComments, onOpenFreezePanes,
   onOpenCellFormatting,
+  onOpenFinancialAnalysis,
 }: {
   onExportCSV: () => void; onPrint: () => void;
   onOpenPivot?: () => void; onOpenValidation?: () => void;
@@ -216,6 +217,7 @@ export function SpreadsheetToolbar({
   onOpenFindReplace?: () => void; onOpenNamedRanges?: () => void;
   onOpenComments?: () => void; onOpenFreezePanes?: () => void;
   onOpenCellFormatting?: () => void;
+  onOpenFinancialAnalysis?: () => void;
 }) {
   const setSelectionStyle = useSpreadsheetStore((s) => s.setSelectionStyle);
   const activeCell = useSpreadsheetStore((s) => s.activeCell);
@@ -684,17 +686,20 @@ export function SpreadsheetToolbar({
               <DropdownDivider />
               <DropdownHeader>Hierarchy</DropdownHeader>
               <DropdownItem onClick={() => { openChartModal("treemap"); close(); }}>Treemap</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("treemap"); close(); }}>Sunburst</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("sunburst"); close(); }}>Sunburst</DropdownItem>
               <DropdownDivider />
               <DropdownHeader>Waterfall</DropdownHeader>
               <DropdownItem onClick={() => { openChartModal("waterfall"); close(); }}>Waterfall</DropdownItem>
               <DropdownItem onClick={() => { openChartModal("funnel"); close(); }}>Funnel</DropdownItem>
               <DropdownDivider />
               <DropdownHeader>Other</DropdownHeader>
-              <DropdownItem onClick={() => { openChartModal("radar"); close(); }}>Radar</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("radar"); close(); }}>Radar/Spider</DropdownItem>
               <DropdownItem onClick={() => { openChartModal("stock"); close(); }}>Stock (OHLC)</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("radar"); close(); }}>Surface</DropdownItem>
-              <DropdownItem onClick={() => { openChartModal("bar"); close(); }}>Combo Chart</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("combo"); close(); }}>Combo Chart</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("butterfly"); close(); }}>Butterfly/Tornado</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("gantt"); close(); }}>Gantt Chart</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("bode"); close(); }}>Bode Plot</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("logarithmic"); close(); }}>Logarithmic Graph</DropdownItem>
             </>
           )}
         </DropdownBtn>
@@ -725,6 +730,26 @@ export function SpreadsheetToolbar({
           const sym = prompt("Enter symbol character:");
           if (sym) setCellValue(activeCell.col, activeCell.row, sym);
         }}><Sparkles size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Financial Analysis">
+        <ToolBtn title="Financial Analysis (NPV, IRR, PMT, XIRR, Break-Even)" onClick={() => onOpenFinancialAnalysis?.()}><DollarSign size={14} /></ToolBtn>
+        <ToolBtn title="Statistical Analysis" onClick={() => onOpenStatistics?.()}><Sigma size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Dept. Templates">
+        <DropdownBtn icon={<FileSpreadsheet size={14} />} title="Department Analysis Templates" label="Templates">
+          {(close) => (
+            <>
+              <DropdownHeader>Department Analysis</DropdownHeader>
+              <DropdownItem onClick={() => { openTemplatesModal(); close(); }}>Sales Forecasting</DropdownItem>
+              <DropdownItem onClick={() => { openTemplatesModal(); close(); }}>HR Headcount Analysis</DropdownItem>
+              <DropdownItem onClick={() => { openTemplatesModal(); close(); }}>Inventory Management</DropdownItem>
+              <DropdownItem onClick={() => { openTemplatesModal(); close(); }}>Budget Variance Analysis</DropdownItem>
+              <DropdownItem onClick={() => { openTemplatesModal(); close(); }}>Expense Report</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
       </RibbonGroup>
     </div>
   );
@@ -978,8 +1003,11 @@ export function SpreadsheetToolbar({
           {(close) => (
             <>
               <DropdownItem onClick={() => { onOpenGoalSeek?.(); close(); }}>Goal Seek...</DropdownItem>
-              <DropdownItem onClick={() => { alert("Scenario Manager: Create and compare scenarios"); close(); }}>Scenario Manager...</DropdownItem>
-              <DropdownItem onClick={() => { alert("Data Table: Calculate results for multiple inputs"); close(); }}>Data Table...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenGoalSeek?.(); close(); }}>Scenario Manager...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenGoalSeek?.(); close(); }}>Data Table...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenGoalSeek?.(); close(); }}>Solver...</DropdownItem>
+              <DropdownDivider />
+              <DropdownItem onClick={() => { onOpenFinancialAnalysis?.(); close(); }}>Financial Analysis...</DropdownItem>
             </>
           )}
         </DropdownBtn>

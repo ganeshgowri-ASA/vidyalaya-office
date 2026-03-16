@@ -23,6 +23,7 @@ import { NamedRangesDialog } from "./named-ranges-dialog";
 import { CellCommentsDialog } from "./cell-comments-dialog";
 import { FreezePanesDialog } from "./freeze-panes-dialog";
 import { CellFormattingDialog } from "./cell-formatting-dialog";
+import { FinancialAnalysisModal } from "./financial-analysis-modal";
 
 export default function SpreadsheetWorkspace() {
   const getActiveSheet = useSpreadsheetStore((s) => s.getActiveSheet);
@@ -46,6 +47,7 @@ export default function SpreadsheetWorkspace() {
   const [showComments, setShowComments] = useState(false);
   const [showFreezePanes, setShowFreezePanes] = useState(false);
   const [showCellFormatting, setShowCellFormatting] = useState(false);
+  const [showFinancialAnalysis, setShowFinancialAnalysis] = useState(false);
 
   // Export handlers
   const handleExportCSV = useCallback(() => {
@@ -147,6 +149,7 @@ export default function SpreadsheetWorkspace() {
         onOpenComments={() => setShowComments(true)}
         onOpenFreezePanes={() => setShowFreezePanes(true)}
         onOpenCellFormatting={() => setShowCellFormatting(true)}
+        onOpenFinancialAnalysis={() => setShowFinancialAnalysis(true)}
         onImportCSV={() => {
           const input = document.createElement("input");
           input.type = "file";
@@ -208,6 +211,7 @@ export default function SpreadsheetWorkspace() {
       <CellCommentsDialog open={showComments} onClose={() => setShowComments(false)} />
       <FreezePanesDialog open={showFreezePanes} onClose={() => setShowFreezePanes(false)} />
       <CellFormattingDialog open={showCellFormatting} onClose={() => setShowCellFormatting(false)} />
+      <FinancialAnalysisModal open={showFinancialAnalysis} onClose={() => setShowFinancialAnalysis(false)} />
     </div>
   );
 }

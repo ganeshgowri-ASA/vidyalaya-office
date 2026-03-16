@@ -9,7 +9,7 @@ import {
   LineChart, Line, Legend,
 } from "recharts";
 
-type AnalysisType = "regression" | "correlation" | "descriptive" | "ttest" | "anova";
+type AnalysisType = "regression" | "correlation" | "descriptive" | "ttest" | "anova" | "confidence";
 type RegressionType = "linear" | "polynomial" | "exponential" | "logarithmic" | "power";
 
 function linReg(x: number[], y: number[]) {
@@ -241,6 +241,42 @@ export function StatisticalAnalysisModal({
     return { ssBetween, ssWithin, dfBetween, dfWithin, msBetween, msWithin, f, ssTotal: ssBetween + ssWithin };
   }, [xData, yData]);
 
+  // Confidence interval data
+  const confidenceData = useMemo(() => {
+    if (xData.length < 3 || yData.length < 3) return null;
+    const n = xData.length;
+    const xMean = xData.reduce((a, b) => a + b, 0) / n;
+    const yMean = yData.reduce((a, b) => a + b, 0) / n;
+    const { slope, intercept, r2 } = linReg(xData, yData);
+    const residuals = yData.map((y, i) => y - (slope * xData[i] + intercept));
+    const sse = residuals.reduce((s, r) => s + r * r, 0);
+    const mse = sse / (n - 2);
+    const se = Math.sqrt(mse);
+    const sxx = xData.reduce((s, x) => s + (x - xMean) ** 2, 0);
+    // t-value approx for 95% CI (df = n-2)
+    const tVal = n > 30 ? 1.96 : n > 10 ? 2.1 : 2.3;
+
+    const sortedX = [...xData].sort((a, b) => a - b);
+    const xMin = sortedX[0];
+    const xMax = sortedX[n - 1];
+    const step = (xMax - xMin) / 30 || 1;
+    const points = [];
+    for (let x = xMin; x <= xMax; x += step) {
+      const yPred = slope * x + intercept;
+      const margin = tVal * se * Math.sqrt(1 / n + (x - xMean) ** 2 / sxx);
+      const predMargin = tVal * se * Math.sqrt(1 + 1 / n + (x - xMean) ** 2 / sxx);
+      points.push({
+        x: parseFloat(x.toFixed(4)),
+        predicted: parseFloat(yPred.toFixed(4)),
+        ciUpper: parseFloat((yPred + margin).toFixed(4)),
+        ciLower: parseFloat((yPred - margin).toFixed(4)),
+        piUpper: parseFloat((yPred + predMargin).toFixed(4)),
+        piLower: parseFloat((yPred - predMargin).toFixed(4)),
+      });
+    }
+    return { points, se, mse, tVal, slopeStdErr: Math.sqrt(mse / sxx), interceptStdErr: Math.sqrt(mse * (1 / n + xMean ** 2 / sxx)) };
+  }, [xData, yData]);
+
   // Chart data for regression
   const chartData = useMemo(() => {
     if (xData.length === 0) return [];
@@ -270,6 +306,7 @@ export function StatisticalAnalysisModal({
         <div className="flex border-b overflow-x-auto" style={{ borderColor: "var(--border)" }}>
           {([
             { key: "regression" as AnalysisType, label: "Regression" },
+            { key: "confidence" as AnalysisType, label: "Confidence Intervals" },
             { key: "correlation" as AnalysisType, label: "Correlation" },
             { key: "descriptive" as AnalysisType, label: "Descriptive" },
             { key: "ttest" as AnalysisType, label: "T-Test" },
@@ -343,6 +380,22 @@ export function StatisticalAnalysisModal({
                         </div>
                       </div>
 
+                      {/* Trend line info */}
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div className="p-2 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                          <div style={{ color: "var(--muted-foreground)" }}>Std Error</div>
+                          <div className="font-mono font-medium">{confidenceData ? confidenceData.se.toFixed(4) : "N/A"}</div>
+                        </div>
+                        <div className="p-2 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                          <div style={{ color: "var(--muted-foreground)" }}>Data Points</div>
+                          <div className="font-mono font-medium">{xData.length}</div>
+                        </div>
+                        <div className="p-2 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                          <div style={{ color: "var(--muted-foreground)" }}>Adj R²</div>
+                          <div className="font-mono font-medium">{xData.length > 2 ? (1 - (1 - regressionResult.r2) * (xData.length - 1) / (xData.length - 2)).toFixed(6) : "N/A"}</div>
+                        </div>
+                      </div>
+
                       {/* Scatter + regression line chart */}
                       <ResponsiveContainer width="100%" height={250}>
                         <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
@@ -351,7 +404,7 @@ export function StatisticalAnalysisModal({
                           <YAxis type="number" fontSize={10} />
                           <Tooltip cursor={{ strokeDasharray: "3 3" }} />
                           <Scatter name="Data" data={chartData} fill="#3b82f6" dataKey="y" />
-                          <Scatter name="Predicted" data={chartData.sort((a, b) => a.x - b.x)} fill="#ef4444" dataKey="predicted" line={{ stroke: "#ef4444", strokeWidth: 2 }} shape={(() => <circle r={0} />) as any} />
+                          <Scatter name="Trend Line" data={chartData.sort((a, b) => a.x - b.x)} fill="#ef4444" dataKey="predicted" line={{ stroke: "#ef4444", strokeWidth: 2 }} shape={(() => <circle r={0} />) as any} />
                         </ScatterChart>
                       </ResponsiveContainer>
                     </div>
@@ -497,6 +550,85 @@ export function StatisticalAnalysisModal({
                       </tbody>
                     </table>
                   </div>
+                </div>
+              )}
+
+              {/* Confidence Intervals */}
+              {analysisType === "confidence" && (
+                <div className="space-y-3">
+                  <div className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                    95% confidence and prediction intervals for linear regression.
+                  </div>
+                  {confidenceData ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                          <div className="text-xs" style={{ color: "var(--muted-foreground)" }}>Slope Std Error</div>
+                          <div className="text-sm font-mono font-bold mt-1">{confidenceData.slopeStdErr.toFixed(6)}</div>
+                        </div>
+                        <div className="p-3 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                          <div className="text-xs" style={{ color: "var(--muted-foreground)" }}>Intercept Std Error</div>
+                          <div className="text-sm font-mono font-bold mt-1">{confidenceData.interceptStdErr.toFixed(6)}</div>
+                        </div>
+                        <div className="p-3 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                          <div className="text-xs" style={{ color: "var(--muted-foreground)" }}>Mean Squared Error</div>
+                          <div className="text-sm font-mono font-bold mt-1">{confidenceData.mse.toFixed(6)}</div>
+                        </div>
+                        <div className="p-3 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                          <div className="text-xs" style={{ color: "var(--muted-foreground)" }}>t-value (95%)</div>
+                          <div className="text-sm font-mono font-bold mt-1">{confidenceData.tVal.toFixed(3)}</div>
+                        </div>
+                      </div>
+
+                      {/* CI visualization */}
+                      <ResponsiveContainer width="100%" height={280}>
+                        <LineChart data={confidenceData.points} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis type="number" dataKey="x" fontSize={10} />
+                          <YAxis fontSize={10} />
+                          <Tooltip />
+                          <Legend />
+                          <Line type="monotone" dataKey="predicted" stroke="#3b82f6" strokeWidth={2} dot={false} name="Regression Line" />
+                          <Line type="monotone" dataKey="ciUpper" stroke="#22c55e" strokeWidth={1} strokeDasharray="5 5" dot={false} name="95% CI Upper" />
+                          <Line type="monotone" dataKey="ciLower" stroke="#22c55e" strokeWidth={1} strokeDasharray="5 5" dot={false} name="95% CI Lower" />
+                          <Line type="monotone" dataKey="piUpper" stroke="#f59e0b" strokeWidth={1} strokeDasharray="3 3" dot={false} name="95% PI Upper" />
+                          <Line type="monotone" dataKey="piLower" stroke="#f59e0b" strokeWidth={1} strokeDasharray="3 3" dot={false} name="95% PI Lower" />
+                        </LineChart>
+                      </ResponsiveContainer>
+
+                      {/* CI/PI table */}
+                      <div className="border rounded overflow-auto max-h-[150px]" style={{ borderColor: "var(--border)" }}>
+                        <table className="w-full text-[10px]">
+                          <thead>
+                            <tr>
+                              <th className="px-2 py-1 border-b text-right" style={{ borderColor: "var(--border)", backgroundColor: "var(--muted)" }}>X</th>
+                              <th className="px-2 py-1 border-b text-right" style={{ borderColor: "var(--border)", backgroundColor: "var(--muted)" }}>Predicted</th>
+                              <th className="px-2 py-1 border-b text-right" style={{ borderColor: "var(--border)", backgroundColor: "var(--muted)" }}>CI Lower</th>
+                              <th className="px-2 py-1 border-b text-right" style={{ borderColor: "var(--border)", backgroundColor: "var(--muted)" }}>CI Upper</th>
+                              <th className="px-2 py-1 border-b text-right" style={{ borderColor: "var(--border)", backgroundColor: "var(--muted)" }}>PI Lower</th>
+                              <th className="px-2 py-1 border-b text-right" style={{ borderColor: "var(--border)", backgroundColor: "var(--muted)" }}>PI Upper</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {confidenceData.points.filter((_, i) => i % 3 === 0).map((pt, i) => (
+                              <tr key={i}>
+                                <td className="px-2 py-0.5 border-b text-right font-mono" style={{ borderColor: "var(--border)" }}>{pt.x}</td>
+                                <td className="px-2 py-0.5 border-b text-right font-mono" style={{ borderColor: "var(--border)" }}>{pt.predicted}</td>
+                                <td className="px-2 py-0.5 border-b text-right font-mono" style={{ borderColor: "var(--border)" }}>{pt.ciLower}</td>
+                                <td className="px-2 py-0.5 border-b text-right font-mono" style={{ borderColor: "var(--border)" }}>{pt.ciUpper}</td>
+                                <td className="px-2 py-0.5 border-b text-right font-mono" style={{ borderColor: "var(--border)" }}>{pt.piLower}</td>
+                                <td className="px-2 py-0.5 border-b text-right font-mono" style={{ borderColor: "var(--border)" }}>{pt.piUpper}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-sm" style={{ color: "var(--muted-foreground)" }}>
+                      Need at least 3 data points for confidence intervals.
+                    </div>
+                  )}
                 </div>
               )}
             </>
