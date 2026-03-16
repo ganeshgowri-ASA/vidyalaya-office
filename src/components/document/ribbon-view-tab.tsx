@@ -29,6 +29,7 @@ export function ViewTab({ onToggleVersionControl, onToggleDeveloper, onShowDocPr
     trackChanges, toggleTrackChanges,
     showComments, toggleComments,
     showLineNumbers, toggleLineNumbers,
+    showOutlinePanel, setShowOutlinePanel,
   } = useDocumentStore();
 
   const [showZoomDialog, setShowZoomDialog] = useState(false);
@@ -63,6 +64,8 @@ export function ViewTab({ onToggleVersionControl, onToggleDeveloper, onShowDocPr
             active={showNavigationPane} onClick={toggleNavigationPane} />
           <ToolbarButton icon={<Hash size={14} />} label="Line #" title="Line Numbers"
             active={showLineNumbers} onClick={toggleLineNumbers} />
+          <ToolbarButton icon={<ListTree size={14} />} label="Outline" title="Document Outline Panel"
+            active={showOutlinePanel} onClick={() => setShowOutlinePanel(!showOutlinePanel)} />
         </div>
         <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Show</span>
       </div>

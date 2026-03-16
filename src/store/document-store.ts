@@ -26,6 +26,30 @@ export type TabKey = "home" | "insert" | "design" | "layout" | "references" | "r
 export type ViewMode = "print" | "read" | "web" | "outline" | "draft";
 export type Orientation = "portrait" | "landscape";
 export type WatermarkDirection = "diagonal" | "horizontal";
+export type WatermarkPosition = "center" | "top" | "bottom" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+export type TocStyle = "dots" | "dashes" | "none" | "underline";
+export type ColumnLayout = "equal" | "left-narrow" | "right-narrow" | "custom";
+
+export interface Footnote {
+  id: string;
+  number: number;
+  text: string;
+  type: "footnote" | "endnote";
+}
+
+export interface Bookmark {
+  id: string;
+  name: string;
+  elementId: string;
+  timestamp: string;
+}
+
+export interface SpellCheckWord {
+  word: string;
+  suggestions: string[];
+  position: number;
+  ignored: boolean;
+}
 
 export interface DocumentProperties {
   title: string;
@@ -144,6 +168,45 @@ interface DocumentState {
   autoSaveEnabled: boolean;
   autoSaveInterval: number;
 
+  // TOC
+  showTocPanel: boolean;
+  tocStyle: TocStyle;
+  tocAutoUpdate: boolean;
+
+  // Footnotes & Endnotes
+  footnotes: Footnote[];
+  showFootnotesPanel: boolean;
+
+  // Watermark enhancements
+  watermarkPosition: WatermarkPosition;
+  watermarkRotation: number;
+  watermarkFontSize: number;
+  showWatermarkDialog: boolean;
+
+  // Columns layout
+  columnLayout: ColumnLayout;
+  columnSpacing: number;
+  showColumnsDialog: boolean;
+
+  // Word Count & Statistics
+  showStatisticsPanel: boolean;
+  readingTime: number;
+  readabilityScore: number;
+
+  // Spelling & Grammar
+  showSpellingPanel: boolean;
+  spellCheckEnabled: boolean;
+  autoCorrectEnabled: boolean;
+  customDictionary: string[];
+  spellingErrors: SpellCheckWord[];
+
+  // Bookmarks & Cross-references
+  bookmarks: Bookmark[];
+  showBookmarksPanel: boolean;
+
+  // Outline Navigation (enhanced)
+  showOutlinePanel: boolean;
+
   setFileName: (name: string) => void;
   setActiveTab: (tab: TabKey) => void;
   toggleAI: () => void;
@@ -228,6 +291,49 @@ interface DocumentState {
   setParagraphCount: (count: number) => void;
   setAutoSaveEnabled: (enabled: boolean) => void;
   setAutoSaveInterval: (interval: number) => void;
+
+  // TOC actions
+  setShowTocPanel: (show: boolean) => void;
+  setTocStyle: (style: TocStyle) => void;
+  setTocAutoUpdate: (auto: boolean) => void;
+
+  // Footnotes actions
+  addFootnote: (fn: Footnote) => void;
+  removeFootnote: (id: string) => void;
+  updateFootnote: (id: string, text: string) => void;
+  setShowFootnotesPanel: (show: boolean) => void;
+
+  // Watermark actions
+  setWatermarkPosition: (pos: WatermarkPosition) => void;
+  setWatermarkRotation: (deg: number) => void;
+  setWatermarkFontSize: (size: number) => void;
+  setShowWatermarkDialog: (show: boolean) => void;
+
+  // Columns actions
+  setColumnLayout: (layout: ColumnLayout) => void;
+  setColumnSpacing: (spacing: number) => void;
+  setShowColumnsDialog: (show: boolean) => void;
+
+  // Statistics actions
+  setShowStatisticsPanel: (show: boolean) => void;
+  setReadingTime: (time: number) => void;
+  setReadabilityScore: (score: number) => void;
+
+  // Spelling actions
+  setShowSpellingPanel: (show: boolean) => void;
+  setSpellCheckEnabled: (enabled: boolean) => void;
+  setAutoCorrectEnabled: (enabled: boolean) => void;
+  addToCustomDictionary: (word: string) => void;
+  removeFromCustomDictionary: (word: string) => void;
+  setSpellingErrors: (errors: SpellCheckWord[]) => void;
+
+  // Bookmarks actions
+  addBookmark: (bm: Bookmark) => void;
+  removeBookmark: (id: string) => void;
+  setShowBookmarksPanel: (show: boolean) => void;
+
+  // Outline actions
+  setShowOutlinePanel: (show: boolean) => void;
 }
 
 export const useDocumentStore = create<DocumentState>((set) => ({
@@ -317,6 +423,45 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   paragraphCount: 0,
   autoSaveEnabled: true,
   autoSaveInterval: 15000,
+
+  // TOC
+  showTocPanel: false,
+  tocStyle: "dots" as TocStyle,
+  tocAutoUpdate: true,
+
+  // Footnotes
+  footnotes: [],
+  showFootnotesPanel: false,
+
+  // Watermark enhancements
+  watermarkPosition: "center" as WatermarkPosition,
+  watermarkRotation: -45,
+  watermarkFontSize: 72,
+  showWatermarkDialog: false,
+
+  // Columns
+  columnLayout: "equal" as ColumnLayout,
+  columnSpacing: 2,
+  showColumnsDialog: false,
+
+  // Statistics
+  showStatisticsPanel: false,
+  readingTime: 0,
+  readabilityScore: 0,
+
+  // Spelling
+  showSpellingPanel: false,
+  spellCheckEnabled: true,
+  autoCorrectEnabled: true,
+  customDictionary: [],
+  spellingErrors: [],
+
+  // Bookmarks
+  bookmarks: [],
+  showBookmarksPanel: false,
+
+  // Outline
+  showOutlinePanel: false,
 
   setFileName: (name) => set({ fileName: name }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -419,4 +564,47 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   setParagraphCount: (count) => set({ paragraphCount: count }),
   setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
   setAutoSaveInterval: (interval) => set({ autoSaveInterval: interval }),
+
+  // TOC actions
+  setShowTocPanel: (show) => set({ showTocPanel: show }),
+  setTocStyle: (style) => set({ tocStyle: style }),
+  setTocAutoUpdate: (auto) => set({ tocAutoUpdate: auto }),
+
+  // Footnotes actions
+  addFootnote: (fn) => set((s) => ({ footnotes: [...s.footnotes, fn] })),
+  removeFootnote: (id) => set((s) => ({ footnotes: s.footnotes.filter((f) => f.id !== id) })),
+  updateFootnote: (id, text) => set((s) => ({ footnotes: s.footnotes.map((f) => f.id === id ? { ...f, text } : f) })),
+  setShowFootnotesPanel: (show) => set({ showFootnotesPanel: show }),
+
+  // Watermark actions
+  setWatermarkPosition: (pos) => set({ watermarkPosition: pos }),
+  setWatermarkRotation: (deg) => set({ watermarkRotation: deg }),
+  setWatermarkFontSize: (size) => set({ watermarkFontSize: size }),
+  setShowWatermarkDialog: (show) => set({ showWatermarkDialog: show }),
+
+  // Columns actions
+  setColumnLayout: (layout) => set({ columnLayout: layout }),
+  setColumnSpacing: (spacing) => set({ columnSpacing: spacing }),
+  setShowColumnsDialog: (show) => set({ showColumnsDialog: show }),
+
+  // Statistics actions
+  setShowStatisticsPanel: (show) => set({ showStatisticsPanel: show }),
+  setReadingTime: (time) => set({ readingTime: time }),
+  setReadabilityScore: (score) => set({ readabilityScore: score }),
+
+  // Spelling actions
+  setShowSpellingPanel: (show) => set({ showSpellingPanel: show }),
+  setSpellCheckEnabled: (enabled) => set({ spellCheckEnabled: enabled }),
+  setAutoCorrectEnabled: (enabled) => set({ autoCorrectEnabled: enabled }),
+  addToCustomDictionary: (word) => set((s) => ({ customDictionary: [...s.customDictionary, word] })),
+  removeFromCustomDictionary: (word) => set((s) => ({ customDictionary: s.customDictionary.filter((w) => w !== word) })),
+  setSpellingErrors: (errors) => set({ spellingErrors: errors }),
+
+  // Bookmarks actions
+  addBookmark: (bm) => set((s) => ({ bookmarks: [...s.bookmarks, bm] })),
+  removeBookmark: (id) => set((s) => ({ bookmarks: s.bookmarks.filter((b) => b.id !== id) })),
+  setShowBookmarksPanel: (show) => set({ showBookmarksPanel: show }),
+
+  // Outline actions
+  setShowOutlinePanel: (show) => set({ showOutlinePanel: show }),
 }));

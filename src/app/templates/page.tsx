@@ -400,7 +400,7 @@ const pptTemplates = [
 const categories = [
   { title: "Word Templates", icon: FileText, templates: wordTemplates, count: 16, type: "word" as const },
   { title: "Excel Templates", icon: Table2, templates: excelTemplates, count: 12, type: "excel" as const },
-  { title: "PPT Templates", icon: PresentationIcon, templates: pptTemplates, count: 11, type: "ppt" as const },
+  { title: "PPT Templates", icon: Presentation, templates: pptTemplates, count: 11, type: "ppt" as const },
 ];
 
 const tabs = [
