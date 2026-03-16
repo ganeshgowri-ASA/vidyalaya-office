@@ -738,6 +738,429 @@ export function evaluateFormula(
           }
           return "#NUM!";
         }
+        // === XIRR: IRR for irregular cash flows with dates ===
+        case "XIRR": {
+          const xirrArgs = splitArgs(args);
+          if (xirrArgs.length < 2) return "#ERROR";
+          const values = toNumbers(resolveArgs(xirrArgs[0], getCell));
+          const dateNums = toNumbers(resolveArgs(xirrArgs[1], getCell));
+          if (values.length < 2 || values.length !== dateNums.length) return "#ERROR";
+          const epoch = new Date(1900, 0, 1);
+          const dates = dateNums.map(d => new Date(epoch.getTime() + (d - 2) * 86400000));
+          const d0 = dates[0].getTime();
+          let rate = xirrArgs.length >= 3 ? toNum(evalArg(xirrArgs[2], getCell)) : 0.1;
+          for (let iter = 0; iter < 200; iter++) {
+            let f = 0, df = 0;
+            for (let i = 0; i < values.length; i++) {
+              const years = (dates[i].getTime() - d0) / (365.25 * 86400000);
+              f += values[i] / Math.pow(1 + rate, years);
+              df -= years * values[i] / Math.pow(1 + rate, years + 1);
+            }
+            if (Math.abs(f) < 1e-7) return Math.round(rate * 1e8) / 1e8;
+            if (df === 0) return "#NUM!";
+            rate -= f / df;
+          }
+          return "#NUM!";
+        }
+        // === RATE: Interest rate per period ===
+        case "RATE": {
+          const rateArgs = splitArgs(args);
+          if (rateArgs.length < 3) return "#ERROR";
+          const nper = toNum(evalArg(rateArgs[0], getCell));
+          const pmt = toNum(evalArg(rateArgs[1], getCell));
+          const pv = toNum(evalArg(rateArgs[2], getCell));
+          const fv = rateArgs.length >= 4 ? toNum(evalArg(rateArgs[3], getCell)) : 0;
+          let rateGuess = 0.1;
+          for (let iter = 0; iter < 200; iter++) {
+            const pvif = Math.pow(1 + rateGuess, nper);
+            const fvifa = rateGuess === 0 ? nper : (pvif - 1) / rateGuess;
+            const f = pv * pvif + pmt * fvifa + fv;
+            const df = pv * nper * Math.pow(1 + rateGuess, nper - 1)
+              + pmt * (rateGuess === 0 ? 0 : (nper * Math.pow(1 + rateGuess, nper - 1) * rateGuess - (pvif - 1)) / (rateGuess * rateGuess));
+            if (Math.abs(f) < 1e-8) return Math.round(rateGuess * 1e8) / 1e8;
+            if (df === 0) return "#NUM!";
+            rateGuess -= f / df;
+          }
+          return "#NUM!";
+        }
+        // === NPER: Number of periods ===
+        case "NPER": {
+          const nperArgs = splitArgs(args);
+          if (nperArgs.length < 3) return "#ERROR";
+          const rate = toNum(evalArg(nperArgs[0], getCell));
+          const pmt = toNum(evalArg(nperArgs[1], getCell));
+          const pv = toNum(evalArg(nperArgs[2], getCell));
+          const fv = nperArgs.length >= 4 ? toNum(evalArg(nperArgs[3], getCell)) : 0;
+          if (rate === 0) return -(pv + fv) / pmt;
+          return Math.log((-fv * rate + pmt) / (pv * rate + pmt)) / Math.log(1 + rate);
+        }
+        // === SLN: Straight-line depreciation ===
+        case "SLN": {
+          const slnArgs = splitArgs(args);
+          if (slnArgs.length < 3) return "#ERROR";
+          const cost = toNum(evalArg(slnArgs[0], getCell));
+          const salvage = toNum(evalArg(slnArgs[1], getCell));
+          const life = toNum(evalArg(slnArgs[2], getCell));
+          return life === 0 ? "#DIV/0!" : (cost - salvage) / life;
+        }
+        // === EFFECT: Effective annual interest rate ===
+        case "EFFECT": {
+          const effArgs = splitArgs(args);
+          if (effArgs.length < 2) return "#ERROR";
+          const nominal = toNum(evalArg(effArgs[0], getCell));
+          const npery = toNum(evalArg(effArgs[1], getCell));
+          return Math.pow(1 + nominal / npery, npery) - 1;
+        }
+        // === NOMINAL: Nominal annual interest rate ===
+        case "NOMINAL": {
+          const nomArgs = splitArgs(args);
+          if (nomArgs.length < 2) return "#ERROR";
+          const effectRate = toNum(evalArg(nomArgs[0], getCell));
+          const npery = toNum(evalArg(nomArgs[1], getCell));
+          return npery * (Math.pow(1 + effectRate, 1 / npery) - 1);
+        }
+        // === Statistical functions ===
+        case "CORREL": {
+          const corArgs = splitArgs(args);
+          if (corArgs.length < 2) return "#ERROR";
+          const xVals = toNumbers(resolveArgs(corArgs[0], getCell));
+          const yVals = toNumbers(resolveArgs(corArgs[1], getCell));
+          const n = Math.min(xVals.length, yVals.length);
+          if (n < 2) return "#ERROR";
+          const xMean = xVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          const yMean = yVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          let sumXY = 0, sumX2 = 0, sumY2 = 0;
+          for (let i = 0; i < n; i++) {
+            sumXY += (xVals[i] - xMean) * (yVals[i] - yMean);
+            sumX2 += (xVals[i] - xMean) ** 2;
+            sumY2 += (yVals[i] - yMean) ** 2;
+          }
+          const denom = Math.sqrt(sumX2 * sumY2);
+          return denom === 0 ? "#DIV/0!" : sumXY / denom;
+        }
+        case "SLOPE": {
+          const slArgs = splitArgs(args);
+          if (slArgs.length < 2) return "#ERROR";
+          const yVals = toNumbers(resolveArgs(slArgs[0], getCell));
+          const xVals = toNumbers(resolveArgs(slArgs[1], getCell));
+          const n = Math.min(xVals.length, yVals.length);
+          if (n < 2) return "#ERROR";
+          const xMean = xVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          const yMean = yVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          let sumXY = 0, sumX2 = 0;
+          for (let i = 0; i < n; i++) {
+            sumXY += (xVals[i] - xMean) * (yVals[i] - yMean);
+            sumX2 += (xVals[i] - xMean) ** 2;
+          }
+          return sumX2 === 0 ? "#DIV/0!" : sumXY / sumX2;
+        }
+        case "INTERCEPT": {
+          const intArgs = splitArgs(args);
+          if (intArgs.length < 2) return "#ERROR";
+          const yVals = toNumbers(resolveArgs(intArgs[0], getCell));
+          const xVals = toNumbers(resolveArgs(intArgs[1], getCell));
+          const n = Math.min(xVals.length, yVals.length);
+          if (n < 2) return "#ERROR";
+          const xMean = xVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          const yMean = yVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          let sumXY = 0, sumX2 = 0;
+          for (let i = 0; i < n; i++) {
+            sumXY += (xVals[i] - xMean) * (yVals[i] - yMean);
+            sumX2 += (xVals[i] - xMean) ** 2;
+          }
+          return sumX2 === 0 ? "#DIV/0!" : yMean - (sumXY / sumX2) * xMean;
+        }
+        case "RSQ": {
+          const rsqArgs = splitArgs(args);
+          if (rsqArgs.length < 2) return "#ERROR";
+          const yVals = toNumbers(resolveArgs(rsqArgs[0], getCell));
+          const xVals = toNumbers(resolveArgs(rsqArgs[1], getCell));
+          const n = Math.min(xVals.length, yVals.length);
+          if (n < 2) return "#ERROR";
+          const xMean = xVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          const yMean = yVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          let sumXY = 0, sumX2 = 0, sumY2 = 0;
+          for (let i = 0; i < n; i++) {
+            sumXY += (xVals[i] - xMean) * (yVals[i] - yMean);
+            sumX2 += (xVals[i] - xMean) ** 2;
+            sumY2 += (yVals[i] - yMean) ** 2;
+          }
+          const denom = sumX2 * sumY2;
+          return denom === 0 ? "#DIV/0!" : (sumXY * sumXY) / denom;
+        }
+        case "FORECAST": {
+          const fcArgs = splitArgs(args);
+          if (fcArgs.length < 3) return "#ERROR";
+          const x = toNum(evalArg(fcArgs[0], getCell));
+          const yVals = toNumbers(resolveArgs(fcArgs[1], getCell));
+          const xVals = toNumbers(resolveArgs(fcArgs[2], getCell));
+          const n = Math.min(xVals.length, yVals.length);
+          if (n < 2) return "#ERROR";
+          const xMean = xVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          const yMean = yVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          let sumXY = 0, sumX2 = 0;
+          for (let i = 0; i < n; i++) {
+            sumXY += (xVals[i] - xMean) * (yVals[i] - yMean);
+            sumX2 += (xVals[i] - xMean) ** 2;
+          }
+          const slope = sumX2 === 0 ? 0 : sumXY / sumX2;
+          return yMean + slope * (x - xMean);
+        }
+        case "VAR": case "VARA": {
+          const nums = toNumbers(resolveArgs(args, getCell));
+          if (nums.length < 2) return 0;
+          const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+          return nums.reduce((s, v) => s + (v - mean) ** 2, 0) / (nums.length - 1);
+        }
+        case "VARP": {
+          const nums = toNumbers(resolveArgs(args, getCell));
+          if (nums.length < 1) return 0;
+          const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+          return nums.reduce((s, v) => s + (v - mean) ** 2, 0) / nums.length;
+        }
+        case "STDEVP": {
+          const nums = toNumbers(resolveArgs(args, getCell));
+          if (nums.length < 1) return 0;
+          const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+          return Math.sqrt(nums.reduce((s, v) => s + (v - mean) ** 2, 0) / nums.length);
+        }
+        case "PERCENTILE": {
+          const pArgs = splitArgs(args);
+          if (pArgs.length < 2) return "#ERROR";
+          const nums = toNumbers(resolveArgs(pArgs[0], getCell)).sort((a, b) => a - b);
+          const k = toNum(evalArg(pArgs[1], getCell));
+          if (nums.length === 0 || k < 0 || k > 1) return "#ERROR";
+          const idx = k * (nums.length - 1);
+          const lower = Math.floor(idx);
+          const frac = idx - lower;
+          if (lower + 1 >= nums.length) return nums[nums.length - 1];
+          return nums[lower] + frac * (nums[lower + 1] - nums[lower]);
+        }
+        case "QUARTILE": {
+          const qArgs = splitArgs(args);
+          if (qArgs.length < 2) return "#ERROR";
+          const nums = toNumbers(resolveArgs(qArgs[0], getCell)).sort((a, b) => a - b);
+          const q = toNum(evalArg(qArgs[1], getCell));
+          if (nums.length === 0 || q < 0 || q > 4) return "#ERROR";
+          const k = q / 4;
+          const idx = k * (nums.length - 1);
+          const lower = Math.floor(idx);
+          const frac = idx - lower;
+          if (lower + 1 >= nums.length) return nums[nums.length - 1];
+          return nums[lower] + frac * (nums[lower + 1] - nums[lower]);
+        }
+        case "MODE": {
+          const nums = toNumbers(resolveArgs(args, getCell));
+          if (nums.length === 0) return "#N/A";
+          const freq: Record<number, number> = {};
+          for (const n of nums) freq[n] = (freq[n] || 0) + 1;
+          let maxFreq = 0, mode = nums[0];
+          for (const [val, f] of Object.entries(freq)) {
+            if (f > maxFreq) { maxFreq = f; mode = Number(val); }
+          }
+          return maxFreq <= 1 ? "#N/A" : mode;
+        }
+        case "GEOMEAN": {
+          const nums = toNumbers(resolveArgs(args, getCell));
+          if (nums.length === 0 || nums.some(n => n <= 0)) return "#NUM!";
+          const logSum = nums.reduce((s, v) => s + Math.log(v), 0);
+          return Math.exp(logSum / nums.length);
+        }
+        case "HARMEAN": {
+          const nums = toNumbers(resolveArgs(args, getCell));
+          if (nums.length === 0 || nums.some(n => n <= 0)) return "#NUM!";
+          const recipSum = nums.reduce((s, v) => s + 1 / v, 0);
+          return nums.length / recipSum;
+        }
+        case "STEYX": {
+          const stArgs = splitArgs(args);
+          if (stArgs.length < 2) return "#ERROR";
+          const yVals = toNumbers(resolveArgs(stArgs[0], getCell));
+          const xVals = toNumbers(resolveArgs(stArgs[1], getCell));
+          const n = Math.min(xVals.length, yVals.length);
+          if (n < 3) return "#ERROR";
+          const xMean = xVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          const yMean = yVals.slice(0, n).reduce((a, b) => a + b, 0) / n;
+          let sumXY = 0, sumX2 = 0;
+          for (let i = 0; i < n; i++) {
+            sumXY += (xVals[i] - xMean) * (yVals[i] - yMean);
+            sumX2 += (xVals[i] - xMean) ** 2;
+          }
+          const slope = sumX2 === 0 ? 0 : sumXY / sumX2;
+          const intercept = yMean - slope * xMean;
+          let sse = 0;
+          for (let i = 0; i < n; i++) {
+            const predicted = intercept + slope * xVals[i];
+            sse += (yVals[i] - predicted) ** 2;
+          }
+          return Math.sqrt(sse / (n - 2));
+        }
+        // === Trigonometric functions ===
+        case "SIN": return Math.sin(toNum(evalArg(args, getCell)));
+        case "COS": return Math.cos(toNum(evalArg(args, getCell)));
+        case "TAN": return Math.tan(toNum(evalArg(args, getCell)));
+        case "ASIN": return Math.asin(toNum(evalArg(args, getCell)));
+        case "ACOS": return Math.acos(toNum(evalArg(args, getCell)));
+        case "ATAN": return Math.atan(toNum(evalArg(args, getCell)));
+        case "ATAN2": {
+          const a2Args = splitArgs(args);
+          if (a2Args.length < 2) return "#ERROR";
+          return Math.atan2(toNum(evalArg(a2Args[0], getCell)), toNum(evalArg(a2Args[1], getCell)));
+        }
+        case "PI": return Math.PI;
+        case "EXP": return Math.exp(toNum(evalArg(args, getCell)));
+        case "LN": {
+          const v = toNum(evalArg(args, getCell));
+          return v <= 0 ? "#NUM!" : Math.log(v);
+        }
+        case "LOG": {
+          const logArgs = splitArgs(args);
+          const v = toNum(evalArg(logArgs[0], getCell));
+          const base = logArgs.length >= 2 ? toNum(evalArg(logArgs[1], getCell)) : 10;
+          return v <= 0 ? "#NUM!" : Math.log(v) / Math.log(base);
+        }
+        case "LOG10": {
+          const v = toNum(evalArg(args, getCell));
+          return v <= 0 ? "#NUM!" : Math.log10(v);
+        }
+        case "CEILING": {
+          const cArgs = splitArgs(args);
+          if (cArgs.length < 2) return "#ERROR";
+          const num = toNum(evalArg(cArgs[0], getCell));
+          const sig = toNum(evalArg(cArgs[1], getCell));
+          return sig === 0 ? 0 : Math.ceil(num / sig) * sig;
+        }
+        case "FLOOR": {
+          const fArgs = splitArgs(args);
+          if (fArgs.length < 2) return "#ERROR";
+          const num = toNum(evalArg(fArgs[0], getCell));
+          const sig = toNum(evalArg(fArgs[1], getCell));
+          return sig === 0 ? 0 : Math.floor(num / sig) * sig;
+        }
+        case "RANDBETWEEN": {
+          const rbArgs = splitArgs(args);
+          if (rbArgs.length < 2) return "#ERROR";
+          const bottom = toNum(evalArg(rbArgs[0], getCell));
+          const top = toNum(evalArg(rbArgs[1], getCell));
+          return Math.floor(Math.random() * (top - bottom + 1)) + bottom;
+        }
+        case "PRODUCT": {
+          const nums = toNumbers(resolveArgs(args, getCell));
+          return nums.length === 0 ? 0 : nums.reduce((a, b) => a * b, 1);
+        }
+        case "LARGE": {
+          const lgArgs = splitArgs(args);
+          if (lgArgs.length < 2) return "#ERROR";
+          const nums = toNumbers(resolveArgs(lgArgs[0], getCell)).sort((a, b) => b - a);
+          const k = toNum(evalArg(lgArgs[1], getCell));
+          return k < 1 || k > nums.length ? "#NUM!" : nums[Math.floor(k) - 1];
+        }
+        case "SMALL": {
+          const smArgs = splitArgs(args);
+          if (smArgs.length < 2) return "#ERROR";
+          const nums = toNumbers(resolveArgs(smArgs[0], getCell)).sort((a, b) => a - b);
+          const k = toNum(evalArg(smArgs[1], getCell));
+          return k < 1 || k > nums.length ? "#NUM!" : nums[Math.floor(k) - 1];
+        }
+        case "RANK": {
+          const rkArgs = splitArgs(args);
+          if (rkArgs.length < 2) return "#ERROR";
+          const num = toNum(evalArg(rkArgs[0], getCell));
+          const nums = toNumbers(resolveArgs(rkArgs[1], getCell));
+          const order = rkArgs.length >= 3 ? toNum(evalArg(rkArgs[2], getCell)) : 0;
+          const sorted = order ? [...nums].sort((a, b) => a - b) : [...nums].sort((a, b) => b - a);
+          const idx = sorted.indexOf(num);
+          return idx === -1 ? "#N/A" : idx + 1;
+        }
+        // === Text functions ===
+        case "REPT": {
+          const rpArgs = splitArgs(args);
+          if (rpArgs.length < 2) return "#ERROR";
+          return String(evalArg(rpArgs[0], getCell)).repeat(toNum(evalArg(rpArgs[1], getCell)));
+        }
+        case "REPLACE": {
+          const rpArgs = splitArgs(args);
+          if (rpArgs.length < 4) return "#ERROR";
+          const text = String(evalArg(rpArgs[0], getCell));
+          const start = toNum(evalArg(rpArgs[1], getCell)) - 1;
+          const len = toNum(evalArg(rpArgs[2], getCell));
+          const newText = String(evalArg(rpArgs[3], getCell));
+          return text.substring(0, start) + newText + text.substring(start + len);
+        }
+        case "EXACT": {
+          const exArgs = splitArgs(args);
+          if (exArgs.length < 2) return "#ERROR";
+          return String(evalArg(exArgs[0], getCell)) === String(evalArg(exArgs[1], getCell)) ? 1 : 0;
+        }
+        case "CHAR": return String.fromCharCode(toNum(evalArg(args, getCell)));
+        case "CODE": return String(evalArg(args, getCell)).charCodeAt(0);
+        case "CLEAN": return String(evalArg(args, getCell)).replace(/[\x00-\x1F]/g, "");
+        case "NUMBERVALUE": {
+          const v = String(evalArg(args, getCell)).replace(/[^0-9.\-]/g, "");
+          const n = parseFloat(v);
+          return isNaN(n) ? "#VALUE!" : n;
+        }
+        // === Date functions ===
+        case "DATEDIF": {
+          const ddArgs = splitArgs(args);
+          if (ddArgs.length < 3) return "#ERROR";
+          const start = toNum(evalArg(ddArgs[0], getCell));
+          const end = toNum(evalArg(ddArgs[1], getCell));
+          const unit = String(evalArg(ddArgs[2], getCell)).toUpperCase();
+          const epoch = new Date(1900, 0, 1);
+          const d1 = new Date(epoch.getTime() + (start - 2) * 86400000);
+          const d2 = new Date(epoch.getTime() + (end - 2) * 86400000);
+          switch (unit) {
+            case "D": return Math.floor((d2.getTime() - d1.getTime()) / 86400000);
+            case "M": return (d2.getFullYear() - d1.getFullYear()) * 12 + d2.getMonth() - d1.getMonth();
+            case "Y": return d2.getFullYear() - d1.getFullYear();
+            default: return "#ERROR";
+          }
+        }
+        case "WEEKDAY": {
+          const serial = toNum(evalArg(args, getCell));
+          const epoch = new Date(1900, 0, 1);
+          const date = new Date(epoch.getTime() + (serial - 2) * 86400000);
+          return date.getDay() + 1;
+        }
+        case "EOMONTH": {
+          const emArgs = splitArgs(args);
+          if (emArgs.length < 2) return "#ERROR";
+          const serial = toNum(evalArg(emArgs[0], getCell));
+          const months = toNum(evalArg(emArgs[1], getCell));
+          const epoch = new Date(1900, 0, 1);
+          const date = new Date(epoch.getTime() + (serial - 2) * 86400000);
+          date.setMonth(date.getMonth() + months + 1, 0);
+          return Math.floor((date.getTime() - epoch.getTime()) / 86400000) + 2;
+        }
+        // === Logical functions ===
+        case "TRUE": return 1;
+        case "FALSE": return 0;
+        case "ISNUMBER": {
+          const v = evalArg(args, getCell);
+          return typeof v === "number" ? 1 : 0;
+        }
+        case "ISTEXT": {
+          const v = evalArg(args, getCell);
+          return typeof v === "string" && !v.startsWith("#") ? 1 : 0;
+        }
+        case "ISERROR": {
+          const v = evalArg(args, getCell);
+          return typeof v === "string" && v.startsWith("#") ? 1 : 0;
+        }
+        case "TYPE": {
+          const v = evalArg(args, getCell);
+          if (typeof v === "number") return 1;
+          if (typeof v === "string") return v.startsWith("#") ? 16 : 2;
+          return 0;
+        }
+        case "CHOOSE": {
+          const chArgs = splitArgs(args);
+          if (chArgs.length < 2) return "#ERROR";
+          const idx = toNum(evalArg(chArgs[0], getCell));
+          if (idx < 1 || idx >= chArgs.length) return "#VALUE!";
+          return evalArg(chArgs[Math.floor(idx)], getCell);
+        }
         default:
           return "#NAME?";
       }

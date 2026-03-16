@@ -202,12 +202,15 @@ const RIBBON_TABS = ["Home", "Insert", "Page Layout", "Formulas", "Data", "Revie
 // ─── Main Toolbar Component ────────────────────────────────
 export function SpreadsheetToolbar({
   onExportCSV, onPrint, onOpenPivot, onOpenValidation, onOpenSortFilter,
-  onOpenCondFormatDialog, onPageSetup,
+  onOpenCondFormatDialog, onPageSetup, onOpenGoalSeek, onOpenStatistics,
+  onExportExcel, onImportCSV,
 }: {
   onExportCSV: () => void; onPrint: () => void;
   onOpenPivot?: () => void; onOpenValidation?: () => void;
   onOpenSortFilter?: () => void; onOpenCondFormatDialog?: () => void;
-  onPageSetup?: () => void;
+  onPageSetup?: () => void; onOpenGoalSeek?: () => void;
+  onOpenStatistics?: () => void; onExportExcel?: () => void;
+  onImportCSV?: () => void;
 }) {
   const setSelectionStyle = useSpreadsheetStore((s) => s.setSelectionStyle);
   const activeCell = useSpreadsheetStore((s) => s.activeCell);
@@ -420,22 +423,20 @@ export function SpreadsheetToolbar({
   );
 
   // ─── Merge ──────────────────────────────────────────────
+  const mergeCells = useSpreadsheetStore((s) => s.mergeCells);
+  const unmergeCells = useSpreadsheetStore((s) => s.unmergeCells);
   const handleMerge = useCallback(
     (type: "all" | "rows" | "unmerge") => {
       const bounds = getSelectionBounds();
       if (!bounds) return;
-      if (type === "unmerge") return;
-      for (let r = bounds.minR; r <= bounds.maxR; r++) {
-        for (let c = bounds.minC; c <= bounds.maxC; c++) {
-          if (r === bounds.minR && c === bounds.minC) {
-            setCellStyle(c, r, { align: "center" });
-          } else {
-            setCellValue(c, r, "");
-          }
-        }
+      if (type === "unmerge") {
+        unmergeCells(bounds.minC, bounds.minR);
+        return;
       }
+      mergeCells(bounds.minC, bounds.minR, bounds.maxC, bounds.maxR);
+      setCellStyle(bounds.minC, bounds.minR, { align: "center" });
     },
-    [getSelectionBounds, setCellStyle, setCellValue]
+    [getSelectionBounds, setCellStyle, mergeCells, unmergeCells]
   );
 
   // ─── Tab content renderers ─────────────────────────────
@@ -638,7 +639,31 @@ export function SpreadsheetToolbar({
         <ToolBtn title="Pie Chart" onClick={() => openChartModal("pie")}><PieChart size={14} /></ToolBtn>
         <ToolBtn title="Scatter Chart" onClick={() => openChartModal("scatter")}><ScatterChart size={14} /></ToolBtn>
         <ToolBtn title="Area Chart" onClick={() => openChartModal("area")}><AreaChart size={14} /></ToolBtn>
-        <ToolBtn title="Doughnut" onClick={() => openChartModal("doughnut")}><PieChart size={14} /></ToolBtn>
+        <DropdownBtn icon={<BarChart3 size={14} />} title="More Charts">
+          {(close) => (
+            <>
+              <DropdownHeader>Circular</DropdownHeader>
+              <DropdownItem onClick={() => { openChartModal("doughnut"); close(); }}>Doughnut</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Specialty</DropdownHeader>
+              <DropdownItem onClick={() => { openChartModal("radar"); close(); }}>Radar/Spider</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("bubble"); close(); }}>Bubble</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("waterfall"); close(); }}>Waterfall</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("funnel"); close(); }}>Funnel</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("treemap"); close(); }}>Treemap</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("histogram"); close(); }}>Histogram</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("boxwhisker"); close(); }}>Box & Whisker</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Financial</DropdownHeader>
+              <DropdownItem onClick={() => { openChartModal("stock"); close(); }}>Stock (OHLC)</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("gantt"); close(); }}>Gantt Chart</DropdownItem>
+              <DropdownDivider />
+              <DropdownHeader>Analysis</DropdownHeader>
+              <DropdownItem onClick={() => { openChartModal("butterfly"); close(); }}>Butterfly/Tornado</DropdownItem>
+              <DropdownItem onClick={() => { openChartModal("logarithmic"); close(); }}>Logarithmic Scale</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
       </RibbonGroup>
 
       <RibbonGroup label="Sparklines">
@@ -728,7 +753,7 @@ export function SpreadsheetToolbar({
         <DropdownBtn icon={<DollarSign size={14} />} title="Financial">
           {(close) => (
             <>
-              {["PMT", "FV", "PV", "NPV", "IRR"].map((fn) => (
+              {["PMT", "FV", "PV", "NPV", "IRR", "XIRR", "RATE", "NPER", "SLN", "EFFECT", "NOMINAL"].map((fn) => (
                 <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
               ))}
             </>
@@ -855,6 +880,7 @@ export function SpreadsheetToolbar({
 
       <RibbonGroup label="Data Tools">
         <ToolBtn title="Data Validation" onClick={() => onOpenValidation?.()}><ShieldCheck size={14} /></ToolBtn>
+        <ToolBtn title="Conditional Formatting" onClick={() => onOpenCondFormatDialog?.()}><Highlighter size={14} /></ToolBtn>
         <ToolBtn title="Remove Duplicates" onClick={() => {
           const bounds = getSelectionBounds();
           if (!bounds) return;
@@ -871,6 +897,11 @@ export function SpreadsheetToolbar({
           }
           alert(`${removed} duplicate(s) removed.`);
         }}><Minus size={14} /></ToolBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Analysis">
+        <ToolBtn title="Goal Seek / Solver" onClick={() => onOpenGoalSeek?.()}><Calculator size={14} /></ToolBtn>
+        <ToolBtn title="Statistical Analysis" onClick={() => onOpenStatistics?.()}><Sigma size={14} /></ToolBtn>
       </RibbonGroup>
     </div>
   );
@@ -967,6 +998,7 @@ export function SpreadsheetToolbar({
         <ToolBtn title="Redo (Ctrl+Y)" onClick={redo} small><Redo2 size={13} /></ToolBtn>
         <Separator />
         <ToolBtn title="Export CSV" onClick={onExportCSV} small><Download size={13} /></ToolBtn>
+        <ToolBtn title="Export Excel" onClick={() => onExportExcel?.()} small><FileSpreadsheet size={13} /></ToolBtn>
         <ToolBtn title="Print" onClick={onPrint} small><Printer size={13} /></ToolBtn>
         <div className="flex-1" />
         <ToolBtn title="Templates" onClick={openTemplatesModal} small><FileSpreadsheet size={13} /></ToolBtn>

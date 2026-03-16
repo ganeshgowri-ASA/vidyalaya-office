@@ -8,6 +8,9 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   ScatterChart, Scatter, AreaChart, Area,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  FunnelChart, Funnel, LabelList, Treemap,
+  ComposedChart, ReferenceLine,
 } from "recharts";
 import AdvancedChart from "@/components/shared/advanced-chart-engine";
 import ChartCustomizationPanel from "@/components/shared/chart-customization-panel";
@@ -27,6 +30,17 @@ const CHART_TYPE_LABELS: Record<string, string> = {
   scatter: "Scatter Chart",
   area: "Area Chart",
   doughnut: "Doughnut Chart",
+  radar: "Radar/Spider Chart",
+  bubble: "Bubble Chart",
+  waterfall: "Waterfall Chart",
+  funnel: "Funnel Chart",
+  treemap: "Treemap",
+  histogram: "Histogram",
+  butterfly: "Butterfly/Tornado Chart",
+  gantt: "Gantt Chart",
+  stock: "Stock (OHLC) Chart",
+  boxwhisker: "Box & Whisker",
+  logarithmic: "Logarithmic Scale",
 };
 
 // All advanced chart type labels
@@ -73,6 +87,7 @@ export function ChartModal() {
   const [showLegend, setShowLegend] = useState(true);
   const [showDataLabels, setShowDataLabels] = useState(false);
   const [chartMode, setChartMode] = useState<ChartMode>('basic');
+  const [basicChartType, setBasicChartType] = useState<string>(chartType || 'bar');
   const [advancedConfig, setAdvancedConfig] = useState<ChartConfig | null>(null);
   const [showCustomPanel, setShowCustomPanel] = useState(false);
 
@@ -148,7 +163,7 @@ export function ChartModal() {
 
     const commonProps = { data };
 
-    switch (chartType) {
+    switch (basicChartType) {
       case "bar":
         return (
           <ResponsiveContainer width="100%" height={350}>
@@ -260,6 +275,283 @@ export function ChartModal() {
             </PieChart>
           </ResponsiveContainer>
         );
+      case "radar":
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <RadarChart data={data}>
+              <PolarGrid />
+              <PolarAngleAxis dataKey="name" fontSize={10} />
+              <PolarRadiusAxis fontSize={10} />
+              <Tooltip />
+              {showLegend && <Legend />}
+              {dataKeys.map((key, i) => (
+                <Radar key={key} name={key} dataKey={key}
+                  stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                  fill={CHART_COLORS[i % CHART_COLORS.length]}
+                  fillOpacity={0.3} />
+              ))}
+            </RadarChart>
+          </ResponsiveContainer>
+        );
+      case "bubble":
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <ScatterChart>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" dataKey="x" name="X" fontSize={11} />
+              <YAxis type="number" dataKey="y" name="Y" fontSize={11} />
+              <Tooltip cursor={{ strokeDasharray: "3 3" }} />
+              {showLegend && <Legend />}
+              <Scatter
+                name="Bubble"
+                data={data.map((d, i) => ({
+                  x: Number(d[dataKeys[0]] || 0),
+                  y: Number(d[dataKeys[1] || dataKeys[0]] || 0),
+                  z: Number(d[dataKeys[2] || dataKeys[0]] || 10) * 5,
+                  name: d.name,
+                }))}
+                fill="#3b82f6"
+              >
+                {data.map((_, i) => (
+                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                ))}
+              </Scatter>
+            </ScatterChart>
+          </ResponsiveContainer>
+        );
+      case "waterfall": {
+        let cumulative = 0;
+        const waterfallData = data.map((d, i) => {
+          const val = Number(d[dataKeys[0]] || 0);
+          const start = cumulative;
+          cumulative += val;
+          return { name: d.name, value: val, start, end: cumulative, fill: val >= 0 ? "#22c55e" : "#ef4444" };
+        });
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={waterfallData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" fontSize={11} />
+              <YAxis fontSize={11} />
+              <Tooltip />
+              {showLegend && <Legend />}
+              <Bar dataKey="start" stackId="a" fill="transparent" />
+              <Bar dataKey="value" stackId="a" name="Value"
+                label={showDataLabels ? { position: "top", fontSize: 10 } : undefined}>
+                {waterfallData.map((d, i) => (
+                  <Cell key={i} fill={d.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      }
+      case "funnel": {
+        const funnelData = data.map((d, i) => ({
+          name: String(d.name),
+          value: Number(d[dataKeys[0]] || 0),
+          fill: CHART_COLORS[i % CHART_COLORS.length],
+        })).sort((a, b) => b.value - a.value);
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <FunnelChart>
+              <Tooltip />
+              <Funnel dataKey="value" data={funnelData} isAnimationActive>
+                <LabelList position="right" fill="#000" stroke="none" dataKey="name" fontSize={11} />
+                {funnelData.map((d, i) => (
+                  <Cell key={i} fill={d.fill} />
+                ))}
+              </Funnel>
+            </FunnelChart>
+          </ResponsiveContainer>
+        );
+      }
+      case "treemap": {
+        const treemapData = data.map((d, i) => ({
+          name: String(d.name),
+          size: Math.abs(Number(d[dataKeys[0]] || 0)),
+          fill: CHART_COLORS[i % CHART_COLORS.length],
+        }));
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <Treemap
+              data={treemapData}
+              dataKey="size"
+              aspectRatio={4 / 3}
+              stroke="#fff"
+            >
+              {treemapData.map((d, i) => (
+                <Cell key={i} fill={d.fill} />
+              ))}
+            </Treemap>
+          </ResponsiveContainer>
+        );
+      }
+      case "histogram": {
+        // Create histogram bins from data
+        const values = data.map(d => Number(d[dataKeys[0]] || 0));
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const binCount = Math.min(10, Math.ceil(Math.sqrt(values.length)));
+        const binWidth = (max - min) / binCount || 1;
+        const bins = Array.from({ length: binCount }, (_, i) => ({
+          name: `${(min + i * binWidth).toFixed(1)}-${(min + (i + 1) * binWidth).toFixed(1)}`,
+          count: 0,
+        }));
+        values.forEach(v => {
+          const idx = Math.min(Math.floor((v - min) / binWidth), binCount - 1);
+          if (idx >= 0 && idx < bins.length) bins[idx].count++;
+        });
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={bins}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" fontSize={9} angle={-45} textAnchor="end" height={60} />
+              <YAxis fontSize={11} label={{ value: "Frequency", angle: -90, position: "insideLeft", fontSize: 11 }} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#3b82f6" name="Frequency"
+                label={showDataLabels ? { position: "top", fontSize: 10 } : undefined} />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      }
+      case "butterfly": {
+        // Butterfly/Tornado chart - horizontal bar chart with mirrored values
+        const butterflyData = data.map(d => ({
+          name: d.name,
+          left: -Math.abs(Number(d[dataKeys[0]] || 0)),
+          right: Math.abs(Number(d[dataKeys[1] || dataKeys[0]] || 0)),
+        }));
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={butterflyData} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" fontSize={11} />
+              <YAxis dataKey="name" type="category" fontSize={11} width={80} />
+              <Tooltip />
+              {showLegend && <Legend />}
+              <ReferenceLine x={0} stroke="#666" />
+              <Bar dataKey="left" fill="#ef4444" name={dataKeys[0] || "Left"} />
+              <Bar dataKey="right" fill="#3b82f6" name={dataKeys[1] || "Right"} />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      }
+      case "gantt": {
+        // Simple Gantt chart - expects columns: Task, Start, Duration
+        const ganttData = data.map((d, i) => ({
+          name: d.name,
+          start: Number(d[dataKeys[0]] || i),
+          duration: Number(d[dataKeys[1] || dataKeys[0]] || 1),
+        }));
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={ganttData} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" fontSize={11} />
+              <YAxis dataKey="name" type="category" fontSize={11} width={100} />
+              <Tooltip />
+              <Bar dataKey="start" stackId="a" fill="transparent" />
+              <Bar dataKey="duration" stackId="a" name="Duration"
+                label={showDataLabels ? { position: "center", fontSize: 10, fill: "#fff" } : undefined}>
+                {ganttData.map((_, i) => (
+                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      }
+      case "stock": {
+        // OHLC-like with high-low bars
+        const stockData = data.map(d => ({
+          name: d.name,
+          open: Number(d[dataKeys[0]] || 0),
+          high: Number(d[dataKeys[1] || dataKeys[0]] || 0),
+          low: Number(d[dataKeys[2] || dataKeys[0]] || 0),
+          close: Number(d[dataKeys[3] || dataKeys[0]] || 0),
+        }));
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <ComposedChart data={stockData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" fontSize={11} />
+              <YAxis fontSize={11} />
+              <Tooltip />
+              {showLegend && <Legend />}
+              <Bar dataKey="low" stackId="hl" fill="transparent" />
+              <Bar dataKey="high" stackId="hl" fill="#8b5cf6" name="High-Low Range" />
+              <Line type="monotone" dataKey="open" stroke="#22c55e" name="Open" dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="close" stroke="#ef4444" name="Close" dot={{ r: 3 }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        );
+      }
+      case "boxwhisker": {
+        // Box and Whisker using bars
+        const allValues = data.map(d => Number(d[dataKeys[0]] || 0)).sort((a, b) => a - b);
+        const n = allValues.length;
+        const q1 = allValues[Math.floor(n * 0.25)];
+        const median = allValues[Math.floor(n * 0.5)];
+        const q3 = allValues[Math.floor(n * 0.75)];
+        const min = allValues[0];
+        const max = allValues[n - 1];
+        const boxData = [{ name: "Data", min, q1, median, q3, max, iqr: q3 - q1 }];
+        return (
+          <div className="space-y-2">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={boxData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" fontSize={11} />
+                <YAxis dataKey="name" type="category" fontSize={11} />
+                <Tooltip />
+                <Bar dataKey="q1" stackId="box" fill="transparent" />
+                <Bar dataKey="iqr" stackId="box" fill="#3b82f680" stroke="#3b82f6" strokeWidth={2} name="IQR" />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="grid grid-cols-5 gap-2 text-xs text-center">
+              <div className="p-1.5 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                <div style={{ color: "var(--muted-foreground)" }}>Min</div>
+                <div className="font-mono font-bold">{min.toFixed(2)}</div>
+              </div>
+              <div className="p-1.5 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                <div style={{ color: "var(--muted-foreground)" }}>Q1</div>
+                <div className="font-mono font-bold">{q1.toFixed(2)}</div>
+              </div>
+              <div className="p-1.5 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                <div style={{ color: "var(--muted-foreground)" }}>Median</div>
+                <div className="font-mono font-bold">{median.toFixed(2)}</div>
+              </div>
+              <div className="p-1.5 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                <div style={{ color: "var(--muted-foreground)" }}>Q3</div>
+                <div className="font-mono font-bold">{q3.toFixed(2)}</div>
+              </div>
+              <div className="p-1.5 rounded" style={{ backgroundColor: "var(--muted)" }}>
+                <div style={{ color: "var(--muted-foreground)" }}>Max</div>
+                <div className="font-mono font-bold">{max.toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      case "logarithmic":
+        return (
+          <ResponsiveContainer width="100%" height={350}>
+            <LineChart {...commonProps}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" fontSize={11} />
+              <YAxis fontSize={11} scale="log" domain={["auto", "auto"]} allowDataOverflow />
+              <Tooltip />
+              {showLegend && <Legend />}
+              {dataKeys.map((key, i) => (
+                <Line key={key} type="monotone" dataKey={key}
+                  stroke={CHART_COLORS[i % CHART_COLORS.length]} strokeWidth={2}
+                  dot={{ r: 4 }}
+                  label={showDataLabels ? { position: "top", fontSize: 10 } : undefined} />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        );
       default:
         return null;
     }
@@ -280,7 +572,7 @@ export function ChartModal() {
             <h2 className="text-sm font-semibold">
               {chartMode === 'advanced' && advancedConfig
                 ? (ADVANCED_CHART_LABELS[advancedConfig.type] || 'Advanced Chart')
-                : (CHART_TYPE_LABELS[chartType] || "Chart")}
+                : (CHART_TYPE_LABELS[basicChartType] || CHART_TYPE_LABELS[chartType] || "Chart")}
             </h2>
             {/* Mode switcher */}
             <div className="flex rounded-md overflow-hidden border text-[10px]" style={{ borderColor: "var(--border)" }}>
@@ -327,6 +619,35 @@ export function ChartModal() {
                 <span className="text-gray-300 dark:text-gray-600">|</span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Chart type selector for basic mode */}
+        {chartMode === 'basic' && (
+          <div className="px-4 py-1.5 border-b overflow-x-auto" style={{ borderColor: "var(--border)" }}>
+            <div className="flex items-center gap-1 text-[10px]">
+              {Object.entries({
+                "Standard": ["bar", "line", "area", "scatter"],
+                "Circular": ["pie", "doughnut"],
+                "Specialty": ["radar", "bubble", "waterfall", "funnel", "treemap", "histogram"],
+                "Financial": ["stock", "gantt"],
+                "Analysis": ["boxwhisker", "butterfly", "logarithmic"],
+              }).map(([cat, types]) => (
+                <div key={cat} className="flex items-center gap-0.5">
+                  <span className="text-gray-400 font-medium whitespace-nowrap">{cat}:</span>
+                  {types.map(t => (
+                    <button key={t}
+                      onClick={() => setBasicChartType(t)}
+                      className={`px-1.5 py-0.5 rounded whitespace-nowrap ${
+                        basicChartType === t ? 'bg-blue-500 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}>
+                      {CHART_TYPE_LABELS[t]?.replace(" Chart", "") || t}
+                    </button>
+                  ))}
+                  <span className="text-gray-300 dark:text-gray-600 mx-0.5">|</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

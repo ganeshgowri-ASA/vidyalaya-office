@@ -34,6 +34,43 @@ export interface CellData {
   comment?: CellComment;
 }
 
+export interface ConditionalFormatRule {
+  id: string;
+  range: string; // e.g. "A1:D10"
+  type: "greaterThan" | "lessThan" | "between" | "equalTo" | "textContains" | "duplicates" | "top10" | "bottom10" | "colorScale2" | "colorScale3" | "dataBar" | "iconSet";
+  value1?: string;
+  value2?: string;
+  format: Partial<CellStyle>;
+  colorScaleMin?: string;
+  colorScaleMid?: string;
+  colorScaleMax?: string;
+  dataBarColor?: string;
+  iconSetType?: "arrows" | "traffic" | "flags" | "stars" | "rating";
+}
+
+export interface MergedCell {
+  startCol: number;
+  startRow: number;
+  endCol: number;
+  endRow: number;
+}
+
+export interface DataValidationRule {
+  type: "list" | "number" | "date" | "textLength" | "custom";
+  listItems?: string;
+  numberMin?: string;
+  numberMax?: string;
+  dateMin?: string;
+  dateMax?: string;
+  textMinLength?: string;
+  textMaxLength?: string;
+  customFormula?: string;
+  inputTitle?: string;
+  inputMessage?: string;
+  errorTitle?: string;
+  errorMessage?: string;
+}
+
 export interface Sheet {
   id: string;
   name: string;
@@ -46,6 +83,9 @@ export interface Sheet {
   frozenCols?: number;
   showGridlines?: boolean;
   showHeadings?: boolean;
+  conditionalFormats?: ConditionalFormatRule[];
+  mergedCells?: MergedCell[];
+  dataValidations?: Record<string, DataValidationRule>;
 }
 
 export interface SpreadsheetState {
@@ -58,7 +98,7 @@ export interface SpreadsheetState {
   editValue: string;
   showAiPanel: boolean;
   showChartModal: boolean;
-  chartType: "bar" | "line" | "pie" | "scatter" | "area" | "doughnut";
+  chartType: string;
   showTemplatesModal: boolean;
   activeRibbonTab: string;
   clipboard: { cells: Record<string, CellData>; startCol: number; startRow: number; endCol: number; endRow: number; cut?: boolean } | null;
@@ -107,7 +147,7 @@ export interface SpreadsheetState {
 
   // Modal toggles
   toggleAiPanel: () => void;
-  openChartModal: (type: "bar" | "line" | "pie" | "scatter" | "area" | "doughnut") => void;
+  openChartModal: (type: string) => void;
   closeChartModal: () => void;
   openTemplatesModal: () => void;
   closeTemplatesModal: () => void;
@@ -150,6 +190,23 @@ export interface SpreadsheetState {
   deleteRows: (row: number, count: number) => void;
   insertCols: (col: number, count: number) => void;
   deleteCols: (col: number, count: number) => void;
+
+  // Conditional formatting
+  addConditionalFormat: (rule: ConditionalFormatRule) => void;
+  removeConditionalFormat: (ruleId: string) => void;
+  getConditionalFormats: () => ConditionalFormatRule[];
+
+  // Merge cells
+  mergeCells: (startCol: number, startRow: number, endCol: number, endRow: number) => void;
+  unmergeCells: (startCol: number, startRow: number) => void;
+  getMergedCells: () => MergedCell[];
+
+  // Data validation
+  setDataValidation: (cellKey: string, rule: DataValidationRule | undefined) => void;
+  getDataValidation: (cellKey: string) => DataValidationRule | undefined;
+
+  // Import
+  importCSV: (csvContent: string) => void;
 }
 
 function makeSheet(id: string, name: string): Sheet {
@@ -808,6 +865,148 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
       set({
         sheets: state.sheets.map((s) =>
           s.id === sheet.id ? { ...s, cells: newCells } : s
+        ),
+      });
+    },
+
+    // Conditional formatting
+    addConditionalFormat: (rule) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      const existing = sheet.conditionalFormats || [];
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, conditionalFormats: [...existing, rule] } : s
+        ),
+      });
+    },
+
+    removeConditionalFormat: (ruleId) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      const existing = sheet.conditionalFormats || [];
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, conditionalFormats: existing.filter(r => r.id !== ruleId) } : s
+        ),
+      });
+    },
+
+    getConditionalFormats: () => {
+      return get().getActiveSheet().conditionalFormats || [];
+    },
+
+    // Merge cells
+    mergeCells: (startCol, startRow, endCol, endRow) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      get().pushUndo();
+      const existing = sheet.mergedCells || [];
+      // Get value from top-left cell
+      const topLeftKey = cellKey(startCol, startRow);
+      const topLeftVal = sheet.cells[topLeftKey]?.raw || "";
+      // Clear all other cells in the merge range
+      const newCells = { ...sheet.cells };
+      for (let r = startRow; r <= endRow; r++) {
+        for (let c = startCol; c <= endCol; c++) {
+          if (r === startRow && c === startCol) continue;
+          const k = cellKey(c, r);
+          if (newCells[k]) {
+            newCells[k] = { ...newCells[k], raw: "" };
+          }
+        }
+      }
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? {
+            ...s,
+            cells: newCells,
+            mergedCells: [...existing, { startCol, startRow, endCol, endRow }]
+          } : s
+        ),
+      });
+    },
+
+    unmergeCells: (startCol, startRow) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      const existing = sheet.mergedCells || [];
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? {
+            ...s,
+            mergedCells: existing.filter(m => !(m.startCol === startCol && m.startRow === startRow))
+          } : s
+        ),
+      });
+    },
+
+    getMergedCells: () => {
+      return get().getActiveSheet().mergedCells || [];
+    },
+
+    // Data validation
+    setDataValidation: (key, rule) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      const existing = { ...(sheet.dataValidations || {}) };
+      if (rule) {
+        existing[key] = rule;
+      } else {
+        delete existing[key];
+      }
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, dataValidations: existing } : s
+        ),
+      });
+    },
+
+    getDataValidation: (key) => {
+      return get().getActiveSheet().dataValidations?.[key];
+    },
+
+    // Import CSV
+    importCSV: (csvContent) => {
+      const state = get();
+      const sheet = state.getActiveSheet();
+      get().pushUndo();
+      const newCells: Record<string, CellData> = {};
+      const lines = csvContent.split(/\r?\n/);
+      for (let r = 0; r < lines.length; r++) {
+        const line = lines[r];
+        if (!line.trim()) continue;
+        // Simple CSV parse (handles quoted fields)
+        const values: string[] = [];
+        let current = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+              current += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (ch === ',' && !inQuotes) {
+            values.push(current);
+            current = "";
+          } else {
+            current += ch;
+          }
+        }
+        values.push(current);
+        for (let c = 0; c < values.length; c++) {
+          const val = values[c].trim();
+          if (val) {
+            newCells[cellKey(c, r)] = { raw: val, style: {} };
+          }
+        }
+      }
+      set({
+        sheets: state.sheets.map((s) =>
+          s.id === sheet.id ? { ...s, cells: { ...sheet.cells, ...newCells } } : s
         ),
       });
     },
