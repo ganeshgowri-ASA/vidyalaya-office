@@ -84,7 +84,7 @@ const MOCK_MEETINGS: Meeting[] = [
     host: PARTICIPANTS[0], participants: PARTICIPANTS.slice(0, 4),
     meetingLink: 'teams.microsoft.com/l/meetup', platform: 'teams', isRecurring: true,
     recurringPattern: 'Every weekday', recording: 'rec_standup_0319.mp4',
-    agenda: ['Yesterday updates', 'Today plans', 'Blockers'], notes: 'Discussed deployment timeline. All on track.',
+  🟣  agenda: ['Yesterday updates', 'Today plans', 'Blockers'], notes: 'Discussed deployment timeline. All on track.',
     tags: ['standup', 'daily'], reminders: [5],
   },
   {
@@ -105,7 +105,7 @@ const MEETING_ROOMS: MeetingRoom[] = [
 ];
 
 const PLATFORM_ICONS: Record<string, string> = {
-  vidyalaya: '\uD83D\uDFE3', teams: '\uD83D\uDFE6', zoom: '\uD83D\uDD35', meet: '\uD83D\uDFE2', webex: '\uD83D\uDFE1',
+  vidyalaya: '🟣', teams: '🟦', zoom: '🔵', meet: '🟢', webex: '🟡',
 };
 
 const getStatusColor = (s: string) => {
@@ -180,9 +180,9 @@ export default function MeetingsModule() {
     <div className="flex flex-col h-full bg-[var(--bg-primary,#0a0f1a)] text-[var(--text-primary,#e2e8f0)]">
       {/* Top Bar */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border-color,#334155)] bg-[var(--bg-secondary,#111827)]">
-        <h2 className="text-sm font-bold">\uD83C\uDFA5 Meetings</h2>
+        <h2 className="text-sm font-bold">🎥 Meetings</h2>
         <div className="flex items-center gap-1 px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)]">
-          <span className="text-[10px]">\uD83D\uDD0D</span>
+          <span className="text-[10px]">🔍</span>
           <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search meetings..." className="bg-transparent text-xs outline-none w-48" />
         </div>
@@ -204,9 +204,9 @@ export default function MeetingsModule() {
           ))}
         </div>
         <button onClick={() => setShowRooms(!showRooms)}
-          className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">\uD83C\uDFE2 Rooms</button>
+          className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">🏢 Rooms</button>
         <button onClick={() => setShowSchedule(true)}
-          className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium">\u2795 New Meeting</button>
+          className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium">➕ New Meeting</button>
       </div>
 
       {/* Today's overview */}
@@ -228,7 +228,7 @@ export default function MeetingsModule() {
         <div className={`${selectedMeeting && !showCallUI ? 'w-96' : 'flex-1'} border-r border-[var(--border-color,#334155)] overflow-y-auto`}>
           {filteredMeetings.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-[var(--text-secondary,#94a3b8)]">
-              <span className="text-4xl mb-2">\uD83C\uDFA5</span>
+              <span className="text-4xl mb-2">🎥</span>
               <p className="text-xs">No meetings found</p>
             </div>
           ) : filteredMeetings.map(meeting => (
@@ -241,9 +241,9 @@ export default function MeetingsModule() {
                 <span className={`text-[8px] px-1.5 py-0.5 rounded ${getStatusColor(meeting.status)}`}>{meeting.status}</span>
               </div>
               <div className="flex items-center gap-2 text-[10px] text-[var(--text-secondary,#94a3b8)]">
-                <span>\uD83D\uDCC5 {meeting.date}</span>
-                <span>\u23F0 {meeting.startTime} - {meeting.endTime}</span>
-                {meeting.isRecurring && <span>\uD83D\uDD01 {meeting.recurringPattern}</span>}
+                <span>📅 {meeting.date}</span>
+                <span>⏰ {meeting.startTime} - {meeting.endTime}</span>
+                {meeting.isRecurring && <span>🔁 {meeting.recurringPattern}</span>}
               </div>
               <div className="flex items-center gap-1 mt-1.5">
                 {meeting.participants.slice(0, 4).map((p, i) => (
@@ -275,18 +275,18 @@ export default function MeetingsModule() {
               </div>
               <p className="text-xs text-[var(--text-secondary,#94a3b8)] mb-3">{selectedMeeting.description}</p>
               <div className="flex items-center gap-4 text-[10px] text-[var(--text-secondary,#94a3b8)] mb-3">
-                <span>\uD83D\uDCC5 {selectedMeeting.date}</span>
-                <span>\u23F0 {selectedMeeting.startTime} - {selectedMeeting.endTime}</span>
-                <span>\uD83C\uDF10 {selectedMeeting.platform}</span>
-                {selectedMeeting.isRecurring && <span>\uD83D\uDD01 {selectedMeeting.recurringPattern}</span>}
+                <span>📅 {selectedMeeting.date}</span>
+                <span>⏰ {selectedMeeting.startTime} - {selectedMeeting.endTime}</span>
+                <span>🌐 {selectedMeeting.platform}</span>
+                {selectedMeeting.isRecurring && <span>🔁 {selectedMeeting.recurringPattern}</span>}
               </div>
               <div className="flex items-center gap-2 mb-4">
                 {selectedMeeting.status === 'scheduled' && (
                   <button onClick={() => joinMeeting(selectedMeeting)}
-                    className="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium">\uD83C\uDFA5 Join Meeting</button>
+                    className="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium">🎥 Join Meeting</button>
                 )}
-                <button className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">\uD83D\uDD17 Copy Link</button>
-                <button className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">\u2709 Send Invite</button>
+                <button className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">🔗 Copy Link</button>
+                <button className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">✉ Send Invite</button>
                 {selectedMeeting.status === 'scheduled' && (
                   <button onClick={() => cancelMeeting(selectedMeeting.id)}
                     className="px-2 py-1 rounded text-[10px] bg-red-600/20 hover:bg-red-600/30 text-red-400">Cancel</button>
@@ -296,7 +296,7 @@ export default function MeetingsModule() {
 
             {/* Meeting Link */}
             <div className="mb-4 p-3 rounded-lg bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)]">
-              <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-1">\uD83D\uDD17 Meeting Link</p>
+              <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-1">🔗 Meeting Link</p>
               <div className="flex items-center gap-2">
                 <code className="text-xs text-blue-400 flex-1">{selectedMeeting.meetingLink}</code>
                 <button className="px-2 py-1 rounded text-[9px] bg-blue-600/20 hover:bg-blue-600/30 text-blue-400">Copy</button>
@@ -305,7 +305,7 @@ export default function MeetingsModule() {
 
             {/* Agenda */}
             <div className="mb-4 p-3 rounded-lg bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)]">
-              <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-2">\uD83D\uDCCB Agenda</p>
+              <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-2">📋 Agenda</p>
               {selectedMeeting.agenda.map((item, i) => (
                 <div key={i} className="flex items-center gap-2 py-1">
                   <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">{i + 1}.</span>
@@ -316,7 +316,7 @@ export default function MeetingsModule() {
 
             {/* Participants */}
             <div className="mb-4 p-3 rounded-lg bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)]">
-              <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-2">\uD83D\uDC65 Participants ({selectedMeeting.participants.length})</p>
+              <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-2">👥 Participants ({selectedMeeting.participants.length})</p>
               {selectedMeeting.participants.map(p => (
                 <div key={p.id} className="flex items-center gap-2 py-1.5">
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[9px] font-bold text-white">{p.avatar}</div>
@@ -333,7 +333,7 @@ export default function MeetingsModule() {
             {/* Recording */}
             {selectedMeeting.recording && (
               <div className="mb-4 p-3 rounded-lg bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)]">
-                <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-1">\uD83C\uDFA5 Recording</p>
+                <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-1">🎥 Recording</p>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-blue-400">{selectedMeeting.recording}</span>
                   <button className="px-2 py-0.5 rounded text-[9px] bg-blue-600/20 text-blue-400">Play</button>
@@ -344,7 +344,7 @@ export default function MeetingsModule() {
 
             {/* Notes */}
             <div className="mb-4 p-3 rounded-lg bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)]">
-              <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-2">\uD83D\uDCDD Notes</p>
+              <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-2">📝 Notes</p>
               <textarea placeholder="Add meeting notes..." rows={4}
                 className="w-full bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] rounded px-3 py-2 text-xs resize-none outline-none"
                 defaultValue={selectedMeeting.notes} />
@@ -352,7 +352,7 @@ export default function MeetingsModule() {
 
             {/* AI Actions */}
             <div className="p-3 rounded-lg bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/20">
-              <p className="text-[10px] font-semibold text-purple-400 mb-2">\u2728 AI Meeting Actions</p>
+              <p className="text-[10px] font-semibold text-purple-400 mb-2">✨ AI Meeting Actions</p>
               <div className="flex flex-wrap gap-1.5">
                 <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Generate MoM</button>
                 <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Extract Action Items</button>
@@ -375,7 +375,7 @@ export default function MeetingsModule() {
                 </div>
                 <p className="text-white text-sm font-medium">{selectedMeeting.title}</p>
                 <p className="text-gray-400 text-xs mt-1">{selectedMeeting.participants.length} participants</p>
-                {callState.recording && <p className="text-red-400 text-[10px] mt-2 animate-pulse">\u25CF Recording</p>}
+                {callState.recording && <p className="text-red-400 text-[10px] mt-2 animate-pulse">● Recording</p>}
               </div>
               {/* Participant thumbnails */}
               <div className="absolute bottom-4 right-4 flex gap-2">
@@ -387,35 +387,35 @@ export default function MeetingsModule() {
               </div>
               {/* Raise hand indicator */}
               {callState.handRaised && (
-                <div className="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 text-xs">\u270B Hand Raised</div>
+                <div className="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 text-xs">✋ Hand Raised</div>
               )}
             </div>
             {/* Call controls */}
             <div className="flex items-center justify-center gap-3 py-4 bg-[#111]">
               <button onClick={() => setCallState(s => ({ ...s, muted: !s.muted }))}
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm ${callState.muted ? 'bg-red-600 text-white' : 'bg-gray-700 text-white hover:bg-gray-600'}`}>
-                {callState.muted ? '\uD83D\uDD07' : '\uD83C\uDF99'}
+                {callState.muted ? '🔇' : '🎙'}
               </button>
               <button onClick={() => setCallState(s => ({ ...s, videoOff: !s.videoOff }))}
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm ${callState.videoOff ? 'bg-red-600 text-white' : 'bg-gray-700 text-white hover:bg-gray-600'}`}>
-                {callState.videoOff ? '\uD83D\uDCF7' : '\uD83C\uDFA5'}
+                {callState.videoOff ? '📷' : '🎥'}
               </button>
               <button onClick={() => setCallState(s => ({ ...s, sharing: !s.sharing }))}
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm ${callState.sharing ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white hover:bg-gray-600'}`}>
-                \uD83D\uDCBB
+                💻
               </button>
               <button onClick={() => setCallState(s => ({ ...s, recording: !s.recording }))}
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm ${callState.recording ? 'bg-red-600 text-white' : 'bg-gray-700 text-white hover:bg-gray-600'}`}>
-                \u23FA
+                ⏺
               </button>
               <button onClick={() => setCallState(s => ({ ...s, handRaised: !s.handRaised }))}
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm ${callState.handRaised ? 'bg-yellow-600 text-white' : 'bg-gray-700 text-white hover:bg-gray-600'}`}>
-                \u270B
+                ✋
               </button>
-              <button className="w-10 h-10 rounded-full bg-gray-700 text-white hover:bg-gray-600 flex items-center justify-center text-sm">\uD83D\uDE00</button>
-              <button className="w-10 h-10 rounded-full bg-gray-700 text-white hover:bg-gray-600 flex items-center justify-center text-sm">\uD83D\uDCAC</button>
+              <button className="w-10 h-10 rounded-full bg-gray-700 text-white hover:bg-gray-600 flex items-center justify-center text-sm">😀</button>
+              <button className="w-10 h-10 rounded-full bg-gray-700 text-white hover:bg-gray-600 flex items-center justify-center text-sm">💬</button>
               <button onClick={() => setShowCallUI(false)}
-                className="w-12 h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-sm">\uD83D\uDCF1</button>
+                className="w-12 h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-sm">📱</button>
             </div>
           </div>
         )}
@@ -423,7 +423,7 @@ export default function MeetingsModule() {
         {/* ===== ROOMS PANEL ===== */}
         {showRooms && (
           <div className="w-64 border-l border-[var(--border-color,#334155)] bg-[var(--bg-secondary,#111827)] overflow-y-auto p-3">
-            <p className="text-xs font-semibold mb-3">\uD83C\uDFE2 Meeting Rooms</p>
+            <p className="text-xs font-semibold mb-3">🏢 Meeting Rooms</p>
             {MEETING_ROOMS.map(room => (
               <div key={room.id} className={`p-3 mb-2 rounded-lg border ${room.available ? 'border-green-500/30 bg-green-900/10' : 'border-red-500/30 bg-red-900/10'}`}>
                 <div className="flex items-center gap-2 mb-1">
@@ -445,8 +445,8 @@ export default function MeetingsModule() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-[480px] bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)] rounded-xl shadow-2xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold">\u2795 Schedule New Meeting</h3>
-              <button onClick={() => setShowSchedule(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white">\u2715</button>
+              <h3 className="text-sm font-semibold">➕ Schedule New Meeting</h3>
+              <button onClick={() => setShowSchedule(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white">✕</button>
             </div>
             <div className="space-y-3">
               <input value={newMeeting.title} onChange={e => setNewMeeting({ ...newMeeting, title: e.target.value })}
