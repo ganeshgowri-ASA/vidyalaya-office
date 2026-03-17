@@ -58,16 +58,16 @@ interface Signature {
 
 // ==================== CONSTANTS ====================
 const FOLDERS: Folder[] = [
-  { id: 'inbox', name: 'Inbox', icon: '\uD83D\uDCE5', count: 18 },
-  { id: 'starred', name: 'Starred', icon: '\u2B50', count: 5 },
-  { id: 'snoozed', name: 'Snoozed', icon: '\u23F0', count: 2 },
-  { id: 'sent', name: 'Sent', icon: '\uD83D\uDCE4', count: 0 },
-  { id: 'drafts', name: 'Drafts', icon: '\uD83D\uDCDD', count: 3 },
-  { id: 'scheduled', name: 'Scheduled', icon: '\uD83D\uDCC5', count: 1 },
-  { id: 'important', name: 'Important', icon: '\uD83D\uDCCC', count: 4 },
-  { id: 'archive', name: 'Archive', icon: '\uD83D\uDCE6', count: 0 },
-  { id: 'spam', name: 'Spam', icon: '\u26A0\uFE0F', count: 2 },
-  { id: 'trash', name: 'Trash', icon: '\uD83D\uDDD1\uFE0F', count: 0 },
+  { id: 'inbox', name: 'Inbox', icon: '>🤖📥', count: 18 },
+  { id: 'starred', name: 'Starred', icon: '⭐', count: 5 },
+  { id: 'snoozed', name: 'Snoozed', icon: '⏰', count: 2 },
+  { id: 'sent', name: 'Sent', icon: '📤', count: 0 },
+  { id: 'drafts', name: 'Drafts', icon: '📝', count: 3 },
+  { id: 'scheduled', name: 'Scheduled', icon: '📅', count: 1 },
+  { id: 'important', name: 'Important', icon: '📌', count: 4 },
+  { id: 'archive', name: 'Archive', icon: '📦', count: 0 },
+  { id: 'spam', name: 'Spam', icon: '⚠️', count: 2 },
+  { id: 'trash', name: 'Trash', icon: '🗑️', count: 0 },
 ];
 
 const CATEGORIES = [
@@ -82,7 +82,7 @@ const SIGNATURES: Signature[] = [
   {
     id: '1',
     name: 'Professional',
-    content: 'Best regards,\nVidyalaya User\nSenior Developer\n\uD83D\uDCDE +1 (555) 123-4567 | \u2709\uFE0F user@vidyalaya.dev',
+    content: 'Best regards,\nVidyalaya User\nSenior Developer\n📞 +1 (555) 123-4567 | ✉️ user@vidyalaya.dev',
     isDefault: true,
   },
   {
@@ -260,11 +260,11 @@ const getCategoryColor = (c: string) => {
 
 const getFileIcon = (type: string) => {
   switch (type) {
-    case 'pdf': return '\uD83D\uDCC4';
-    case 'docx': return '\uD83D\uDCC3';
-    case 'pptx': return '\uD83D\uDCCA';
-    case 'fig': return '\uD83C\uDFA8';
-    default: return '\uD83D\uDCCE';
+    case 'pdf': return '📄';
+    case 'docx': return '📃';
+    case 'pptx': return '📊';
+    case 'fig': return '🎨';
+    default: return '📎';
   }
 };
 
@@ -417,9 +417,9 @@ export function EmailClient() {
     <div className="flex flex-col h-full bg-[var(--bg-primary,#0a0f1a)] text-[var(--text-primary,#e2e8f0)]">
       {/* ===== TOP RIBBON BAR ===== */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border-color,#334155)] bg-[var(--bg-secondary,#111827)]">
-        <h2 className="text-sm font-bold flex items-center gap-2">\u2709\uFE0F Email</h2>
+        <h2 className="text-sm font-bold flex items-center gap-2">✉️ Email</h2>
         <div className="flex items-center gap-1 px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)]">
-          <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">\uD83D\uDD0D</span>
+          <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">🔍</span>
           <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search emails, contacts, subjects..."
             className="bg-transparent text-xs outline-none w-64 placeholder:text-[var(--text-secondary,#94a3b8)]" />
@@ -429,7 +429,7 @@ export function EmailClient() {
         <div className="flex items-center gap-1">
           <button onClick={() => setViewMode(viewMode === 'split' ? 'list' : 'split')}
             className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">
-            {viewMode === 'split' ? '\u2630 List' : '\u25A7 Split'}
+            {viewMode === 'split' ? '☰ List' : '▧ Split'}
           </button>
           <select value={sortBy} onChange={e => setSortBy(e.target.value as 'date' | 'priority' | 'sender')}
             className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary,#e2e8f0)]">
@@ -440,7 +440,7 @@ export function EmailClient() {
         </div>
         <button onClick={() => { setComposeData({ to: '', cc: '', bcc: '', subject: '', body: '', signature: SIGNATURES[0].content, scheduledAt: '', readReceipt: false, priority: 'normal' }); setShowCompose(true); }}
           className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium flex items-center gap-1">
-          \u270F\uFE0F Compose
+          ✏️ Compose
         </button>
       </div>
 
@@ -504,8 +504,8 @@ export function EmailClient() {
                 <button onClick={() => bulkAction('read')} className="px-1.5 py-0.5 rounded text-[9px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">Read</button>
                 <button onClick={() => bulkAction('unread')} className="px-1.5 py-0.5 rounded text-[9px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">Unread</button>
                 <button onClick={() => bulkAction('archive')} className="px-1.5 py-0.5 rounded text-[9px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">Archive</button>
-                <button onClick={() => bulkAction('star')} className="px-1.5 py-0.5 rounded text-[9px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">\u2B50</button>
-                <button onClick={() => bulkAction('trash')} className="px-1.5 py-0.5 rounded text-[9px] bg-red-600/20 hover:bg-red-600/40 text-red-400">\uD83D\uDDD1</button>
+                <button onClick={() => bulkAction('star')} className="px-1.5 py-0.5 rounded text-[9px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">⭐</button>
+                <button onClick={() => bulkAction('trash')} className="px-1.5 py-0.5 rounded text-[9px] bg-red-600/20 hover:bg-red-600/40 text-red-400">🗑</button>
               </div>
             )}
             <div className="flex-1" />
@@ -515,7 +515,7 @@ export function EmailClient() {
           {/* Email items */}
           {filteredEmails.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-[var(--text-secondary,#94a3b8)]">
-              <span className="text-4xl mb-2">\uD83D\uDCEC</span>
+              <span className="text-4xl mb-2">📬</span>
               <p className="text-xs">No emails in this folder</p>
             </div>
           ) : filteredEmails.map(email => (
@@ -524,7 +524,7 @@ export function EmailClient() {
               <input type="checkbox" checked={selectedEmails.includes(email.id)}
                 onChange={(e) => { e.stopPropagation(); toggleSelectEmail(email.id); }} className="w-3 h-3 mt-1 rounded flex-shrink-0" />
               <button onClick={(e) => { e.stopPropagation(); toggleStar(email.id); }} className="text-xs flex-shrink-0 mt-0.5">
-                {email.starred ? '\u2B50' : '\u2606'}
+                {email.starred ? '⭐' : '☆'}
               </button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -543,9 +543,9 @@ export function EmailClient() {
                       {email.priority !== 'normal' && (
                         <span className={`text-[8px] px-1 py-0.5 rounded ${getPriorityColor(email.priority)}`}>{email.priority}</span>
                       )}
-                      {email.flagged && <span className="text-[9px]">\uD83D\uDCCC</span>}
-                      {email.attachments.length > 0 && <span className="text-[9px] text-[var(--text-secondary,#94a3b8)]">\uD83D\uDCCE {email.attachments.length}</span>}
-                      {email.readReceipt && <span className="text-[9px] text-green-400">\u2713\u2713</span>}
+                      {email.flagged && <span className="text-[9px]">📌</span>}
+                      {email.attachments.length > 0 && <span className="text-[9px] text-[var(--text-secondary,#94a3b8)]">📎 {email.attachments.length}</span>}
+                      {email.readReceipt && <span className="text-[9px] text-green-400">✓✓</span>}
                     </div>
                   </div>
                 </div>
@@ -561,15 +561,15 @@ export function EmailClient() {
               <div className="p-4">
                 {/* Action bar */}
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[var(--border-color,#334155)]">
-                  <button onClick={() => replyToEmail(selectedEmail)} className="px-2 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-[10px] flex items-center gap-1">\u21A9 Reply</button>
+                  <button onClick={() => replyToEmail(selectedEmail)} className="px-2 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-[10px] flex items-center gap-1">↩ Reply</button>
                   <button onClick={() => { setComposeData({ to: '', cc: selectedEmail.from, bcc: '', subject: `Re: ${selectedEmail.subject}`, body: '', signature: SIGNATURES[0].content, scheduledAt: '', readReceipt: false, priority: 'normal' }); setShowCompose(true); }}
-                    className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">\u21AA Reply All</button>
-                  <button onClick={() => forwardEmail(selectedEmail)} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">\u27A1 Forward</button>
+                    className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">↪ Reply All</button>
+                  <button onClick={() => forwardEmail(selectedEmail)} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">➡ Forward</button>
                   <div className="flex-1" />
-                  <button onClick={() => toggleFlag(selectedEmail.id)} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">{selectedEmail.flagged ? '\uD83D\uDCCC Unflag' : '\uD83D\uDCCC Flag'}</button>
-                  <button onClick={() => markUnread(selectedEmail.id)} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">\uD83D\uDCE8 Unread</button>
-                  <button onClick={() => moveToFolder(selectedEmail.id, 'archive')} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">\uD83D\uDCE6 Archive</button>
-                  <button onClick={() => moveToFolder(selectedEmail.id, 'trash')} className="px-2 py-1 rounded bg-red-600/20 hover:bg-red-600/40 text-red-400 text-[10px]">\uD83D\uDDD1 Delete</button>
+                  <button onClick={() => toggleFlag(selectedEmail.id)} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">{selectedEmail.flagged ? '📌 Unflag' : '📌 Flag'}</button>
+                  <button onClick={() => markUnread(selectedEmail.id)} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">📨 Unread</button>
+                  <button onClick={() => moveToFolder(selectedEmail.id, 'archive')} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">📦 Archive</button>
+                  <button onClick={() => moveToFolder(selectedEmail.id, 'trash')} className="px-2 py-1 rounded bg-red-600/20 hover:bg-red-600/40 text-red-400 text-[10px]">🗑 Delete</button>
                 </div>
 
                 {/* Email header */}
@@ -604,7 +604,7 @@ export function EmailClient() {
                 {/* Attachments */}
                 {selectedEmail.attachments.length > 0 && (
                   <div className="mb-4 p-3 rounded-lg bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)]">
-                    <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-2">\uD83D\uDCCE Attachments ({selectedEmail.attachments.length})</p>
+                    <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-2">📎 Attachments ({selectedEmail.attachments.length})</p>
                     <div className="flex flex-wrap gap-2">
                       {selectedEmail.attachments.map((a, i) => (
                         <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] hover:border-blue-500/50 cursor-pointer transition-colors">
@@ -626,7 +626,7 @@ export function EmailClient() {
 
                 {/* AI Quick Actions */}
                 <div className="mt-6 p-3 rounded-lg bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/20">
-                  <p className="text-[10px] font-semibold text-purple-400 mb-2">\u2728 AI Quick Actions</p>
+                  <p className="text-[10px] font-semibold text-purple-400 mb-2">✨ AI Quick Actions</p>
                   <div className="flex flex-wrap gap-1.5">
                     <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Summarize</button>
                     <button onClick={() => replyToEmail(selectedEmail)} className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Draft Reply</button>
@@ -641,11 +641,11 @@ export function EmailClient() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-[var(--text-secondary,#94a3b8)]">
-                <span className="text-6xl mb-4">\u2709\uFE0F</span>
+                <span className="text-6xl mb-4">✉️</span>
                 <p className="text-sm font-medium">Select an email to read</p>
                 <p className="text-xs mt-1">Or compose a new message</p>
                 <div className="flex items-center gap-2 mt-4">
-                  <span className="text-[10px]">\u2328 Keyboard shortcuts:</span>
+                  <span className="text-[10px]">⌨ Keyboard shortcuts:</span>
                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--bg-tertiary,#0f172a)]">C - Compose</span>
                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--bg-tertiary,#0f172a)]">R - Reply</span>
                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--bg-tertiary,#0f172a)]">E - Archive</span>
@@ -664,7 +664,7 @@ export function EmailClient() {
             <div className="flex items-center px-4 py-2 bg-[var(--bg-tertiary,#0f172a)] rounded-t-xl">
               <span className="text-xs font-semibold">New Message</span>
               <div className="flex-1" />
-              <button onClick={() => setShowCompose(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white text-sm">\u2715</button>
+              <button onClick={() => setShowCompose(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white text-sm">✕</button>
             </div>
 
             <div className="flex flex-col gap-0 p-0 overflow-y-auto flex-1">
@@ -755,7 +755,7 @@ export function EmailClient() {
 
             {showSchedule && (
               <div className="mx-4 mb-2 p-3 rounded-lg border border-[var(--border-color,#334155)] bg-[var(--bg-tertiary,#0f172a)]">
-                <p className="text-[10px] font-semibold mb-2">\uD83D\uDCC5 Schedule Send</p>
+                <p className="text-[10px] font-semibold mb-2">📅 Schedule Send</p>
                 <input type="datetime-local" value={composeData.scheduledAt}
                   onChange={e => setComposeData({ ...composeData, scheduledAt: e.target.value })}
                   className="w-full px-2 py-1.5 rounded bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)] text-[10px]" />
@@ -764,24 +764,24 @@ export function EmailClient() {
 
             {/* Bottom toolbar */}
             <div className="flex items-center gap-1.5 px-4 py-2.5 border-t border-[var(--border-color,#334155)] bg-[var(--bg-tertiary,#0f172a)] rounded-b-xl">
-              <button onClick={simulateAiDraft} className="px-2 py-1 rounded bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-[9px] flex items-center gap-1">\u2728 AI Draft</button>
+              <button onClick={simulateAiDraft} className="px-2 py-1 rounded bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-[9px] flex items-center gap-1">✨ AI Draft</button>
               <button onClick={simulateGrammarCheck} className={`px-2 py-1 rounded text-[9px] ${grammarChecking ? 'bg-yellow-600/20 text-yellow-300' : 'bg-green-600/20 hover:bg-green-600/30 text-green-400'}`}>
-                {grammarChecking ? '\uD83D\uDD04 Checking...' : '\u2713 Grammar'}
+                {grammarChecking ? '🔄 Checking...' : '✓ Grammar'}
               </button>
-              <button onClick={() => setShowTemplates(!showTemplates)} className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">\uD83D\uDCCB Templates</button>
-              <button onClick={() => setShowSignatures(!showSignatures)} className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">\uD83D\uDD8A Signature</button>
-              <button className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">\uD83D\uDCCE Attach</button>
+              <button onClick={() => setShowTemplates(!showTemplates)} className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">📋 Templates</button>
+              <button onClick={() => setShowSignatures(!showSignatures)} className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">🖊 Signature</button>
+              <button className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">📎 Attach</button>
               <div className="flex items-center gap-1 ml-0.5">
                 <input type="checkbox" id="rr" checked={composeData.readReceipt}
                   onChange={e => setComposeData({ ...composeData, readReceipt: e.target.checked })} className="w-3 h-3" />
                 <label htmlFor="rr" className="text-[9px] text-[var(--text-secondary,#94a3b8)]">Read receipt</label>
               </div>
               <div className="flex-1" />
-              <button onClick={() => setShowSchedule(!showSchedule)} className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">\uD83D\uDD52 Schedule</button>
+              <button onClick={() => setShowSchedule(!showSchedule)} className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">🕒 Schedule</button>
               <button onClick={() => setShowCompose(false)} className="px-3 py-1.5 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-xs">Discard</button>
               <button onClick={() => setShowCompose(false)}
                 className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium flex items-center gap-1">
-                {composeData.scheduledAt ? '\uD83D\uDD52 Schedule' : '\u27A4 Send'}
+                {composeData.scheduledAt ? '🕒 Schedule' : '➤ Send'}
               </button>
             </div>
           </div>
@@ -790,16 +790,16 @@ export function EmailClient() {
             {/* AI Email Assistant Panel */}
       {showAiPanel && (<div className="fixed right-0 top-0 h-full w-80 bg-[var(--bg-secondary,#1e293b)] border-l border-[var(--border-color,#334155)] shadow-2xl z-50 flex flex-col">
         <div className="flex items-center justify-between p-3 border-b border-[var(--border-color,#334155)]">
-          <h3 className="text-sm font-semibold text-purple-400 flex items-center gap-2">\uD83E\uDD16 AI Email Assistant</h3>
-          <button onClick={() => setShowAiPanel(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white">\u2715</button>
+          <h3 className="text-sm font-semibold text-purple-400 flex items-center gap-2">🤖 AI Email Assistant</h3>
+          <button onClick={() => setShowAiPanel(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white">✕</button>
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
           <div className="space-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Quick Actions</p>
-            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, body: 'Dear Team,\n\nI hope this email finds you well. I wanted to follow up on our previous discussion regarding...\n\nBest regards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">\u2728 Draft follow-up email</button>
-            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, subject: 'Meeting Request', body: 'Hi,\n\nI would like to schedule a meeting to discuss...\n\nPlease let me know your availability.\n\nBest regards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">\uD83D\uDCC5 Schedule meeting request</button>
-            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, subject: 'Project Update', body: 'Hi Team,\n\nHere is the weekly project update:\n\n1. Completed:\n2. In Progress:\n3. Blockers:\n4. Next Steps:\n\nRegards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">\uD83D\uDCCB Generate project update</button>
-            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, body: 'Dear [Name],\n\nThank you so much for your time and assistance with...\n\nI truly appreciate your help and look forward to...\n\nWarm regards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">\uD83D\uDE4F Write thank you note</button>
+            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, body: 'Dear Team,\n\nI hope this email finds you well. I wanted to follow up on our previous discussion regarding...\n\nBest regards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">✨ Draft follow-up email</button>
+            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, subject: 'Meeting Request', body: 'Hi,\n\nI would like to schedule a meeting to discuss...\n\nPlease let me know your availability.\n\nBest regards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">📅 Schedule meeting request</button>
+            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, subject: 'Project Update', body: 'Hi Team,\n\nHere is the weekly project update:\n\n1. Completed:\n2. In Progress:\n3. Blockers:\n4. Next Steps:\n\nRegards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">📋 Generate project update</button>
+            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, body: 'Dear [Name],\n\nThank you so much for your time and assistance with...\n\nI truly appreciate your help and look forward to...\n\nWarm regards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">🙏 Write thank you note</button>
           </div>
           <div className="space-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">AI Analysis</p>
@@ -813,8 +813,8 @@ export function EmailClient() {
           <div className="space-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Smart Suggestions</p>
             <div className="space-y-1">
-              {emails.filter(e => !e.read && e.priority === 'high').slice(0,3).map(e => (<div key={e.id} onClick={() => setSelectedEmail(e)} className="px-3 py-2 rounded bg-red-600/10 border border-red-600/20 text-xs cursor-pointer hover:bg-red-600/20"><div className="text-red-400 font-medium">\u26A0 Priority: {e.subject}</div><div className="text-[var(--text-secondary,#94a3b8)] text-[10px]">{e.fromName}</div></div>))}
-              {emails.filter(e => !e.read && e.priority === 'high').length === 0 && <p className="text-[10px] text-green-400">\u2705 No urgent emails!</p>}
+              {emails.filter(e => !e.read && e.priority === 'high').slice(0,3).map(e => (<div key={e.id} onClick={() => setSelectedEmail(e)} className="px-3 py-2 rounded bg-red-600/10 border border-red-600/20 text-xs cursor-pointer hover:bg-red-600/20"><div className="text-red-400 font-medium">⚠ Priority: {e.subject}</div><div className="text-[var(--text-secondary,#94a3b8)] text-[10px]">{e.fromName}</div></div>))}
+              {emails.filter(e => !e.read && e.priority === 'high').length === 0 && <p className="text-[10px] text-green-400">✅ No urgent emails!</p>}
             </div>
           </div>
           <div className="space-y-2">
