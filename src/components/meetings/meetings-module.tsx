@@ -84,7 +84,7 @@ const MOCK_MEETINGS: Meeting[] = [
     host: PARTICIPANTS[0], participants: PARTICIPANTS.slice(0, 4),
     meetingLink: 'teams.microsoft.com/l/meetup', platform: 'teams', isRecurring: true,
     recurringPattern: 'Every weekday', recording: 'rec_standup_0319.mp4',
-  🟣  agenda: ['Yesterday updates', 'Today plans', 'Blockers'], notes: 'Discussed deployment timeline. All on track.',
+       agenda: ['Yesterday updates', 'Today plans', 'Blockers'], notes: 'Discussed deployment timeline. All on track.',
     tags: ['standup', 'daily'], reminders: [5],
   },
   {
