@@ -787,6 +787,42 @@ export function EmailClient() {
           </div>
         </div>
       )}
+            {/* AI Email Assistant Panel */}
+      {showAiPanel && (<div className="fixed right-0 top-0 h-full w-80 bg-[var(--bg-secondary,#1e293b)] border-l border-[var(--border-color,#334155)] shadow-2xl z-50 flex flex-col">
+        <div className="flex items-center justify-between p-3 border-b border-[var(--border-color,#334155)]">
+          <h3 className="text-sm font-semibold text-purple-400 flex items-center gap-2">\uD83E\uDD16 AI Email Assistant</h3>
+          <button onClick={() => setShowAiPanel(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white">\u2715</button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Quick Actions</p>
+            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, body: 'Dear Team,\n\nI hope this email finds you well. I wanted to follow up on our previous discussion regarding...\n\nBest regards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">\u2728 Draft follow-up email</button>
+            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, subject: 'Meeting Request', body: 'Hi,\n\nI would like to schedule a meeting to discuss...\n\nPlease let me know your availability.\n\nBest regards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">\uD83D\uDCC5 Schedule meeting request</button>
+            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, subject: 'Project Update', body: 'Hi Team,\n\nHere is the weekly project update:\n\n1. Completed:\n2. In Progress:\n3. Blockers:\n4. Next Steps:\n\nRegards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">\uD83D\uDCCB Generate project update</button>
+            <button onClick={() => { setShowCompose(true); setComposeData(prev => ({...prev, body: 'Dear [Name],\n\nThank you so much for your time and assistance with...\n\nI truly appreciate your help and look forward to...\n\nWarm regards'})); }} className="w-full text-left px-3 py-2 rounded text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border border-purple-600/20">\uD83D\uDE4F Write thank you note</button>
+          </div>
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">AI Analysis</p>
+            <div className="px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] text-xs space-y-1">
+              <div className="flex justify-between"><span className="text-[var(--text-secondary,#94a3b8)]">Unread emails</span><span className="text-blue-400 font-semibold">{emails.filter(e => !e.read).length}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--text-secondary,#94a3b8)]">High priority</span><span className="text-red-400 font-semibold">{emails.filter(e => e.priority === 'high').length}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--text-secondary,#94a3b8)]">Starred</span><span className="text-yellow-400 font-semibold">{emails.filter(e => e.starred).length}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--text-secondary,#94a3b8)]">Total emails</span><span className="text-green-400 font-semibold">{emails.length}</span></div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Smart Suggestions</p>
+            <div className="space-y-1">
+              {emails.filter(e => !e.read && e.priority === 'high').slice(0,3).map(e => (<div key={e.id} onClick={() => setSelectedEmail(e)} className="px-3 py-2 rounded bg-red-600/10 border border-red-600/20 text-xs cursor-pointer hover:bg-red-600/20"><div className="text-red-400 font-medium">\u26A0 Priority: {e.subject}</div><div className="text-[var(--text-secondary,#94a3b8)] text-[10px]">{e.fromName}</div></div>))}
+              {emails.filter(e => !e.read && e.priority === 'high').length === 0 && <p className="text-[10px] text-green-400">\u2705 No urgent emails!</p>}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Ask AI</p>
+            <div className="flex gap-2"><input value={aiSuggestion} onChange={e => setAiSuggestion(e.target.value)} placeholder="Ask about your emails..." className="flex-1 px-2 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs"/><button onClick={() => setAiSuggestion('')} className="px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-700 text-xs text-white">Ask</button></div>
+          </div>
+        </div>
+      </div>)}
     </div>
   );
 }
