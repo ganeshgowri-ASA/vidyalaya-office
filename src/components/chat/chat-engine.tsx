@@ -69,6 +69,8 @@ export function ChatEngine() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMembers, setShowMembers] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+    const [showAiPanel, setShowAiPanel] = useState(false);
+  const [aiChatInput, setAiChatInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const channelMessages = messages.filter(m => m.channelId === activeChannel);
@@ -152,6 +154,7 @@ export function ChatEngine() {
             <div className="flex-1" />
             <button onClick={() => setShowSearch(!showSearch)} className={`px-2 py-1 rounded text-xs ${showSearch ? 'bg-blue-600/30 text-blue-400' : 'hover:bg-[var(--bg-hover,#334155)]'}`}>\uD83D\uDD0D</button>
             <button onClick={() => setShowMembers(!showMembers)} className={`px-2 py-1 rounded text-xs ${showMembers ? 'bg-blue-600/30 text-blue-400' : 'hover:bg-[var(--bg-hover,#334155)]'}`}>\uD83D\uDC65 {currentChannel?.members}</button>
+                        <button onClick={() => setShowAiPanel(!showAiPanel)} className={`px-2 py-1 rounded text-xs ${showAiPanel ? 'bg-purple-600/30 text-purple-400' : 'hover:bg-[var(--bg-hover,#334155)]'}`}>\uD83E\uDD16 AI</button>
           </div>
           {showSearch && (
             <div className="px-4 py-2 bg-[var(--bg-secondary,#1e293b)] border-b border-[var(--border-color,#334155)]">
@@ -228,7 +231,39 @@ export function ChatEngine() {
             </div>
           </div>
         )}
+                {/* AI Chat Assistant Panel */}
+        {showAiPanel && (<div className="w-72 border-l border-[var(--border-color,#334155)] bg-[var(--bg-secondary,#1e293b)] flex flex-col overflow-y-auto">
+          <div className="flex items-center justify-between p-3 border-b border-[var(--border-color,#334155)]">
+            <h3 className="text-xs font-semibold text-purple-400">\uD83E\uDD16 AI Chat Assistant</h3>
+            <button onClick={() => setShowAiPanel(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white text-sm">\u2715</button>
+          </div>
+          <div className="flex-1 p-3 space-y-3">
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Smart Replies</p>
+              {['Got it, thanks!','I\'ll look into this','Can we discuss this in a meeting?','Sounds good, let\'s proceed','I need more details on this','Let me check and get back to you'].map((r,i) => (<button key={i} onClick={() => { setInputText(r); }} className="w-full text-left px-2 py-1.5 rounded text-[11px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] transition-colors">{r}</button>))}
+            </div>
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Channel Stats</p>
+              <div className="px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] text-xs space-y-1">
+                <div className="flex justify-between"><span className="text-[var(--text-secondary,#94a3b8)]">Messages</span><span className="text-blue-400 font-semibold">{channelMessages.length}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--text-secondary,#94a3b8)]">Channel</span><span className="text-green-400 font-semibold">{currentChannel?.name}</span></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">AI Actions</p>
+              <button className="w-full px-2 py-1.5 rounded text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400">\u2728 Summarize conversation</button>
+              <button className="w-full px-2 py-1.5 rounded text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400">\uD83D\uDCCB Extract action items</button>
+              <button className="w-full px-2 py-1.5 rounded text-xs bg-green-600/20 hover:bg-green-600/30 text-green-400">\uD83D\uDCC5 Schedule follow-up</button>
+              <button className="w-full px-2 py-1.5 rounded text-xs bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400">\uD83D\uDD0D Search in messages</button>
+            </div>
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Ask AI</p>
+              <div className="flex gap-2"><input value={aiChatInput} onChange={e => setAiChatInput(e.target.value)} placeholder="Ask anything..." className="flex-1 px-2 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs"/><button className="px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-700 text-xs text-white">Go</button></div>
+            </div>
+          </div>
+        </div>)}
       </div>
+
     </div>
   );
 }
