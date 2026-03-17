@@ -7,6 +7,7 @@ import {
   FileText, Table2, Presentation, FileImage, ChevronDown,
   Zap, BookOpen, PenLine, BarChart3, ScanText, Type,
   ListOrdered, Languages, Wand2, ArrowLeft,
+      Image, Palette, Paintbrush, Layers, Mail, Reply, Forward, Inbox, AtSign, PenTool,
 } from "lucide-react";
 import { useAIChatStore, type EditorContext } from "@/store/ai-chat-store";
 import { usePathname } from "next/navigation";
@@ -54,6 +55,22 @@ const QUICK_ACTIONS: Record<EditorContext, QuickAction[]> = {
     { label: "Create form fields", icon: <Type size={13} />, prompt: "Suggest form fields that should be added to this PDF." },
     { label: "Accessibility check", icon: <Zap size={13} />, prompt: "Check this PDF for accessibility issues and suggest improvements." },
   ],
+    graphics: [
+    { label: "Generate from prompt", icon: <Image size={13} />, prompt: "Generate a graphic design based on this description: " },
+    { label: "Color palette", icon: <Palette size={13} />, prompt: "Suggest a professional color palette for this design project." },
+    { label: "Design layout", icon: <Layers size={13} />, prompt: "Suggest an optimal layout arrangement for this graphic design." },
+    { label: "Logo ideas", icon: <PenTool size={13} />, prompt: "Generate creative logo design concepts for: " },
+    { label: "Image effects", icon: <Paintbrush size={13} />, prompt: "Suggest image effects and filters to enhance this design." },
+    { label: "Design critique", icon: <Wand2 size={13} />, prompt: "Provide a professional critique and improvement suggestions for this design." },
+  ],
+  email: [
+    { label: "Draft reply", icon: <Reply size={13} />, prompt: "Draft a professional reply to this email: " },
+    { label: "Compose email", icon: <Mail size={13} />, prompt: "Compose a professional email about: " },
+    { label: "Improve tone", icon: <PenLine size={13} />, prompt: "Improve the tone and clarity of this email draft." },
+    { label: "Subject line", icon: <AtSign size={13} />, prompt: "Generate compelling email subject lines for: " },
+    { label: "Follow-up", icon: <Forward size={13} />, prompt: "Draft a follow-up email for this conversation." },
+    { label: "Summarize thread", icon: <Inbox size={13} />, prompt: "Summarize this email thread into key points and action items." },
+  ],
   general: [
     { label: "Help me write", icon: <PenLine size={13} />, prompt: "Help me write about: " },
     { label: "Brainstorm ideas", icon: <Sparkles size={13} />, prompt: "Brainstorm creative ideas for: " },
@@ -67,6 +84,8 @@ const EDITOR_LABELS: Record<EditorContext, { label: string; icon: React.ReactNod
   spreadsheet: { label: "Spreadsheet", icon: <Table2 size={14} /> },
   presentation: { label: "Presentation", icon: <Presentation size={14} /> },
   pdf: { label: "PDF", icon: <FileImage size={14} /> },
+    graphics: { label: "Graphics", icon: <Image size={14} /> },
+  email: { label: "Email", icon: <Mail size={14} /> },
   general: { label: "General", icon: <Sparkles size={14} /> },
 };
 
@@ -86,6 +105,8 @@ function getEditorContext(pathname: string): EditorContext {
   if (pathname.startsWith("/spreadsheet")) return "spreadsheet";
   if (pathname.startsWith("/presentation")) return "presentation";
   if (pathname.startsWith("/pdf")) return "pdf";
+    if (pathname.startsWith("/graphics")) return "graphics";
+  if (pathname.startsWith("/email")) return "email";
   return "general";
 }
 
@@ -104,6 +125,10 @@ function getSystemPrompt(ctx: EditorContext): string {
       return `${base} You are currently assisting with the Presentation Editor. Help with slide content, speaker notes, design suggestions, and presentation structure. Keep suggestions visual and impactful.`;
     case "pdf":
       return `${base} You are currently assisting with the PDF Editor. Help with text extraction, form fields, annotations, accessibility, and document analysis.`;
+          case "graphics":
+      return `${base} You are currently assisting with the Graphics Editor. Help with design layouts, color palettes, image generation from prompts, logo design, visual effects, typography, and design critique. When suggesting designs, be specific about colors, dimensions, and composition.`;
+    case "email":
+      return `${base} You are currently assisting with the Email Client. Help with composing emails, improving tone, drafting replies, writing subject lines, summarizing threads, and email etiquette. Be concise and professional.`;
     default:
       return base;
   }
