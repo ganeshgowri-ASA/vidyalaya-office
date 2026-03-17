@@ -17,54 +17,54 @@ type Shape = RectShape|EllipseShape|DiamondShape|TriangleShape|StarShape|ArrowSh
 type Tool = 'select'|'rect'|'ellipse'|'diamond'|'triangle'|'star'|'arrow'|'text'|'line'|'pen'|'hand'|'hexagon'|'cloud'|'cylinder';
 const COLORS = ['#3b82f6','#ef4444','#22c55e','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316','#14b8a6','#6366f1','#ffffff','#000000','#64748b'];
 const TEMPLATE_CATEGORIES = [
-  { name: 'Diagrams', icon: '\u26A1', collapsed: false, templates: [
-    { name: 'Flowchart', icon: '\u27A1', desc: 'Process flow diagram' },
-    { name: 'Mind Map', icon: '\uD83E\uDDE0', desc: 'Brainstorming & ideas' },
-    { name: 'Org Chart', icon: '\uD83C\uDFE2', desc: 'Organization hierarchy' },
-    { name: 'ER Diagram', icon: '\uD83D\uDDC3', desc: 'Entity relationship' },
-    { name: 'UML Class', icon: '\uD83D\uDCC1', desc: 'Class diagrams' },
-    { name: 'Sequence Diagram', icon: '\u2194', desc: 'Interaction sequence' },
-    { name: 'BPMN Process', icon: '\u2699', desc: 'Business process model' },
-    { name: 'Network Diagram', icon: '\uD83C\uDF10', desc: 'Network topology' },
-    { name: 'Data Flow', icon: '\uD83D\uDD04', desc: 'Data flow diagram' },
-    { name: 'State Machine', icon: '\u26A1', desc: 'State transitions' },
+  { name: 'Diagrams', icon: '⚡', collapsed: false, templates: [
+    { name: 'Flowchart', icon: '➡', desc: 'Process flow diagram' },
+    { name: 'Mind Map', icon: '🧠', desc: 'Brainstorming & ideas' },
+    { name: 'Org Chart', icon: '🏢', desc: 'Organization hierarchy' },
+    { name: 'ER Diagram', icon: '🗃', desc: 'Entity relationship' },
+    { name: 'UML Class', icon: '📁', desc: 'Class diagrams' },
+    { name: 'Sequence Diagram', icon: '↔', desc: 'Interaction sequence' },
+    { name: 'BPMN Process', icon: '⚙', desc: 'Business process model' },
+    { name: 'Network Diagram', icon: '🌐', desc: 'Network topology' },
+    { name: 'Data Flow', icon: '🔄', desc: 'Data flow diagram' },
+    { name: 'State Machine', icon: '⚡', desc: 'State transitions' },
   ]},
-  { name: 'Infographics', icon: '\uD83D\uDCC8', collapsed: false, templates: [
-    { name: 'Timeline', icon: '\u23F0', desc: 'Timeline infographic' },
-    { name: 'Statistics', icon: '\uD83D\uDCC8', desc: 'Stats & numbers' },
-    { name: 'Comparison', icon: '\u2696', desc: 'Compare items side by side' },
-    { name: 'Process Steps', icon: '\uD83D\uDC63', desc: 'Step by step guide' },
-    { name: 'Pie Chart', icon: '\uD83E\uDD67', desc: 'Pie chart layout' },
-    { name: 'Bar Chart', icon: '\uD83D\uDCCA', desc: 'Bar chart layout' },
-    { name: 'Pyramid', icon: '\uD83D\uDD3A', desc: 'Hierarchy pyramid' },
-    { name: 'Cycle Diagram', icon: '\uD83D\uDD04', desc: 'Circular process' },
-    { name: 'Venn Diagram', icon: '\u2B55', desc: 'Overlapping sets' },
-    { name: 'SWOT Analysis', icon: '\uD83D\uDCCB', desc: 'Strengths weaknesses' },
+  { name: 'Infographics', icon: '📈', collapsed: false, templates: [
+    { name: 'Timeline', icon: '⏰', desc: 'Timeline infographic' },
+    { name: 'Statistics', icon: '📈', desc: 'Stats & numbers' },
+    { name: 'Comparison', icon: '⚖', desc: 'Compare items side by side' },
+    { name: 'Process Steps', icon: '👣', desc: 'Step by step guide' },
+    { name: 'Pie Chart', icon: '🥧', desc: 'Pie chart layout' },
+    { name: 'Bar Chart', icon: '📊', desc: 'Bar chart layout' },
+    { name: 'Pyramid', icon: '🔺', desc: 'Hierarchy pyramid' },
+    { name: 'Cycle Diagram', icon: '🔄', desc: 'Circular process' },
+    { name: 'Venn Diagram', icon: '⭕', desc: 'Overlapping sets' },
+    { name: 'SWOT Analysis', icon: '📋', desc: 'Strengths weaknesses' },
   ]},
-  { name: 'Marketing', icon: '\uD83D\uDCE2', collapsed: true, templates: [
-    { name: 'Social Media Post', icon: '\uD83D\uDCF1', desc: 'Instagram/Facebook post' },
-    { name: 'Banner Ad', icon: '\uD83C\uDFF7', desc: 'Web banner design' },
-    { name: 'Poster', icon: '\uD83D\uDCCC', desc: 'Event/product poster' },
-    { name: 'Brochure', icon: '\uD83D\uDCC4', desc: 'Tri-fold brochure' },
-    { name: 'Business Card', icon: '\uD83D\uDCBC', desc: 'Professional card' },
-    { name: 'Logo Design', icon: '\u2B50', desc: 'Brand logo canvas' },
-    { name: 'Flyer', icon: '\uD83D\uDCE8', desc: 'Promotional flyer' },
-    { name: 'Certificate', icon: '\uD83C\uDFC6', desc: 'Award certificate' },
+  { name: 'Marketing', icon: '📢', collapsed: true, templates: [
+    { name: 'Social Media Post', icon: '📱', desc: 'Instagram/Facebook post' },
+    { name: 'Banner Ad', icon: '🏷', desc: 'Web banner design' },
+    { name: 'Poster', icon: '📌', desc: 'Event/product poster' },
+    { name: 'Brochure', icon: '📄', desc: 'Tri-fold brochure' },
+    { name: 'Business Card', icon: '💼', desc: 'Professional card' },
+    { name: 'Logo Design', icon: '⭐', desc: 'Brand logo canvas' },
+    { name: 'Flyer', icon: '📨', desc: 'Promotional flyer' },
+    { name: 'Certificate', icon: '🏆', desc: 'Award certificate' },
   ]},
-  { name: 'Education', icon: '\uD83C\uDF93', collapsed: true, templates: [
-    { name: 'Lesson Plan', icon: '\uD83D\uDCDA', desc: 'Class lesson layout' },
-    { name: 'Flashcard', icon: '\uD83C\uDFB4', desc: 'Study flashcard' },
-    { name: 'Quiz Layout', icon: '\u2753', desc: 'Quiz/test template' },
-    { name: 'Schedule', icon: '\uD83D\uDCC5', desc: 'Class schedule' },
-    { name: 'Report Card', icon: '\uD83D\uDCCB', desc: 'Student report' },
-    { name: 'Worksheet', icon: '\u270F', desc: 'Activity worksheet' },
+  { name: 'Education', icon: '🎓', collapsed: true, templates: [
+    { name: 'Lesson Plan', icon: '📚', desc: 'Class lesson layout' },
+    { name: 'Flashcard', icon: '🎴', desc: 'Study flashcard' },
+    { name: 'Quiz Layout', icon: '❓', desc: 'Quiz/test template' },
+    { name: 'Schedule', icon: '📅', desc: 'Class schedule' },
+    { name: 'Report Card', icon: '📋', desc: 'Student report' },
+    { name: 'Worksheet', icon: '✏', desc: 'Activity worksheet' },
   ]},
-  { name: 'Wireframes', icon: '\uD83D\uDDA5', collapsed: true, templates: [
-    { name: 'Mobile App', icon: '\uD83D\uDCF1', desc: 'Mobile wireframe' },
-    { name: 'Web Page', icon: '\uD83C\uDF10', desc: 'Website wireframe' },
-    { name: 'Dashboard', icon: '\uD83D\uDCCA', desc: 'Analytics dashboard' },
-    { name: 'Landing Page', icon: '\uD83D\uDCC4', desc: 'Marketing landing' },
-    { name: 'Form Layout', icon: '\uD83D\uDCDD', desc: 'Input form design' },
+  { name: 'Wireframes', icon: '🖥', collapsed: true, templates: [
+    { name: 'Mobile App', icon: '📱', desc: 'Mobile wireframe' },
+    { name: 'Web Page', icon: '🌐', desc: 'Website wireframe' },
+    { name: 'Dashboard', icon: '📊', desc: 'Analytics dashboard' },
+    { name: 'Landing Page', icon: '📄', desc: 'Marketing landing' },
+    { name: 'Form Layout', icon: '📝', desc: 'Input form design' },
   ]},
 ];
 let idCounter = 0;
@@ -179,8 +179,8 @@ export default function GraphicsEditor() {
       <div className="flex items-center gap-1 px-3 py-2 border-b border-[var(--border-color,#334155)] bg-[var(--bg-secondary,#1e293b)]">
         {tools.map(t => (<button key={t.id} onClick={() => setTool(t.id)} title={t.label} className={`px-2 py-1.5 rounded text-sm transition-colors ${tool === t.id ? 'bg-blue-600 text-white' : 'hover:bg-[var(--bg-hover,#334155)]'}`}>{t.icon}</button>))}
         <div className="w-px h-6 bg-[var(--border-color,#334155)] mx-1"/>
-        <button onClick={undo} className="px-2 py-1.5 rounded hover:bg-[var(--bg-hover,#334155)] text-sm">\u21A9</button>
-        <button onClick={redo} className="px-2 py-1.5 rounded hover:bg-[var(--bg-hover,#334155)] text-sm">\u21AA</button>
+        <button onClick={undo} className="px-2 py-1.5 rounded hover:bg-[var(--bg-hover,#334155)] text-sm">↩</button>
+        <button onClick={redo} className="px-2 py-1.5 rounded hover:bg-[var(--bg-hover,#334155)] text-sm">↪</button>
         <div className="w-px h-6 bg-[var(--border-color,#334155)] mx-1"/>
         <button onClick={() => setShowGrid(!showGrid)} className={`px-2 py-1.5 rounded text-sm ${showGrid ? 'bg-blue-600/30 text-blue-400' : ''}`}>Grid</button>
         <button onClick={() => setSnapToGrid(!snapToGrid)} className={`px-2 py-1.5 rounded text-sm ${snapToGrid ? 'bg-blue-600/30 text-blue-400' : ''}`}>Snap</button>
@@ -192,7 +192,7 @@ export default function GraphicsEditor() {
         <div className="w-px h-6 bg-[var(--border-color,#334155)] mx-1"/>
         <button onClick={() => setShowLayers(!showLayers)} className={`px-2 py-1.5 rounded text-sm ${showLayers ? 'bg-blue-600/30 text-blue-400' : ''}`}>Layers</button>
         <button onClick={() => setShowProperties(!showProperties)} className={`px-2 py-1.5 rounded text-sm ${showProperties ? 'bg-blue-600/30 text-blue-400' : ''}`}>Props</button>
-        <button onClick={() => setShowAI(!showAI)} className={`px-2 py-1.5 rounded text-sm ${showAI ? 'bg-purple-600/30 text-purple-400' : ''}`}>\uD83E\uDD16 AI</button>
+        <button onClick={() => setShowAI(!showAI)} className={`px-2 py-1.5 rounded text-sm ${showAI ? 'bg-purple-600/30 text-purple-400' : ''}`}>🤖 AI</button>
       </div>
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
@@ -211,7 +211,7 @@ export default function GraphicsEditor() {
           </div>
           <div className="border-t border-[var(--border-color,#334155)] p-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)] mb-2">Layers ({shapes.length})</h3>
-            {shapes.map((s, i) => (<div key={s.id} onClick={() => setSelectedId(s.id)} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs cursor-pointer transition-colors ${s.id === selectedId ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-[var(--bg-hover,#334155)]'}`}><span>{s.type === 'rect' ? '\u25A1' : s.type === 'ellipse' ? '\u25CB' : s.type === 'text' ? 'T' : '\u25C7'}</span><span className="flex-1 truncate">{s.label || `${s.type} ${i+1}`}</span>{s.locked && <span>\uD83D\uDD12</span>}<button onClick={(e) => { e.stopPropagation(); deleteShape(s.id); }} className="text-red-400 hover:text-red-300 text-[10px]">\u2715</button></div>))}
+            {shapes.map((s, i) => (<div key={s.id} onClick={() => setSelectedId(s.id)} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs cursor-pointer transition-colors ${s.id === selectedId ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-[var(--bg-hover,#334155)]'}`}><span>{s.type === 'rect' ? '\u25A1' : s.type === 'ellipse' ? '\u25CB' : s.type === 'text' ? 'T' : '\u25C7'}</span><span className="flex-1 truncate">{s.label || `${s.type} ${i+1}`}</span>{s.locked && <span>🔒</span>}<button onClick={(e) => { e.stopPropagation(); deleteShape(s.id); }} className="text-red-400 hover:text-red-300 text-[10px]">✕</button></div>))}
             {shapes.length === 0 && <p className="text-[10px] text-[var(--text-secondary,#94a3b8)] text-center py-4">Click canvas to add shapes</p>}
           </div>
         </div>)}
@@ -250,7 +250,7 @@ export default function GraphicsEditor() {
         {/* AI Assistant Panel */}
         {showAI && (<div className="w-72 border-l border-[var(--border-color,#334155)] bg-[var(--bg-secondary,#1e293b)] overflow-y-auto flex flex-col">
           <div className="p-3 border-b border-[var(--border-color,#334155)]">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-purple-400 flex items-center gap-2">\uD83E\uDD16 AI Design Assistant</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-purple-400 flex items-center gap-2">🤖 AI Design Assistant</h3>
           </div>
           <div className="flex-1 p-3 space-y-3">
             <div className="space-y-2">
@@ -259,11 +259,11 @@ export default function GraphicsEditor() {
             </div>
             <div className="space-y-2">
               <p className="text-[10px] text-[var(--text-secondary,#94a3b8)]">AI Actions:</p>
-              <button onClick={() => { const types: Shape['type'][] = ['rect','ellipse','diamond','arrow','text']; types.forEach((t,i) => { setTimeout(() => addShape(t), i*100); }); }} className="w-full px-2 py-1.5 rounded text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400">\u2728 Auto-generate flowchart</button>
-              <button onClick={() => { ['rect','rect','rect','arrow','arrow'].forEach((t,i) => { setTimeout(() => addShape(t as Shape['type']), i*100); }); }} className="w-full px-2 py-1.5 rounded text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400">\uD83C\uDFE2 Auto-generate org chart</button>
-              <button onClick={() => { ['ellipse','line','line','line','ellipse','ellipse','ellipse'].forEach((t,i) => { setTimeout(() => addShape(t as Shape['type']), i*100); }); }} className="w-full px-2 py-1.5 rounded text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400">\uD83E\uDDE0 Auto-generate mind map</button>
-              <button onClick={() => { shapes.forEach(s => updateShape(s.id, { fill: COLORS[Math.floor(Math.random()*COLORS.length)] })); }} className="w-full px-2 py-1.5 rounded text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400">\uD83C\uDFA8 Randomize colors</button>
-              <button onClick={() => { shapes.forEach((s,i) => updateShape(s.id, { x: 100+(i%4)*150, y: 100+Math.floor(i/4)*120 })); }} className="w-full px-2 py-1.5 rounded text-xs bg-green-600/20 hover:bg-green-600/30 text-green-400">\uD83D\uDCCF Auto-layout shapes</button>
+              <button onClick={() => { const types: Shape['type'][] = ['rect','ellipse','diamond','arrow','text']; types.forEach((t,i) => { setTimeout(() => addShape(t), i*100); }); }} className="w-full px-2 py-1.5 rounded text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400">✨ Auto-generate flowchart</button>
+              <button onClick={() => { ['rect','rect','rect','arrow','arrow'].forEach((t,i) => { setTimeout(() => addShape(t as Shape['type']), i*100); }); }} className="w-full px-2 py-1.5 rounded text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400">🏢 Auto-generate org chart</button>
+              <button onClick={() => { ['ellipse','line','line','line','ellipse','ellipse','ellipse'].forEach((t,i) => { setTimeout(() => addShape(t as Shape['type']), i*100); }); }} className="w-full px-2 py-1.5 rounded text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400">🧠 Auto-generate mind map</button>
+              <button onClick={() => { shapes.forEach(s => updateShape(s.id, { fill: COLORS[Math.floor(Math.random()*COLORS.length)] })); }} className="w-full px-2 py-1.5 rounded text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400">🎨 Randomize colors</button>
+              <button onClick={() => { shapes.forEach((s,i) => updateShape(s.id, { x: 100+(i%4)*150, y: 100+Math.floor(i/4)*120 })); }} className="w-full px-2 py-1.5 rounded text-xs bg-green-600/20 hover:bg-green-600/30 text-green-400">📏 Auto-layout shapes</button>
             </div>
           </div>
           <div className="p-3 border-t border-[var(--border-color,#334155)]">
