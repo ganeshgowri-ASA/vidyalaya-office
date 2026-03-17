@@ -86,6 +86,7 @@ const createShape = (type: Shape['type'], x: number, y: number): Shape => {
     default: return { ...base, type: 'rect', borderRadius: 8 };
   }
 };
+export default function GraphicsEditor() {
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [selectedId, setSelectedId] = useState<string|null>(null);
   const [tool, setTool] = useState<Tool>('select');
