@@ -104,6 +104,42 @@ interface AutoArchiveRule {
   enabled: boolean;
 }
 
+interface CalendarEvent {
+  id: string;
+  title: string;
+  time: string;
+  duration: string;
+  attendees: string[];
+  location?: string;
+  type: 'meeting' | 'call' | 'deadline' | 'reminder';
+}
+
+interface Task {
+  id: string;
+  title: string;
+  dueDate: string;
+  priority: 'low' | 'normal' | 'high';
+  done: boolean;
+  emailId?: string;
+  source: 'manual' | 'email-extracted';
+}
+
+interface AdvancedSearchState {
+  subject: string;
+  body: string;
+  from: string;
+  to: string;
+  flaggedOnly: boolean;
+  category: string;
+  calendarRelated: boolean;
+  taskRelated: boolean;
+}
+
+interface SnoozeState {
+  emailId: string;
+  until: string;
+}
+
 // ==================== CONSTANTS ====================
 const DEFAULT_FOLDERS: Folder[] = [
   { id: 'inbox', name: 'Inbox', icon: 'IN', count: 18 },
@@ -245,6 +281,21 @@ const MOCK_EMAILS: Email[] = [
   },
 ];
 
+const MOCK_CALENDAR_EVENTS: CalendarEvent[] = [
+  { id: 'ev1', title: 'Sprint Planning Q2', time: '09:00 AM', duration: '2h', attendees: ['Alice Johnson', 'Bob Smith', 'Carol White'], location: 'Conf Room A', type: 'meeting' },
+  { id: 'ev2', title: 'Client Call - TechCorp', time: '11:30 AM', duration: '45m', attendees: ['Carol White', 'David Lee'], location: 'Google Meet', type: 'call' },
+  { id: 'ev3', title: 'Design Review', time: '02:00 PM', duration: '1h', attendees: ['Bob Smith', 'Grace Chen'], location: 'Figma', type: 'meeting' },
+  { id: 'ev4', title: 'Proposal Deadline', time: '05:00 PM', duration: '', attendees: [], type: 'deadline' },
+];
+
+const MOCK_TASKS: Task[] = [
+  { id: 'tk1', title: 'Review Q2 sprint plan estimates', dueDate: 'Today', priority: 'high', done: false, emailId: '1', source: 'email-extracted' },
+  { id: 'tk2', title: 'Acknowledge remote work policy', dueDate: 'Tomorrow', priority: 'normal', done: false, emailId: '2', source: 'email-extracted' },
+  { id: 'tk3', title: 'Provide feedback on UI mockups by EOD Friday', dueDate: 'Fri', priority: 'normal', done: false, emailId: '7', source: 'email-extracted' },
+  { id: 'tk4', title: 'Attend company all-hands meeting', dueDate: 'Mar 20', priority: 'high', done: false, emailId: '6', source: 'email-extracted' },
+  { id: 'tk5', title: 'Reply to client proposal (Phase 2)', dueDate: 'Today', priority: 'high', done: true, emailId: '4', source: 'email-extracted' },
+];
+
 // ==================== HELPER FUNCTIONS ====================
 const getPriorityColor = (p: string) => {
   switch (p) {
@@ -370,6 +421,34 @@ export function EmailClient() {
   const [showAutoArchiveRules, setShowAutoArchiveRules] = useState(false);
   const [autoArchiveRules, setAutoArchiveRules] = useState<AutoArchiveRule[]>(DEFAULT_AUTO_ARCHIVE_RULES);
 
+  // NEW: Advanced search
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [advancedSearch, setAdvancedSearch] = useState<AdvancedSearchState>({
+    subject: '', body: '', from: '', to: '', flaggedOnly: false, category: 'all', calendarRelated: false, taskRelated: false,
+  });
+
+  // NEW: Snooze
+  const [snoozedEmails, setSnoozedEmails] = useState<SnoozeState[]>([]);
+  const [showSnoozeMenu, setShowSnoozeMenu] = useState(false);
+
+  // NEW: Undo send
+  const [showUndoSend, setShowUndoSend] = useState(false);
+  const [undoSendTimer, setUndoSendTimer] = useState(5);
+  const undoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // NEW: Conversation/thread view
+  const [showThreadView, setShowThreadView] = useState(false);
+
+  // NEW: Calendar & Tasks sidebar
+  const [showCalendarSidebar, setShowCalendarSidebar] = useState(false);
+  const [calendarEvents] = useState<CalendarEvent[]>(MOCK_CALENDAR_EVENTS);
+  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  // NEW: AI context actions state
+  const [aiContextResult, setAiContextResult] = useState<string | null>(null);
+  const [aiActionLoading, setAiActionLoading] = useState<string | null>(null);
+
   const allFolders = useMemo(() => [...DEFAULT_FOLDERS, ...customFolders], [customFolders]);
 
   const activeFilterCount = useMemo(() => {
@@ -417,7 +496,14 @@ export function EmailClient() {
       const matchDateFrom = !filters.dateFrom || new Date(e.date) >= new Date(filters.dateFrom);
       const matchDateTo = !filters.dateTo || new Date(e.date) <= new Date(filters.dateTo);
       const matchLabel = filters.label === 'all' || e.labels.includes(filters.label);
-      return matchFolder && matchSearch && matchCategory && matchUnread && matchAttach && matchPriority && matchDateFrom && matchDateTo && matchLabel;
+      // Advanced search fields
+      const matchAdvSubject = advancedSearch.subject === '' || e.subject.toLowerCase().includes(advancedSearch.subject.toLowerCase());
+      const matchAdvBody = advancedSearch.body === '' || e.body.toLowerCase().includes(advancedSearch.body.toLowerCase());
+      const matchAdvFrom = advancedSearch.from === '' || e.from.toLowerCase().includes(advancedSearch.from.toLowerCase()) || e.fromName.toLowerCase().includes(advancedSearch.from.toLowerCase());
+      const matchAdvTo = advancedSearch.to === '' || e.to.toLowerCase().includes(advancedSearch.to.toLowerCase());
+      const matchAdvFlagged = !advancedSearch.flaggedOnly || e.flagged;
+      const matchAdvCategory = advancedSearch.category === 'all' || e.category === advancedSearch.category;
+      return matchFolder && matchSearch && matchCategory && matchUnread && matchAttach && matchPriority && matchDateFrom && matchDateTo && matchLabel && matchAdvSubject && matchAdvBody && matchAdvFrom && matchAdvTo && matchAdvFlagged && matchAdvCategory;
     });
     filtered.sort((a, b) => {
       if (sortBy === 'date') return new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -574,6 +660,87 @@ export function EmailClient() {
     setFilters({ unreadOnly: false, hasAttachments: false, priority: 'all', dateFrom: '', dateTo: '', label: 'all' });
   }, []);
 
+  const clearAdvancedSearch = useCallback(() => {
+    setAdvancedSearch({ subject: '', body: '', from: '', to: '', flaggedOnly: false, category: 'all', calendarRelated: false, taskRelated: false });
+  }, []);
+
+  const snoozeEmail = useCallback((id: string, until: string) => {
+    setSnoozedEmails(prev => [...prev.filter(s => s.emailId !== id), { emailId: id, until }]);
+    setEmails(prev => prev.map(e => e.id === id ? { ...e, folder: 'snoozed' } : e));
+    if (selectedEmail?.id === id) setSelectedEmail(null);
+    setShowSnoozeMenu(false);
+  }, [selectedEmail]);
+
+  const triggerSend = useCallback(() => {
+    setShowCompose(false);
+    setShowUndoSend(true);
+    setUndoSendTimer(5);
+    if (undoTimerRef.current) clearInterval(undoTimerRef.current);
+    undoTimerRef.current = setInterval(() => {
+      setUndoSendTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(undoTimerRef.current!);
+          setShowUndoSend(false);
+          return 5;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const undoSend = useCallback(() => {
+    if (undoTimerRef.current) clearInterval(undoTimerRef.current);
+    setShowUndoSend(false);
+    setShowCompose(true);
+  }, []);
+
+  const extractTaskFromEmail = useCallback((email: Email) => {
+    const newTask: Task = {
+      id: `tk-${Date.now()}`,
+      title: `Follow up: ${email.subject}`,
+      dueDate: 'Today',
+      priority: email.priority === 'urgent' || email.priority === 'high' ? 'high' : 'normal',
+      done: false,
+      emailId: email.id,
+      source: 'email-extracted',
+    };
+    setTasks(prev => [newTask, ...prev]);
+    setShowCalendarSidebar(true);
+  }, []);
+
+  const addManualTask = useCallback(() => {
+    if (!newTaskTitle.trim()) return;
+    const newTask: Task = {
+      id: `tk-${Date.now()}`,
+      title: newTaskTitle.trim(),
+      dueDate: 'Today',
+      priority: 'normal',
+      done: false,
+      source: 'manual',
+    };
+    setTasks(prev => [newTask, ...prev]);
+    setNewTaskTitle('');
+  }, [newTaskTitle]);
+
+  const toggleTask = useCallback((id: string) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  }, []);
+
+  const simulateAiAction = useCallback((action: string, email: Email | null) => {
+    setAiActionLoading(action);
+    setAiContextResult(null);
+    setTimeout(() => {
+      setAiActionLoading(null);
+      if (action === 'summarize') setAiContextResult(`Summary: ${email?.subject || 'Selected email'} — ${email?.fromName} sent this regarding ${email?.body.substring(0, 60)}...`);
+      else if (action === 'find-docs') setAiContextResult('Found 3 related documents: "Sprint Plan Q2.docx", "Budget 2024.xlsx", "Team Roadmap.pptx" — Open in Documents');
+      else if (action === 'extract-sheet') setAiContextResult('Extracted 4 data points to new spreadsheet: dates, amounts, contacts, action items.');
+      else if (action === 'schedule') setAiContextResult('Calendar event created: "Meeting re: ' + (email?.subject || 'email') + '" — Scheduled for tomorrow 10:00 AM');
+      else if (action === 'create-task') { if (email) extractTaskFromEmail(email); setAiContextResult('Task created and added to your task list.'); }
+      else if (action === 'smart-reply') setAiContextResult('Generated reply: "Thank you for your message regarding ' + (email?.subject || 'this topic') + '. I have reviewed the details and will follow up by EOD."');
+      else if (action === 'sentiment') setAiContextResult('Sentiment: Neutral-Professional. Tone: Informational. Urgency: ' + (email?.priority || 'normal') + '. No negative indicators detected.');
+    }, 1200);
+  }, [extractTaskFromEmail]);
+
   const toggleAutoArchiveRule = useCallback((ruleId: string) => {
     setAutoArchiveRules(prev => prev.map(r => r.id === ruleId ? { ...r, enabled: !r.enabled } : r));
   }, []);
@@ -589,26 +756,40 @@ export function EmailClient() {
       {/* ===== TOP RIBBON BAR ===== */}
       <div className={`flex items-center gap-2 px-4 py-2 border-b ${highContrastBorder} bg-[var(--bg-secondary,#111827)]`}>
         <h2 className="text-sm font-bold flex items-center gap-2">Email</h2>
-        <div className={`flex items-center gap-1 px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder}`}>
-          <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">Search</span>
+        <div className={`flex items-center gap-1 px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} flex-1 max-w-xl`}>
+          <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">&#128269;</span>
           <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search emails, contacts, subjects..."
-            className="bg-transparent text-xs outline-none w-64 placeholder:text-[var(--text-secondary,#94a3b8)]" />
+            className="bg-transparent text-xs outline-none flex-1 placeholder:text-[var(--text-secondary,#94a3b8)]" />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="text-[10px] text-[var(--text-secondary,#94a3b8)] hover:text-white px-1">x</button>
+          )}
+          <button onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+            className={`text-[9px] px-1.5 py-0.5 rounded border ml-1 transition-colors ${showAdvancedSearch ? 'border-blue-500/60 text-blue-400 bg-blue-600/10' : `border-[var(--border-color,#334155)] text-[var(--text-secondary,#94a3b8)] hover:text-white`}`}>
+            Advanced
+          </button>
         </div>
-        <div className="flex-1" />
         {/* Address Book toggle */}
         <button onClick={() => setShowAddressBook(!showAddressBook)}
-          className={`px-2 py-1 rounded text-[10px] ${showAddressBook ? 'bg-blue-600/30 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
+          className={`px-2 py-1 rounded text-[10px] flex-shrink-0 ${showAddressBook ? 'bg-blue-600/30 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
           Contacts
+        </button>
+        {/* Calendar & Tasks toggle */}
+        <button onClick={() => setShowCalendarSidebar(!showCalendarSidebar)}
+          className={`px-2 py-1 rounded text-[10px] flex-shrink-0 flex items-center gap-1 ${showCalendarSidebar ? 'bg-green-600/30 text-green-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
+          &#128197; Tasks
+          {tasks.filter(t => !t.done).length > 0 && (
+            <span className="px-1 py-0 rounded-full bg-green-600 text-white text-[8px]">{tasks.filter(t => !t.done).length}</span>
+          )}
         </button>
         {/* Filter toggle */}
         <button onClick={() => setShowFilters(!showFilters)}
-          className={`px-2 py-1 rounded text-[10px] flex items-center gap-1 ${showFilters ? 'bg-blue-600/30 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
+          className={`px-2 py-1 rounded text-[10px] flex items-center gap-1 flex-shrink-0 ${showFilters ? 'bg-blue-600/30 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
           Filters {activeFilterCount > 0 && <span className="px-1 py-0 rounded-full bg-blue-600 text-white text-[8px]">{activeFilterCount}</span>}
         </button>
         {/* Accessibility */}
         <button onClick={() => setShowAccessibility(!showAccessibility)}
-          className={`px-2 py-1 rounded text-[10px] ${showAccessibility ? 'bg-blue-600/30 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
+          className={`px-2 py-1 rounded text-[10px] flex-shrink-0 ${showAccessibility ? 'bg-blue-600/30 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
           Settings
         </button>
         {/* View & Sort controls */}
@@ -646,7 +827,7 @@ export function EmailClient() {
         </div>
       )}
 
-      {/* ===== ADVANCED FILTER BAR ===== */}
+      {/* ===== QUICK FILTER BAR ===== */}
       {showFilters && (
         <div className={`flex items-center gap-3 px-4 py-2 border-b ${highContrastBorder} bg-[var(--bg-secondary,#111827)]`}>
           <label className="flex items-center gap-1 text-[10px]">
@@ -685,6 +866,75 @@ export function EmailClient() {
           <button onClick={clearFilters} className="px-2 py-0.5 rounded text-[10px] bg-red-600/20 hover:bg-red-600/30 text-red-400">
             Clear all
           </button>
+        </div>
+      )}
+
+      {/* ===== ADVANCED SEARCH PANEL ===== */}
+      {showAdvancedSearch && (
+        <div className={`px-4 py-3 border-b ${highContrastBorder} bg-[var(--bg-secondary,#111827)]`}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">Advanced Search</span>
+            <button onClick={clearAdvancedSearch} className="text-[9px] text-[var(--text-secondary,#94a3b8)] hover:text-red-400">Clear</button>
+          </div>
+          {/* Row 1: text search fields */}
+          <div className="grid grid-cols-4 gap-2 mb-2">
+            <div>
+              <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-0.5">Subject</label>
+              <input value={advancedSearch.subject} onChange={e => setAdvancedSearch(p => ({ ...p, subject: e.target.value }))}
+                placeholder="Search in subject..."
+                className={`w-full px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none placeholder:text-[var(--text-secondary,#94a3b8)]`} />
+            </div>
+            <div>
+              <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-0.5">Body</label>
+              <input value={advancedSearch.body} onChange={e => setAdvancedSearch(p => ({ ...p, body: e.target.value }))}
+                placeholder="Search in body..."
+                className={`w-full px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none placeholder:text-[var(--text-secondary,#94a3b8)]`} />
+            </div>
+            <div>
+              <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-0.5">From</label>
+              <input value={advancedSearch.from} onChange={e => setAdvancedSearch(p => ({ ...p, from: e.target.value }))}
+                placeholder="Sender name or email..."
+                className={`w-full px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none placeholder:text-[var(--text-secondary,#94a3b8)]`} />
+            </div>
+            <div>
+              <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-0.5">To</label>
+              <input value={advancedSearch.to} onChange={e => setAdvancedSearch(p => ({ ...p, to: e.target.value }))}
+                placeholder="Recipient email..."
+                className={`w-full px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none placeholder:text-[var(--text-secondary,#94a3b8)]`} />
+            </div>
+          </div>
+          {/* Row 2: toggles and selects */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="flex items-center gap-1 text-[10px]">
+              <input type="checkbox" checked={advancedSearch.flaggedOnly} onChange={e => setAdvancedSearch(p => ({ ...p, flaggedOnly: e.target.checked }))} className="w-3 h-3" />
+              Flagged only
+            </label>
+            <label className="flex items-center gap-1 text-[10px]">
+              <input type="checkbox" checked={advancedSearch.calendarRelated} onChange={e => setAdvancedSearch(p => ({ ...p, calendarRelated: e.target.checked }))} className="w-3 h-3" />
+              Calendar-related
+            </label>
+            <label className="flex items-center gap-1 text-[10px]">
+              <input type="checkbox" checked={advancedSearch.taskRelated} onChange={e => setAdvancedSearch(p => ({ ...p, taskRelated: e.target.checked }))} className="w-3 h-3" />
+              Task-related
+            </label>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">Category:</span>
+              <select value={advancedSearch.category} onChange={e => setAdvancedSearch(p => ({ ...p, category: e.target.value }))}
+                className={`px-1.5 py-0.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} ${highContrastText}`}>
+                <option value="all">All categories</option>
+                <option value="primary">Primary</option>
+                <option value="social">Social</option>
+                <option value="promotions">Promotions</option>
+                <option value="updates">Updates</option>
+                <option value="forums">Forums</option>
+              </select>
+            </div>
+            <div className="flex-1" />
+            <div className="flex items-center gap-1 text-[9px] text-[var(--text-secondary,#94a3b8)]">
+              <span>&#128197;</span>
+              <span>Calendar integration: finds emails mentioning upcoming events</span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -898,7 +1148,34 @@ export function EmailClient() {
                     )}
                   </div>
                   <div className="flex-1" />
-                  <button onClick={() => toggleFlag(selectedEmail.id)} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">{selectedEmail.flagged ? 'Unflag' : 'Flag'}</button>
+                  <button onClick={() => toggleFlag(selectedEmail.id)}
+                    className={`px-2 py-1 rounded text-[10px] ${selectedEmail.flagged ? 'bg-orange-600/20 text-orange-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
+                    {selectedEmail.flagged ? '&#9873; Unflag' : '&#9873; Flag'}
+                  </button>
+                  {/* Snooze dropdown */}
+                  <div className="relative">
+                    <button onClick={() => setShowSnoozeMenu(!showSnoozeMenu)}
+                      className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">
+                      &#9200; Snooze
+                    </button>
+                    {showSnoozeMenu && (
+                      <div className={`absolute top-full right-0 mt-1 w-44 bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} rounded-lg shadow-xl z-50 py-1`}>
+                        <p className="px-3 py-1 text-[9px] text-[var(--text-secondary,#94a3b8)] font-semibold">Snooze until...</p>
+                        {[
+                          { label: 'Later today (4 PM)', value: 'today-4pm' },
+                          { label: 'Tomorrow morning', value: 'tomorrow-9am' },
+                          { label: 'This weekend', value: 'saturday-9am' },
+                          { label: 'Next week', value: 'monday-9am' },
+                          { label: 'In 2 hours', value: '2h' },
+                        ].map(opt => (
+                          <button key={opt.value} onClick={() => snoozeEmail(selectedEmail.id, opt.value)}
+                            className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[var(--bg-hover,#334155)]">
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <button onClick={() => markUnread(selectedEmail.id)} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">Unread</button>
                   <button onClick={() => moveToFolder(selectedEmail.id, 'archive')} className="px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[10px]">Archive</button>
                   {activeFolder.startsWith('vault-') && (
@@ -969,18 +1246,95 @@ export function EmailClient() {
                   {selectedEmail.body}
                 </div>
 
-                {/* AI Quick Actions */}
-                <div className="mt-6 p-3 rounded-lg bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/20">
-                  <p className="text-[10px] font-semibold text-purple-400 mb-2">AI Quick Actions</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Summarize</button>
-                    <button onClick={() => replyToEmail(selectedEmail)} className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Draft Reply</button>
-                    <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Extract Tasks</button>
-                    <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Extract Dates</button>
-                    <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Translate</button>
-                    <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Create Meeting</button>
-                    <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Add to Tasks</button>
-                    <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Sentiment</button>
+                {/* AI Quick Actions - Enhanced with context awareness */}
+                <div className="mt-6 rounded-lg bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/20 overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-purple-500/20">
+                    <p className="text-[10px] font-semibold text-purple-400">&#10024; AI Assistant — Context: {selectedEmail.fromName}</p>
+                    <div className="flex items-center gap-1 text-[9px] text-[var(--text-secondary,#94a3b8)]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                      Email context loaded
+                    </div>
+                  </div>
+                  {/* Context summary */}
+                  <div className="px-3 py-2 bg-purple-900/10 text-[9px] text-[var(--text-secondary,#94a3b8)]">
+                    <span className="text-purple-300 font-medium">Thread: </span>{selectedEmail.subject} &bull;
+                    <span className="text-purple-300 font-medium ml-1"> From: </span>{selectedEmail.fromName} &bull;
+                    <span className="text-purple-300 font-medium ml-1"> Priority: </span>{selectedEmail.priority} &bull;
+                    <span className="text-purple-300 font-medium ml-1"> Labels: </span>{selectedEmail.labels.join(', ') || 'none'}
+                  </div>
+                  {/* Action buttons grid */}
+                  <div className="p-3 space-y-2">
+                    {/* AI Actions */}
+                    <div>
+                      <p className="text-[9px] text-[var(--text-secondary,#94a3b8)] uppercase tracking-wider mb-1.5">AI Actions</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => simulateAiAction('summarize', selectedEmail)}
+                          disabled={aiActionLoading === 'summarize'}
+                          className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 disabled:opacity-50">
+                          {aiActionLoading === 'summarize' ? '...' : '&#128196; Summarize'}
+                        </button>
+                        <button onClick={() => simulateAiAction('smart-reply', selectedEmail)}
+                          disabled={aiActionLoading === 'smart-reply'}
+                          className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 disabled:opacity-50">
+                          {aiActionLoading === 'smart-reply' ? '...' : '&#128172; Smart Reply'}
+                        </button>
+                        <button onClick={() => simulateAiAction('sentiment', selectedEmail)}
+                          disabled={aiActionLoading === 'sentiment'}
+                          className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 disabled:opacity-50">
+                          {aiActionLoading === 'sentiment' ? '...' : '&#128200; Sentiment'}
+                        </button>
+                        <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">
+                          &#127760; Translate
+                        </button>
+                      </div>
+                    </div>
+                    {/* Connector Actions */}
+                    <div>
+                      <p className="text-[9px] text-[var(--text-secondary,#94a3b8)] uppercase tracking-wider mb-1.5">Connectors</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => simulateAiAction('find-docs', selectedEmail)}
+                          disabled={aiActionLoading === 'find-docs'}
+                          className="px-2 py-1 rounded text-[10px] bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 disabled:opacity-50">
+                          {aiActionLoading === 'find-docs' ? '...' : '&#128202; Find Related Docs'}
+                        </button>
+                        <button onClick={() => simulateAiAction('extract-sheet', selectedEmail)}
+                          disabled={aiActionLoading === 'extract-sheet'}
+                          className="px-2 py-1 rounded text-[10px] bg-green-600/20 hover:bg-green-600/30 text-green-300 disabled:opacity-50">
+                          {aiActionLoading === 'extract-sheet' ? '...' : '&#128203; Extract to Spreadsheet'}
+                        </button>
+                        <button onClick={() => simulateAiAction('schedule', selectedEmail)}
+                          disabled={aiActionLoading === 'schedule'}
+                          className="px-2 py-1 rounded text-[10px] bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 disabled:opacity-50">
+                          {aiActionLoading === 'schedule' ? '...' : '&#128197; Schedule from Email'}
+                        </button>
+                        <button onClick={() => simulateAiAction('create-task', selectedEmail)}
+                          disabled={aiActionLoading === 'create-task'}
+                          className="px-2 py-1 rounded text-[10px] bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-300 disabled:opacity-50">
+                          {aiActionLoading === 'create-task' ? '...' : '&#9989; Create Task'}
+                        </button>
+                        <button className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[var(--text-secondary,#94a3b8)] border border-dashed border-[var(--border-color,#334155)]">
+                          + Connect External Service
+                        </button>
+                      </div>
+                    </div>
+                    {/* AI Result */}
+                    {aiContextResult && (
+                      <div className="p-2 rounded bg-purple-900/20 border border-purple-500/30 text-[10px] text-purple-200">
+                        <div className="flex items-start justify-between gap-2">
+                          <span>{aiContextResult}</span>
+                          <button onClick={() => setAiContextResult(null)} className="text-[9px] text-[var(--text-secondary,#94a3b8)] hover:text-white flex-shrink-0">x</button>
+                        </div>
+                      </div>
+                    )}
+                    {/* Contextual suggestions */}
+                    <div className="text-[9px] text-[var(--text-secondary,#94a3b8)] flex items-center gap-1 pt-1 border-t border-purple-500/10">
+                      <span>&#128161;</span>
+                      {selectedEmail.priority === 'urgent' || selectedEmail.priority === 'high'
+                        ? 'High priority — consider replying or creating a task immediately'
+                        : selectedEmail.attachments.length > 0
+                        ? `Has ${selectedEmail.attachments.length} attachment(s) — try "Extract to Spreadsheet" or "Find Related Docs"`
+                        : 'Tip: Use Smart Reply for AI-generated context-aware responses'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -996,6 +1350,68 @@ export function EmailClient() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ===== CALENDAR & TASKS SIDEBAR ===== */}
+        {showCalendarSidebar && (
+          <div className={`w-64 border-l ${highContrastBorder} bg-[var(--bg-secondary,#111827)] overflow-y-auto flex-shrink-0 flex flex-col`}>
+            <div className={`flex items-center justify-between px-3 py-2 border-b ${highContrastBorder}`}>
+              <h3 className="text-xs font-semibold text-green-400">&#128197; Today</h3>
+              <button onClick={() => setShowCalendarSidebar(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white text-sm leading-none">x</button>
+            </div>
+            {/* Calendar events */}
+            <div className={`px-3 py-2 border-b ${highContrastBorder}`}>
+              <p className="text-[9px] font-semibold text-[var(--text-secondary,#94a3b8)] uppercase tracking-wider mb-2">Events</p>
+              <div className="space-y-2">
+                {calendarEvents.map(ev => (
+                  <div key={ev.id} className={`p-2 rounded-lg border ${highContrastBorder} bg-[var(--bg-tertiary,#0f172a)] hover:border-green-500/30 cursor-pointer transition-colors`}>
+                    <div className="flex items-start gap-2">
+                      <div className={`w-1 h-full min-h-[2rem] rounded-full flex-shrink-0 ${ev.type === 'meeting' ? 'bg-blue-500' : ev.type === 'call' ? 'bg-green-500' : ev.type === 'deadline' ? 'bg-red-500' : 'bg-yellow-500'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-medium truncate">{ev.title}</p>
+                        <p className="text-[9px] text-[var(--text-secondary,#94a3b8)]">{ev.time}{ev.duration && ` · ${ev.duration}`}</p>
+                        {ev.location && <p className="text-[9px] text-blue-400 truncate">{ev.location}</p>}
+                        {ev.attendees.length > 0 && (
+                          <p className="text-[8px] text-[var(--text-secondary,#94a3b8)] truncate">{ev.attendees.slice(0, 2).join(', ')}{ev.attendees.length > 2 ? ` +${ev.attendees.length - 2}` : ''}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className="w-full mt-2 px-2 py-1 rounded text-[9px] bg-green-600/10 hover:bg-green-600/20 text-green-400 text-left border border-dashed border-green-600/20">
+                + Add event
+              </button>
+            </div>
+            {/* Tasks */}
+            <div className="px-3 py-2 flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[9px] font-semibold text-[var(--text-secondary,#94a3b8)] uppercase tracking-wider">Tasks ({tasks.filter(t => !t.done).length} pending)</p>
+              </div>
+              {/* Add task */}
+              <div className="flex items-center gap-1 mb-2">
+                <input value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addManualTask()}
+                  placeholder="Add a task..."
+                  className={`flex-1 px-2 py-1 rounded text-[9px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none placeholder:text-[var(--text-secondary,#94a3b8)]`} />
+                <button onClick={addManualTask} className="px-1.5 py-1 rounded text-[9px] bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400">+</button>
+              </div>
+              <div className="space-y-1.5">
+                {tasks.map(task => (
+                  <div key={task.id} className={`flex items-start gap-2 p-2 rounded-lg border transition-colors ${task.done ? `border-transparent opacity-50` : `${highContrastBorder} bg-[var(--bg-tertiary,#0f172a)]`}`}>
+                    <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[10px] ${task.done ? 'line-through text-[var(--text-secondary,#94a3b8)]' : ''}`}>{task.title}</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className={`text-[8px] px-1 rounded ${task.priority === 'high' ? 'bg-red-600/20 text-red-400' : 'bg-[var(--bg-secondary,#111827)] text-[var(--text-secondary,#94a3b8)]'}`}>{task.dueDate}</span>
+                        {task.source === 'email-extracted' && <span className="text-[8px] text-purple-400">from email</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -1150,7 +1566,7 @@ export function EmailClient() {
               <div className="flex-1" />
               <button onClick={() => setShowSchedule(!showSchedule)} className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">Schedule</button>
               <button onClick={() => setShowCompose(false)} className="px-3 py-1.5 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-xs">Discard</button>
-              <button onClick={() => setShowCompose(false)}
+              <button onClick={triggerSend}
                 className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium">
                 {composeData.scheduledAt ? 'Schedule' : 'Send'}
               </button>
@@ -1315,6 +1731,17 @@ export function EmailClient() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ===== UNDO SEND TOAST ===== */}
+      {showUndoSend && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-4 py-3 rounded-xl bg-[var(--bg-secondary,#111827)] border border-blue-500/40 shadow-2xl">
+          <span className="text-xs text-[var(--text-secondary,#94a3b8)]">Message sent. Undoing in {undoSendTimer}s...</span>
+          <div className="w-8 h-1.5 rounded-full bg-[var(--bg-tertiary,#0f172a)] overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${(undoSendTimer / 5) * 100}%` }} />
+          </div>
+          <button onClick={undoSend} className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium">Undo</button>
         </div>
       )}
 
