@@ -152,6 +152,8 @@ export const DOCUMENT_STYLES = [
   { name: "Heading 2", tag: "h2", fontSize: "16pt", fontWeight: "bold", lineHeight: "1.2", color: "#2F5496", marginBottom: "10px", fontFamily: "Calibri Light" },
   { name: "Heading 3", tag: "h3", fontSize: "14pt", fontWeight: "bold", lineHeight: "1.2", color: "#1F3763", marginBottom: "8px", fontFamily: "Calibri Light" },
   { name: "Heading 4", tag: "h4", fontSize: "12pt", fontWeight: "bold", lineHeight: "1.2", color: "#2F5496", marginBottom: "8px", fontFamily: "Calibri Light" },
+  { name: "Heading 5", tag: "h5", fontSize: "11pt", fontWeight: "bold", lineHeight: "1.2", color: "#404040", marginBottom: "6px", fontFamily: "Calibri" },
+  { name: "Heading 6", tag: "h6", fontSize: "10pt", fontWeight: "bold", lineHeight: "1.2", color: "#7f7f7f", marginBottom: "6px", fontFamily: "Calibri", fontStyle: "italic" },
   { name: "Title", tag: "h1", fontSize: "28pt", fontWeight: "normal", lineHeight: "1.2", color: "#000", marginBottom: "16px", fontFamily: "Calibri Light" },
   { name: "Subtitle", tag: "h2", fontSize: "14pt", fontWeight: "normal", lineHeight: "1.2", color: "#5A5A5A", marginBottom: "12px", fontFamily: "Calibri" },
   { name: "Emphasis", tag: "p", fontSize: "11pt", fontWeight: "normal", lineHeight: "1.15", color: "#404040", marginBottom: "8px", fontFamily: "Calibri", fontStyle: "italic" },

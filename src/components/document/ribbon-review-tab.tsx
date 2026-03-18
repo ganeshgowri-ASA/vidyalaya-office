@@ -9,6 +9,8 @@ import {
 import { useDocumentStore } from "@/store/document-store";
 import { useCollaborationStore } from "@/store/collaboration-store";
 import { ToolbarButton, ToolbarSeparator, ToolbarDropdown } from "./toolbar-button";
+import { DocumentComparisonModal } from "./document-comparison";
+import { getEditorContent } from "./editor-area";
 
 export function ReviewTab() {
   const {
@@ -27,6 +29,7 @@ export function ReviewTab() {
 
   const [markupDisplay, setMarkupDisplay] = useState("all");
   const [showWordCount, setShowWordCount] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
 
   return (
     <>
@@ -132,9 +135,7 @@ export function ReviewTab() {
       {/* ===== COMPARE GROUP ===== */}
       <div className="flex flex-col items-center border-r pr-2 mr-1" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-0.5">
-          <ToolbarButton icon={<Diff size={14} />} label="Compare" title="Compare Documents" onClick={() => {
-            alert("Compare Documents: Select two documents to compare their differences.");
-          }} />
+          <ToolbarButton icon={<Diff size={14} />} label="Compare" title="Compare Documents" onClick={() => setShowComparison(true)} />
           <ToolbarButton icon={<FileText size={14} />} label="Combine" title="Combine Documents" onClick={() => {
             alert("Combine Documents: Merge revisions from multiple authors.");
           }} />
@@ -164,6 +165,14 @@ export function ReviewTab() {
         </div>
         <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Collaborate</span>
       </div>
+
+      {/* Document Comparison Modal */}
+      <DocumentComparisonModal
+        open={showComparison}
+        onClose={() => setShowComparison(false)}
+        currentContent={typeof document !== "undefined" ? getEditorContent() : ""}
+        currentTitle="Current Document"
+      />
     </>
   );
 }
