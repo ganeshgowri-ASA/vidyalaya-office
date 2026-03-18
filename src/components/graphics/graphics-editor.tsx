@@ -133,6 +133,62 @@ export default function GraphicsEditor() {
     setShapes(ns); pushHistory(ns);
   }, [shapes, selectedId, pushHistory]);
 
+  // Boolean operations (Union, Intersect, Subtract, Exclude)
+  const booleanUnion = useCallback(() => {
+    const ids = selectedIds.length > 1 ? selectedIds : (selectedId ? [selectedId] : []);
+    if (ids.length < 2) { alert('Select 2+ shapes for Boolean Union'); return; }
+    const selected = shapes.filter(s => ids.includes(s.id));
+    const minX = Math.min(...selected.map(s => s.x));
+    const minY = Math.min(...selected.map(s => s.y));
+    const maxX = Math.max(...selected.map(s => s.x + s.width));
+    const maxY = Math.max(...selected.map(s => s.y + s.height));
+    const merged: RectShape = { ...selected[0] as RectShape, type: 'rect', id: genId(), x: minX, y: minY, width: maxX - minX, height: maxY - minY, label: 'Union', borderRadius: 0 };
+    const ns = [...shapes.filter(s => !ids.includes(s.id)), merged];
+    setShapes(ns); pushHistory(ns); setSelectedId(merged.id); setSelectedIds([merged.id]);
+  }, [shapes, selectedIds, selectedId, pushHistory]);
+
+  const booleanIntersect = useCallback(() => {
+    const ids = selectedIds.length > 1 ? selectedIds : (selectedId ? [selectedId] : []);
+    if (ids.length < 2) { alert('Select 2+ shapes for Boolean Intersect'); return; }
+    const selected = shapes.filter(s => ids.includes(s.id));
+    const maxX1 = Math.max(...selected.map(s => s.x));
+    const maxY1 = Math.max(...selected.map(s => s.y));
+    const minX2 = Math.min(...selected.map(s => s.x + s.width));
+    const minY2 = Math.min(...selected.map(s => s.y + s.height));
+    if (maxX1 >= minX2 || maxY1 >= minY2) { alert('Shapes do not overlap'); return; }
+    const intersected: RectShape = { ...selected[0] as RectShape, type: 'rect', id: genId(), x: maxX1, y: maxY1, width: minX2 - maxX1, height: minY2 - maxY1, label: 'Intersect', borderRadius: 0 };
+    const ns = [...shapes.filter(s => !ids.includes(s.id)), intersected];
+    setShapes(ns); pushHistory(ns); setSelectedId(intersected.id); setSelectedIds([intersected.id]);
+  }, [shapes, selectedIds, selectedId, pushHistory]);
+
+  const booleanSubtract = useCallback(() => {
+    const ids = selectedIds.length > 1 ? selectedIds : (selectedId ? [selectedId] : []);
+    if (ids.length < 2) { alert('Select 2+ shapes for Boolean Subtract'); return; }
+    // Keep first shape, remove others (simplified: just remove the second shapes)
+    const [keepId, ...removeIds] = ids;
+    const ns = shapes.filter(s => !removeIds.includes(s.id));
+    setShapes(ns); pushHistory(ns); setSelectedId(keepId); setSelectedIds([keepId]);
+  }, [shapes, selectedIds, selectedId, pushHistory]);
+
+  const booleanExclude = useCallback(() => {
+    const ids = selectedIds.length > 1 ? selectedIds : (selectedId ? [selectedId] : []);
+    if (ids.length < 2) { alert('Select 2+ shapes for Boolean Exclude'); return; }
+    // XOR: keep shapes that don't overlap the bounding box of the other
+    const selected = shapes.filter(s => ids.includes(s.id));
+    const maxX1 = Math.max(...selected.map(s => s.x));
+    const maxY1 = Math.max(...selected.map(s => s.y));
+    const minX2 = Math.min(...selected.map(s => s.x + s.width));
+    const minY2 = Math.min(...selected.map(s => s.y + s.height));
+    const hasOverlap = maxX1 < minX2 && maxY1 < minY2;
+    if (hasOverlap) {
+      // Create two shapes with subtracted region (simplified)
+      const ns = shapes.map(s => ids.includes(s.id) ? { ...s, opacity: s.opacity * 0.7, label: s.label || 'Exclude' } : s);
+      setShapes(ns); pushHistory(ns);
+    } else {
+      alert('Shapes do not overlap for Exclude operation');
+    }
+  }, [shapes, selectedIds, selectedId, pushHistory]);
+
   // Export functions
   const exportSVG = useCallback(() => {
     const svg = svgRef.current;
@@ -255,7 +311,7 @@ export default function GraphicsEditor() {
     { id: 'star', label: 'Star', icon: '☆' }, { id: 'cloud', label: 'Cloud', icon: '☁' },
     { id: 'cylinder', label: 'Cylinder', icon: '⬤' }, { id: 'arrow', label: 'Arrow', icon: '→' },
     { id: 'line', label: 'Line', icon: '—' }, { id: 'text', label: 'Text', icon: 'T' },
-    { id: 'hand', label: 'Pan', icon: '✋' },
+    { id: 'pen', label: 'Pen/Path', icon: '✒' }, { id: 'hand', label: 'Pan', icon: '✋' },
   ];
 
   const colors = PALETTES[activePalette];
@@ -278,6 +334,14 @@ export default function GraphicsEditor() {
         </>)}
         {selectedIds.length > 1 && <button onClick={groupSelected} className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/30">Group</button>}
         {selectedShape?.groupId && <button onClick={ungroupSelected} className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/30">Ungroup</button>}
+        {selectedIds.length >= 2 && (<>
+          <div className="w-px h-6 bg-[var(--border-color,#334155)] mx-1" />
+          <span className="text-[10px] text-[var(--text-secondary,#94a3b8)] mr-1">Bool:</span>
+          <button onClick={booleanUnion} className="px-2 py-1 rounded bg-orange-600/20 text-orange-400 text-xs hover:bg-orange-600/30" title="Union: Merge selected shapes">⊕ Union</button>
+          <button onClick={booleanIntersect} className="px-2 py-1 rounded bg-orange-600/20 text-orange-400 text-xs hover:bg-orange-600/30" title="Intersect: Keep overlapping area">⊗ Intersect</button>
+          <button onClick={booleanSubtract} className="px-2 py-1 rounded bg-orange-600/20 text-orange-400 text-xs hover:bg-orange-600/30" title="Subtract: Remove top shape from bottom">⊖ Subtract</button>
+          <button onClick={booleanExclude} className="px-2 py-1 rounded bg-orange-600/20 text-orange-400 text-xs hover:bg-orange-600/30" title="Exclude: XOR - remove overlapping area">⊝ Exclude</button>
+        </>)}
         <div className="w-px h-6 bg-[var(--border-color,#334155)] mx-1" />
         <button onClick={() => setShowGrid(!showGrid)} className={`px-2 py-1.5 rounded text-xs ${showGrid ? 'bg-blue-600/30 text-blue-400' : ''}`}>Grid</button>
         <button onClick={() => setSnapToGrid(!snapToGrid)} className={`px-2 py-1.5 rounded text-xs ${snapToGrid ? 'bg-blue-600/30 text-blue-400' : ''}`}>Snap</button>

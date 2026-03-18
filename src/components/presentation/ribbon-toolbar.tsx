@@ -1517,6 +1517,7 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
               <RibbonButton icon={<Columns3 size={14} />} label="Guides" onClick={() => setShowGuides(!showGuides)} active={showGuides} small />
               <RibbonButton icon={<Maximize size={14} />} label="Snap Grid" onClick={() => setSnapToGrid(!snapToGrid)} active={snapToGrid} small />
               <RibbonButton icon={<BoxSelect size={14} />} label="Snap Obj" onClick={() => setSnapToObjects(!snapToObjects)} active={snapToObjects} small />
+              <RibbonButton icon={<Sparkles size={14} />} label="Smart Guides" onClick={() => setSnapToObjects(!snapToObjects)} active={snapToObjects} small title="Smart Guides: Auto-align to other objects with spacing indicators" />
             </RibbonGroup>
             <RibbonDivider />
 

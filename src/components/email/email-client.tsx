@@ -1504,7 +1504,40 @@ export function EmailClient() {
                   <option value="urgent">Urgent</option>
                 </select>
               </div>
-              <textarea value={composeData.body} onChange={e => setComposeData({ ...composeData, body: e.target.value })}
+              {/* Rich text formatting toolbar */}
+              <div className={`flex items-center gap-0.5 px-3 py-1 border-b ${highContrastBorder} flex-wrap`}>
+                {([
+                  { label: 'B', title: 'Bold', wrap: ['**','**'], style: 'font-bold' },
+                  { label: 'I', title: 'Italic', wrap: ['_','_'], style: 'italic' },
+                  { label: 'U', title: 'Underline', wrap: ['<u>','</u>'], style: 'underline' },
+                  { label: 'S', title: 'Strikethrough', wrap: ['~~','~~'], style: 'line-through' },
+                ] as { label: string; title: string; wrap: [string,string]; style: string }[]).map(fmt => (
+                  <button key={fmt.label} title={fmt.title}
+                    className="w-6 h-6 rounded text-[10px] hover:bg-[var(--bg-hover,#334155)] flex items-center justify-center"
+                    style={{ color: 'var(--foreground)', fontStyle: fmt.style === 'italic' ? 'italic' : undefined, fontWeight: fmt.style === 'font-bold' ? 'bold' : undefined, textDecoration: (fmt.style === 'underline' || fmt.style === 'line-through') ? fmt.style : undefined }}
+                    onClick={() => {
+                      const ta = document.getElementById('compose-body') as HTMLTextAreaElement;
+                      if (!ta) return;
+                      const start = ta.selectionStart; const end = ta.selectionEnd;
+                      const sel = composeData.body.substring(start, end);
+                      const newBody = composeData.body.substring(0, start) + fmt.wrap[0] + sel + fmt.wrap[1] + composeData.body.substring(end);
+                      setComposeData({ ...composeData, body: newBody });
+                      setTimeout(() => { ta.focus(); ta.setSelectionRange(start + fmt.wrap[0].length, end + fmt.wrap[0].length); }, 0);
+                    }}>{fmt.label}</button>
+                ))}
+                <div className="w-px h-4 bg-[var(--border-color,#334155)] mx-0.5" />
+                <button title="Bullet List" className="w-6 h-6 rounded text-[10px] hover:bg-[var(--bg-hover,#334155)] flex items-center justify-center" style={{ color: 'var(--foreground)' }}
+                  onClick={() => { const ta = document.getElementById('compose-body') as HTMLTextAreaElement; if (!ta) return; const pos = ta.selectionStart; const newBody = composeData.body.substring(0, pos) + '\n• ' + composeData.body.substring(pos); setComposeData({ ...composeData, body: newBody }); }}>•</button>
+                <button title="Numbered List" className="w-6 h-6 rounded text-[10px] hover:bg-[var(--bg-hover,#334155)] flex items-center justify-center" style={{ color: 'var(--foreground)' }}
+                  onClick={() => { const ta = document.getElementById('compose-body') as HTMLTextAreaElement; if (!ta) return; const pos = ta.selectionStart; const newBody = composeData.body.substring(0, pos) + '\n1. ' + composeData.body.substring(pos); setComposeData({ ...composeData, body: newBody }); }}>1.</button>
+                <button title="Insert Link" className="w-6 h-6 rounded text-[10px] hover:bg-[var(--bg-hover,#334155)] flex items-center justify-center" style={{ color: 'var(--foreground)' }}
+                  onClick={() => { const url = prompt('Enter URL:'); if (!url) return; const ta = document.getElementById('compose-body') as HTMLTextAreaElement; if (!ta) return; const start = ta.selectionStart; const end = ta.selectionEnd; const sel = composeData.body.substring(start, end) || 'Link text'; const newBody = composeData.body.substring(0, start) + `[${sel}](${url})` + composeData.body.substring(end); setComposeData({ ...composeData, body: newBody }); }}>🔗</button>
+                <button title="Horizontal Rule" className="w-6 h-6 rounded text-[10px] hover:bg-[var(--bg-hover,#334155)] flex items-center justify-center" style={{ color: 'var(--foreground)' }}
+                  onClick={() => { const ta = document.getElementById('compose-body') as HTMLTextAreaElement; if (!ta) return; const pos = ta.selectionStart; const newBody = composeData.body.substring(0, pos) + '\n---\n' + composeData.body.substring(pos); setComposeData({ ...composeData, body: newBody }); }}>—</button>
+                <div className="flex-1" />
+                <span className="text-[9px] text-[var(--text-secondary,#94a3b8)]">Markdown supported</span>
+              </div>
+              <textarea id="compose-body" value={composeData.body} onChange={e => setComposeData({ ...composeData, body: e.target.value })}
                 placeholder="Write your message..." rows={8}
                 className={`w-full px-4 py-3 bg-transparent text-xs resize-none outline-none border-b ${highContrastBorder}`} />
               {aiSuggestion && (

@@ -26,10 +26,12 @@ const QUICK_ACTIONS: Record<EditorContext, QuickAction[]> = {
   document: [
     { label: "Summarize document", icon: <FileText size={13} />, prompt: "Summarize the key points of this document concisely." },
     { label: "Improve writing", icon: <Wand2 size={13} />, prompt: "Review and improve the writing quality, clarity, and tone." },
-    { label: "Fix grammar", icon: <Type size={13} />, prompt: "Find and fix all grammar, spelling, and punctuation errors." },
+    { label: "Fix grammar", icon: <Type size={13} />, prompt: "Perform a thorough grammar, spelling, punctuation, and style check. List all errors found with suggested corrections." },
+    { label: "Style check", icon: <Sparkles size={13} />, prompt: "Analyze the writing style for: readability score, sentence variety, passive voice overuse, wordiness, tone consistency, and clarity. Provide specific improvements." },
     { label: "Professional tone", icon: <PenLine size={13} />, prompt: "Rewrite in a professional, formal business tone." },
     { label: "Create outline", icon: <ListOrdered size={13} />, prompt: "Create a structured outline from this document content." },
-    { label: "Translate", icon: <Languages size={13} />, prompt: "Translate this text to Spanish. Preserve the original formatting." },
+    { label: "Translate", icon: <Languages size={13} />, prompt: "Translate this text. Available languages: French, Spanish, German, Japanese, Chinese (Simplified), Arabic, Hindi, Portuguese (Brazilian), Italian, Russian, Korean, Dutch, Turkish, Swedish, Polish. Please specify your target language, or I'll translate to French by default." },
+    { label: "Cross-doc search", icon: <BookOpen size={13} />, prompt: "Help me find related information, similar topics, or cross-references in my other documents about: " },
   ],
   spreadsheet: [
     { label: "Create chart", icon: <BarChart3 size={13} />, prompt: "Suggest the best chart type for this data and describe how to create it." },
@@ -76,6 +78,14 @@ const QUICK_ACTIONS: Record<EditorContext, QuickAction[]> = {
     { label: "Brainstorm ideas", icon: <Sparkles size={13} />, prompt: "Brainstorm creative ideas for: " },
     { label: "Explain concept", icon: <BookOpen size={13} />, prompt: "Explain this concept in simple terms: " },
     { label: "Create checklist", icon: <ListOrdered size={13} />, prompt: "Create a detailed checklist for: " },
+    { label: "Cross-doc search", icon: <FileText size={13} />, prompt: "Search and find information across all my documents about: " },
+    { label: "Translate text", icon: <Languages size={13} />, prompt: "Translate the following text. First tell me what language options are available (French, Spanish, German, Japanese, Chinese, Arabic, Hindi, Portuguese, Italian, Russian), then translate to the specified language: " },
+  ],
+  chat: [
+    { label: "Summarize chat", icon: <MessageSquare size={13} />, prompt: "Summarize the key points and action items from this conversation." },
+    { label: "Draft response", icon: <Reply size={13} />, prompt: "Draft a professional response to this message: " },
+    { label: "Meeting agenda", icon: <ListOrdered size={13} />, prompt: "Create a meeting agenda based on this conversation thread." },
+    { label: "Action items", icon: <Zap size={13} />, prompt: "Extract all action items and deadlines from this conversation." },
   ],
 };
 
@@ -86,6 +96,7 @@ const EDITOR_LABELS: Record<EditorContext, { label: string; icon: React.ReactNod
   pdf: { label: "PDF", icon: <FileImage size={14} /> },
     graphics: { label: "Graphics", icon: <Image size={14} /> },
   email: { label: "Email", icon: <Mail size={14} /> },
+  chat: { label: "Chat", icon: <MessageSquare size={14} /> },
   general: { label: "General", icon: <Sparkles size={14} /> },
 };
 
@@ -107,6 +118,7 @@ function getEditorContext(pathname: string): EditorContext {
   if (pathname.startsWith("/pdf")) return "pdf";
     if (pathname.startsWith("/graphics")) return "graphics";
   if (pathname.startsWith("/email")) return "email";
+  if (pathname.startsWith("/chat")) return "chat";
   return "general";
 }
 
@@ -129,8 +141,10 @@ function getSystemPrompt(ctx: EditorContext): string {
       return `${base} You are currently assisting with the Graphics Editor. Help with design layouts, color palettes, image generation from prompts, logo design, visual effects, typography, and design critique. When suggesting designs, be specific about colors, dimensions, and composition.`;
     case "email":
       return `${base} You are currently assisting with the Email Client. Help with composing emails, improving tone, drafting replies, writing subject lines, summarizing threads, and email etiquette. Be concise and professional.`;
+    case "chat":
+      return `${base} You are currently assisting with the Chat Engine. Help with summarizing conversations, drafting professional responses, extracting action items, creating meeting agendas, and improving communication clarity.`;
     default:
-      return base;
+      return `${base} You can help with cross-document search, translation (French, Spanish, German, Japanese, Chinese, Arabic, Hindi, Portuguese, Italian, Russian), grammar checking, style analysis, and general writing assistance.`;
   }
 }
 
