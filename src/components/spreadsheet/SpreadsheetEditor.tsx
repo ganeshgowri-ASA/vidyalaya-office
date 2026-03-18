@@ -56,6 +56,14 @@ import { ImportDialog } from "@/components/shared/import-dialog";
 import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
 import { ExportManager, type ExportFormat } from "@/lib/export-manager";
 import { Upload } from "lucide-react";
+import {
+  Table, Shield, Tag, CheckSquare, Crosshair,
+  Scissors, Globe, SortAsc, SortDesc, Split,
+  Lock, Play, Square, Calculator,
+  Columns, Rows,
+  FileCode, ClipboardPaste, Copy as CopyIcon,
+  Circle,
+} from "lucide-react";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const DEFAULT_ROWS = 50;
@@ -143,6 +151,76 @@ export default function SpreadsheetEditor() {
   const [resizeStartX, setResizeStartX] = useState(0);
   const [resizeStartWidth, setResizeStartWidth] = useState(DEFAULT_COL_WIDTH);
   const [zoom, setZoom] = useState(100);
+
+  // ─── New Feature State ─────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<"home"|"insert"|"formulas"|"data"|"review"|"view"|"pageLayout">("home");
+  // Pivot table
+  const [showPivotModal, setShowPivotModal] = useState(false);
+  const [pivotRowField, setPivotRowField] = useState("");
+  const [pivotColField, setPivotColField] = useState("");
+  const [pivotValueField, setPivotValueField] = useState("");
+  const [pivotAgg, setPivotAgg] = useState<"SUM"|"COUNT"|"AVERAGE"|"MAX"|"MIN">("SUM");
+  // Data validation
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationType, setValidationType] = useState<"list"|"number"|"date"|"custom">("list");
+  const [validationList, setValidationList] = useState("");
+  const [validationMin, setValidationMin] = useState("");
+  const [validationMax, setValidationMax] = useState("");
+  const [validationFormula, setValidationFormula] = useState("");
+  const [dataValidations, setDataValidations] = useState<Record<string, { type: string; listItems?: string; min?: string; max?: string; formula?: string }>>({});
+  // Named ranges
+  const [showNamedRangesModal, setShowNamedRangesModal] = useState(false);
+  const [namedRanges, setNamedRanges] = useState<Record<string, string>>({});
+  const [newRangeName, setNewRangeName] = useState("");
+  const [newRangeRef, setNewRangeRef] = useState("");
+  // Freeze panes
+  const [showFreezePanesModal, setShowFreezePanesModal] = useState(false);
+  const [freezeCustomRows, setFreezeCustomRows] = useState("1");
+  const [freezeCustomCols, setFreezeCustomCols] = useState("0");
+  // Goal seek
+  const [showGoalSeekModal, setShowGoalSeekModal] = useState(false);
+  const [gsTargetCell, setGsTargetCell] = useState("");
+  const [gsTargetValue, setGsTargetValue] = useState("");
+  const [gsInputCell, setGsInputCell] = useState("");
+  const [gsResult, setGsResult] = useState<string | null>(null);
+  // Sheet protection
+  const [showProtectionModal, setShowProtectionModal] = useState(false);
+  const [isProtected, setIsProtected] = useState(false);
+  const [protectionPassword, setProtectionPassword] = useState("");
+  const [protectionInput, setProtectionInput] = useState("");
+  // Context menu
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; ref: string } | null>(null);
+  // Custom number format
+  const [showCustomFormatModal, setShowCustomFormatModal] = useState(false);
+  const [customFormatInput, setCustomFormatInput] = useState("");
+  // Print area
+  const [showPrintAreaModal, setShowPrintAreaModal] = useState(false);
+  const [printArea, setPrintAreaState] = useState("");
+  // VLOOKUP helper
+  const [showVlookupHelper, setShowVlookupHelper] = useState(false);
+  const [vlLookupValue, setVlLookupValue] = useState("");
+  const [vlTableArray, setVlTableArray] = useState("");
+  const [vlColIndex, setVlColIndex] = useState("2");
+  const [vlExact, setVlExact] = useState(true);
+  const [vlUseXlookup, setVlUseXlookup] = useState(false);
+  // Split view
+  const [splitView, setSplitView] = useState(false);
+  const [splitDirection, setSplitDirection] = useState<"horizontal"|"vertical">("horizontal");
+  // Data import (Power Query style)
+  const [showDataImportModal, setShowDataImportModal] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState("");
+  // Macros
+  const [showMacroModal, setShowMacroModal] = useState(false);
+  const [isRecordingMacro, setIsRecordingMacro] = useState(false);
+  const [macroActions, setMacroActions] = useState<{ cell: string; value: string }[]>([]);
+  const [savedMacros, setSavedMacros] = useState<{ name: string; actions: { cell: string; value: string }[] }[]>([]);
+  const [macroName, setMacroName] = useState("");
+  // Clipboard (for cut/copy/paste)
+  const [clipboardCells, setClipboardCells] = useState<Record<string, { value: string; formula?: string; style?: CellStyle }>>({});
+  const [clipboardOrigin, setClipboardOrigin] = useState<{ start: string; end: string } | null>(null);
+  const [cutMode, setCutMode] = useState(false);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const formulaInputRef = useRef<HTMLInputElement>(null);
@@ -263,7 +341,9 @@ export default function SpreadsheetEditor() {
     }).length;
     const sum = vals.reduce((a, b) => a + b, 0);
     const avg = vals.length ? sum / vals.length : 0;
-    return { sum, avg, count, numCount: vals.length };
+    const min = vals.length ? Math.min(...vals) : 0;
+    const max = vals.length ? Math.max(...vals) : 0;
+    return { sum, avg, count, numCount: vals.length, min, max };
   }, [selectedRefs, activeSheet.cells]);
 
   // ─── Cell display value ────────────────────────────────────────────────
@@ -349,12 +429,28 @@ export default function SpreadsheetEditor() {
         selectedRefs.forEach((r) => updateCell(r, ""));
         return;
       }
+      // Ctrl shortcuts handled by window listeners set in effects below
+      if ((e.ctrlKey || e.metaKey) && (e.key === "c" || e.key === "x" || e.key === "v")) {
+        e.preventDefault(); return;
+      }
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         startEdit(selectedCell, e.key);
       }
     },
     [editingCell, selectedCell, selectedRefs, navigate, startEdit, updateCell]
+  );
+
+  // Ctrl+Shift+Enter in cell editor for array formulas
+  const handleCellKeyDownEnhanced = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter" && e.ctrlKey && e.shiftKey) { e.preventDefault(); commitArrayFormula(); return; }
+      if (e.key === "Enter") { e.preventDefault(); commitEdit(); navigate("down", false); }
+      else if (e.key === "Tab") { e.preventDefault(); commitEdit(); navigate("right", false); }
+      else if (e.key === "Escape") { e.preventDefault(); cancelEdit(); }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [commitEdit, cancelEdit, navigate]
   );
 
   // ─── Mouse handlers ────────────────────────────────────────────────────
@@ -774,6 +870,442 @@ export default function SpreadsheetEditor() {
     setShowCondFmt(false);
   };
 
+  // ─── Copy / Cut / Paste ────────────────────────────────────────────────
+  const copySelection = useCallback((cut = false) => {
+    const cells: Record<string, { value: string; formula?: string; style?: CellStyle }> = {};
+    for (const ref of selectedRefs) {
+      const c = activeSheet.cells[ref];
+      if (c) cells[ref] = { value: c.value ?? "", formula: c.formula, style: c.style };
+    }
+    setClipboardCells(cells);
+    setClipboardOrigin(selStart && selEnd ? { start: selStart, end: selEnd } : null);
+    setCutMode(cut);
+  }, [selectedRefs, activeSheet.cells, selStart, selEnd]);
+
+  const pasteSelection = useCallback(() => {
+    if (!Object.keys(clipboardCells).length) return;
+    const refs = Object.keys(clipboardCells);
+    const origins = refs.map((r) => parseCellRef(r)).filter(Boolean) as { col: number; row: number }[];
+    if (!origins.length) return;
+    const minOC = Math.min(...origins.map((o) => o.col));
+    const minOR = Math.min(...origins.map((o) => o.row));
+    const target = parseCellRef(selectedCell);
+    if (!target) return;
+    const dc = target.col - minOC;
+    const dr = target.row - minOR;
+    setSheets((prev) =>
+      prev.map((sheet) => {
+        if (sheet.id !== activeSheetId) return sheet;
+        let updated = { ...sheet.cells };
+        for (const [ref, cell] of Object.entries(clipboardCells)) {
+          const parsed = parseCellRef(ref);
+          if (!parsed) continue;
+          const newRef = cellRef(parsed.col + dc, parsed.row + dr).toUpperCase();
+          updated[newRef] = { value: cell.value, formula: cell.formula, style: cell.style };
+        }
+        if (cutMode) {
+          for (const ref of Object.keys(clipboardCells)) {
+            updated[ref] = { value: "" };
+          }
+        }
+        return { ...sheet, cells: recalculate(updated) };
+      })
+    );
+    if (cutMode) { setClipboardCells({}); setCutMode(false); }
+  }, [clipboardCells, selectedCell, activeSheetId, cutMode, recalculate]);
+
+  // Keyboard shortcuts (copy/paste) using effects, after the functions are defined
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!document.activeElement?.closest("[data-spreadsheet]")) return;
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === "c") { e.preventDefault(); copySelection(false); }
+        if (e.key === "x") { e.preventDefault(); copySelection(true); }
+        if (e.key === "v") { e.preventDefault(); pasteSelection(); }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [copySelection, pasteSelection]);
+
+  // ─── Insert / Delete Rows & Cols ───────────────────────────────────────
+  const insertRow = useCallback(() => {
+    const parsed = parseCellRef(selectedCell);
+    if (!parsed) return;
+    const row = parsed.row;
+    setSheets((prev) =>
+      prev.map((sheet) => {
+        if (sheet.id !== activeSheetId) return sheet;
+        const updated: Record<string, Cell> = {};
+        for (const [ref, cell] of Object.entries(sheet.cells)) {
+          const p = parseCellRef(ref);
+          if (!p) continue;
+          if (p.row >= row) {
+            updated[cellRef(p.col, p.row + 1).toUpperCase()] = cell;
+          } else {
+            updated[ref] = cell;
+          }
+        }
+        return { ...sheet, cells: updated };
+      })
+    );
+  }, [selectedCell, activeSheetId]);
+
+  const deleteRow = useCallback(() => {
+    const parsed = parseCellRef(selectedCell);
+    if (!parsed) return;
+    const row = parsed.row;
+    setSheets((prev) =>
+      prev.map((sheet) => {
+        if (sheet.id !== activeSheetId) return sheet;
+        const updated: Record<string, Cell> = {};
+        for (const [ref, cell] of Object.entries(sheet.cells)) {
+          const p = parseCellRef(ref);
+          if (!p || p.row === row) continue;
+          if (p.row > row) {
+            updated[cellRef(p.col, p.row - 1).toUpperCase()] = cell;
+          } else {
+            updated[ref] = cell;
+          }
+        }
+        return { ...sheet, cells: updated };
+      })
+    );
+  }, [selectedCell, activeSheetId]);
+
+  const insertColumn = useCallback(() => {
+    const parsed = parseCellRef(selectedCell);
+    if (!parsed) return;
+    const col = parsed.col;
+    setSheets((prev) =>
+      prev.map((sheet) => {
+        if (sheet.id !== activeSheetId) return sheet;
+        const updated: Record<string, Cell> = {};
+        for (const [ref, cell] of Object.entries(sheet.cells)) {
+          const p = parseCellRef(ref);
+          if (!p) continue;
+          if (p.col >= col) {
+            updated[cellRef(p.col + 1, p.row).toUpperCase()] = cell;
+          } else {
+            updated[ref] = cell;
+          }
+        }
+        return { ...sheet, cells: updated };
+      })
+    );
+  }, [selectedCell, activeSheetId]);
+
+  const deleteColumn = useCallback(() => {
+    const parsed = parseCellRef(selectedCell);
+    if (!parsed) return;
+    const col = parsed.col;
+    setSheets((prev) =>
+      prev.map((sheet) => {
+        if (sheet.id !== activeSheetId) return sheet;
+        const updated: Record<string, Cell> = {};
+        for (const [ref, cell] of Object.entries(sheet.cells)) {
+          const p = parseCellRef(ref);
+          if (!p || p.col === col) continue;
+          if (p.col > col) {
+            updated[cellRef(p.col - 1, p.row).toUpperCase()] = cell;
+          } else {
+            updated[ref] = cell;
+          }
+        }
+        return { ...sheet, cells: updated };
+      })
+    );
+  }, [selectedCell, activeSheetId]);
+
+  // ─── Sort ──────────────────────────────────────────────────────────────
+  const sortBySelectedColumn = useCallback((asc: boolean) => {
+    if (!selStart || !selEnd) return;
+    const s = parseCellRef(selStart);
+    const e = parseCellRef(selEnd);
+    if (!s || !e) return;
+    const minR = Math.min(s.row, e.row);
+    const maxR = Math.max(s.row, e.row);
+    const col = s.col;
+    const rows: { rowIdx: number; cells: Record<number, Cell> }[] = [];
+    const minC = Math.min(s.col, e.col);
+    const maxC = Math.max(s.col, e.col);
+    for (let r = minR; r <= maxR; r++) {
+      const rowCells: Record<number, Cell> = {};
+      for (let c = minC; c <= maxC; c++) {
+        rowCells[c] = activeSheet.cells[cellRef(c, r)] ?? { value: "" };
+      }
+      rows.push({ rowIdx: r, cells: rowCells });
+    }
+    rows.sort((a, b) => {
+      const va = a.cells[col]?.value ?? "";
+      const vb = b.cells[col]?.value ?? "";
+      const na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+      return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    setSheets((prev) =>
+      prev.map((sheet) => {
+        if (sheet.id !== activeSheetId) return sheet;
+        const updated = { ...sheet.cells };
+        rows.forEach((row, i) => {
+          for (let c = minC; c <= maxC; c++) {
+            updated[cellRef(c, minR + i).toUpperCase()] = row.cells[c] ?? { value: "" };
+          }
+        });
+        return { ...sheet, cells: updated };
+      })
+    );
+  }, [selStart, selEnd, activeSheet.cells, activeSheetId]);
+
+  // ─── Data Validation ───────────────────────────────────────────────────
+  const applyDataValidation = useCallback(() => {
+    const rule = { type: validationType, listItems: validationList, min: validationMin, max: validationMax, formula: validationFormula };
+    const newV = { ...dataValidations };
+    for (const ref of selectedRefs) newV[ref.toUpperCase()] = rule;
+    setDataValidations(newV);
+    setShowValidationModal(false);
+  }, [validationType, validationList, validationMin, validationMax, validationFormula, selectedRefs, dataValidations]);
+
+  const getValidationForCell = useCallback((ref: string) => {
+    return dataValidations[ref.toUpperCase()] ?? null;
+  }, [dataValidations]);
+
+  const validateCellInput = useCallback((ref: string, value: string): boolean => {
+    const rule = getValidationForCell(ref);
+    if (!rule) return true;
+    if (rule.type === "list" && rule.listItems) {
+      const items = rule.listItems.split(",").map((s) => s.trim());
+      return items.includes(value.trim());
+    }
+    if (rule.type === "number") {
+      const n = parseFloat(value);
+      if (isNaN(n)) return false;
+      if (rule.min && n < parseFloat(rule.min)) return false;
+      if (rule.max && n > parseFloat(rule.max)) return false;
+    }
+    return true;
+  }, [getValidationForCell]);
+
+  // ─── Named Ranges ──────────────────────────────────────────────────────
+  const addNamedRange = useCallback(() => {
+    if (!newRangeName.trim() || !newRangeRef.trim()) return;
+    setNamedRanges((prev) => ({ ...prev, [newRangeName.trim().toUpperCase()]: newRangeRef.trim().toUpperCase() }));
+    setNewRangeName(""); setNewRangeRef("");
+  }, [newRangeName, newRangeRef]);
+
+  const deleteNamedRange = useCallback((name: string) => {
+    setNamedRanges((prev) => { const n = { ...prev }; delete n[name]; return n; });
+  }, []);
+
+  // ─── Goal Seek ─────────────────────────────────────────────────────────
+  const runGoalSeek = useCallback(() => {
+    const target = parseCellRef(gsTargetCell);
+    const input = parseCellRef(gsInputCell);
+    if (!target || !input) { setGsResult("Invalid cell references"); return; }
+    const targetVal = parseFloat(gsTargetValue);
+    if (isNaN(targetVal)) { setGsResult("Invalid target value"); return; }
+    // Newton's method approximation
+    let x = parseFloat(activeSheet.cells[gsInputCell.toUpperCase()]?.value ?? "0") || 0;
+    for (let i = 0; i < 100; i++) {
+      const testCells = {
+        ...activeSheet.cells,
+        [gsInputCell.toUpperCase()]: { value: String(x) },
+      };
+      const result = recalculate(testCells);
+      const fx = parseFloat(String(result[gsTargetCell.toUpperCase()]?.computed ?? result[gsTargetCell.toUpperCase()]?.value ?? "0")) - targetVal;
+      if (Math.abs(fx) < 0.0001) break;
+      const dx = 0.001 * (Math.abs(x) + 1);
+      const testCells2 = { ...activeSheet.cells, [gsInputCell.toUpperCase()]: { value: String(x + dx) } };
+      const result2 = recalculate(testCells2);
+      const fx2 = parseFloat(String(result2[gsTargetCell.toUpperCase()]?.computed ?? result2[gsTargetCell.toUpperCase()]?.value ?? "0")) - targetVal;
+      const deriv = (fx2 - fx) / dx;
+      if (Math.abs(deriv) < 1e-10) break;
+      x = x - fx / deriv;
+    }
+    setGsResult(x.toFixed(6));
+  }, [gsTargetCell, gsInputCell, gsTargetValue, activeSheet.cells, recalculate]);
+
+  const applyGoalSeekResult = useCallback(() => {
+    if (!gsResult || !gsInputCell) return;
+    updateCell(gsInputCell.toUpperCase(), gsResult);
+    setShowGoalSeekModal(false);
+    setGsResult(null);
+  }, [gsResult, gsInputCell, updateCell]);
+
+  // ─── Sheet Protection ──────────────────────────────────────────────────
+  const toggleProtection = useCallback(() => {
+    if (isProtected) {
+      if (protectionInput !== protectionPassword) { alert("Incorrect password"); return; }
+      setIsProtected(false); setProtectionInput("");
+    } else {
+      setIsProtected(true);
+      setProtectionPassword(protectionInput || "");
+      setProtectionInput("");
+    }
+    setShowProtectionModal(false);
+  }, [isProtected, protectionPassword, protectionInput]);
+
+  // ─── Array Formulas (Ctrl+Shift+Enter) ────────────────────────────────
+  const commitArrayFormula = useCallback(() => {
+    if (editingCell && editValue.startsWith("=")) {
+      updateCell(editingCell, `{${editValue}}`);
+      setEditingCell(null);
+    }
+  }, [editingCell, editValue, updateCell]);
+
+  // ─── VLOOKUP Helper ────────────────────────────────────────────────────
+  const buildVlookupFormula = useCallback(() => {
+    if (vlUseXlookup) {
+      return `=XLOOKUP(${vlLookupValue},${vlTableArray ? vlTableArray.split(":")[0] + ":" + vlTableArray.split(":")[0] : "A:A"},${vlTableArray || "A:B"})`;
+    }
+    return `=VLOOKUP(${vlLookupValue},${vlTableArray},${vlColIndex},${vlExact ? "FALSE" : "TRUE"})`;
+  }, [vlLookupValue, vlTableArray, vlColIndex, vlExact, vlUseXlookup]);
+
+  const insertVlookup = useCallback(() => {
+    const formula = buildVlookupFormula();
+    updateCell(selectedCell, formula);
+    setShowVlookupHelper(false);
+  }, [buildVlookupFormula, selectedCell, updateCell]);
+
+  // ─── Macros ────────────────────────────────────────────────────────────
+  const startRecording = useCallback(() => {
+    setMacroActions([]);
+    setIsRecordingMacro(true);
+    setShowMacroModal(false);
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    setIsRecordingMacro(false);
+    setShowMacroModal(true);
+  }, []);
+
+  const saveMacro = useCallback(() => {
+    if (!macroName.trim() || !macroActions.length) return;
+    setSavedMacros((prev) => [...prev, { name: macroName.trim(), actions: macroActions }]);
+    setMacroName(""); setMacroActions([]); setShowMacroModal(false);
+  }, [macroName, macroActions]);
+
+  const playMacro = useCallback((macro: { name: string; actions: { cell: string; value: string }[] }) => {
+    macro.actions.forEach(({ cell, value }) => updateCell(cell, value));
+    setShowMacroModal(false);
+  }, [updateCell]);
+
+  // Intercept updateCell to record macro actions
+  const updateCellWithMacro = useCallback((ref: string, value: string) => {
+    if (isRecordingMacro) {
+      setMacroActions((prev) => [...prev, { cell: ref.toUpperCase(), value }]);
+    }
+    updateCell(ref, value);
+  }, [isRecordingMacro, updateCell]);
+
+  // ─── Power Query Data Import ───────────────────────────────────────────
+  const importFromUrl = useCallback(async () => {
+    if (!importUrl.trim()) return;
+    setImportLoading(true);
+    setImportError("");
+    try {
+      const res = await fetch(`/api/proxy?url=${encodeURIComponent(importUrl)}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      const text = await res.text();
+      let rows: string[][] = [];
+      // Try JSON
+      try {
+        const json = JSON.parse(text);
+        const arr = Array.isArray(json) ? json : json.data ?? json.results ?? json.items ?? [];
+        if (arr.length > 0) {
+          const keys = Object.keys(arr[0]);
+          rows = [keys, ...arr.map((item: Record<string, unknown>) => keys.map((k) => String(item[k] ?? "")))];
+        }
+      } catch {
+        // Try CSV
+        rows = text.split("\n").map((line) => line.split(",").map((v) => v.trim().replace(/^"|"$/g, "")));
+      }
+      if (rows.length === 0) { setImportError("No data found in response"); return; }
+      setSheets((prev) =>
+        prev.map((sheet) => {
+          if (sheet.id !== activeSheetId) return sheet;
+          const newCells: Record<string, Cell> = { ...sheet.cells };
+          rows.forEach((row, ri) => row.forEach((val, ci) => {
+            if (val) newCells[cellRef(ci, ri).toUpperCase()] = { value: val };
+          }));
+          return { ...sheet, cells: newCells };
+        })
+      );
+      setShowDataImportModal(false);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportLoading(false);
+    }
+  }, [importUrl, activeSheetId]);
+
+  // ─── Pivot Table ───────────────────────────────────────────────────────
+  const buildPivotTable = useCallback(() => {
+    if (!selStart || !selEnd) return;
+    const s = parseCellRef(selStart);
+    const e = parseCellRef(selEnd);
+    if (!s || !e) return;
+    const minC = Math.min(s.col, e.col);
+    const maxC = Math.max(s.col, e.col);
+    const minR = Math.min(s.row, e.row);
+    const maxR = Math.max(s.row, e.row);
+    // Header row
+    const headers: Record<number, string> = {};
+    for (let c = minC; c <= maxC; c++) {
+      headers[c] = getCellDisplay(cellRef(c, minR));
+    }
+    const rowFieldIdx = Object.keys(headers).find((k) => headers[Number(k)] === pivotRowField);
+    const valFieldIdx = Object.keys(headers).find((k) => headers[Number(k)] === pivotValueField);
+    if (!rowFieldIdx || !valFieldIdx) { alert("Please select valid row and value fields"); return; }
+    const rIdx = parseInt(rowFieldIdx), vIdx = parseInt(valFieldIdx);
+    // Aggregate
+    const agg: Record<string, number[]> = {};
+    for (let r = minR + 1; r <= maxR; r++) {
+      const rowKey = getCellDisplay(cellRef(rIdx, r));
+      const val = parseFloat(getCellDisplay(cellRef(vIdx, r))) || 0;
+      if (!agg[rowKey]) agg[rowKey] = [];
+      agg[rowKey].push(val);
+    }
+    // Create pivot sheet
+    const pvId = generateId();
+    const pvName = `Pivot_${activeSheet.name}`;
+    const pvCells: Record<string, Cell> = {
+      A1: { value: pivotRowField, style: { bold: true } },
+      B1: { value: `${pivotAgg}(${pivotValueField})`, style: { bold: true } },
+    };
+    Object.entries(agg).forEach(([key, vals], i) => {
+      pvCells[`A${i + 2}`] = { value: key };
+      let result = 0;
+      if (pivotAgg === "SUM") result = vals.reduce((a, b) => a + b, 0);
+      else if (pivotAgg === "COUNT") result = vals.length;
+      else if (pivotAgg === "AVERAGE") result = vals.reduce((a, b) => a + b, 0) / vals.length;
+      else if (pivotAgg === "MAX") result = Math.max(...vals);
+      else if (pivotAgg === "MIN") result = Math.min(...vals);
+      pvCells[`B${i + 2}`] = { value: result.toFixed(2) };
+    });
+    const pvSheet = { ...createSheet(pvId, pvName), cells: pvCells };
+    setSheets((prev) => [...prev, pvSheet]);
+    setActiveSheetId(pvId);
+    setShowPivotModal(false);
+  }, [selStart, selEnd, pivotRowField, pivotValueField, pivotAgg, getCellDisplay, activeSheet.name, generateId]);
+
+  // Derived headers from selection for pivot modal
+  const selectionHeaders = useMemo(() => {
+    if (!selStart || !selEnd) return [];
+    const s = parseCellRef(selStart);
+    const e = parseCellRef(selEnd);
+    if (!s || !e) return [];
+    const minC = Math.min(s.col, e.col);
+    const maxC = Math.max(s.col, e.col);
+    const minR = Math.min(s.row, e.row);
+    const headers: string[] = [];
+    for (let c = minC; c <= maxC; c++) {
+      const h = getCellDisplay(cellRef(c, minR));
+      if (h) headers.push(h);
+    }
+    return headers;
+  }, [selStart, selEnd, getCellDisplay]);
+
   // ─── Chart drag ─────────────────────────────────────────────────────────
   const chartDragRef = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number } | null>(null);
 
@@ -838,166 +1370,201 @@ export default function SpreadsheetEditor() {
       }}
       tabIndex={0}
       onKeyDown={handleGridKeyDown}
+      data-spreadsheet="true"
     >
-      {/* ── Toolbar ─────────────────────────────────────────────────── */}
+      {/* ── Ribbon Tabs ─────────────────────────────────────────────── */}
+      <div style={{ display: "flex", background: "var(--card)", borderBottom: "1px solid var(--border)", paddingLeft: 8, gap: 0 }}>
+        {(["home","insert","formulas","data","review","view","pageLayout"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: "6px 14px",
+              fontSize: 12,
+              fontWeight: activeTab === tab ? 600 : 400,
+              background: "transparent",
+              border: "none",
+              borderBottom: activeTab === tab ? "2px solid var(--primary)" : "2px solid transparent",
+              color: activeTab === tab ? "var(--primary)" : "var(--muted-foreground)",
+              cursor: "pointer",
+              textTransform: "capitalize",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {tab === "pageLayout" ? "Page Layout" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Toolbar (tab content) ───────────────────────────────────── */}
       <div
         style={{
           display: "flex",
           flexWrap: "wrap",
           gap: "4px",
-          padding: "6px 8px",
+          padding: "5px 8px",
           borderBottom: "1px solid var(--border)",
           background: "var(--card)",
           alignItems: "center",
+          minHeight: 38,
         }}
       >
-        {/* File actions */}
-        <button style={toolbarBtnStyle()} onClick={() => setShowTemplates(true)}>
-          <FileSpreadsheet size={14} /> Templates
-        </button>
-        <button style={toolbarBtnStyle()} onClick={() => setShowImport(true)}>
-          <Upload size={14} /> Import
-        </button>
-        <ExportDropdown
-          documentType="spreadsheet"
-          onExport={handleExport}
-          onPrint={handleSpreadsheetPrint}
-          onPrintPreview={() => setShowPrintPreview(true)}
-          isExporting={isExporting}
-          exportProgress={exportProgress}
-        />
+        {/* ── HOME TAB ─────────────────────────────────────────────── */}
+        {activeTab === "home" && <>
+          <button style={toolbarBtnStyle()} onClick={() => setShowTemplates(true)}>
+            <FileSpreadsheet size={14} /> Templates
+          </button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle(primaryStyle.bold)} onClick={() => toggleStyle("bold", true)} title="Bold"><Bold size={14} /></button>
+          <button style={toolbarBtnStyle(primaryStyle.italic)} onClick={() => toggleStyle("italic", true)} title="Italic"><Italic size={14} /></button>
+          <button style={toolbarBtnStyle(primaryStyle.underline)} onClick={() => toggleStyle("underline", true)} title="Underline"><Underline size={14} /></button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle(primaryStyle.align === "left")} onClick={() => updateStyle(selectedRefs, { align: "left" })} title="Align Left"><AlignLeft size={14} /></button>
+          <button style={toolbarBtnStyle(primaryStyle.align === "center")} onClick={() => updateStyle(selectedRefs, { align: "center" })} title="Align Center"><AlignCenter size={14} /></button>
+          <button style={toolbarBtnStyle(primaryStyle.align === "right")} onClick={() => updateStyle(selectedRefs, { align: "right" })} title="Align Right"><AlignRight size={14} /></button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <select
+            style={{ ...inputStyle, height: 26 }}
+            value={primaryStyle.format ?? "general"}
+            onChange={(e) => updateStyle(selectedRefs, { format: e.target.value as CellStyle["format"] })}
+            title="Number Format"
+          >
+            <option value="general">General</option>
+            <option value="number">Number</option>
+            <option value="currency">Currency ($)</option>
+            <option value="percentage">Percentage (%)</option>
+            <option value="date">Date</option>
+          </select>
+          <button style={toolbarBtnStyle()} onClick={() => setShowCustomFormatModal(true)} title="Custom Format"><span style={{ fontSize: 14, fontWeight: 700 }}>#</span></button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, cursor: "pointer" }} title="Background Color">
+            <Palette size={14} /><span>BG</span>
+            <input type="color" value={primaryStyle.bgColor ?? "#ffffff"} onChange={(e) => updateStyle(selectedRefs, { bgColor: e.target.value })} style={{ width: 24, height: 20, border: "none", padding: 0, cursor: "pointer" }} />
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, cursor: "pointer" }} title="Text Color">
+            <span style={{ fontWeight: "bold", color: primaryStyle.textColor }}>A</span>
+            <input type="color" value={primaryStyle.textColor ?? "#000000"} onChange={(e) => updateStyle(selectedRefs, { textColor: e.target.value })} style={{ width: 24, height: 20, border: "none", padding: 0, cursor: "pointer" }} />
+          </label>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle()} onClick={() => updateStyle(selectedRefs, { borders: { top: true, right: true, bottom: true, left: true } })} title="All Borders">⊞</button>
+          <button style={toolbarBtnStyle()} onClick={() => updateStyle(selectedRefs, { borders: {} })} title="No Borders">□</button>
+          <button style={toolbarBtnStyle()} onClick={mergeCells} title="Merge Cells"><Merge size={14} /> Merge</button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle()} onClick={() => copySelection(false)} title="Copy"><CopyIcon size={14} /></button>
+          <button style={toolbarBtnStyle()} onClick={() => copySelection(true)} title="Cut"><Scissors size={14} /></button>
+          <button style={toolbarBtnStyle()} onClick={pasteSelection} title="Paste"><ClipboardPaste size={14} /></button>
+          <div style={{ flex: 1 }} />
+          <button style={toolbarBtnStyle(aiOpen)} onClick={() => setAiOpen((v) => !v)} title="AI Assistant">
+            <Sparkles size={14} /> AI
+          </button>
+        </>}
 
-        <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+        {/* ── INSERT TAB ───────────────────────────────────────────── */}
+        {activeTab === "insert" && <>
+          <button style={toolbarBtnStyle()} onClick={() => { setNewChartRange(selStart && selEnd ? `${selStart}:${selEnd}` : selectedCell); setShowChartModal(true); }} title="Insert Chart">
+            <BarChart2 size={14} /> Chart
+          </button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle()} onClick={insertRow} title="Insert Row"><Rows size={14} /> Insert Row</button>
+          <button style={toolbarBtnStyle()} onClick={deleteRow} title="Delete Row"><Rows size={14} /> Delete Row</button>
+          <button style={toolbarBtnStyle()} onClick={insertColumn} title="Insert Column"><Columns size={14} /> Insert Col</button>
+          <button style={toolbarBtnStyle()} onClick={deleteColumn} title="Delete Column"><Columns size={14} /> Delete Col</button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle()} onClick={() => setShowTemplates(true)}>
+            <FileSpreadsheet size={14} /> Templates
+          </button>
+        </>}
 
-        {/* Text formatting */}
-        <button style={toolbarBtnStyle(primaryStyle.bold)} onClick={() => toggleStyle("bold", true)} title="Bold">
-          <Bold size={14} />
-        </button>
-        <button style={toolbarBtnStyle(primaryStyle.italic)} onClick={() => toggleStyle("italic", true)} title="Italic">
-          <Italic size={14} />
-        </button>
-        <button style={toolbarBtnStyle(primaryStyle.underline)} onClick={() => toggleStyle("underline", true)} title="Underline">
-          <Underline size={14} />
-        </button>
-
-        <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
-
-        {/* Alignment */}
-        <button style={toolbarBtnStyle(primaryStyle.align === "left")} onClick={() => updateStyle(selectedRefs, { align: "left" })} title="Align Left">
-          <AlignLeft size={14} />
-        </button>
-        <button style={toolbarBtnStyle(primaryStyle.align === "center")} onClick={() => updateStyle(selectedRefs, { align: "center" })} title="Align Center">
-          <AlignCenter size={14} />
-        </button>
-        <button style={toolbarBtnStyle(primaryStyle.align === "right")} onClick={() => updateStyle(selectedRefs, { align: "right" })} title="Align Right">
-          <AlignRight size={14} />
-        </button>
-
-        <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
-
-        {/* Number format */}
-        <select
-          style={{ ...inputStyle, height: 26 }}
-          value={primaryStyle.format ?? "general"}
-          onChange={(e) => updateStyle(selectedRefs, { format: e.target.value as CellStyle["format"] })}
-        >
-          <option value="general">General</option>
-          <option value="number">Number</option>
-          <option value="currency">Currency</option>
-          <option value="percentage">Percentage</option>
-          <option value="date">Date</option>
-        </select>
-
-        <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
-
-        {/* Colors */}
-        <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, cursor: "pointer" }} title="Background Color">
-          <Palette size={14} />
-          <span>BG</span>
-          <input
-            type="color"
-            value={primaryStyle.bgColor ?? "#ffffff"}
-            onChange={(e) => updateStyle(selectedRefs, { bgColor: e.target.value })}
-            style={{ width: 24, height: 20, border: "none", padding: 0, cursor: "pointer" }}
-          />
-        </label>
-        <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, cursor: "pointer" }} title="Text Color">
-          <span style={{ fontWeight: "bold", color: primaryStyle.textColor }}>A</span>
-          <input
-            type="color"
-            value={primaryStyle.textColor ?? "#000000"}
-            onChange={(e) => updateStyle(selectedRefs, { textColor: e.target.value })}
-            style={{ width: 24, height: 20, border: "none", padding: 0, cursor: "pointer" }}
-          />
-        </label>
-
-        <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
-
-        {/* Borders */}
-        <button style={toolbarBtnStyle()} onClick={() => updateStyle(selectedRefs, { borders: { top: true, right: true, bottom: true, left: true } })} title="All Borders">
-          ⊞
-        </button>
-        <button style={toolbarBtnStyle()} onClick={() => updateStyle(selectedRefs, { borders: {} })} title="No Borders">
-          □
-        </button>
-
-        {/* Merge */}
-        <button style={toolbarBtnStyle()} onClick={mergeCells} title="Merge Cells">
-          <Merge size={14} /> Merge
-        </button>
-
-        {/* Freeze */}
-        <button style={toolbarBtnStyle(activeSheet.frozenRows > 0)} onClick={freezeTopRow} title="Freeze Top Row">
-          <Snowflake size={14} /> Freeze
-        </button>
-
-        <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
-
-        {/* Conditional Formatting */}
-        <button style={toolbarBtnStyle()} onClick={() => setShowCondFmt(true)} title="Conditional Formatting">
-          Cond. Fmt
-        </button>
-
-        {/* Chart */}
-        <button style={toolbarBtnStyle()} onClick={() => { setNewChartRange(selStart && selEnd ? `${selStart}:${selEnd}` : selectedCell); setShowChartModal(true); }} title="Insert Chart">
-          <BarChart2 size={14} /> Chart
-        </button>
-
-        <div style={{ flex: 1 }} />
-
-        {/* Zoom */}
-        <button style={toolbarBtnStyle()} onClick={() => setZoom((z) => Math.max(50, z - 10))}>
-          <ZoomOut size={14} />
-        </button>
-        <span style={{ fontSize: 12, minWidth: 36, textAlign: "center" }}>{zoom}%</span>
-        <button style={toolbarBtnStyle()} onClick={() => setZoom((z) => Math.min(200, z + 10))}>
-          <ZoomIn size={14} />
-        </button>
-
-        {/* Quick formulas */}
-        <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
-        {(["SUM", "AVG", "COUNT", "MAX", "MIN"] as const).map((fn) => (
-          <button
-            key={fn}
-            style={toolbarBtnStyle()}
-            onClick={() => {
+        {/* ── FORMULAS TAB ─────────────────────────────────────────── */}
+        {activeTab === "formulas" && <>
+          {(["SUM", "AVG", "COUNT", "MAX", "MIN"] as const).map((fn) => (
+            <button key={fn} style={toolbarBtnStyle()} onClick={() => {
               const range = selStart && selEnd ? `${selStart}:${selEnd}` : `${selectedCell}:${selectedCell}`;
               const fn2 = fn === "AVG" ? "AVERAGE" : fn;
               const next = parseCellRef(selectedCell);
               if (!next) return;
               const target = cellRef(next.col, next.row + 1);
-              updateCell(target, `=${fn2}(${range})`);
+              updateCellWithMacro(target, `=${fn2}(${range})`);
               setSelectedCell(target.toUpperCase());
-            }}
-          >
-            {fn}
+            }}>{fn}</button>
+          ))}
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle()} onClick={() => setShowNamedRangesModal(true)} title="Named Ranges"><Tag size={14} /> Named Ranges</button>
+          <button style={toolbarBtnStyle()} onClick={() => { setVlLookupValue(selectedCell); setVlTableArray(selStart && selEnd ? `${selStart}:${selEnd}` : ""); setShowVlookupHelper(true); }} title="VLOOKUP/XLOOKUP Helper">
+            <Calculator size={14} /> VLOOKUP
           </button>
-        ))}
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle()} onClick={() => {
+            if (editingCell && editValue.startsWith("=")) commitArrayFormula();
+            else alert("Select a cell with a formula and press F2 to enter edit mode, then use Ctrl+Shift+Enter for array formula.");
+          }} title="Array Formula (Ctrl+Shift+Enter)">
+            <FileCode size={14} /> Array
+          </button>
+        </>}
 
-        {/* AI */}
-        <button style={toolbarBtnStyle(aiOpen)} onClick={() => setAiOpen((v) => !v)} title="AI Assistant">
-          <Sparkles size={14} /> AI
-        </button>
+        {/* ── DATA TAB ─────────────────────────────────────────────── */}
+        {activeTab === "data" && <>
+          <button style={toolbarBtnStyle()} onClick={() => sortBySelectedColumn(true)} title="Sort Ascending"><SortAsc size={14} /> Sort A→Z</button>
+          <button style={toolbarBtnStyle()} onClick={() => sortBySelectedColumn(false)} title="Sort Descending"><SortDesc size={14} /> Sort Z→A</button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle()} onClick={() => setShowCondFmt(true)} title="Conditional Formatting">Cond. Fmt</button>
+          <button style={toolbarBtnStyle()} onClick={() => setShowValidationModal(true)} title="Data Validation"><CheckSquare size={14} /> Validation</button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle()} onClick={() => setShowPivotModal(true)} title="Pivot Table"><Table size={14} /> Pivot Table</button>
+          <button style={toolbarBtnStyle()} onClick={() => { setGsTargetCell(selectedCell); setShowGoalSeekModal(true); }} title="Goal Seek"><Crosshair size={14} /> Goal Seek</button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle()} onClick={() => setShowImport(true)}><Upload size={14} /> Import CSV/XLSX</button>
+          <ExportDropdown documentType="spreadsheet" onExport={handleExport} onPrint={handleSpreadsheetPrint} onPrintPreview={() => setShowPrintPreview(true)} isExporting={isExporting} exportProgress={exportProgress} />
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle()} onClick={() => setShowDataImportModal(true)} title="Import from URL / JSON"><Globe size={14} /> Web Import</button>
+        </>}
+
+        {/* ── REVIEW TAB ───────────────────────────────────────────── */}
+        {activeTab === "review" && <>
+          <button style={toolbarBtnStyle(isProtected)} onClick={() => setShowProtectionModal(true)} title="Sheet Protection">
+            {isProtected ? <Lock size={14} /> : <Shield size={14} />}
+            {isProtected ? " Protected" : " Protect Sheet"}
+          </button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle(isRecordingMacro)} onClick={isRecordingMacro ? stopRecording : () => setShowMacroModal(true)} title="Macros">
+            {isRecordingMacro ? <Square size={14} color="red" /> : <Play size={14} />}
+            {isRecordingMacro ? " Stop Recording" : " Macros"}
+          </button>
+        </>}
+
+        {/* ── VIEW TAB ─────────────────────────────────────────────── */}
+        {activeTab === "view" && <>
+          <button style={toolbarBtnStyle()} onClick={() => setZoom((z) => Math.max(50, z - 10))}><ZoomOut size={14} /></button>
+          <span style={{ fontSize: 12, minWidth: 36, textAlign: "center" }}>{zoom}%</span>
+          <button style={toolbarBtnStyle()} onClick={() => setZoom((z) => Math.min(200, z + 10))}><ZoomIn size={14} /></button>
+          <button style={toolbarBtnStyle()} onClick={() => setZoom(100)} title="Reset Zoom">100%</button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle(activeSheet.frozenRows > 0)} onClick={freezeTopRow} title="Freeze Top Row"><Snowflake size={14} /> Freeze Row</button>
+          <button style={toolbarBtnStyle()} onClick={() => setShowFreezePanesModal(true)} title="Freeze Panes"><Snowflake size={14} /> Freeze Panes…</button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button style={toolbarBtnStyle(splitView)} onClick={() => setSplitView((v) => !v)} title="Split View"><Split size={14} /> Split</button>
+          {splitView && (
+            <select style={{ ...inputStyle, height: 26 }} value={splitDirection} onChange={(e) => setSplitDirection(e.target.value as "horizontal"|"vertical")}>
+              <option value="horizontal">Horizontal</option>
+              <option value="vertical">Vertical</option>
+            </select>
+          )}
+        </>}
+
+        {/* ── PAGE LAYOUT TAB ──────────────────────────────────────── */}
+        {activeTab === "pageLayout" && <>
+          <button style={toolbarBtnStyle()} onClick={() => { setPrintAreaState(selStart && selEnd ? `${selStart}:${selEnd}` : selectedCell); setShowPrintAreaModal(true); }} title="Set Print Area">
+            <Printer size={14} /> Print Area
+          </button>
+          <button style={toolbarBtnStyle()} onClick={() => setShowPrintPreview(true)} title="Print Preview"><Printer size={14} /> Preview</button>
+          <button style={toolbarBtnStyle()} onClick={handleSpreadsheetPrint} title="Print"><Download size={14} /> Print</button>
+          {printArea && (
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)", marginLeft: 8 }}>
+              Print area: {printArea}
+              <button onClick={() => setPrintAreaState("")} style={{ marginLeft: 4, background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)" }}>×</button>
+            </span>
+          )}
+        </>}
       </div>
 
       {/* ── Formula Bar ────────────────────────────────────────────── */}
@@ -1159,6 +1726,7 @@ export default function SpreadsheetEditor() {
                           onMouseDown={(e) => handleCellMouseDown(ref, e)}
                           onMouseEnter={() => handleCellMouseEnter(ref)}
                           onDoubleClick={() => handleCellDoubleClick(ref)}
+                          onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, ref: ref.toUpperCase() }); }}
                           style={{
                             border: `1px solid ${isPrimary ? "#2563eb" : isSel ? "#93c5fd" : "var(--border)"}`,
                             outline: isPrimary ? "2px solid #2563eb" : "none",
@@ -1195,7 +1763,7 @@ export default function SpreadsheetEditor() {
                               autoFocus
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleCellKeyDown}
+                              onKeyDown={handleCellKeyDownEnhanced}
                               onBlur={commitEdit}
                               style={{
                                 width: "100%",
@@ -1459,13 +2027,18 @@ export default function SpreadsheetEditor() {
         <span>Cells: {statusStats.count}</span>
         {statusStats.numCount > 0 && (
           <>
-            <span>Sum: {statusStats.sum.toFixed(2)}</span>
-            <span>Avg: {statusStats.avg.toFixed(2)}</span>
+            <span>Sum: {statusStats.sum.toLocaleString("en-US", { maximumFractionDigits: 4 })}</span>
+            <span>Avg: {statusStats.avg.toLocaleString("en-US", { maximumFractionDigits: 4 })}</span>
+            <span>Min: {statusStats.min.toLocaleString("en-US", { maximumFractionDigits: 4 })}</span>
+            <span>Max: {statusStats.max.toLocaleString("en-US", { maximumFractionDigits: 4 })}</span>
             <span>Count: {statusStats.numCount}</span>
           </>
         )}
+        {isRecordingMacro && <span style={{ color: "#ef4444", fontWeight: 600 }}>● Recording</span>}
+        {isProtected && <span style={{ color: "#f59e0b" }}>🔒 Protected</span>}
+        {printArea && <span>Print Area: {printArea}</span>}
         <span style={{ marginLeft: "auto" }}>
-          {activeSheet.name} · {DEFAULT_ROWS} rows × {DEFAULT_COLS} cols
+          {activeSheet.name} · {DEFAULT_ROWS} rows × {DEFAULT_COLS} cols · {zoom}%
         </span>
       </div>
 
@@ -1652,6 +2225,509 @@ export default function SpreadsheetEditor() {
         message={exportProgress.message}
         onClose={() => setIsExporting(false)}
       />
+
+      {/* ── Context Menu ─────────────────────────────────────────────── */}
+      {contextMenu && (
+        <div
+          style={{
+            position: "fixed",
+            left: contextMenu.x,
+            top: contextMenu.y,
+            zIndex: 2000,
+            background: "var(--card)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+            minWidth: 200,
+            padding: "4px 0",
+          }}
+          onMouseLeave={() => setContextMenu(null)}
+        >
+          {[
+            { label: "Copy", icon: <CopyIcon size={13}/>, action: () => { copySelection(false); setContextMenu(null); } },
+            { label: "Cut", icon: <Scissors size={13}/>, action: () => { copySelection(true); setContextMenu(null); } },
+            { label: "Paste", icon: <ClipboardPaste size={13}/>, action: () => { pasteSelection(); setContextMenu(null); } },
+            null,
+            { label: "Insert Row Above", icon: <Rows size={13}/>, action: () => { insertRow(); setContextMenu(null); } },
+            { label: "Delete Row", icon: <Rows size={13}/>, action: () => { deleteRow(); setContextMenu(null); } },
+            { label: "Insert Column Left", icon: <Columns size={13}/>, action: () => { insertColumn(); setContextMenu(null); } },
+            { label: "Delete Column", icon: <Columns size={13}/>, action: () => { deleteColumn(); setContextMenu(null); } },
+            null,
+            { label: "Sort A → Z", icon: <SortAsc size={13}/>, action: () => { sortBySelectedColumn(true); setContextMenu(null); } },
+            { label: "Sort Z → A", icon: <SortDesc size={13}/>, action: () => { sortBySelectedColumn(false); setContextMenu(null); } },
+            null,
+            { label: "Format Cells…", icon: <Palette size={13}/>, action: () => { setShowCustomFormatModal(true); setContextMenu(null); } },
+            { label: "Data Validation…", icon: <CheckSquare size={13}/>, action: () => { setShowValidationModal(true); setContextMenu(null); } },
+            null,
+            { label: "Clear Cell", icon: <X size={13}/>, action: () => { selectedRefs.forEach((r) => updateCell(r, "")); setContextMenu(null); } },
+          ].map((item, idx) =>
+            item === null ? (
+              <div key={idx} style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
+            ) : (
+              <button
+                key={item.label}
+                onClick={item.action}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  width: "100%",
+                  padding: "7px 14px",
+                  background: "none",
+                  border: "none",
+                  color: "var(--foreground)",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "var(--sidebar-accent)")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "none")}
+              >
+                {item.icon}{item.label}
+              </button>
+            )
+          )}
+        </div>
+      )}
+
+      {/* ── Pivot Table Modal ─────────────────────────────────────────── */}
+      {showPivotModal && (
+        <Modal title="Pivot Table Builder" onClose={() => setShowPivotModal(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted-foreground)", padding: "8px 12px", background: "var(--background)", borderRadius: 6 }}>
+              First select the data range (including headers) in the spreadsheet, then configure the pivot table below.
+              {selStart && selEnd ? ` Selected: ${selStart}:${selEnd}` : " No range selected."}
+            </div>
+            {selectionHeaders.length > 0 ? (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Row Field</label>
+                    <select style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13 }} value={pivotRowField} onChange={(e) => setPivotRowField(e.target.value)}>
+                      <option value="">-- Select --</option>
+                      {selectionHeaders.map((h) => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Value Field</label>
+                    <select style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13 }} value={pivotValueField} onChange={(e) => setPivotValueField(e.target.value)}>
+                      <option value="">-- Select --</option>
+                      {selectionHeaders.map((h) => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Aggregation</label>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {(["SUM","COUNT","AVERAGE","MAX","MIN"] as const).map((a) => (
+                      <button key={a} onClick={() => setPivotAgg(a)} style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid", borderColor: pivotAgg === a ? "var(--primary)" : "var(--border)", background: pivotAgg === a ? "var(--primary)" : "transparent", color: pivotAgg === a ? "var(--primary-foreground)" : "var(--foreground)", cursor: "pointer", fontSize: 12 }}>{a}</button>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={buildPivotTable} disabled={!pivotRowField || !pivotValueField} style={{ padding: "8px 20px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontWeight: 600, opacity: (!pivotRowField || !pivotValueField) ? 0.5 : 1 }}>
+                  <Table size={14} style={{ display: "inline", marginRight: 6 }} />
+                  Build Pivot Table (new sheet)
+                </button>
+              </>
+            ) : (
+              <div style={{ color: "var(--muted-foreground)", fontSize: 13 }}>Select a range with headers to enable pivot table builder.</div>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Data Validation Modal ─────────────────────────────────────── */}
+      {showValidationModal && (
+        <Modal title="Data Validation" onClose={() => setShowValidationModal(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Applying to: {selectedRefs.length} cell(s) — {selectedCell}</div>
+            <div>
+              <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Validation Type</label>
+              <select style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13 }} value={validationType} onChange={(e) => setValidationType(e.target.value as typeof validationType)}>
+                <option value="list">List (Dropdown)</option>
+                <option value="number">Number Range</option>
+                <option value="date">Date Range</option>
+                <option value="custom">Custom Formula</option>
+              </select>
+            </div>
+            {validationType === "list" && (
+              <div>
+                <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Allowed values (comma-separated)</label>
+                <input value={validationList} onChange={(e) => setValidationList(e.target.value)} placeholder="Yes,No,Maybe" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, boxSizing: "border-box" }} />
+              </div>
+            )}
+            {validationType === "number" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Minimum</label>
+                  <input value={validationMin} onChange={(e) => setValidationMin(e.target.value)} type="number" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, boxSizing: "border-box" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Maximum</label>
+                  <input value={validationMax} onChange={(e) => setValidationMax(e.target.value)} type="number" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, boxSizing: "border-box" }} />
+                </div>
+              </div>
+            )}
+            {validationType === "date" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Start Date</label>
+                  <input value={validationMin} onChange={(e) => setValidationMin(e.target.value)} type="date" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, boxSizing: "border-box" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>End Date</label>
+                  <input value={validationMax} onChange={(e) => setValidationMax(e.target.value)} type="date" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, boxSizing: "border-box" }} />
+                </div>
+              </div>
+            )}
+            {validationType === "custom" && (
+              <div>
+                <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Custom Formula</label>
+                <input value={validationFormula} onChange={(e) => setValidationFormula(e.target.value)} placeholder="=A1>0" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={applyDataValidation} style={{ flex: 1, padding: "8px 20px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontWeight: 600 }}>Apply Validation</button>
+              <button onClick={() => { const nv = { ...dataValidations }; selectedRefs.forEach((r) => delete nv[r.toUpperCase()]); setDataValidations(nv); setShowValidationModal(false); }} style={{ padding: "8px 20px", borderRadius: 6, background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border)", cursor: "pointer" }}>Clear Validation</button>
+            </div>
+            {Object.keys(dataValidations).length > 0 && (
+              <div style={{ fontSize: 12, color: "var(--muted-foreground)", borderTop: "1px solid var(--border)", paddingTop: 8 }}>
+                {Object.keys(dataValidations).length} cell(s) have validation rules
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Named Ranges Modal ────────────────────────────────────────── */}
+      {showNamedRangesModal && (
+        <Modal title="Named Ranges Manager" onClose={() => setShowNamedRangesModal(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={newRangeName} onChange={(e) => setNewRangeName(e.target.value.replace(/\s+/g,"_").toUpperCase())} placeholder="RANGE_NAME" style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, fontFamily: "monospace" }} />
+              <input value={newRangeRef} onChange={(e) => setNewRangeRef(e.target.value.toUpperCase())} placeholder="A1:B10" style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, fontFamily: "monospace" }} />
+              <button onClick={addNamedRange} style={{ padding: "6px 16px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontWeight: 600 }}>Add</button>
+            </div>
+            <button onClick={() => { if (selStart && selEnd) { setNewRangeRef(`${selStart}:${selEnd}`); } else { setNewRangeRef(selectedCell); } }} style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "transparent", color: "var(--foreground)", fontSize: 12, cursor: "pointer" }}>
+              Use current selection ({selStart && selEnd ? `${selStart}:${selEnd}` : selectedCell})
+            </button>
+            <div style={{ maxHeight: 300, overflowY: "auto" }}>
+              {Object.keys(namedRanges).length === 0 ? (
+                <div style={{ color: "var(--muted-foreground)", fontSize: 13, textAlign: "center", padding: 20 }}>No named ranges defined yet.</div>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "var(--background)" }}>
+                      <th style={{ padding: "6px 10px", textAlign: "left", borderBottom: "1px solid var(--border)", color: "var(--muted-foreground)", fontWeight: 600 }}>Name</th>
+                      <th style={{ padding: "6px 10px", textAlign: "left", borderBottom: "1px solid var(--border)", color: "var(--muted-foreground)", fontWeight: 600 }}>Reference</th>
+                      <th style={{ width: 60, borderBottom: "1px solid var(--border)" }} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(namedRanges).map(([name, ref]) => (
+                      <tr key={name}>
+                        <td style={{ padding: "6px 10px", fontFamily: "monospace", fontWeight: 600 }}>{name}</td>
+                        <td style={{ padding: "6px 10px", fontFamily: "monospace", color: "var(--primary)" }}>{ref}</td>
+                        <td style={{ padding: "6px 10px", textAlign: "right" }}>
+                          <button onClick={() => deleteNamedRange(name)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)" }}><X size={14} /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Freeze Panes Modal ────────────────────────────────────────── */}
+      {showFreezePanesModal && (
+        <Modal title="Freeze Panes" onClose={() => setShowFreezePanesModal(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[
+                { label: "Freeze First Row", action: () => { setSheets((p) => p.map((s) => s.id === activeSheetId ? { ...s, frozenRows: 1, frozenCols: 0 } : s)); setShowFreezePanesModal(false); } },
+                { label: "Freeze First Column", action: () => { setSheets((p) => p.map((s) => s.id === activeSheetId ? { ...s, frozenRows: 0, frozenCols: 1 } : s)); setShowFreezePanesModal(false); } },
+                { label: "Unfreeze All", action: () => { setSheets((p) => p.map((s) => s.id === activeSheetId ? { ...s, frozenRows: 0, frozenCols: 0 } : s)); setShowFreezePanesModal(false); } },
+              ].map((btn) => (
+                <button key={btn.label} onClick={btn.action} style={{ flex: 1, padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", cursor: "pointer", fontSize: 13 }}>{btn.label}</button>
+              ))}
+            </div>
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+              <div style={{ fontSize: 12, marginBottom: 8, color: "var(--muted-foreground)", fontWeight: 600 }}>Custom Freeze Point</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Freeze Rows</label>
+                  <input type="number" min={0} max={20} value={freezeCustomRows} onChange={(e) => setFreezeCustomRows(e.target.value)} style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, boxSizing: "border-box" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Freeze Columns</label>
+                  <input type="number" min={0} max={26} value={freezeCustomCols} onChange={(e) => setFreezeCustomCols(e.target.value)} style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, boxSizing: "border-box" }} />
+                </div>
+              </div>
+              <button onClick={() => { setSheets((p) => p.map((s) => s.id === activeSheetId ? { ...s, frozenRows: parseInt(freezeCustomRows)||0, frozenCols: parseInt(freezeCustomCols)||0 } : s)); setShowFreezePanesModal(false); }} style={{ marginTop: 10, width: "100%", padding: "8px 20px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontWeight: 600 }}>
+                Apply Custom Freeze
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: "var(--muted-foreground)", textAlign: "center" }}>
+              Current: {activeSheet.frozenRows} row(s), {activeSheet.frozenCols} col(s) frozen
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Goal Seek Modal ───────────────────────────────────────────── */}
+      {showGoalSeekModal && (
+        <Modal title="Goal Seek / What-If Analysis" onClose={() => { setShowGoalSeekModal(false); setGsResult(null); }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted-foreground)", padding: "8px 12px", background: "var(--background)", borderRadius: 6 }}>
+              Find the input value needed in a cell to achieve a target result in a formula cell.
+            </div>
+            <div>
+              <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Set Cell (formula cell, e.g. B10)</label>
+              <input value={gsTargetCell} onChange={(e) => setGsTargetCell(e.target.value.toUpperCase())} placeholder="B10" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>To Value (target)</label>
+              <input value={gsTargetValue} onChange={(e) => setGsTargetValue(e.target.value)} type="number" placeholder="100" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>By Changing Cell (input cell, e.g. A1)</label>
+              <input value={gsInputCell} onChange={(e) => setGsInputCell(e.target.value.toUpperCase())} placeholder="A1" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
+            </div>
+            <button onClick={runGoalSeek} style={{ padding: "8px 20px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontWeight: 600 }}>
+              <Crosshair size={14} style={{ display: "inline", marginRight: 6 }} />Solve
+            </button>
+            {gsResult !== null && (
+              <div style={{ padding: "12px 16px", borderRadius: 8, background: "var(--background)", border: "1px solid var(--border)" }}>
+                <div style={{ fontSize: 13, marginBottom: 8 }}>
+                  Result: Set <strong>{gsInputCell}</strong> to <strong>{gsResult}</strong>
+                </div>
+                <button onClick={applyGoalSeekResult} style={{ padding: "6px 16px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontSize: 12 }}>Apply to Cell</button>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Sheet Protection Modal ────────────────────────────────────── */}
+      {showProtectionModal && (
+        <Modal title={isProtected ? "Unprotect Sheet" : "Protect Sheet"} onClose={() => setShowProtectionModal(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {isProtected ? (
+              <>
+                <div style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Enter the password to unprotect this sheet.</div>
+                <input type="password" value={protectionInput} onChange={(e) => setProtectionInput(e.target.value)} placeholder="Enter password" onKeyDown={(e) => e.key === "Enter" && toggleProtection()} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13 }} />
+                <button onClick={toggleProtection} style={{ padding: "8px 20px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontWeight: 600 }}>Unprotect Sheet</button>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Protect this sheet to prevent unauthorized editing. Set an optional password.</div>
+                <input type="password" value={protectionInput} onChange={(e) => setProtectionInput(e.target.value)} placeholder="Password (optional)" style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13 }} />
+                <button onClick={toggleProtection} style={{ padding: "8px 20px", borderRadius: 6, background: "#ef4444", color: "white", border: "none", cursor: "pointer", fontWeight: 600 }}>
+                  <Lock size={14} style={{ display: "inline", marginRight: 6 }} />Protect Sheet
+                </button>
+              </>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Custom Number Format Modal ────────────────────────────────── */}
+      {showCustomFormatModal && (
+        <Modal title="Custom Number Format" onClose={() => setShowCustomFormatModal(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Select a preset or enter a custom format for selected cells.</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {[
+                { label: "General", format: "general" },
+                { label: "Number (1,234.56)", format: "number" },
+                { label: "Currency ($1,234.56)", format: "currency" },
+                { label: "Percentage (12.3%)", format: "percentage" },
+                { label: "Date (MM/DD/YYYY)", format: "date" },
+                { label: "Scientific (1.23E+3)", format: "scientific" },
+                { label: "Accounting", format: "accounting" },
+                { label: "Fraction (1/2)", format: "fraction" },
+              ].map(({ label, format }) => (
+                <button key={format} onClick={() => { updateStyle(selectedRefs, { format: format as CellStyle["format"] }); setShowCustomFormatModal(false); }} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", cursor: "pointer", fontSize: 12, textAlign: "left" }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+              <label style={{ fontSize: 12, display: "block", marginBottom: 6, color: "var(--muted-foreground)" }}>Custom format string</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={customFormatInput} onChange={(e) => setCustomFormatInput(e.target.value)} placeholder="#,##0.00 or 0.00% or YYYY-MM-DD" style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, fontFamily: "monospace" }} />
+                <button onClick={() => { /* Custom format string stored, use general for now */ setShowCustomFormatModal(false); }} style={{ padding: "6px 16px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer" }}>Apply</button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Print Area Modal ──────────────────────────────────────────── */}
+      {showPrintAreaModal && (
+        <Modal title="Set Print Area" onClose={() => setShowPrintAreaModal(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Define the range to include when printing this sheet.</div>
+            <div>
+              <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Print Area Range (e.g. A1:H30)</label>
+              <input value={printArea} onChange={(e) => setPrintAreaState(e.target.value.toUpperCase())} placeholder="A1:Z50" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => { if (selStart && selEnd) setPrintAreaState(`${selStart}:${selEnd}`); }} style={{ flex: 1, padding: "7px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "transparent", color: "var(--foreground)", cursor: "pointer", fontSize: 12 }}>Use Selection</button>
+              <button onClick={() => setShowPrintAreaModal(false)} style={{ flex: 2, padding: "7px 12px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontWeight: 600 }}>Set Print Area</button>
+            </div>
+            {printArea && <div style={{ fontSize: 12, color: "var(--primary)" }}>Current print area: {printArea}</div>}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── VLOOKUP/XLOOKUP Helper Modal ──────────────────────────────── */}
+      {showVlookupHelper && (
+        <Modal title="VLOOKUP / XLOOKUP Formula Builder" onClose={() => setShowVlookupHelper(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <label style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Function:</label>
+              <button onClick={() => setVlUseXlookup(false)} style={{ padding: "5px 14px", borderRadius: 6, border: "1px solid", borderColor: !vlUseXlookup ? "var(--primary)" : "var(--border)", background: !vlUseXlookup ? "var(--primary)" : "transparent", color: !vlUseXlookup ? "var(--primary-foreground)" : "var(--foreground)", cursor: "pointer", fontSize: 12 }}>VLOOKUP</button>
+              <button onClick={() => setVlUseXlookup(true)} style={{ padding: "5px 14px", borderRadius: 6, border: "1px solid", borderColor: vlUseXlookup ? "var(--primary)" : "var(--border)", background: vlUseXlookup ? "var(--primary)" : "transparent", color: vlUseXlookup ? "var(--primary-foreground)" : "var(--foreground)", cursor: "pointer", fontSize: 12 }}>XLOOKUP</button>
+            </div>
+            <div>
+              <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Lookup Value (cell or value)</label>
+              <input value={vlLookupValue} onChange={(e) => setVlLookupValue(e.target.value.toUpperCase())} placeholder="A2" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Table Array (range, e.g. A1:D100)</label>
+              <input value={vlTableArray} onChange={(e) => setVlTableArray(e.target.value.toUpperCase())} placeholder="A1:D100" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
+            </div>
+            {!vlUseXlookup && (
+              <>
+                <div>
+                  <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Column Index (return column number)</label>
+                  <input value={vlColIndex} onChange={(e) => setVlColIndex(e.target.value)} type="number" min={1} style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, boxSizing: "border-box" }} />
+                </div>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                  <input type="checkbox" checked={vlExact} onChange={(e) => setVlExact(e.target.checked)} />
+                  Exact match (FALSE) — recommended
+                </label>
+              </>
+            )}
+            <div style={{ padding: "10px 12px", background: "var(--background)", borderRadius: 6, fontFamily: "monospace", fontSize: 13, border: "1px solid var(--border)", wordBreak: "break-all" }}>
+              {buildVlookupFormula()}
+            </div>
+            <button onClick={insertVlookup} style={{ padding: "8px 20px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontWeight: 600 }}>
+              Insert into {selectedCell}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Data Import Modal (Power Query style) ───────────────────── */}
+      {showDataImportModal && (
+        <Modal title="Import Data from URL / JSON / CSV" onClose={() => setShowDataImportModal(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--muted-foreground)", padding: "8px 12px", background: "var(--background)", borderRadius: 6 }}>
+              Enter a URL returning JSON (array of objects) or CSV. Data will be imported into the current sheet starting at A1.
+            </div>
+            <div>
+              <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Data URL</label>
+              <input value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="https://api.example.com/data.json" style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13, boxSizing: "border-box" }} />
+            </div>
+            {importError && <div style={{ padding: "8px 12px", borderRadius: 6, background: "#ef444420", border: "1px solid #ef4444", color: "#ef4444", fontSize: 12 }}>{importError}</div>}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={importFromUrl} disabled={importLoading || !importUrl.trim()} style={{ flex: 1, padding: "8px 20px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontWeight: 600, opacity: importLoading ? 0.7 : 1 }}>
+                <Globe size={14} style={{ display: "inline", marginRight: 6 }} />
+                {importLoading ? "Importing…" : "Import Data"}
+              </button>
+            </div>
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: "var(--muted-foreground)" }}>Or paste CSV / JSON directly:</div>
+              <textarea
+                placeholder={"Paste CSV or JSON here...\n\nCSV example:\nName,Value\nApple,10\nBanana,20\n\nJSON example:\n[{\"Name\":\"Apple\",\"Value\":10}]"}
+                style={{ width: "100%", height: 120, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 12, fontFamily: "monospace", resize: "vertical", boxSizing: "border-box" }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.ctrlKey) {
+                    const text = (e.target as HTMLTextAreaElement).value;
+                    if (!text.trim()) return;
+                    let rows: string[][] = [];
+                    try {
+                      const json = JSON.parse(text);
+                      const arr = Array.isArray(json) ? json : [];
+                      if (arr.length > 0) {
+                        const keys = Object.keys(arr[0]);
+                        rows = [keys, ...arr.map((item: Record<string, unknown>) => keys.map((k) => String(item[k] ?? "")))];
+                      }
+                    } catch {
+                      rows = text.split("\n").map((line) => line.split(",").map((v) => v.trim().replace(/^"|"$/g, "")));
+                    }
+                    setSheets((prev) => prev.map((sheet) => {
+                      if (sheet.id !== activeSheetId) return sheet;
+                      const newCells: Record<string, Cell> = { ...sheet.cells };
+                      rows.forEach((row, ri) => row.forEach((val, ci) => { if (val) newCells[cellRef(ci, ri).toUpperCase()] = { value: val }; }));
+                      return { ...sheet, cells: newCells };
+                    }));
+                    setShowDataImportModal(false);
+                  }
+                }}
+              />
+              <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 4 }}>Press Ctrl+Enter to import pasted data</div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Macro Recorder Modal ──────────────────────────────────────── */}
+      {showMacroModal && (
+        <Modal title="Macro Recorder" onClose={() => setShowMacroModal(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {!isRecordingMacro ? (
+                <button onClick={startRecording} style={{ flex: 1, padding: "8px 16px", borderRadius: 6, background: "#ef4444", color: "white", border: "none", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <Circle size={16} style={{ color: "#ef4444" }} /> Start Recording
+                </button>
+              ) : (
+                <button onClick={stopRecording} style={{ flex: 1, padding: "8px 16px", borderRadius: 6, background: "var(--card)", color: "var(--foreground)", border: "1px solid var(--border)", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <Square size={16} /> Stop Recording
+                </button>
+              )}
+            </div>
+            {macroActions.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: "var(--muted-foreground)" }}>Recorded Actions ({macroActions.length})</div>
+                <div style={{ maxHeight: 120, overflowY: "auto", background: "var(--background)", borderRadius: 6, padding: 8, fontFamily: "monospace", fontSize: 11 }}>
+                  {macroActions.map((a, i) => <div key={i}>{a.cell} = {a.value}</div>)}
+                </div>
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <input value={macroName} onChange={(e) => setMacroName(e.target.value)} placeholder="Macro name" style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--background)", color: "var(--foreground)", fontSize: 13 }} />
+                  <button onClick={saveMacro} style={{ padding: "6px 16px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer" }}>Save</button>
+                </div>
+              </div>
+            )}
+            {savedMacros.length > 0 && (
+              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: "var(--muted-foreground)" }}>Saved Macros</div>
+                {savedMacros.map((macro, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+                    <span style={{ flex: 1, fontSize: 13 }}>{macro.name} <span style={{ color: "var(--muted-foreground)", fontSize: 11 }}>({macro.actions.length} actions)</span></span>
+                    <button onClick={() => playMacro(macro)} style={{ padding: "4px 12px", borderRadius: 6, background: "var(--primary)", color: "var(--primary-foreground)", border: "none", cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
+                      <Play size={12} /> Run
+                    </button>
+                    <button onClick={() => setSavedMacros((p) => p.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)" }}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {savedMacros.length === 0 && macroActions.length === 0 && (
+              <div style={{ color: "var(--muted-foreground)", fontSize: 13, textAlign: "center", padding: "16px 0" }}>
+                Click &quot;Start Recording&quot; then make changes to the spreadsheet. Each cell edit will be recorded as a macro action.
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
