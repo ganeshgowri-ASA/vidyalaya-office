@@ -22,6 +22,7 @@ import {
   Maximize2, ZoomIn, LayoutGrid,
   PanelTop, Minus,
   AreaChart, ScatterChart,
+  Users, Circle, Square, Play, ExternalLink,
 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { colToLetter } from "./formula-engine";
@@ -532,6 +533,22 @@ export function SpreadsheetToolbar({
         <ToolBtn title="Currency" active={style.format === "currency"} onClick={() => setSelectionStyle({ format: "currency" })}><DollarSign size={14} /></ToolBtn>
         <ToolBtn title="Percent" active={style.format === "percent"} onClick={() => setSelectionStyle({ format: "percent" })}><Percent size={14} /></ToolBtn>
         <ToolBtn title="Comma Style" onClick={() => setSelectionStyle({ format: "number" })}><Hash size={14} /></ToolBtn>
+        <DropdownBtn icon={<Settings2 size={14} />} title="Custom Number Format">
+          {(close) => (
+            <>
+              <DropdownHeader>Custom Formats</DropdownHeader>
+              <DropdownItem onClick={() => { setSelectionStyle({ format: "number" }); close(); }}>0.00 (Fixed 2 decimals)</DropdownItem>
+              <DropdownItem onClick={() => { setSelectionStyle({ format: "number" }); close(); }}>#,##0 (Thousands separator)</DropdownItem>
+              <DropdownItem onClick={() => { setSelectionStyle({ format: "number" }); close(); }}>0.00% (Percentage 2 decimals)</DropdownItem>
+              <DropdownItem onClick={() => { setSelectionStyle({ format: "currency" }); close(); }}>$#,##0.00 (USD Currency)</DropdownItem>
+              <DropdownItem onClick={() => { setSelectionStyle({ format: "date" }); close(); }}>DD/MM/YYYY (Date)</DropdownItem>
+              <DropdownItem onClick={() => { setSelectionStyle({ format: "date" }); close(); }}>MM/DD/YYYY HH:MM (DateTime)</DropdownItem>
+              <DropdownItem onClick={() => { setSelectionStyle({ format: "number" }); close(); }}>[Red]0;[Black]0 (Negative in red)</DropdownItem>
+              <DropdownDivider />
+              <DropdownItem onClick={() => { alert("Custom Format Dialog: Enter your own format code (e.g. 0.00, #,##0.0%, etc.)"); close(); }}>More formats...</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
       </RibbonGroup>
 
       {/* Styles */}
@@ -851,6 +868,24 @@ export function SpreadsheetToolbar({
               {["VLOOKUP", "HLOOKUP", "INDEX", "MATCH", "XLOOKUP", "OFFSET"].map((fn) => (
                 <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
               ))}
+              <DropdownDivider />
+              <DropdownItem onClick={() => { alert("VLOOKUP Visual Helper:\n\nVLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])\n\n• lookup_value: The value to search for in column 1\n• table_array: The range containing the data (e.g. A1:D100)\n• col_index_num: The column number to return from the table\n• range_lookup: FALSE for exact match, TRUE for approximate\n\nExample: =VLOOKUP(A2, ProductTable, 3, FALSE)"); close(); }}>VLOOKUP Visual Helper...</DropdownItem>
+              <DropdownItem onClick={() => { alert("XLOOKUP Visual Helper:\n\nXLOOKUP(lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode])\n\n• lookup_value: The value to search for\n• lookup_array: The array or range to search\n• return_array: The array or range to return\n• if_not_found: Value to return if not found (optional)\n• match_mode: 0=Exact, -1=Exact or next smaller, 1=Exact or next larger\n• search_mode: 1=First to last, -1=Last to first, 2=Binary asc, -2=Binary desc\n\nExample: =XLOOKUP(E2, A:A, C:C, 'Not Found')"); close(); }}>XLOOKUP Visual Helper...</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <DropdownBtn icon={<Braces size={14} />} title="Array Formulas">
+          {(close) => (
+            <>
+              <DropdownHeader>Array Formulas (Ctrl+Shift+Enter)</DropdownHeader>
+              <DropdownItem onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `{=SUM(A1:A10*B1:B10)}`); close(); }}>{`{=SUM(A1:A10*B1:B10)}`} - Multiply arrays</DropdownItem>
+              <DropdownItem onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `{=TRANSPOSE(A1:D4)}`); close(); }}>{`{=TRANSPOSE(A1:D4)}`} - Transpose range</DropdownItem>
+              <DropdownItem onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=SEQUENCE(10,1,1,1)`); close(); }}>SEQUENCE - Dynamic array</DropdownItem>
+              <DropdownItem onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=FILTER(A1:C10, B1:B10>100)`); close(); }}>FILTER - Dynamic filter array</DropdownItem>
+              <DropdownItem onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=SORT(A1:C10, 2, 1)`); close(); }}>SORT - Dynamic sort array</DropdownItem>
+              <DropdownItem onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=UNIQUE(A1:A100)`); close(); }}>UNIQUE - Remove duplicates</DropdownItem>
+              <DropdownDivider />
+              <DropdownItem onClick={() => { alert("Array Formula Help:\n\nArray formulas let you perform multiple calculations simultaneously.\n\n• Classic: Ctrl+Shift+Enter to enter (shown with {})\n• Dynamic (Excel 365): Just press Enter\n\nUse SEQUENCE, FILTER, SORT, UNIQUE for modern array operations."); close(); }}>Array Formula Help...</DropdownItem>
             </>
           )}
         </DropdownBtn>
@@ -920,6 +955,21 @@ export function SpreadsheetToolbar({
               <DropdownItem onClick={close}>From XML</DropdownItem>
               <DropdownItem onClick={close}>From JSON</DropdownItem>
               <DropdownItem onClick={close}>From OData Feed</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Power Query">
+        <DropdownBtn icon={<Sparkles size={14} />} title="Power Query">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { alert("Power Query Editor: Transform and shape data from multiple sources"); close(); }}>Launch Power Query Editor</DropdownItem>
+              <DropdownItem onClick={() => { alert("New Query from CSV: Import and transform CSV file"); close(); }}>From CSV...</DropdownItem>
+              <DropdownItem onClick={() => { alert("New Query from Web: Connect to a web data source"); close(); }}>From Web...</DropdownItem>
+              <DropdownItem onClick={() => { alert("New Query from JSON: Import and parse JSON data"); close(); }}>From JSON...</DropdownItem>
+              <DropdownItem onClick={() => { alert("Combine Queries: Merge or append multiple queries"); close(); }}>Combine Queries</DropdownItem>
+              <DropdownItem onClick={() => { alert("Query Dependencies: View relationships between queries"); close(); }}>Query Dependencies</DropdownItem>
             </>
           )}
         </DropdownBtn>
@@ -1045,6 +1095,22 @@ export function SpreadsheetToolbar({
         <ToolBtn title="Protect Sheet" active={protectedSheet} onClick={() => {
           useSpreadsheetStore.setState({ protectedSheet: !protectedSheet });
         }}><Lock size={14} /></ToolBtn>
+        <ToolBtn title="Lock Cells" onClick={() => alert("Lock Cells: Prevent editing of selected cells (requires sheet protection)")}><Lock size={14} /></ToolBtn>
+        <ToolBtn title="Protect Workbook" onClick={() => alert("Protect Workbook: Prevent structural changes to workbook")}><ShieldCheck size={14} /></ToolBtn>
+        <ToolBtn title="Allow Edit Ranges" onClick={() => alert("Allow Edit Ranges: Specify which cells can be edited when sheet is protected")}><Users size={14} /></ToolBtn>
+      </RibbonGroup>
+      <RibbonGroup label="Macros">
+        <ToolBtn title="Record Macro" onClick={() => alert("Macro Recorder: Recording started. Perform actions then stop recording.")}><Circle size={14} className="text-red-400" /></ToolBtn>
+        <ToolBtn title="Stop Recording" onClick={() => alert("Stop Recording: Macro saved as 'Macro1'")}><Square size={14} /></ToolBtn>
+        <DropdownBtn icon={<Play size={14} />} title="Macros">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { alert("Run Macro: No macros recorded yet"); close(); }}>Run Macro...</DropdownItem>
+              <DropdownItem onClick={() => { alert("Macro Editor: Opening VBA-like editor"); close(); }}>Edit Macros...</DropdownItem>
+              <DropdownItem onClick={() => { alert("Macro Security: Macro settings and trusted locations"); close(); }}>Macro Security...</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
       </RibbonGroup>
     </div>
   );
@@ -1088,6 +1154,18 @@ export function SpreadsheetToolbar({
             </>
           )}
         </DropdownBtn>
+        <DropdownBtn icon={<Columns3 size={14} />} title="Split View">
+          {(close) => (
+            <>
+              <DropdownItem onClick={() => { alert("Split Horizontally: View two sections of the sheet side by side"); close(); }}>Split Horizontally</DropdownItem>
+              <DropdownItem onClick={() => { alert("Split Vertically: View two sections of the sheet top and bottom"); close(); }}>Split Vertically</DropdownItem>
+              <DropdownItem onClick={() => { alert("Split into 4 panes"); close(); }}>Split into 4 Panes</DropdownItem>
+              <DropdownItem onClick={() => { alert("Remove Split: Sheet split removed"); close(); }}>Remove Split</DropdownItem>
+            </>
+          )}
+        </DropdownBtn>
+        <ToolBtn title="New Window" onClick={() => alert("New Window: Opens this workbook in a new window")}><ExternalLink size={14} /></ToolBtn>
+        <ToolBtn title="Arrange All" onClick={() => alert("Arrange All: Tile, horizontal, vertical or cascade open windows")}><LayoutGrid size={14} /></ToolBtn>
       </RibbonGroup>
     </div>
   );
