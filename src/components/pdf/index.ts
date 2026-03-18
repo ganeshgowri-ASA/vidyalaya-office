@@ -19,4 +19,7 @@ export { default as OcrPanel } from "./OcrPanel";
 export { default as PdfCreatorPanel } from "./PdfCreatorPanel";
 export { default as BookmarksPanel } from "./BookmarksPanel";
 export { default as OrganizePagesPanel } from "./OrganizePagesPanel";
+export { default as StampPanel } from "./StampPanel";
+export { default as BatchPanel } from "./BatchPanel";
+export { default as ComparePdfPanel } from "./ComparePdfPanel";
 export * from "./types";
