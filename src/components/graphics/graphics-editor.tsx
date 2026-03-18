@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import TemplateGallery, { type TemplateShape } from './infographics-templates';
 interface Point { x: number; y: number; }
 interface ShapeBase { id: string; x: number; y: number; width: number; height: number; rotation: number; fill: string; stroke: string; strokeWidth: number; opacity: number; label: string; locked: boolean; visible: boolean; }
 interface RectShape extends ShapeBase { type: 'rect'; borderRadius: number; }
@@ -103,6 +104,7 @@ export default function GraphicsEditor() {
   const [showProperties, setShowProperties] = useState(true);
   const [showAI, setShowAI] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
   const [aiSuggestions] = useState(['Create a flowchart for user login','Design an org chart for a startup','Make an infographic about climate change','Create a mind map for project planning','Design a social media post template','Build a wireframe for a mobile app']);
   const [collapsedCats, setCollapsedCats] = useState<Record<string,boolean>>({});
   const [activeTemplateTab, setActiveTemplateTab] = useState('Diagrams');
@@ -115,6 +117,50 @@ export default function GraphicsEditor() {
   const updateShape = useCallback((id: string, u: Partial<ShapeBase>) => { const ns = shapes.map(s => s.id === id ? { ...s, ...u } as Shape : s); setShapes(ns); pushHistory(ns); }, [shapes, pushHistory]);
   const deleteShape = useCallback((id: string) => { const ns = shapes.filter(s => s.id !== id); setShapes(ns); pushHistory(ns); if (selectedId === id) setSelectedId(null); }, [shapes, selectedId, pushHistory]);
   const duplicateShape = useCallback((id: string) => { const s = shapes.find(s => s.id === id); if (!s) return; const d = { ...s, id: genId(), x: s.x+20, y: s.y+20 }; const ns = [...shapes, d as Shape]; setShapes(ns); pushHistory(ns); setSelectedId(d.id); }, [shapes, pushHistory]);
+
+  const loadTemplate = useCallback((templateShapes: TemplateShape[]) => {
+    // Calculate bounding box of template shapes to center them
+    const xs = templateShapes.flatMap(s => s.startPoint ? [s.startPoint.x, s.endPoint?.x ?? s.x] : [s.x, s.x + (s.width ?? 100)]);
+    const ys = templateShapes.flatMap(s => s.startPoint ? [s.startPoint.y, s.endPoint?.y ?? s.y] : [s.y, s.y + (s.height ?? 60)]);
+    const minX = Math.min(...xs); const minY = Math.min(...ys);
+    const maxX = Math.max(...xs); const maxY = Math.max(...ys);
+    const tw = maxX - minX; const th = maxY - minY;
+    // Offset so template is centered at canvas center
+    const canvasCX = (-pan.x + 500) / zoom; const canvasCY = (-pan.y + 350) / zoom;
+    const offX = canvasCX - tw / 2 - minX; const offY = canvasCY - th / 2 - minY;
+    const newShapes: Shape[] = templateShapes.map(ts => {
+      const base: ShapeBase = {
+        id: genId(), x: ts.x + offX, y: ts.y + offY,
+        width: ts.width ?? 120, height: ts.height ?? 60,
+        rotation: ts.rotation ?? 0, fill: ts.fill ?? '#3b82f6',
+        stroke: ts.stroke ?? '#1e40af', strokeWidth: ts.strokeWidth ?? 2,
+        opacity: ts.opacity ?? 1, label: ts.label ?? '',
+        locked: false, visible: true,
+      };
+      switch (ts.type) {
+        case 'rect': return { ...base, type: 'rect', borderRadius: ts.borderRadius ?? 4 } as RectShape;
+        case 'ellipse': return { ...base, type: 'ellipse' } as EllipseShape;
+        case 'diamond': return { ...base, type: 'diamond' } as DiamondShape;
+        case 'triangle': return { ...base, type: 'triangle' } as TriangleShape;
+        case 'hexagon': return { ...base, type: 'hexagon' } as HexagonShape;
+        case 'star': return { ...base, type: 'star', points: 5, innerRadius: 0.4 } as StarShape;
+        case 'text': return { ...base, type: 'text', text: ts.text ?? ts.label ?? 'Text', fontSize: ts.fontSize ?? 12, fontFamily: 'Inter', fill: ts.fill ?? 'transparent', stroke: 'transparent' } as TextShape;
+        case 'line': {
+          const sp = ts.startPoint ? { x: ts.startPoint.x + offX, y: ts.startPoint.y + offY } : { x: base.x, y: base.y + base.height / 2 };
+          const ep = ts.endPoint ? { x: ts.endPoint.x + offX, y: ts.endPoint.y + offY } : { x: base.x + base.width, y: base.y + base.height / 2 };
+          return { ...base, type: 'line', startPoint: sp, endPoint: ep, lineStyle: 'solid' } as LineShape;
+        }
+        case 'arrow': {
+          const sp = ts.startPoint ? { x: ts.startPoint.x + offX, y: ts.startPoint.y + offY } : { x: base.x, y: base.y + base.height / 2 };
+          const ep = ts.endPoint ? { x: ts.endPoint.x + offX, y: ts.endPoint.y + offY } : { x: base.x + base.width, y: base.y + base.height / 2 };
+          return { ...base, type: 'arrow', startPoint: sp, endPoint: ep } as ArrowShape;
+        }
+        default: return { ...base, type: 'rect', borderRadius: 4 } as RectShape;
+      }
+    });
+    const ns = [...shapes, ...newShapes];
+    setShapes(ns); pushHistory(ns); setShowTemplateGallery(false); setTool('select');
+  }, [shapes, pan, zoom, pushHistory]);
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === 'Delete' && selectedId) deleteShape(selectedId);
@@ -193,6 +239,7 @@ export default function GraphicsEditor() {
         <button onClick={() => setShowLayers(!showLayers)} className={`px-2 py-1.5 rounded text-sm ${showLayers ? 'bg-blue-600/30 text-blue-400' : ''}`}>Layers</button>
         <button onClick={() => setShowProperties(!showProperties)} className={`px-2 py-1.5 rounded text-sm ${showProperties ? 'bg-blue-600/30 text-blue-400' : ''}`}>Props</button>
         <button onClick={() => setShowAI(!showAI)} className={`px-2 py-1.5 rounded text-sm ${showAI ? 'bg-purple-600/30 text-purple-400' : ''}`}>🤖 AI</button>
+        <button onClick={() => setShowTemplateGallery(true)} className="px-3 py-1.5 rounded text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium">📐 Templates</button>
       </div>
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
@@ -200,6 +247,10 @@ export default function GraphicsEditor() {
         {showLayers && (<div className="w-64 border-r border-[var(--border-color,#334155)] bg-[var(--bg-secondary,#1e293b)] overflow-y-auto">
           <div className="p-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)] mb-2">Templates</h3>
+            <button onClick={() => setShowTemplateGallery(true)} className="w-full mb-3 px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium flex items-center justify-center gap-2">
+              <span>📐</span> Browse Infographics Gallery
+            </button>
+            <p className="text-[10px] text-[var(--text-secondary,#94a3b8)] mb-2">32 templates: 7QC Tools, Six Sigma, Strategy, PM &amp; more</p>
             <div className="flex flex-wrap gap-1 mb-3">
               {TEMPLATE_CATEGORIES.map(cat => (<button key={cat.name} onClick={() => setActiveTemplateTab(cat.name)} className={`px-2 py-1 rounded text-[10px] ${activeTemplateTab === cat.name ? 'bg-blue-600 text-white' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>{cat.icon} {cat.name}</button>))}
             </div>
@@ -271,6 +322,13 @@ export default function GraphicsEditor() {
           </div>
         </div>)}
       </div>
+      {/* Template Gallery Modal */}
+      {showTemplateGallery && (
+        <TemplateGallery
+          onLoadTemplate={loadTemplate}
+          onClose={() => setShowTemplateGallery(false)}
+        />
+      )}
     </div>
   );
 }
