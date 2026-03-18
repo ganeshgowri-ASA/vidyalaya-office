@@ -22,6 +22,23 @@ interface Poll {
   closed: boolean;
 }
 
+interface ChecklistItem {
+  id: string;
+  text: string;
+  checked: boolean;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  channelId: string;
+  createdBy: string;
+  assigneeName: string;
+  dueDate: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'todo' | 'in-progress' | 'done';
+}
+
 interface Message {
   id: string;
   channelId: string;
@@ -36,6 +53,7 @@ interface Message {
   edited: boolean;
   attachment?: FileAttachment;
   poll?: Poll;
+  checklist?: { items: ChecklistItem[] };
 }
 
 interface Channel {
@@ -84,6 +102,25 @@ const MOCK_MESSAGES: Message[] = [
   { id: 'm5', channelId: 'general', userId: 'u2', userName: 'Priya Sharma', avatar: '👩‍💻', content: 'Attaching the design spec for review.', timestamp: '11:00 AM', reactions: [], thread: [], pinned: false, edited: false, attachment: { name: 'design-spec-v3.pdf', size: '2.4 MB', type: 'pdf' } },
   { id: 'm6', channelId: 'engineering', userId: 'u1', userName: 'You', avatar: '🙋', content: 'Working on the graphics editor component. SVG canvas with shape tools is done.', timestamp: '11:00 AM', reactions: [{ emoji: '💯', count: 2, reacted: false }], thread: [], pinned: false, edited: false },
   { id: 'm7', channelId: 'engineering', userId: 'u3', userName: 'Rahul Verma', avatar: '👨‍🔧', content: 'Nice! Can you add export to PNG/SVG support?', timestamp: '11:15 AM', reactions: [], thread: [], pinned: false, edited: false },
+  { id: 'm8', channelId: 'general', userId: 'u4', userName: 'Anita Patel', avatar: '👩‍🏫',
+    content: '📋 Sprint review checklist for Q1:', timestamp: '11:45 AM',
+    reactions: [], thread: [], pinned: false, edited: false,
+    checklist: { items: [
+      { id: 'ci1', text: 'Review Q1 OKR progress report', checked: true },
+      { id: 'ci2', text: 'Update sprint board before standup', checked: false },
+      { id: 'ci3', text: 'Send weekly digest to stakeholders', checked: false },
+      { id: 'ci4', text: 'Archive completed project channels', checked: false },
+    ]}},
+  { id: 'm9', channelId: 'engineering', userId: 'u3', userName: 'Rahul Verma', avatar: '👨‍🔧',
+    content: '🔧 Deployment checklist:', timestamp: '11:50 AM',
+    reactions: [], thread: [], pinned: false, edited: false,
+    checklist: { items: [
+      { id: 'ci5', text: 'Run unit tests', checked: true },
+      { id: 'ci6', text: 'Update environment variables', checked: true },
+      { id: 'ci7', text: 'Deploy to staging', checked: false },
+      { id: 'ci8', text: 'Smoke test on staging', checked: false },
+      { id: 'ci9', text: 'Deploy to production', checked: false },
+    ]}},
 ];
 
 const BOT_COMMANDS: Record<string, string> = {
@@ -124,6 +161,27 @@ export function ChatEngine() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Checklists ──
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+  const [newChecklistItems, setNewChecklistItems] = useState<string[]>(['', '']);
+  const [newChecklistTitle, setNewChecklistTitle] = useState('');
+  // ── Tasks ──
+  const [tasks, setTasks] = useState<Task[]>([
+    { id: 't1', title: 'Update API documentation', channelId: 'engineering', createdBy: 'u1', assigneeName: 'Rahul Verma', dueDate: '2026-03-22', priority: 'high', status: 'in-progress' },
+    { id: 't2', title: 'Review design specs for v2', channelId: 'design', createdBy: 'u4', assigneeName: 'Priya Sharma', dueDate: '2026-03-25', priority: 'medium', status: 'todo' },
+    { id: 't3', title: 'Deploy hotfix to production', channelId: 'engineering', createdBy: 'u1', assigneeName: 'Rahul Verma', dueDate: '2026-03-20', priority: 'high', status: 'done' },
+  ]);
+  const [showTasksPanel, setShowTasksPanel] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [taskForm, setTaskForm] = useState<{ title: string; assignee: string; dueDate: string; priority: 'low' | 'medium' | 'high' }>({ title: '', assignee: 'u2', dueDate: '', priority: 'medium' });
+  // ── @Mention ──
+  const [mentionDropdown, setMentionDropdown] = useState<{ show: boolean; type: '@' | '#'; query: string; startIdx: number } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  // ── AI panel messages ──
+  const [aiPanelMessages, setAiPanelMessages] = useState<{ role: 'user' | 'ai'; content: string }[]>([
+    { role: 'ai', content: '👋 Hi! I can summarize conversations, extract action items, suggest replies, and answer questions. Try the quick actions below!' }
+  ]);
 
   const channelMessages = messages.filter(m => m.channelId === activeChannel);
   const currentChannel = CHANNELS.find(c => c.id === activeChannel);
@@ -269,6 +327,101 @@ export function ChatEngine() {
     }));
   };
 
+  const toggleChecklistItem = (msgId: string, itemId: string) => {
+    setMessages(prev => prev.map(m => {
+      if (m.id !== msgId || !m.checklist) return m;
+      return { ...m, checklist: { items: m.checklist.items.map(item => item.id === itemId ? { ...item, checked: !item.checked } : item) } };
+    }));
+  };
+
+  const createChecklist = () => {
+    const valid = newChecklistItems.filter(i => i.trim());
+    if (!valid.length) return;
+    const msg: Message = {
+      id: `m${++msgCounter}`, channelId: activeChannel, userId: 'u1', userName: 'You',
+      avatar: '🙋', content: newChecklistTitle || 'Checklist:',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      reactions: [], thread: [], pinned: false, edited: false,
+      checklist: { items: valid.map((text, i) => ({ id: `ci_${msgCounter}_${i}`, text, checked: false })) },
+    };
+    setMessages(prev => [...prev, msg]);
+    setShowChecklistModal(false);
+    setNewChecklistItems(['', '']);
+    setNewChecklistTitle('');
+  };
+
+  const createTask = () => {
+    if (!taskForm.title.trim()) return;
+    const assignee = USERS.find(u => u.id === taskForm.assignee);
+    const task: Task = {
+      id: `task_${Date.now()}`, title: taskForm.title, channelId: activeChannel,
+      createdBy: 'u1', assigneeName: assignee?.name || 'Team',
+      dueDate: taskForm.dueDate, priority: taskForm.priority, status: 'todo',
+    };
+    setTasks(prev => [...prev, task]);
+    const msg: Message = {
+      id: `m${++msgCounter}`, channelId: activeChannel, userId: 'u1', userName: 'You',
+      avatar: '🙋',
+      content: `📌 Task assigned to ${task.assigneeName}: "${task.title}" · ${task.priority.toUpperCase()} priority${task.dueDate ? ` · Due ${task.dueDate}` : ''}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      reactions: [], thread: [], pinned: false, edited: false,
+    };
+    setMessages(prev => [...prev, msg]);
+    setShowTaskModal(false);
+    setTaskForm({ title: '', assignee: 'u2', dueDate: '', priority: 'medium' });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputText(val);
+    const cursorPos = e.target.selectionStart ?? val.length;
+    const textBefore = val.slice(0, cursorPos);
+    const atMatch = textBefore.match(/@(\w*)$/);
+    const hashMatch = textBefore.match(/#(\w*)$/);
+    if (atMatch) {
+      setMentionDropdown({ show: true, type: '@', query: atMatch[1].toLowerCase(), startIdx: cursorPos - atMatch[0].length });
+    } else if (hashMatch) {
+      setMentionDropdown({ show: true, type: '#', query: hashMatch[1].toLowerCase(), startIdx: cursorPos - hashMatch[0].length });
+    } else {
+      setMentionDropdown(null);
+    }
+  };
+
+  const insertMention = (label: string) => {
+    if (!mentionDropdown) return;
+    const before = inputText.slice(0, mentionDropdown.startIdx);
+    const afterIdx = inputText.indexOf(' ', mentionDropdown.startIdx + 1);
+    const after = afterIdx >= 0 ? inputText.slice(afterIdx) : '';
+    const insert = mentionDropdown.type === '@' ? `@${label} ` : `#${label} `;
+    setInputText(before + insert + after);
+    setMentionDropdown(null);
+    inputRef.current?.focus();
+  };
+
+  const handleAiPanelAction = (action: 'summarize' | 'actionItems' | 'schedule') => {
+    const responses: Record<string, string> = {
+      summarize: `📝 **Summary of #${currentChannel?.name}**\n\n• ${channelMessages.length} messages today\n• Key topics: team standup, design reviews, CI/CD improvements\n• ${pinnedMsgs.length} pinned message(s)\n• Most active: ${USERS.slice(1, 3).map(u => u.name).join(', ')}\n• Overall sentiment: positive & productive`,
+      actionItems: `✅ **Action Items Extracted:**\n\n1. Review dashboard designs in #design channel\n2. Update sprint boards before 10 AM standup\n3. Share Figma link for design review (Priya)\n4. Monitor CI/CD pipeline improvements (Rahul)\n5. Respond to client proposal by EOD`,
+      schedule: `📅 **Follow-up Scheduled:**\n\nTime: Tomorrow 9:00 AM\nAgenda: Review today's action items\nInvited: ${USERS.filter(u => u.id !== 'u1').map(u => u.name).join(', ')}\nLocation: #general standup call`,
+    };
+    setAiPanelMessages(prev => [...prev, { role: 'ai', content: responses[action] }]);
+  };
+
+  const sendAiPanelMessage = () => {
+    if (!aiChatInput.trim()) return;
+    const query = aiChatInput.trim();
+    setAiPanelMessages(prev => [...prev, { role: 'user', content: query }]);
+    setAiChatInput('');
+    const lower = query.toLowerCase();
+    let response = '';
+    if (lower.includes('summar')) response = `📝 Summary of #${currentChannel?.name}: ${channelMessages.length} messages covering standup, design reviews, and CI/CD work. Team is aligned on sprint goals.`;
+    else if (lower.includes('action') || lower.includes('task')) response = `📋 Action items:\n1) Review designs 2) Update sprint board 3) Monitor pipeline 4) Send weekly digest`;
+    else if (lower.includes('who') || lower.includes('member')) response = `👥 Members: ${USERS.map(u => `${u.name} (${u.status})`).join(', ')}`;
+    else if (lower.includes('suggest') || lower.includes('reply')) response = `💡 Suggested replies:\n• "Got it, I'll look into this"\n• "Let's discuss in tomorrow's standup"\n• "Can you share more details?"`;
+    else response = `🤖 Based on #${currentChannel?.name}'s ${channelMessages.length} messages: the team is working on design reviews, CI/CD improvements, and sprint planning. How can I help further?`;
+    setTimeout(() => setAiPanelMessages(prev => [...prev, { role: 'ai', content: response }]), 400);
+  };
+
   const statusColor = (s: string) => s === 'online' ? '#22c55e' : s === 'away' ? '#f59e0b' : s === 'busy' ? '#ef4444' : '#6b7280';
 
   const fileIcon = (type: FileAttachment['type']) => type === 'pdf' ? '📄' : type === 'image' ? '🖼' : type === 'code' ? '💻' : type === 'doc' ? '📝' : '📎';
@@ -328,6 +481,7 @@ export function ChatEngine() {
             <button onClick={() => { setCallType('voice'); setShowCallModal(true); }} className="px-2 py-1 rounded text-xs hover:bg-[var(--bg-hover,#334155)]" title="Voice call">📞</button>
             <button onClick={() => { setCallType('video'); setShowCallModal(true); }} className="px-2 py-1 rounded text-xs hover:bg-[var(--bg-hover,#334155)]" title="Video call">📹</button>
             <button onClick={() => setShowMembers(!showMembers)} className={`px-2 py-1 rounded text-xs ${showMembers ? 'bg-blue-600/30 text-blue-400' : 'hover:bg-[var(--bg-hover,#334155)]'}`}>👥 {currentChannel?.members}</button>
+            <button onClick={() => setShowTasksPanel(!showTasksPanel)} className={`px-2 py-1 rounded text-xs ${showTasksPanel ? 'bg-orange-600/30 text-orange-400' : 'hover:bg-[var(--bg-hover,#334155)]'}`} title="Tasks">📋 Tasks</button>
             <button onClick={() => setShowAiPanel(!showAiPanel)} className={`px-2 py-1 rounded text-xs ${showAiPanel ? 'bg-purple-600/30 text-purple-400' : 'hover:bg-[var(--bg-hover,#334155)]'}`}>🤖 AI</button>
           </div>
 
@@ -406,6 +560,25 @@ export function ChatEngine() {
                     </div>
                   )}
 
+                  {/* Checklist */}
+                  {msg.checklist && (
+                    <div className="mt-2 p-3 rounded-lg bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] max-w-sm">
+                      <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] uppercase tracking-wide mb-2">CHECKLIST · {msg.checklist.items.filter(i => i.checked).length}/{msg.checklist.items.length} done</p>
+                      {msg.checklist.items.map(item => (
+                        <button key={item.id} onClick={() => toggleChecklistItem(msg.id, item.id)}
+                          className="w-full flex items-center gap-2 mb-1.5 text-left hover:bg-[var(--bg-hover,#334155)] px-1 py-0.5 rounded transition-colors">
+                          <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 text-[8px] font-bold ${item.checked ? 'bg-green-500 border-green-500 text-white' : 'border-[var(--border-color,#334155)]'}`}>
+                            {item.checked && '✓'}
+                          </span>
+                          <span className={`text-xs ${item.checked ? 'line-through text-[var(--text-secondary,#94a3b8)]' : ''}`}>{item.text}</span>
+                        </button>
+                      ))}
+                      <div className="mt-1.5 h-1 bg-[var(--border-color,#334155)] rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 transition-all" style={{ width: `${msg.checklist.items.length > 0 ? (msg.checklist.items.filter(i => i.checked).length / msg.checklist.items.length) * 100 : 0}%` }} />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Reactions */}
                   {msg.reactions.length > 0 && (
                     <div className="flex gap-1 mt-1 flex-wrap">
@@ -451,16 +624,44 @@ export function ChatEngine() {
               <button onClick={() => fileInputRef.current?.click()} className="px-2 py-1 rounded hover:bg-[var(--bg-hover,#334155)] text-xs" title="Attach file">📎</button>
               <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
               <button onClick={() => setShowPollModal(true)} className="px-2 py-1 rounded hover:bg-[var(--bg-hover,#334155)] text-xs" title="Create poll">📊</button>
-              <input value={inputText} onChange={e => setInputText(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                placeholder={`Message ${currentChannel?.type === 'channel' ? '#' : ''}${currentChannel?.name || ''}... (try /help)`}
-                className="flex-1 px-3 py-2 rounded-lg bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+              <button onClick={() => setShowChecklistModal(true)} className="px-2 py-1 rounded hover:bg-[var(--bg-hover,#334155)] text-xs" title="Create checklist">☑️</button>
+              <button onClick={() => setShowTaskModal(true)} className="px-2 py-1 rounded hover:bg-[var(--bg-hover,#334155)] text-xs" title="Assign task">📌</button>
+              <div className="flex-1 relative">
+              {mentionDropdown?.show && (
+                <div className="absolute bottom-full left-0 mb-1 bg-[var(--bg-secondary,#1e293b)] border border-[var(--border-color,#334155)] rounded-lg shadow-lg z-10 min-w-[180px] overflow-hidden max-h-48 overflow-y-auto">
+                  <div className="px-2 py-1 text-[10px] text-[var(--text-secondary,#94a3b8)] border-b border-[var(--border-color,#334155)]">
+                    {mentionDropdown.type === '@' ? 'Mention a person' : 'Mention a channel'}
+                  </div>
+                  {mentionDropdown.type === '@'
+                    ? USERS.filter(u => u.name.toLowerCase().includes(mentionDropdown.query)).map(u => (
+                        <button key={u.id} onClick={() => insertMention(u.name)}
+                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg-hover,#334155)] text-xs text-left">
+                          <span>{u.avatar}</span>
+                          <span className="font-medium">{u.name}</span>
+                          <span className="text-[var(--text-secondary,#94a3b8)] text-[10px]">{u.role}</span>
+                        </button>
+                      ))
+                    : CHANNELS.filter(c => c.name.toLowerCase().includes(mentionDropdown.query)).map(c => (
+                        <button key={c.id} onClick={() => insertMention(c.name)}
+                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg-hover,#334155)] text-xs text-left">
+                          <span className="text-[var(--text-secondary,#94a3b8)]">#</span>
+                          <span>{c.name}</span>
+                        </button>
+                      ))
+                  }
+                </div>
+              )}
+              <input ref={inputRef} value={inputText} onChange={handleInputChange}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { sendMessage(); setMentionDropdown(null); } else if (e.key === 'Escape') setMentionDropdown(null); }}
+                placeholder={`Message ${currentChannel?.type === 'channel' ? '#' : ''}${currentChannel?.name || ''}... (try /help, @mention, #channel)`}
+                className="w-full px-3 py-2 rounded-lg bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+              </div>
               <button className="px-2 py-1 rounded hover:bg-[var(--bg-hover,#334155)] text-xs" title="Emoji">😀</button>
               <button onClick={sendMessage} className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs">Send</button>
             </div>
             <div className="flex gap-2 mt-1">
               <button className="px-2 py-0.5 rounded bg-purple-600/20 text-purple-400 text-[10px] hover:bg-purple-600/30">✨ AI Compose</button>
-              <button className="px-2 py-0.5 rounded bg-[var(--bg-tertiary,#0f172a)] text-[var(--text-secondary,#94a3b8)] text-[10px]">@mention</button>
+              <button onClick={() => { setInputText(prev => prev + '@'); inputRef.current?.focus(); }} className="px-2 py-0.5 rounded bg-[var(--bg-tertiary,#0f172a)] text-[var(--text-secondary,#94a3b8)] text-[10px]">@mention</button>
               <button onClick={() => setInputText('/help')} className="px-2 py-0.5 rounded bg-[var(--bg-tertiary,#0f172a)] text-[var(--text-secondary,#94a3b8)] text-[10px]">/command</button>
             </div>
           </div>
@@ -525,39 +726,81 @@ export function ChatEngine() {
           </div>
         )}
 
+        {/* Tasks Panel */}
+        {showTasksPanel && !threadMessage && !showMembers && !showAiPanel && (
+          <div className="w-64 border-l border-[var(--border-color,#334155)] bg-[var(--bg-secondary,#1e293b)] flex flex-col">
+            <div className="flex items-center justify-between p-3 border-b border-[var(--border-color,#334155)]">
+              <h3 className="text-xs font-semibold text-orange-400">📋 Tasks</h3>
+              <div className="flex gap-1">
+                <button onClick={() => setShowTaskModal(true)} className="px-2 py-0.5 rounded bg-orange-600/20 text-orange-400 text-[10px] hover:bg-orange-600/30">+ New</button>
+                <button onClick={() => setShowTasksPanel(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white text-sm">✕</button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {tasks.length === 0 && <p className="text-[10px] text-[var(--text-secondary,#94a3b8)] text-center py-4">No tasks yet. Create one!</p>}
+              {tasks.map(task => (
+                <div key={task.id} className="p-2.5 rounded-lg bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)]">
+                  <div className="flex items-start gap-2">
+                    <button onClick={() => setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: t.status === 'done' ? 'todo' : 'done' } : t))}
+                      className={`mt-0.5 w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 text-[8px] font-bold ${task.status === 'done' ? 'bg-green-500 border-green-500 text-white' : 'border-[var(--border-color,#334155)]'}`}>
+                      {task.status === 'done' && '✓'}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-medium ${task.status === 'done' ? 'line-through text-[var(--text-secondary,#94a3b8)]' : ''}`}>{task.title}</p>
+                      <p className="text-[10px] text-[var(--text-secondary,#94a3b8)] mt-0.5">→ {task.assigneeName}</p>
+                      {task.dueDate && <p className="text-[10px] text-[var(--text-secondary,#94a3b8)]">📅 {task.dueDate}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${task.priority === 'high' ? 'bg-red-600/20 text-red-400' : task.priority === 'medium' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-green-600/20 text-green-400'}`}>
+                      {task.priority}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${task.status === 'done' ? 'bg-green-600/20 text-green-400' : task.status === 'in-progress' ? 'bg-blue-600/20 text-blue-400' : 'bg-[var(--bg-hover,#334155)] text-[var(--text-secondary,#94a3b8)]'}`}>
+                      {task.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* AI Chat Panel */}
         {showAiPanel && !threadMessage && !showMembers && (
-          <div className="w-72 border-l border-[var(--border-color,#334155)] bg-[var(--bg-secondary,#1e293b)] flex flex-col overflow-y-auto">
+          <div className="w-72 border-l border-[var(--border-color,#334155)] bg-[var(--bg-secondary,#1e293b)] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-3 border-b border-[var(--border-color,#334155)]">
               <h3 className="text-xs font-semibold text-purple-400">🤖 AI Chat Assistant</h3>
               <button onClick={() => setShowAiPanel(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white text-sm">✕</button>
             </div>
-            <div className="flex-1 p-3 space-y-3">
-              <div className="space-y-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Smart Replies</p>
-                {['Got it, thanks!', 'I\'ll look into this', 'Can we discuss this in a meeting?', 'Sounds good, let\'s proceed', 'I need more details on this', 'Let me check and get back to you'].map((r, i) => (
-                  <button key={i} onClick={() => setInputText(r)} className="w-full text-left px-2 py-1.5 rounded text-[11px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] transition-colors">{r}</button>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* AI Messages */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {aiPanelMessages.map((m, i) => (
+                  <div key={i} className={`${m.role === 'user' ? 'ml-4' : 'mr-4'}`}>
+                    <div className={`px-3 py-2 rounded-lg text-xs whitespace-pre-wrap ${m.role === 'user' ? 'bg-blue-600/20 text-blue-100 text-right' : 'bg-[var(--bg-tertiary,#0f172a)] text-[var(--foreground,#e2e8f0)]'}`}>
+                      {m.content}
+                    </div>
+                  </div>
                 ))}
               </div>
-              <div className="space-y-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Channel Stats</p>
-                <div className="px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] text-xs space-y-1">
-                  <div className="flex justify-between"><span className="text-[var(--text-secondary,#94a3b8)]">Messages</span><span className="text-blue-400 font-semibold">{channelMessages.length}</span></div>
-                  <div className="flex justify-between"><span className="text-[var(--text-secondary,#94a3b8)]">Pinned</span><span className="text-yellow-400 font-semibold">{pinnedMsgs.length}</span></div>
-                  <div className="flex justify-between"><span className="text-[var(--text-secondary,#94a3b8)]">Channel</span><span className="text-green-400 font-semibold">{currentChannel?.name}</span></div>
-                </div>
+              {/* Quick Actions */}
+              <div className="p-2 border-t border-[var(--border-color,#334155)] space-y-1">
+                <p className="text-[10px] text-[var(--text-secondary,#94a3b8)] mb-1">Quick Actions:</p>
+                <button onClick={() => handleAiPanelAction('summarize')} className="w-full px-2 py-1.5 rounded text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 text-left">✨ Summarize conversation</button>
+                <button onClick={() => handleAiPanelAction('actionItems')} className="w-full px-2 py-1.5 rounded text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-left">📋 Extract action items</button>
+                <button onClick={() => handleAiPanelAction('schedule')} className="w-full px-2 py-1.5 rounded text-xs bg-green-600/20 hover:bg-green-600/30 text-green-400 text-left">📅 Schedule follow-up</button>
+                <p className="text-[10px] text-[var(--text-secondary,#94a3b8)] mb-1 mt-2">Smart Replies:</p>
+                {['Got it, thanks!', "I'll look into this", 'Let\'s discuss in standup'].map((r, i) => (
+                  <button key={i} onClick={() => setInputText(r)} className="w-full text-left px-2 py-1 rounded text-[11px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">{r}</button>
+                ))}
               </div>
-              <div className="space-y-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">AI Actions</p>
-                <button className="w-full px-2 py-1.5 rounded text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400">✨ Summarize conversation</button>
-                <button className="w-full px-2 py-1.5 rounded text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400">📋 Extract action items</button>
-                <button className="w-full px-2 py-1.5 rounded text-xs bg-green-600/20 hover:bg-green-600/30 text-green-400">📅 Schedule follow-up</button>
-              </div>
-              <div className="space-y-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#94a3b8)]">Ask AI</p>
-                <div className="flex gap-2">
-                  <input value={aiChatInput} onChange={e => setAiChatInput(e.target.value)} placeholder="Ask anything..." className="flex-1 px-2 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
-                  <button className="px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-700 text-xs text-white">Go</button>
+              {/* Ask AI Input */}
+              <div className="p-2 border-t border-[var(--border-color,#334155)]">
+                <div className="flex gap-1">
+                  <input value={aiChatInput} onChange={e => setAiChatInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && sendAiPanelMessage()}
+                    placeholder="Ask about this conversation..." className="flex-1 px-2 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+                  <button onClick={sendAiPanelMessage} className="px-2 py-1.5 rounded bg-purple-600 hover:bg-purple-700 text-xs text-white">↵</button>
                 </div>
               </div>
             </div>
@@ -649,6 +892,86 @@ export function ChatEngine() {
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setShowPollModal(false)} className="flex-1 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] text-xs hover:bg-[var(--bg-hover,#334155)]">Cancel</button>
                 <button onClick={createPoll} disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2} className="flex-1 py-1.5 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs">Create Poll</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checklist Modal */}
+      {showChecklistModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="w-80 rounded-xl bg-[var(--bg-secondary,#1e293b)] border border-[var(--border-color,#334155)] p-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">☑️ Create Checklist</h3>
+              <button onClick={() => setShowChecklistModal(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white">✕</button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] text-[var(--text-secondary,#94a3b8)] block mb-1">Title</label>
+                <input value={newChecklistTitle} onChange={e => setNewChecklistTitle(e.target.value)} placeholder="Checklist title..." className="w-full px-2 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+              </div>
+              <div>
+                <label className="text-[10px] text-[var(--text-secondary,#94a3b8)] block mb-1">Items</label>
+                <div className="space-y-1.5">
+                  {newChecklistItems.map((item, i) => (
+                    <div key={i} className="flex gap-1">
+                      <input value={item} onChange={e => { const items = [...newChecklistItems]; items[i] = e.target.value; setNewChecklistItems(items); }} placeholder={`Item ${i + 1}`} className="flex-1 px-2 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+                      {newChecklistItems.length > 1 && <button onClick={() => setNewChecklistItems(newChecklistItems.filter((_, j) => j !== i))} className="text-red-400 text-xs px-1">✕</button>}
+                    </div>
+                  ))}
+                </div>
+                {newChecklistItems.length < 10 && (
+                  <button onClick={() => setNewChecklistItems([...newChecklistItems, ''])} className="mt-1.5 text-[10px] text-blue-400 hover:text-blue-300">+ Add item</button>
+                )}
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setShowChecklistModal(false)} className="flex-1 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] text-xs hover:bg-[var(--bg-hover,#334155)]">Cancel</button>
+                <button onClick={createChecklist} disabled={!newChecklistItems.filter(i => i.trim()).length} className="flex-1 py-1.5 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs">Create</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Assignment Modal */}
+      {showTaskModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="w-80 rounded-xl bg-[var(--bg-secondary,#1e293b)] border border-[var(--border-color,#334155)] p-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">📌 Assign Task</h3>
+              <button onClick={() => setShowTaskModal(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white">✕</button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] text-[var(--text-secondary,#94a3b8)] block mb-1">Task Title</label>
+                <input value={taskForm.title} onChange={e => setTaskForm({ ...taskForm, title: e.target.value })} placeholder="Describe the task..." className="w-full px-2 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+              </div>
+              <div>
+                <label className="text-[10px] text-[var(--text-secondary,#94a3b8)] block mb-1">Assign To</label>
+                <select value={taskForm.assignee} onChange={e => setTaskForm({ ...taskForm, assignee: e.target.value })} className="w-full px-2 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs">
+                  {USERS.filter(u => u.id !== 'u1' && u.id !== 'u5').map(u => (
+                    <option key={u.id} value={u.id}>{u.avatar} {u.name} — {u.role}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-[var(--text-secondary,#94a3b8)] block mb-1">Due Date</label>
+                  <input type="date" value={taskForm.dueDate} onChange={e => setTaskForm({ ...taskForm, dueDate: e.target.value })} className="w-full px-2 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-[var(--text-secondary,#94a3b8)] block mb-1">Priority</label>
+                  <select value={taskForm.priority} onChange={e => setTaskForm({ ...taskForm, priority: e.target.value as 'low'|'medium'|'high' })} className="w-full px-2 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs">
+                    <option value="low">🟢 Low</option>
+                    <option value="medium">🟡 Medium</option>
+                    <option value="high">🔴 High</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setShowTaskModal(false)} className="flex-1 py-1.5 rounded bg-[var(--bg-tertiary,#0f172a)] text-xs hover:bg-[var(--bg-hover,#334155)]">Cancel</button>
+                <button onClick={createTask} disabled={!taskForm.title.trim()} className="flex-1 py-1.5 rounded bg-orange-600 hover:bg-orange-700 disabled:opacity-40 text-white text-xs">Assign Task</button>
               </div>
             </div>
           </div>

@@ -1289,6 +1289,74 @@ export default function SpreadsheetEditor() {
     setShowPivotModal(false);
   }, [selStart, selEnd, pivotRowField, pivotValueField, pivotAgg, getCellDisplay, activeSheet.name, generateId]);
 
+  // ─── Insert Formatted Table ────────────────────────────────────────────
+  const insertFormattedTable = useCallback(() => {
+    const startRef = parseCellRef(selectedCell);
+    if (!startRef) return;
+
+    // Check if sheet is mostly empty (use demo data if so)
+    const currentCells = activeSheet.cells;
+    const hasSomeData = Object.keys(currentCells).length > 3;
+
+    if (hasSomeData && selStart && selEnd) {
+      // Apply table formatting to selection
+      const s = parseCellRef(selStart);
+      const e = parseCellRef(selEnd);
+      if (!s || !e) return;
+      const minR = Math.min(s.row, e.row);
+      const maxR = Math.max(s.row, e.row);
+      const minC = Math.min(s.col, e.col);
+      const maxC = Math.max(s.col, e.col);
+      const updates: Record<string, Cell> = { ...currentCells };
+      for (let r = minR; r <= maxR; r++) {
+        for (let c = minC; c <= maxC; c++) {
+          const ref = cellRef(c, r);
+          const isHeader = r === minR;
+          const isEven = (r - minR) % 2 === 0;
+          updates[ref] = {
+            ...(currentCells[ref] ?? { value: '' }),
+            style: {
+              ...(currentCells[ref]?.style ?? {}),
+              bold: isHeader ? true : (currentCells[ref]?.style?.bold ?? false),
+              bgColor: isHeader ? '#1e40af' : isEven ? '#1e293b' : undefined,
+              textColor: isHeader ? '#ffffff' : undefined,
+            },
+          };
+        }
+      }
+      setSheets(prev => prev.map(s => s.id === activeSheetId ? { ...s, cells: updates } : s));
+    } else {
+      // Insert demo table with sample data
+      const headers = ['Employee Name', 'Department', 'Salary ($)', 'Start Date', 'Status'];
+      const rows = [
+        ['Alice Johnson', 'Engineering', '95000', '2022-01-15', 'Active'],
+        ['Bob Smith', 'Marketing', '78000', '2021-06-01', 'Active'],
+        ['Carol White', 'Design', '82000', '2023-03-10', 'Active'],
+        ['David Brown', 'Engineering', '105000', '2020-09-20', 'Active'],
+        ['Eva Davis', 'HR', '70000', '2022-11-05', 'On Leave'],
+        ['Frank Miller', 'Sales', '88000', '2021-08-15', 'Active'],
+        ['Grace Lee', 'Engineering', '99000', '2023-01-08', 'Active'],
+      ];
+      const newCells: Record<string, Cell> = { ...currentCells };
+      headers.forEach((h, c) => {
+        const ref = cellRef(startRef.col + c, startRef.row);
+        newCells[ref] = { value: h, style: { bold: true, bgColor: '#1e40af', textColor: '#ffffff' }, formula: undefined, computed: undefined };
+      });
+      rows.forEach((row, ri) => {
+        row.forEach((val, ci) => {
+          const ref = cellRef(startRef.col + ci, startRef.row + ri + 1);
+          const isEven = ri % 2 === 0;
+          newCells[ref] = {
+            value: val,
+            style: { bgColor: isEven ? '#1e293b' : undefined },
+            formula: undefined, computed: undefined,
+          };
+        });
+      });
+      setSheets(prev => prev.map(s => s.id === activeSheetId ? { ...s, cells: newCells } : s));
+    }
+  }, [selectedCell, activeSheetId, activeSheet.cells, selStart, selEnd, setSheets]);
+
   // Derived headers from selection for pivot modal
   const selectionHeaders = useMemo(() => {
     if (!selStart || !selEnd) return [];
@@ -1473,6 +1541,28 @@ export default function SpreadsheetEditor() {
           <button style={toolbarBtnStyle()} onClick={() => setShowTemplates(true)}>
             <FileSpreadsheet size={14} /> Templates
           </button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 4px', border: '1px solid var(--border)', borderRadius: 4, height: 28 }}>
+            <span style={{ fontSize: 10, color: 'var(--muted-foreground)', paddingRight: 4 }}>Tables</span>
+            <button style={toolbarBtnStyle()} title="Insert Plain Table" onClick={() => {
+              const start = parseCellRef(selectedCell);
+              if (!start) return;
+              const headers = ['Column A', 'Column B', 'Column C', 'Column D'];
+              const updates: Record<string, Cell> = { ...activeSheet.cells };
+              headers.forEach((h, c) => {
+                const ref = cellRef(start.col + c, start.row);
+                updates[ref] = { value: h, style: { bold: true }, formula: undefined, computed: undefined };
+              });
+              for (let r = 1; r <= 5; r++) {
+                for (let c = 0; c < 4; c++) {
+                  const ref = cellRef(start.col + c, start.row + r);
+                  if (!updates[ref]?.value) updates[ref] = { value: '', style: {}, formula: undefined, computed: undefined };
+                }
+              }
+              setSheets(prev => prev.map(s => s.id === activeSheetId ? { ...s, cells: updates } : s));
+            }}><Table size={14} /></button>
+            <button style={toolbarBtnStyle()} title="Insert Formatted Table with Sample Data" onClick={insertFormattedTable}><Table size={14} /> Fmt Table</button>
+          </div>
         </>}
 
         {/* ── FORMULAS TAB ─────────────────────────────────────────── */}
@@ -2298,6 +2388,38 @@ export default function SpreadsheetEditor() {
               First select the data range (including headers) in the spreadsheet, then configure the pivot table below.
               {selStart && selEnd ? ` Selected: ${selStart}:${selEnd}` : " No range selected."}
             </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              <button
+                onClick={() => {
+                  const demoData = [
+                    ['Region', 'Product', 'Sales', 'Quarter'],
+                    ['North', 'Widget A', '15000', 'Q1'],
+                    ['South', 'Widget B', '22000', 'Q1'],
+                    ['North', 'Widget B', '18000', 'Q2'],
+                    ['East', 'Widget A', '31000', 'Q2'],
+                    ['South', 'Widget A', '27000', 'Q1'],
+                    ['West', 'Widget B', '19000', 'Q3'],
+                    ['North', 'Widget A', '24000', 'Q3'],
+                    ['East', 'Widget B', '33000', 'Q4'],
+                    ['South', 'Widget A', '28000', 'Q4'],
+                  ];
+                  const updates: Record<string, Cell> = { ...activeSheet.cells };
+                  demoData.forEach((row, ri) => {
+                    row.forEach((val, ci) => {
+                      const ref = cellRef(ci, ri);
+                      updates[ref] = { value: val, style: ri === 0 ? { bold: true } : {}, formula: undefined, computed: undefined };
+                    });
+                  });
+                  setSheets(prev => prev.map(s => s.id === activeSheetId ? { ...s, cells: updates } : s));
+                  setSelStart('A1');
+                  setSelEnd('D10');
+                  setSelectedCell('A1');
+                }}
+                style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', cursor: 'pointer', fontSize: 11 }}
+              >
+                📊 Load Demo Sales Data
+              </button>
+            </div>
             {selectionHeaders.length > 0 ? (
               <>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -2316,6 +2438,29 @@ export default function SpreadsheetEditor() {
                     </select>
                   </div>
                 </div>
+                {selectionHeaders.length > 0 && (
+                  <div>
+                    <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Quick Add Fields</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {selectionHeaders.map(h => (
+                        <div key={h} style={{ display: 'flex', gap: 2 }}>
+                          <button
+                            onClick={() => setPivotRowField(h)}
+                            style={{ padding: '3px 8px', borderRadius: 4, border: '1px solid', borderColor: pivotRowField === h ? 'var(--primary)' : 'var(--border)', background: pivotRowField === h ? 'var(--primary)' : 'var(--muted)', color: pivotRowField === h ? 'var(--primary-foreground)' : 'var(--foreground)', cursor: 'pointer', fontSize: 11 }}
+                          >
+                            {h} →Row
+                          </button>
+                          <button
+                            onClick={() => setPivotValueField(h)}
+                            style={{ padding: '3px 8px', borderRadius: 4, border: '1px solid', borderColor: pivotValueField === h ? '#8b5cf6' : 'var(--border)', background: pivotValueField === h ? '#8b5cf6' : 'var(--muted)', color: pivotValueField === h ? 'white' : 'var(--foreground)', cursor: 'pointer', fontSize: 11 }}
+                          >
+                            {h} →Val
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "var(--muted-foreground)" }}>Aggregation</label>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
