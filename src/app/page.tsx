@@ -26,6 +26,12 @@ import {
   Pencil,
   FolderOpen,
   ExternalLink,
+  Bell,
+  Calendar,
+  Users,
+  Video,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -121,6 +127,33 @@ const templateUsage = [
   { name: "Presentation Deck", value: 18, color: "#f59e0b" },
   { name: "Meeting Notes", value: 14, color: "#8b5cf6" },
   { name: "Other", value: 12, color: "#6b7280" },
+];
+
+/* Upcoming meetings mock */
+const upcomingMeetings = [
+  { id: "m1", title: "Product Standup", time: "10:00 AM", duration: "30 min", attendees: 5, type: "video", today: true },
+  { id: "m2", title: "Design Review", time: "2:00 PM", duration: "1 hr", attendees: 8, type: "video", today: true },
+  { id: "m3", title: "Client Demo - Acme Corp", time: "4:30 PM", duration: "45 min", attendees: 12, type: "video", today: true },
+  { id: "m4", title: "Sprint Planning", time: "9:00 AM", duration: "2 hr", attendees: 10, type: "call", today: false },
+  { id: "m5", title: "1:1 with Manager", time: "3:00 PM", duration: "30 min", attendees: 2, type: "video", today: false },
+];
+
+/* Notification mock */
+const mockNotifications = [
+  { id: "n1", type: "comment", message: "Priya commented on Q4 Report", time: "5 min ago", read: false, icon: "💬" },
+  { id: "n2", type: "share", message: "Rahul shared 'Sales Dashboard 2024' with you", time: "22 min ago", read: false, icon: "🔗" },
+  { id: "n3", type: "approve", message: "Invoice Template was approved by Anita", time: "1 hr ago", read: false, icon: "✅" },
+  { id: "n4", type: "mention", message: "You were mentioned in 'Project Brief'", time: "3 hr ago", read: true, icon: "📣" },
+  { id: "n5", type: "edit", message: "Campus Safety Audit was updated", time: "Yesterday", read: true, icon: "✏️" },
+  { id: "n6", type: "deadline", message: "Annual Budget Proposal is due tomorrow", time: "Yesterday", read: true, icon: "⏰" },
+];
+
+/* Team activity mock */
+const teamMembers = [
+  { id: "t1", name: "Priya Sharma", role: "Designer", avatar: "👩‍💻", status: "online", task: "Working on dashboard redesign", lastActive: "Active now" },
+  { id: "t2", name: "Rahul Verma", role: "DevOps", avatar: "👨‍🔧", status: "away", task: "CI/CD pipeline optimization", lastActive: "5 min ago" },
+  { id: "t3", name: "Anita Patel", role: "Product Manager", avatar: "👩‍🏫", status: "busy", task: "Sprint planning meeting", lastActive: "In meeting" },
+  { id: "t4", name: "Dev Kumar", role: "Backend Dev", avatar: "👨‍💻", status: "online", task: "API integration for PDF module", lastActive: "Active now" },
 ];
 
 /* Storage mock */
@@ -229,7 +262,22 @@ export default function DashboardPage() {
   const [dashSearch, setDashSearch] = useState("");
   const [contextMenu, setContextMenu] = useState<{ fileId: string; x: number; y: number } | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [notifications, setNotifications] = useState(mockNotifications);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date(2026, 2, 18)); // March 2026
   const router = useRouter();
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+  const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+
+  const calYear = calendarDate.getFullYear();
+  const calMonth = calendarDate.getMonth();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const today = 18; // mock today
+  const meetingDays = [3, 7, 12, 18, 21, 25, 28];
 
   const handleImport = async (file: File, type: DocumentType) => {
     // For PDF files, navigate to PDF page
@@ -584,6 +632,164 @@ export default function DashboardPage() {
                   <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{item.desc}</p>
                 </div>
               </Link>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* Calendar + Notifications */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Calendar Widget */}
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+            <Calendar size={14} /> Calendar
+          </h2>
+          <div className="rounded-xl border p-4" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+            {/* Month Navigation */}
+            <div className="flex items-center justify-between mb-3">
+              <button onClick={() => setCalendarDate(new Date(calYear, calMonth - 1, 1))} className="p-1 rounded hover:opacity-70 transition-opacity" style={{ color: "var(--muted-foreground)" }}>
+                <ChevronLeft size={16} />
+              </button>
+              <h3 className="text-sm font-semibold" style={{ color: "var(--card-foreground)" }}>{monthNames[calMonth]} {calYear}</h3>
+              <button onClick={() => setCalendarDate(new Date(calYear, calMonth + 1, 1))} className="p-1 rounded hover:opacity-70 transition-opacity" style={{ color: "var(--muted-foreground)" }}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            {/* Day headers */}
+            <div className="grid grid-cols-7 mb-1">
+              {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
+                <div key={d} className="text-center text-[10px] font-semibold py-1" style={{ color: "var(--muted-foreground)" }}>{d}</div>
+              ))}
+            </div>
+            {/* Days grid */}
+            <div className="grid grid-cols-7 gap-0.5">
+              {Array.from({ length: firstDay }, (_, i) => <div key={`empty-${i}`} />)}
+              {Array.from({ length: daysInMonth }, (_, i) => {
+                const day = i + 1;
+                const isToday = day === today;
+                const hasMeeting = meetingDays.includes(day);
+                return (
+                  <div key={day} className="flex flex-col items-center py-1 rounded-lg cursor-pointer transition-colors hover:opacity-80"
+                    style={{ backgroundColor: isToday ? "var(--primary)" : "transparent" }}>
+                    <span className="text-xs font-medium" style={{ color: isToday ? "var(--primary-foreground)" : "var(--card-foreground)" }}>{day}</span>
+                    {hasMeeting && <span className="w-1 h-1 rounded-full mt-0.5" style={{ backgroundColor: isToday ? "var(--primary-foreground)" : "var(--primary)" }} />}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Today's meetings */}
+            <div className="mt-3 pt-3 border-t space-y-2" style={{ borderColor: "var(--border)" }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>Today&apos;s Meetings</p>
+              {upcomingMeetings.filter(m => m.today).slice(0, 3).map(meeting => (
+                <div key={meeting.id} className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: "var(--primary)", opacity: 0.15 }}>
+                    <Video size={12} style={{ color: "var(--primary)" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate" style={{ color: "var(--card-foreground)" }}>{meeting.title}</p>
+                    <p className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>{meeting.time} · {meeting.duration} · {meeting.attendees} attendees</p>
+                  </div>
+                  <button className="shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-colors hover:opacity-80" style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}>
+                    Join
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Notifications Center */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+              <Bell size={14} /> Notifications
+              {unreadCount > 0 && (
+                <span className="inline-flex items-center justify-center rounded-full text-[10px] font-bold px-1.5 py-0.5" style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}>{unreadCount}</span>
+              )}
+            </h2>
+            {unreadCount > 0 && (
+              <button onClick={markAllRead} className="text-xs hover:opacity-70 transition-opacity" style={{ color: "var(--primary)" }}>
+                Mark all read
+              </button>
+            )}
+          </div>
+          <div className="rounded-xl border divide-y" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+            {(showAllNotifications ? notifications : notifications.slice(0, 5)).map(notif => (
+              <div
+                key={notif.id}
+                onClick={() => markRead(notif.id)}
+                className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors hover:opacity-90"
+                style={{ borderColor: "var(--border)", backgroundColor: notif.read ? "transparent" : "var(--primary)08" }}
+              >
+                <span className="text-lg shrink-0 mt-0.5">{notif.icon}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm" style={{ color: "var(--card-foreground)", fontWeight: notif.read ? 400 : 600 }}>{notif.message}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{notif.time}</p>
+                </div>
+                {!notif.read && <span className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: "var(--primary)" }} />}
+              </div>
+            ))}
+            {notifications.length > 5 && (
+              <button onClick={() => setShowAllNotifications(!showAllNotifications)} className="w-full py-3 text-xs font-medium transition-colors hover:opacity-70" style={{ color: "var(--primary)" }}>
+                {showAllNotifications ? "Show less" : `Show ${notifications.length - 5} more`}
+              </button>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* Team Activity + Meetings */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Team Activity */}
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+            <Users size={14} /> Team Activity
+          </h2>
+          <div className="rounded-xl border divide-y" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+            {teamMembers.map(member => {
+              const statusColors: Record<string, string> = { online: "#22c55e", away: "#f59e0b", busy: "#ef4444", offline: "#6b7280" };
+              return (
+                <div key={member.id} className="flex items-center gap-3 px-4 py-3" style={{ borderColor: "var(--border)" }}>
+                  <div className="relative shrink-0">
+                    <span className="text-xl">{member.avatar}</span>
+                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2" style={{ backgroundColor: statusColors[member.status], borderColor: "var(--card)" }} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium" style={{ color: "var(--card-foreground)" }}>{member.name}</p>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "var(--secondary)", color: "var(--muted-foreground)" }}>{member.role}</span>
+                    </div>
+                    <p className="text-xs truncate mt-0.5" style={{ color: "var(--muted-foreground)" }}>{member.task}</p>
+                  </div>
+                  <span className="text-[10px] shrink-0" style={{ color: "var(--muted-foreground)" }}>{member.lastActive}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Upcoming Meetings */}
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+            <Video size={14} /> Upcoming Meetings
+          </h2>
+          <div className="rounded-xl border divide-y" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+            {upcomingMeetings.map((meeting, idx) => (
+              <div key={meeting.id} className="flex items-center gap-3 px-4 py-3" style={{ borderColor: "var(--border)" }}>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: idx === 0 ? "var(--primary)" : "var(--secondary)" }}>
+                  <Video size={14} style={{ color: idx === 0 ? "var(--primary-foreground)" : "var(--muted-foreground)" }} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium" style={{ color: "var(--card-foreground)" }}>{meeting.title}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
+                    {meeting.today ? "Today" : "Tomorrow"} · {meeting.time} · {meeting.duration} · {meeting.attendees} attendees
+                  </p>
+                </div>
+                <button className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                  style={{ backgroundColor: idx === 0 ? "var(--primary)" : "var(--secondary)", color: idx === 0 ? "var(--primary-foreground)" : "var(--muted-foreground)" }}>
+                  {idx === 0 ? "Join Now" : "Join"}
+                </button>
+              </div>
             ))}
           </div>
         </section>
