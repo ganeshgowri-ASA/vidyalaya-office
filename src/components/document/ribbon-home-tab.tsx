@@ -513,8 +513,10 @@ export function HomeTab() {
 
       {/* ===== STYLES GROUP ===== */}
       <div className="flex flex-col items-center border-r pr-2 mr-1" style={{ borderColor: "var(--border)" }}>
-        <div className="flex items-center gap-0.5 overflow-x-auto max-w-[300px]">
-          {DOCUMENT_STYLES.slice(0, 6).map((style) => (
+        <div className="flex items-center gap-0.5 overflow-x-auto max-w-[380px]">
+          {DOCUMENT_STYLES.filter((s) =>
+            ["Normal", "Heading 1", "Heading 2", "Heading 3", "Heading 4", "Heading 5", "Heading 6", "Subtitle", "Quote"].includes(s.name)
+          ).map((style) => (
             <button
               key={style.name}
               className="px-2 py-0.5 rounded border text-[10px] whitespace-nowrap hover:bg-[var(--muted)] transition-colors cursor-pointer"
