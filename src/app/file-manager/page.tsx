@@ -22,10 +22,15 @@ import {
   Edit3,
   X,
   Check,
+  Upload,
+  Share2,
+  ExternalLink,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { formatDate } from "@/lib/utils";
 import type { FileType, VFolder } from "@/types";
+import { ImportDialog } from "@/components/shared/import-dialog";
+import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
 
 const typeIcons: Record<FileType, React.ElementType> = {
   document: FileText,
@@ -71,6 +76,9 @@ export default function FileManagerPage() {
 
   // Context menu
   const [contextMenu, setContextMenu] = useState<{ id: string; kind: "file" | "folder"; x: number; y: number } | null>(null);
+
+  // Import
+  const [showImport, setShowImport] = useState(false);
 
   const childFolders = folders.filter((f) => f.parentId === currentFolderId);
   const filesInFolder = recentFiles.filter((f) => f.folderId === currentFolderId);
@@ -170,6 +178,13 @@ export default function FileManagerPage() {
           <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>Browse and organize your files and folders</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium"
+            style={{ backgroundColor: "var(--card)", color: "var(--card-foreground)", border: "1px solid var(--border)" }}
+          >
+            <Upload size={16} /> Import
+          </button>
           <button
             onClick={() => setShowNewFile(true)}
             className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium"
@@ -430,7 +445,37 @@ export default function FileManagerPage() {
       {/* Context menu */}
       {contextMenu && (
         <div className="fixed z-50 rounded-lg border shadow-lg py-1"
-          style={{ left: contextMenu.x, top: contextMenu.y, backgroundColor: "var(--card)", borderColor: "var(--border)", minWidth: 140 }}>
+          style={{ left: contextMenu.x, top: contextMenu.y, backgroundColor: "var(--card)", borderColor: "var(--border)", minWidth: 160 }}>
+          {contextMenu.kind === "file" && (
+            <>
+              <button
+                onClick={() => {
+                  const file = recentFiles.find((f) => f.id === contextMenu.id);
+                  if (file) {
+                    const routes: Record<FileType, string> = { document: "/document", spreadsheet: "/spreadsheet", presentation: "/presentation", pdf: "/pdf" };
+                    window.location.href = routes[file.type] || "/";
+                  }
+                  setContextMenu(null);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--accent)]" style={{ color: "var(--foreground)" }}
+              >
+                <ExternalLink size={14} /> Open
+              </button>
+              <button
+                onClick={() => {
+                  const file = recentFiles.find((f) => f.id === contextMenu.id);
+                  if (file) {
+                    navigator.clipboard?.writeText(`${window.location.origin}/document?file=${file.id}`).catch(() => {});
+                  }
+                  setContextMenu(null);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--accent)]" style={{ color: "var(--foreground)" }}
+              >
+                <Share2 size={14} /> Share / Copy Link
+              </button>
+              <div className="my-1 border-t" style={{ borderColor: "var(--border)" }} />
+            </>
+          )}
           <button
             onClick={() => {
               const item = contextMenu.kind === "file" ? recentFiles.find((f) => f.id === contextMenu.id) : folders.find((f) => f.id === contextMenu.id);
@@ -507,6 +552,40 @@ export default function FileManagerPage() {
           <ArrowUp size={20} />
         </button>
       )}
+
+      {/* Import Dialog */}
+      <ImportDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={async (file) => {
+          // Just create a file entry representing the imported file
+          const type: FileType = file.name.endsWith(".xlsx") || file.name.endsWith(".csv")
+            ? "spreadsheet"
+            : file.name.endsWith(".pptx") || file.name.endsWith(".ppt")
+            ? "presentation"
+            : file.name.endsWith(".pdf")
+            ? "pdf"
+            : "document";
+          createFile(file.name, type, currentFolderId);
+          setShowImport(false);
+        }}
+      />
+
+      {/* Drag-and-drop overlay */}
+      <GlobalDropzoneOverlay
+        onFileDrop={(files) => {
+          files.forEach((file) => {
+            const type: FileType = file.name.endsWith(".xlsx") || file.name.endsWith(".csv")
+              ? "spreadsheet"
+              : file.name.endsWith(".pptx") || file.name.endsWith(".ppt")
+              ? "presentation"
+              : file.name.endsWith(".pdf")
+              ? "pdf"
+              : "document";
+            createFile(file.name, type, currentFolderId);
+          });
+        }}
+      />
     </div>
   );
 }

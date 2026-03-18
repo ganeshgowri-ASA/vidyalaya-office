@@ -24,6 +24,10 @@ import { CellCommentsDialog } from "./cell-comments-dialog";
 import { FreezePanesDialog } from "./freeze-panes-dialog";
 import { CellFormattingDialog } from "./cell-formatting-dialog";
 import { FinancialAnalysisModal } from "./financial-analysis-modal";
+import { ImportDialog } from "@/components/shared/import-dialog";
+import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
+import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
+import { ExportManager } from "@/lib/export-manager";
 
 export default function SpreadsheetWorkspace() {
   const getActiveSheet = useSpreadsheetStore((s) => s.getActiveSheet);
@@ -48,6 +52,8 @@ export default function SpreadsheetWorkspace() {
   const [showFreezePanes, setShowFreezePanes] = useState(false);
   const [showCellFormatting, setShowCellFormatting] = useState(false);
   const [showFinancialAnalysis, setShowFinancialAnalysis] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   // Export handlers
   const handleExportCSV = useCallback(() => {
@@ -63,6 +69,42 @@ export default function SpreadsheetWorkspace() {
   const handlePrint = useCallback(() => {
     const sheet = getActiveSheet();
     printSheet(sheet, getCellDisplay);
+  }, [getActiveSheet, getCellDisplay]);
+
+  const handleImport = useCallback(async (file: File) => {
+    const progress = (_p: { percent: number; message: string }) => {};
+    if (file.name.endsWith(".csv") || file.name.endsWith(".tsv") || file.name.endsWith(".txt")) {
+      const text = await file.text();
+      importCSV(text);
+    } else {
+      try {
+        const result = await ExportManager.importDocument(file, progress);
+        importCSV(result.content);
+      } catch {
+        // fallback: try reading as text
+        const text = await file.text();
+        importCSV(text);
+      }
+    }
+  }, [importCSV]);
+
+  const getSpreadsheetHtml = useCallback(() => {
+    const sheet = getActiveSheet();
+    let html = "<table border='1' style='border-collapse:collapse;font-size:13px;'>";
+    for (let r = 0; r < 50; r++) {
+      let hasContent = false;
+      let row = "<tr>";
+      for (let c = 0; c < 26; c++) {
+        const key = `${colToLetter(c)}${r + 1}`;
+        const val = getCellDisplay(c, r);
+        if (val) hasContent = true;
+        row += `<td style='padding:4px 8px;border:1px solid #ddd;'>${val || ""}</td>`;
+      }
+      row += "</tr>";
+      if (hasContent) html += row;
+    }
+    html += "</table>";
+    return html;
   }, [getActiveSheet, getCellDisplay]);
 
   // Data validation apply
@@ -166,6 +208,8 @@ export default function SpreadsheetWorkspace() {
           };
           input.click();
         }}
+        onImport={() => setShowImport(true)}
+        onPrintPreview={() => setShowPrintPreview(true)}
       />
 
       {/* Formula Bar */}
@@ -212,6 +256,23 @@ export default function SpreadsheetWorkspace() {
       <FreezePanesDialog open={showFreezePanes} onClose={() => setShowFreezePanes(false)} />
       <CellFormattingDialog open={showCellFormatting} onClose={() => setShowCellFormatting(false)} />
       <FinancialAnalysisModal open={showFinancialAnalysis} onClose={() => setShowFinancialAnalysis(false)} />
+      <ImportDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={handleImport}
+        defaultType="spreadsheet"
+      />
+      <PrintPreviewModal
+        open={showPrintPreview}
+        onClose={() => setShowPrintPreview(false)}
+        htmlContent={getSpreadsheetHtml()}
+        title="Spreadsheet"
+      />
+      <GlobalDropzoneOverlay
+        onFileDrop={(files) => {
+          if (files[0]) handleImport(files[0]);
+        }}
+      />
     </div>
   );
 }

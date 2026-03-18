@@ -44,6 +44,7 @@ import { ExportProgress } from "@/components/shared/export-progress";
 import { ImportDialog } from "@/components/shared/import-dialog";
 import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
 import { ExportManager, type ExportFormat } from "@/lib/export-manager";
+import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
 
 export default function DocumentPage() {
   const {
@@ -81,7 +82,7 @@ export default function DocumentPage() {
         switch (e.key.toLowerCase()) {
           case "p":
             e.preventDefault();
-            window.print();
+            setShowPrintPreview(true);
             break;
           case "f":
             e.preventDefault();
@@ -379,6 +380,11 @@ export default function DocumentPage() {
         percent={exportProgress.percent}
         message={exportProgress.message}
         onClose={() => setIsExporting(false)}
+      />
+      <GlobalDropzoneOverlay
+        onFileDrop={(files) => {
+          if (files[0]) handleImport(files[0]);
+        }}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import { HistoryPanel } from '@/components/shared/history-panel';
 import {
   Bold, Italic, Underline, Type, Image, Square, Circle,
   Palette, Play, LayoutTemplate, ChevronDown, ArrowRight,
@@ -1569,6 +1570,13 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
           className="p-1 rounded hover:opacity-80" style={{ color: 'var(--topbar-foreground)', opacity: redoStack.length === 0 ? 0.3 : 1 }} title="Redo (Ctrl+Y)">
           <Redo2 size={14} />
         </button>
+        <HistoryPanel
+          undoCount={undoStack.length}
+          redoCount={redoStack.length}
+          onUndo={undo}
+          onRedo={redo}
+          module="presentation"
+        />
         <div className="w-px h-4 mx-1" style={{ background: 'var(--border)' }} />
 
         <div className="flex items-center gap-0.5">

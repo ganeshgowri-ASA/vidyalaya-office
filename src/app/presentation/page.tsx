@@ -35,6 +35,7 @@ import { ExportProgress } from '@/components/shared/export-progress';
 import { ImportDialog } from '@/components/shared/import-dialog';
 import { PrintPreviewModal } from '@/components/shared/print-preview-modal';
 import { ExportManager, type ExportFormat } from '@/lib/export-manager';
+import { GlobalDropzoneOverlay } from '@/components/shared/dropzone-overlay';
 
 export default function PresentationPage() {
   const {
@@ -285,6 +286,11 @@ export default function PresentationPage() {
       <RecordNarrationModal />
       <SlideZoomModal />
       <KeyboardShortcutsModal />
+      <GlobalDropzoneOverlay
+        onFileDrop={(files) => {
+          if (files[0]) handlePresentationImport(files[0]);
+        }}
+      />
     </>
   );
 }

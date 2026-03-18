@@ -40,6 +40,7 @@ import { formatDate } from "@/lib/utils";
 import type { FileType } from "@/types";
 import { ImportDialog } from "@/components/shared/import-dialog";
 import { ExportManager } from "@/lib/export-manager";
+import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
 import type { DocumentType } from "@/lib/export-manager";
 import {
   BarChart,
@@ -879,6 +880,19 @@ export default function DashboardPage() {
         open={showImport}
         onClose={() => setShowImport(false)}
         onImport={handleImport}
+      />
+      <GlobalDropzoneOverlay
+        onFileDrop={(files) => {
+          if (files[0]) {
+            const f = files[0];
+            const type: DocumentType = f.name.endsWith(".xlsx") || f.name.endsWith(".csv")
+              ? "spreadsheet"
+              : f.name.endsWith(".pptx")
+              ? "presentation"
+              : "document";
+            handleImport(f, type);
+          }
+        }}
       />
     </div>
   );

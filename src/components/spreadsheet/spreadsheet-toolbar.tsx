@@ -27,6 +27,7 @@ import {
 import { useCallback, useRef, useState } from "react";
 import { colToLetter } from "./formula-engine";
 import { CellBordersPicker } from "./cell-borders-picker";
+import { HistoryPanel } from "@/components/shared/history-panel";
 
 // ─── Small reusable UI primitives ────────────────────────────────
 function ToolBtn({
@@ -208,6 +209,8 @@ export function SpreadsheetToolbar({
   onOpenFindReplace, onOpenNamedRanges, onOpenComments, onOpenFreezePanes,
   onOpenCellFormatting,
   onOpenFinancialAnalysis,
+  onPrintPreview,
+  onImport,
 }: {
   onExportCSV: () => void; onPrint: () => void;
   onOpenPivot?: () => void; onOpenValidation?: () => void;
@@ -219,6 +222,8 @@ export function SpreadsheetToolbar({
   onOpenComments?: () => void; onOpenFreezePanes?: () => void;
   onOpenCellFormatting?: () => void;
   onOpenFinancialAnalysis?: () => void;
+  onPrintPreview?: () => void;
+  onImport?: () => void;
 }) {
   const setSelectionStyle = useSpreadsheetStore((s) => s.setSelectionStyle);
   const activeCell = useSpreadsheetStore((s) => s.activeCell);
@@ -241,6 +246,8 @@ export function SpreadsheetToolbar({
   const clipboardPasteSpecial = useSpreadsheetStore((s) => s.clipboardPasteSpecial);
   const undo = useSpreadsheetStore((s) => s.undo);
   const redo = useSpreadsheetStore((s) => s.redo);
+  const undoStack = useSpreadsheetStore((s) => s.undoStack);
+  const redoStack = useSpreadsheetStore((s) => s.redoStack);
   const setFrozenPanes = useSpreadsheetStore((s) => s.setFrozenPanes);
   const toggleShowFormulas = useSpreadsheetStore((s) => s.toggleShowFormulas);
   const toggleShowGridlines = useSpreadsheetStore((s) => s.toggleShowGridlines);
@@ -1189,10 +1196,21 @@ export function SpreadsheetToolbar({
       <div className="flex items-center gap-0.5 px-2 py-0.5 border-b" style={{ borderColor: "var(--border)" }}>
         <ToolBtn title="Undo (Ctrl+Z)" onClick={undo} small><Undo2 size={13} /></ToolBtn>
         <ToolBtn title="Redo (Ctrl+Y)" onClick={redo} small><Redo2 size={13} /></ToolBtn>
+        <HistoryPanel
+          undoCount={undoStack.length}
+          redoCount={redoStack.length}
+          onUndo={undo}
+          onRedo={redo}
+          module="spreadsheet"
+        />
         <Separator />
+        <ToolBtn title="Import" onClick={() => onImport?.()} small><Upload size={13} /></ToolBtn>
         <ToolBtn title="Export CSV" onClick={onExportCSV} small><Download size={13} /></ToolBtn>
         <ToolBtn title="Export Excel" onClick={() => onExportExcel?.()} small><FileSpreadsheet size={13} /></ToolBtn>
         <ToolBtn title="Print" onClick={onPrint} small><Printer size={13} /></ToolBtn>
+        {onPrintPreview && (
+          <ToolBtn title="Print Preview" onClick={onPrintPreview} small><Eye size={13} /></ToolBtn>
+        )}
         <div className="flex-1" />
         <ToolBtn title="Templates" onClick={openTemplatesModal} small><FileSpreadsheet size={13} /></ToolBtn>
         <ToolBtn title="AI Assistant" active={showAiPanel} onClick={toggleAiPanel} small><MessageSquare size={13} /></ToolBtn>
