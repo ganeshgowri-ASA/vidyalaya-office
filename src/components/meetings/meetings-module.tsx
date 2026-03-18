@@ -194,7 +194,11 @@ const LANG_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 const PLATFORM_ICONS: Record<string, string> = {
-  vidyalaya: '🟣', teams: '🟦', zoom: '🔵', meet: '🟢', webex: '🟡',
+  vidyalaya: '🟣', teams: '🟦', jiomeet: '🔷', zoom: '🔵', meet: '🟢', webex: '🟡',
+};
+
+const PLATFORM_LABELS: Record<string, string> = {
+  vidyalaya: 'Vidyalaya Meet', teams: 'Microsoft Teams', jiomeet: 'Jio Meet', zoom: 'Zoom', meet: 'Google Meet', webex: 'Cisco Webex',
 };
 
 const getStatusColor = (s: string) => {
@@ -257,6 +261,12 @@ export default function MeetingsModule() {
   const [newMeeting, setNewMeeting] = useState({
     title: '', description: '', date: '', startTime: '', endTime: '',
     platform: 'vidyalaya' as string, type: 'video' as string, isRecurring: false,
+    recurringType: 'weekly' as string,
+    meetingId: `vid-meet-${Math.random().toString(36).substr(2, 5)}`,
+    password: Math.random().toString(36).substr(2, 8).toUpperCase(),
+    roomId: '',
+    sendCalendarInvite: true,
+    agenda: '',
   });
 
   // ---- Recording timer effects ----
@@ -1012,53 +1022,154 @@ export default function MeetingsModule() {
       {/* ===== SCHEDULE NEW MEETING MODAL ===== */}
       {showSchedule && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-[480px] bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)] rounded-xl shadow-2xl p-6">
+          <div className="w-[560px] max-h-[90vh] overflow-y-auto bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)] rounded-xl shadow-2xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold">➕ Schedule New Meeting</h3>
-              <button onClick={() => setShowSchedule(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white">✕</button>
+              <div>
+                <h3 className="text-sm font-semibold">➕ Schedule New Meeting</h3>
+                <p className="text-[10px] text-[var(--text-secondary,#94a3b8)] mt-0.5">Set up a meeting across platforms with auto-generated credentials</p>
+              </div>
+              <button onClick={() => setShowSchedule(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white text-lg">✕</button>
             </div>
             <div className="space-y-3">
               <input value={newMeeting.title} onChange={e => setNewMeeting({ ...newMeeting, title: e.target.value })}
-                placeholder="Meeting title" className="w-full px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs outline-none" />
+                placeholder="Meeting title *" className="w-full px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs outline-none" />
               <textarea value={newMeeting.description} onChange={e => setNewMeeting({ ...newMeeting, description: e.target.value })}
-                placeholder="Description" rows={2} className="w-full px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs resize-none outline-none" />
+                placeholder="Description / Agenda" rows={2} className="w-full px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs resize-none outline-none" />
+
+              {/* Date & Time row */}
               <div className="flex gap-2">
-                <input type="date" value={newMeeting.date} onChange={e => setNewMeeting({ ...newMeeting, date: e.target.value })}
-                  className="flex-1 px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
-                <input type="time" value={newMeeting.startTime} onChange={e => setNewMeeting({ ...newMeeting, startTime: e.target.value })}
-                  className="flex-1 px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
-                <input type="time" value={newMeeting.endTime} onChange={e => setNewMeeting({ ...newMeeting, endTime: e.target.value })}
-                  className="flex-1 px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+                <div className="flex-1">
+                  <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-1">Date</label>
+                  <input type="date" value={newMeeting.date} onChange={e => setNewMeeting({ ...newMeeting, date: e.target.value })}
+                    className="w-full px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+                </div>
+                <div className="flex-1">
+                  <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-1">Start Time</label>
+                  <input type="time" value={newMeeting.startTime} onChange={e => setNewMeeting({ ...newMeeting, startTime: e.target.value })}
+                    className="w-full px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+                </div>
+                <div className="flex-1">
+                  <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-1">End Time</label>
+                  <input type="time" value={newMeeting.endTime} onChange={e => setNewMeeting({ ...newMeeting, endTime: e.target.value })}
+                    className="w-full px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs" />
+                </div>
               </div>
-              <div className="flex gap-2">
-                <select value={newMeeting.platform} onChange={e => setNewMeeting({ ...newMeeting, platform: e.target.value })}
-                  className="flex-1 px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs">
-                  <option value="vidyalaya">Vidyalaya Meet</option>
-                  <option value="zoom">Zoom</option>
-                  <option value="teams">MS Teams</option>
-                  <option value="meet">Google Meet</option>
-                  <option value="webex">Webex</option>
+
+              {/* Platform & Type */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-1">External Platform</label>
+                  <select value={newMeeting.platform} onChange={e => setNewMeeting({ ...newMeeting, platform: e.target.value })}
+                    className="w-full px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs">
+                    <option value="vidyalaya">🟣 Vidyalaya Meet</option>
+                    <option value="teams">🟦 Microsoft Teams</option>
+                    <option value="jiomeet">🔷 Jio Meet</option>
+                    <option value="zoom">🔵 Zoom</option>
+                    <option value="meet">🟢 Google Meet</option>
+                    <option value="webex">🟡 Cisco Webex</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-1">Meeting Type</label>
+                  <select value={newMeeting.type} onChange={e => setNewMeeting({ ...newMeeting, type: e.target.value })}
+                    className="w-full px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs">
+                    <option value="video">📹 Video Call</option>
+                    <option value="audio">🎙 Audio Only</option>
+                    <option value="in-person">🏢 In-Person</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Conference Room */}
+              <div>
+                <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-1">Conference Room (optional)</label>
+                <select value={newMeeting.roomId} onChange={e => setNewMeeting({ ...newMeeting, roomId: e.target.value })}
+                  className="w-full px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs">
+                  <option value="">No physical room</option>
+                  {MEETING_ROOMS.map(r => (
+                    <option key={r.id} value={r.id} disabled={!r.available}>
+                      {r.name} — {r.floor}, {r.location} ({r.capacity} ppl){!r.available ? ` [Busy until ${r.nextAvailableAt}]` : ' ✓'}
+                    </option>
+                  ))}
                 </select>
-                <select value={newMeeting.type} onChange={e => setNewMeeting({ ...newMeeting, type: e.target.value })}
-                  className="flex-1 px-3 py-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs">
-                  <option value="video">Video Call</option>
-                  <option value="audio">Audio Only</option>
-                  <option value="in-person">In-Person</option>
-                </select>
               </div>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" checked={newMeeting.isRecurring}
-                  onChange={e => setNewMeeting({ ...newMeeting, isRecurring: e.target.checked })} className="w-3 h-3" />
-                <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">Recurring meeting</span>
+
+              {/* Auto-generated Meeting ID & Password */}
+              <div className="p-3 rounded-lg bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)]">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] font-semibold text-blue-400">Auto-Generated Credentials</p>
+                  <button onClick={() => setNewMeeting(p => ({ ...p, meetingId: `vid-meet-${Math.random().toString(36).substr(2, 5)}`, password: Math.random().toString(36).substr(2, 8).toUpperCase() }))}
+                    className="text-[9px] text-[var(--text-secondary,#94a3b8)] hover:text-white px-1.5 py-0.5 rounded border border-[var(--border-color,#334155)] hover:border-blue-500/50">
+                    ↺ Regenerate
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[9px] text-[var(--text-secondary,#94a3b8)] mb-1">Meeting ID</p>
+                    <code className="text-[11px] text-blue-400 font-mono">{newMeeting.meetingId}</code>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-[var(--text-secondary,#94a3b8)] mb-1">Password</p>
+                    <code className="text-[11px] text-green-400 font-mono">{newMeeting.password}</code>
+                  </div>
+                </div>
+                <div className="mt-2 pt-2 border-t border-[var(--border-color,#334155)]">
+                  <p className="text-[9px] text-[var(--text-secondary,#94a3b8)] mb-0.5">Meeting Link</p>
+                  <code className="text-[10px] text-[var(--text-secondary,#94a3b8)]">meet.vidyalaya.dev/{newMeeting.meetingId}</code>
+                </div>
               </div>
-              <div className="p-2 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)]">
-                <p className="text-[9px] text-[var(--text-secondary,#94a3b8)] mb-1">Meeting Link (auto-generated)</p>
-                <code className="text-[10px] text-blue-400">{generateMeetingLink()}</code>
+
+              {/* Recurring + Calendar Invite */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={newMeeting.isRecurring}
+                      onChange={e => setNewMeeting({ ...newMeeting, isRecurring: e.target.checked })} className="w-3 h-3 rounded" />
+                    <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">Recurring meeting</span>
+                  </label>
+                  {newMeeting.isRecurring && (
+                    <select value={newMeeting.recurringType} onChange={e => setNewMeeting({ ...newMeeting, recurringType: e.target.value })}
+                      className="flex-1 px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] text-xs">
+                      <option value="daily">Every day</option>
+                      <option value="weekdays">Every weekday (Mon–Fri)</option>
+                      <option value="weekly">Every week</option>
+                      <option value="biweekly">Every 2 weeks</option>
+                      <option value="monthly">Every month</option>
+                      <option value="quarterly">Every quarter</option>
+                    </select>
+                  )}
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={newMeeting.sendCalendarInvite}
+                    onChange={e => setNewMeeting({ ...newMeeting, sendCalendarInvite: e.target.checked })} className="w-3 h-3 rounded" />
+                  <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">Send calendar invite to all participants</span>
+                  {newMeeting.sendCalendarInvite && <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">📧 Email invite will be sent</span>}
+                </label>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="flex justify-end gap-2 mt-5">
               <button onClick={() => setShowSchedule(false)} className="px-3 py-1.5 rounded text-xs bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">Cancel</button>
-              <button onClick={() => setShowSchedule(false)} className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium">Schedule</button>
+              <button
+                onClick={() => {
+                  if (!newMeeting.title) return;
+                  const meeting: Meeting = {
+                    id: `m${Date.now()}`, title: newMeeting.title, description: newMeeting.description,
+                    date: newMeeting.date || '2024-03-25', startTime: newMeeting.startTime || '10:00', endTime: newMeeting.endTime || '11:00',
+                    type: newMeeting.type as Meeting['type'], status: 'scheduled',
+                    host: { id: 'p1', name: 'Ganesh Gowri', email: 'ganesh@vidyalaya.dev', avatar: 'G', role: 'host', status: 'accepted', isOnline: true },
+                    participants: [], meetingLink: `meet.vidyalaya.dev/${newMeeting.meetingId}`,
+                    platform: (newMeeting.platform === 'jiomeet' ? 'vidyalaya' : newMeeting.platform) as Meeting['platform'],
+                    isRecurring: newMeeting.isRecurring,
+                    recurringPattern: newMeeting.isRecurring ? { daily: 'Every day', weekdays: 'Every weekday', weekly: 'Every week', biweekly: 'Every 2 weeks', monthly: 'Every month', quarterly: 'Every quarter' }[newMeeting.recurringType] || 'Weekly' : undefined,
+                    agenda: newMeeting.agenda ? newMeeting.agenda.split('\n').filter(Boolean) : [],
+                    notes: '', tags: [], reminders: [15],
+                  };
+                  setMeetings(prev => [...prev, meeting]);
+                  setShowSchedule(false);
+                }}
+                className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium">
+                Schedule Meeting
+              </button>
             </div>
           </div>
         </div>
