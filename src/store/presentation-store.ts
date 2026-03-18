@@ -314,6 +314,10 @@ export interface PresentationState {
   slideShowAnnotations: Array<{ slideIndex: number; points: Array<{ x: number; y: number }>; color: string; tool: 'pen' | 'highlighter' }>;
   presenterViewMode: boolean;
   customThemes: PresentationTheme[];
+  showRecordNarration: boolean;
+  showSlideZoom: boolean;
+  showKeyboardShortcuts: boolean;
+  slideNarrations: Record<string, { audioUrl: string; duration: number }>;
 }
 
 export interface PresentationActions {
@@ -391,6 +395,11 @@ export interface PresentationActions {
   setShowAnimationTimeline: (on: boolean) => void;
   addCustomTheme: (theme: PresentationTheme) => void;
   updateImageFilters: (slideIndex: number, elementId: string, filters: ImageFilters) => void;
+  setShowRecordNarration: (on: boolean) => void;
+  setShowSlideZoom: (on: boolean) => void;
+  setShowKeyboardShortcuts: (on: boolean) => void;
+  addSlideNarration: (slideId: string, audioUrl: string, duration: number) => void;
+  removeSlideNarration: (slideId: string) => void;
   updateImageCrop: (slideIndex: number, elementId: string, crop: ImageCrop) => void;
   updateTableCellStyle: (slideIndex: number, elementId: string, cellKey: string, style: TableCellStyle) => void;
   updateSlideTransitionSound: (index: number, sound: TransitionSound) => void;
@@ -708,6 +717,10 @@ export const usePresentationStore = create<PresentationState & PresentationActio
   slideShowAnnotations: [],
   presenterViewMode: false,
   customThemes: [],
+  showRecordNarration: false,
+  showSlideZoom: false,
+  showKeyboardShortcuts: false,
+  slideNarrations: {},
 
   pushUndo: () =>
     set((state) => ({
@@ -1318,4 +1331,20 @@ export const usePresentationStore = create<PresentationState & PresentationActio
     set((state) => ({
       slideMasters: state.slideMasters.map(m => m.id === masterId ? { ...m, placeholders } : m),
     })),
+
+  setShowRecordNarration: (on) => set({ showRecordNarration: on }),
+  setShowSlideZoom: (on) => set({ showSlideZoom: on }),
+  setShowKeyboardShortcuts: (on) => set({ showKeyboardShortcuts: on }),
+
+  addSlideNarration: (slideId, audioUrl, duration) =>
+    set((state) => ({
+      slideNarrations: { ...state.slideNarrations, [slideId]: { audioUrl, duration } },
+    })),
+
+  removeSlideNarration: (slideId) =>
+    set((state) => {
+      const n = { ...state.slideNarrations };
+      delete n[slideId];
+      return { slideNarrations: n };
+    }),
 }));

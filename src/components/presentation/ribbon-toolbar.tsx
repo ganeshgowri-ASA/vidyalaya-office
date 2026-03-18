@@ -26,6 +26,7 @@ import {
   PlayCircle, StopCircle, SkipBack, FastForward,
   ChevronRight, ChevronLeft, ChevronUp, ListOrdered,
   MousePointerClick, Hourglass, LayoutList, Rewind,
+  Keyboard,
 } from 'lucide-react';
 import {
   ShapePicker, IconPicker,
@@ -148,6 +149,8 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
     setShowImageEditor, showImageEditor,
     setShowTransitionPanel, showTransitionPanel,
     setShowAnimationTimeline, showAnimationTimeline,
+    setShowRecordNarration, setShowSlideZoom, setShowKeyboardShortcuts,
+    slideNarrations,
   } = store;
 
   const [showBgPicker, setShowBgPicker] = useState(false);
@@ -668,6 +671,16 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
 
             <RibbonGroup label="Illustrations">
               <RibbonButton icon={<Lightbulb size={18} />} label="SmartArt" onClick={() => setShowSmartArtModal(true)} />
+            </RibbonGroup>
+            <RibbonDivider />
+
+            <RibbonGroup label="Zoom">
+              <RibbonButton
+                icon={<ZoomIn size={18} />}
+                label="Slide Zoom"
+                onClick={() => setShowSlideZoom(true)}
+                title="Insert a slide zoom for interactive navigation"
+              />
             </RibbonGroup>
           </div>
         );
@@ -1373,15 +1386,15 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
                     <RibbonButton
                       icon={<Camera size={14} />}
                       label="Record"
-                      onClick={() => alert('Record Slide Show: Record narration, timings, and pointer movements')}
+                      onClick={() => setShowRecordNarration(true)}
                       small
-                      title="Record slide show"
+                      title="Record narration for slides"
                     />
                     <button
-                      onClick={() => alert('Record from: Beginning or Current Slide')}
+                      onClick={() => setShowRecordNarration(true)}
                       className="p-0.5 rounded hover:opacity-80"
                       style={{ color: 'var(--topbar-foreground)' }}
-                      title="Record options"
+                      title="Record narration"
                     >
                       <ChevronDown size={9} />
                     </button>
@@ -1490,10 +1503,11 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
 
       case 'view':
         return (
-          <div className="flex items-end gap-0.5">
+          <div className="flex items-end gap-0.5 overflow-x-auto">
             <RibbonGroup label="Presentation Views">
               <RibbonButton icon={<Rows3 size={16} />} label="Normal" active={!showSlideSorter} onClick={() => setShowSlideSorter(false)} />
               <RibbonButton icon={<Grid size={16} />} label="Sorter" active={showSlideSorter} onClick={() => setShowSlideSorter(!showSlideSorter)} />
+              <RibbonButton icon={<Layers size={16} />} label="Slide Master" onClick={() => setShowSlideMaster(true)} small title="Open Slide Master editor" />
             </RibbonGroup>
             <RibbonDivider />
 
@@ -1523,6 +1537,17 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
                   100%
                 </button>
               </div>
+            </RibbonGroup>
+            <RibbonDivider />
+
+            <RibbonGroup label="Help">
+              <RibbonButton
+                icon={<Keyboard size={16} />}
+                label="Shortcuts"
+                onClick={() => setShowKeyboardShortcuts(true)}
+                title="Show keyboard shortcuts (?)"
+                small
+              />
             </RibbonGroup>
           </div>
         );

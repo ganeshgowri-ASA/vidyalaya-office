@@ -26,6 +26,9 @@ import TransitionPanel from '@/components/presentation/transition-panel';
 import AnimationTimeline from '@/components/presentation/animation-timeline';
 import { PageSetupDialog } from '@/components/document/page-setup-dialog';
 import { CollaborationToolbar, CollabCommentsSidebar, ShareDialog, VersionHistoryPanel } from '@/components/collaboration';
+import RecordNarrationModal from '@/components/presentation/record-narration-modal';
+import SlideZoomModal from '@/components/presentation/slide-zoom-modal';
+import KeyboardShortcutsModal from '@/components/presentation/keyboard-shortcuts-modal';
 import { useCollaborationStore } from '@/store/collaboration-store';
 import { ExportDropdown } from '@/components/shared/export-dropdown';
 import { ExportProgress } from '@/components/shared/export-progress';
@@ -38,6 +41,7 @@ export default function PresentationPage() {
     setPresenterMode, presenterMode, loadTemplate,
     undo, redo, pushUndo, copyElement, pasteElement,
     selectedElementId, removeElement, activeSlideIndex,
+    setShowKeyboardShortcuts,
   } = usePresentationStore();
   const [showPageSetup, setShowPageSetup] = React.useState(false);
   const [isExporting, setIsExporting] = React.useState(false);
@@ -155,6 +159,13 @@ export default function PresentationPage() {
         e.preventDefault();
         setPresenterMode(true);
       }
+      // ? key opens keyboard shortcuts
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.getAttribute('contenteditable') === 'true' || activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) return;
+        e.preventDefault();
+        setShowKeyboardShortcuts(true);
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         undo();
@@ -187,7 +198,7 @@ export default function PresentationPage() {
         }
       }
     },
-    [presenterMode, setPresenterMode, undo, redo, copyElement, pasteElement, selectedElementId, pushUndo, removeElement, activeSlideIndex],
+    [presenterMode, setPresenterMode, undo, redo, copyElement, pasteElement, selectedElementId, pushUndo, removeElement, activeSlideIndex, setShowKeyboardShortcuts],
   );
 
   useEffect(() => {
@@ -271,6 +282,9 @@ export default function PresentationPage() {
         message={exportProgress.message}
         onClose={() => setIsExporting(false)}
       />
+      <RecordNarrationModal />
+      <SlideZoomModal />
+      <KeyboardShortcutsModal />
     </>
   );
 }
