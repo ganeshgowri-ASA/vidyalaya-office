@@ -186,6 +186,8 @@ export function SpreadsheetGrid() {
   const handleCellMouseDown = useCallback(
     (col: number, row: number, e: React.MouseEvent) => {
       if (e.button === 2) return; // right click handled by context menu
+      // Ensure the grid div gets keyboard focus so typing triggers onKeyDown
+      gridRef.current?.focus();
       if (e.shiftKey && activeCell) {
         setSelection(activeCell, { col, row });
       } else if (e.ctrlKey || e.metaKey) {
@@ -594,7 +596,7 @@ export function SpreadsheetGrid() {
                         height: getRowHeight(r), padding: 0,
                         border: showGridlines ? "1px solid var(--border)" : "1px solid transparent",
                         backgroundColor: selected && !active
-                          ? "rgba(59,130,246,0.1)"
+                          ? "rgba(59,130,246,0.25)"
                           : cellStyle.bgColor || "var(--background)",
                         outline: active ? "2px solid #3b82f6" : "none",
                         outlineOffset: "-1px",
