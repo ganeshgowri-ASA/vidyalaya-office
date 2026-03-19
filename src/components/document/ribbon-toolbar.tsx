@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Sparkles, LayoutTemplate, Terminal, Code,
   Shield, FileCode, Search, Globe, Key, Link,
@@ -8,8 +8,10 @@ import {
   Type, FileType, ImageIcon, List, Calendar, CheckSquare,
   AlignLeft, ToggleLeft, ChevronDown, Paintbrush, SlidersHorizontal,
   FileJson, Layers, Map, Play, Mic, ShieldAlert,
+  Undo2, Redo2,
 } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
+import { HistoryPanel } from "@/components/shared/history-panel";
 import { ToolbarButton, ToolbarSeparator, RibbonGroup } from "./toolbar-button";
 import { HomeTab } from "./ribbon-home-tab";
 import { InsertTab } from "./ribbon-insert-tab";
@@ -39,6 +41,35 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
     selectedTable, selectedImage, selectedSmartArt,
   } = useDocumentStore();
 
+  // Track undo/redo count via MutationObserver on the editor
+  const [undoCount, setUndoCount] = useState(0);
+  const [redoCount, setRedoCount] = useState(0);
+  const mutationCountRef = useRef(0);
+
+  useEffect(() => {
+    const editor = document.getElementById("doc-editor");
+    if (!editor) return;
+    const observer = new MutationObserver(() => {
+      mutationCountRef.current += 1;
+      setUndoCount(mutationCountRef.current);
+      setRedoCount(0);
+    });
+    observer.observe(editor, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, []);
+
+  const handleDocUndo = () => {
+    document.execCommand("undo");
+    setUndoCount((c) => Math.max(0, c - 1));
+    setRedoCount((c) => c + 1);
+  };
+
+  const handleDocRedo = () => {
+    document.execCommand("redo");
+    setRedoCount((c) => Math.max(0, c - 1));
+    setUndoCount((c) => c + 1);
+  };
+
   const baseTabs: { key: TabKey; label: string; contextual?: boolean; color?: string }[] = [
     { key: "home", label: "Home" },
     { key: "insert", label: "Insert" },
@@ -58,6 +89,32 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
 
   return (
     <div className="no-print flex-shrink-0 border-b" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
+      {/* Quick Access Toolbar */}
+      <div className="flex items-center gap-0.5 px-2 py-0.5 border-b" style={{ borderColor: "var(--border)" }}>
+        <button
+          onClick={handleDocUndo}
+          className="p-0.5 rounded hover:opacity-80 transition-colors"
+          style={{ color: "var(--muted-foreground)" }}
+          title="Undo (Ctrl+Z)"
+        >
+          <Undo2 size={13} />
+        </button>
+        <button
+          onClick={handleDocRedo}
+          className="p-0.5 rounded hover:opacity-80 transition-colors"
+          style={{ color: "var(--muted-foreground)" }}
+          title="Redo (Ctrl+Y)"
+        >
+          <Redo2 size={13} />
+        </button>
+        <HistoryPanel
+          undoCount={undoCount}
+          redoCount={redoCount}
+          onUndo={handleDocUndo}
+          onRedo={handleDocRedo}
+          module="document"
+        />
+      </div>
       {/* Tabs */}
       <div className="flex items-center gap-0 border-b px-2" style={{ borderColor: "var(--border)" }}>
         {tabs.map((t) => (

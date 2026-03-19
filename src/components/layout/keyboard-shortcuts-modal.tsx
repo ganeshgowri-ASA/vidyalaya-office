@@ -11,8 +11,9 @@ const shortcutGroups = [
       { keys: ["?"], description: "Show keyboard shortcuts" },
       { keys: ["Ctrl", "S"], description: "Save current document" },
       { keys: ["Ctrl", "Z"], description: "Undo" },
-      { keys: ["Ctrl", "Shift", "Z"], description: "Redo" },
-      { keys: ["Ctrl", "P"], description: "Print" },
+      { keys: ["Ctrl", "Y"], description: "Redo" },
+      { keys: ["Ctrl", "Shift", "Z"], description: "Redo (alternate)" },
+      { keys: ["Ctrl", "P"], description: "Print / Print preview" },
       { keys: ["Ctrl", "F"], description: "Find in document" },
       { keys: ["Ctrl", "H"], description: "Find and replace" },
       { keys: ["Esc"], description: "Close modal / cancel" },
@@ -25,8 +26,15 @@ const shortcutGroups = [
       { keys: ["Ctrl", "I"], description: "Italic" },
       { keys: ["Ctrl", "U"], description: "Underline" },
       { keys: ["Ctrl", "Shift", "L"], description: "Bulleted list" },
-      { keys: ["Ctrl", "Shift", "E"], description: "Center align" },
+      { keys: ["Ctrl", "E"], description: "Center align" },
+      { keys: ["Ctrl", "L"], description: "Left align" },
+      { keys: ["Ctrl", "R"], description: "Right align" },
+      { keys: ["Ctrl", "J"], description: "Justify" },
       { keys: ["Ctrl", "K"], description: "Insert link" },
+      { keys: ["Ctrl", "A"], description: "Select all" },
+      { keys: ["Ctrl", "X"], description: "Cut" },
+      { keys: ["Ctrl", "C"], description: "Copy" },
+      { keys: ["Ctrl", "V"], description: "Paste" },
     ],
   },
   {
@@ -35,9 +43,15 @@ const shortcutGroups = [
       { keys: ["Tab"], description: "Move to next cell" },
       { keys: ["Shift", "Tab"], description: "Move to previous cell" },
       { keys: ["Enter"], description: "Confirm cell & move down" },
+      { keys: ["Ctrl", ";"], description: "Insert current date" },
+      { keys: ["Ctrl", "Shift", ";"], description: "Insert current time" },
       { keys: ["Ctrl", "C"], description: "Copy cell" },
       { keys: ["Ctrl", "V"], description: "Paste cell" },
+      { keys: ["Ctrl", "X"], description: "Cut cell" },
       { keys: ["Delete"], description: "Clear cell contents" },
+      { keys: ["F2"], description: "Edit active cell" },
+      { keys: ["Ctrl", "Home"], description: "Go to first cell (A1)" },
+      { keys: ["Ctrl", "End"], description: "Go to last used cell" },
     ],
   },
   {
@@ -48,6 +62,36 @@ const shortcutGroups = [
       { keys: ["F5"], description: "Start presentation" },
       { keys: ["Esc"], description: "Exit presentation mode" },
       { keys: ["\u2190", "\u2192"], description: "Navigate slides" },
+      { keys: ["Ctrl", "A"], description: "Select all elements" },
+      { keys: ["Delete"], description: "Delete selected element" },
+      { keys: ["Ctrl", "G"], description: "Group elements" },
+    ],
+  },
+  {
+    title: "Email",
+    shortcuts: [
+      { keys: ["C"], description: "Compose new email" },
+      { keys: ["R"], description: "Reply to email" },
+      { keys: ["Shift", "R"], description: "Reply all" },
+      { keys: ["F"], description: "Forward email" },
+      { keys: ["E"], description: "Archive email" },
+      { keys: ["#"], description: "Delete email" },
+      { keys: ["S"], description: "Star / unstar email" },
+      { keys: ["U"], description: "Mark as unread" },
+      { keys: ["Enter"], description: "Open selected email" },
+      { keys: ["Esc"], description: "Close compose" },
+    ],
+  },
+  {
+    title: "File Manager",
+    shortcuts: [
+      { keys: ["F2"], description: "Rename selected file" },
+      { keys: ["Delete"], description: "Delete selected file" },
+      { keys: ["Ctrl", "C"], description: "Copy file" },
+      { keys: ["Ctrl", "V"], description: "Paste file" },
+      { keys: ["Ctrl", "A"], description: "Select all files" },
+      { keys: ["Enter"], description: "Open file / navigate folder" },
+      { keys: ["Backspace"], description: "Go up one folder" },
     ],
   },
   {
@@ -58,6 +102,7 @@ const shortcutGroups = [
       { keys: ["Ctrl", "3"], description: "Go to Spreadsheets" },
       { keys: ["Ctrl", "4"], description: "Go to Presentations" },
       { keys: ["Ctrl", "/"], description: "Focus search bar" },
+      { keys: ["Ctrl", "."], description: "Toggle AI assistant" },
     ],
   },
 ];
@@ -98,7 +143,7 @@ export function KeyboardShortcutsModal() {
 
       {/* Modal */}
       <div
-        className="relative z-10 w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-xl border shadow-2xl"
+        className="relative z-10 w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-xl border shadow-2xl"
         style={{
           backgroundColor: "var(--card)",
           borderColor: "var(--border)",
@@ -127,7 +172,7 @@ export function KeyboardShortcutsModal() {
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           {shortcutGroups.map((group) => (
             <div key={group.title}>
               <h3
@@ -144,7 +189,7 @@ export function KeyboardShortcutsModal() {
                     style={{ backgroundColor: "var(--background)" }}
                   >
                     <span>{shortcut.description}</span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                       {shortcut.keys.map((key, kIdx) => (
                         <span key={kIdx}>
                           <kbd
@@ -184,7 +229,21 @@ export function KeyboardShortcutsModal() {
             color: "var(--muted-foreground)",
           }}
         >
-          Press <kbd className="rounded border px-1 py-0.5 text-xs font-mono" style={{ borderColor: "var(--border)" }}>?</kbd> to toggle this dialog
+          Press{" "}
+          <kbd
+            className="rounded border px-1 py-0.5 text-xs font-mono"
+            style={{ borderColor: "var(--border)" }}
+          >
+            ?
+          </kbd>{" "}
+          to toggle &bull; Press{" "}
+          <kbd
+            className="rounded border px-1 py-0.5 text-xs font-mono"
+            style={{ borderColor: "var(--border)" }}
+          >
+            Esc
+          </kbd>{" "}
+          to close
         </div>
       </div>
     </div>
