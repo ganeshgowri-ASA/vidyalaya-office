@@ -20,6 +20,9 @@ import { PrintModal } from "@/components/pdf";
 import { ExportModal } from "@/components/pdf";
 import { BookmarksPanel } from "@/components/pdf";
 import { OrganizePagesPanel } from "@/components/pdf";
+import { BatchPanel } from "@/components/pdf";
+import { StampPanel } from "@/components/pdf";
+import { RedactionPanel } from "@/components/pdf";
 import type {
   RibbonTabId, HeaderFooterConfig, PrintOptions, ExportOptions,
   SecurityConfig, DocumentProperties, SearchResult,
@@ -48,7 +51,7 @@ import { ExportManager, type ExportFormat as UnifiedExportFormat } from "@/lib/e
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TabId = "view" | "edit" | "merge" | "split" | "convert" | "compress" | "forms" | "compare" | "ocr" | "create";
+type TabId = "view" | "edit" | "merge" | "split" | "convert" | "compress" | "forms" | "compare" | "ocr" | "create" | "redact" | "stamp" | "batch";
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "view", label: "View", icon: FileText },
@@ -60,6 +63,9 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "forms", label: "Forms", icon: FormInput },
   { id: "compare", label: "Compare", icon: Columns2 },
   { id: "ocr", label: "OCR", icon: ScanText },
+  { id: "redact", label: "Redact", icon: EyeOff },
+  { id: "stamp", label: "Stamp", icon: Stamp },
+  { id: "batch", label: "Batch", icon: Layers },
   { id: "create", label: "Create", icon: FilePlus2 },
 ];
 
@@ -893,6 +899,22 @@ export default function PdfToolsPage() {
     } catch (err) { console.error("Apply redactions failed:", err); }
   };
 
+  // ─── Redaction search ─────────────────────────────────────────────────────
+  const handleSearchRedact = useCallback((term: string) => {
+    if (!term.trim()) return;
+    // Add a search-based redaction annotation placeholder on current page
+    const ann: Annotation = {
+      id: uid(),
+      type: "redaction",
+      page: currentPage,
+      x: 60,
+      y: 100 + annotations.filter(a => a.type === "redaction").length * 30,
+      width: Math.max(100, term.length * 8),
+      height: 20,
+    };
+    setAnnotations(prev => [...prev, ann]);
+  }, [currentPage, annotations]);
+
   // ─── Create blank PDF ──────────────────────────────────────────────────────
 
   const createBlankPdf = async (pageSize: string, orientation: string, pageCount: number = 1) => {
@@ -1198,6 +1220,38 @@ export default function PdfToolsPage() {
             language={ocrLanguage} onLanguageChange={setOcrLanguage}
             onStartOcr={runOcr} pdfLoaded={!!pdfDoc}
           />
+        );
+      case "redact":
+        return (
+          <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--background)" }}>
+            <RedactionPanel
+              annotations={annotations.filter(a => a.type === "redaction").map(a => ({
+                id: a.id,
+                type: a.type,
+                page: a.page,
+                x: a.x,
+                y: a.y,
+                width: a.width,
+                height: a.height,
+              }))}
+              onApplyRedactions={handleApplyRedactions}
+              onSearchRedact={handleSearchRedact}
+              redactionsApplied={false}
+              pdfLoaded={!!pdfDoc}
+            />
+          </div>
+        );
+      case "stamp":
+        return (
+          <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--background)" }}>
+            <StampPanel />
+          </div>
+        );
+      case "batch":
+        return (
+          <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--background)" }}>
+            <BatchPanel />
+          </div>
         );
       case "create":
         return (

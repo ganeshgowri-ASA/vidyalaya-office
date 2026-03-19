@@ -8,6 +8,7 @@ import {
 import { useDocumentStore } from "@/store/document-store";
 import { ToolbarButton, ToolbarSeparator } from "./toolbar-button";
 import { THEMES, TEXT_COLORS } from "./constants";
+import { PageBordersDialog } from "./page-borders-dialog";
 
 export function DesignTab() {
   const {
@@ -24,6 +25,7 @@ export function DesignTab() {
   const [showWatermarkMenu, setShowWatermarkMenu] = useState(false);
   const [showPageColor, setShowPageColor] = useState(false);
   const [showPageBorders, setShowPageBorders] = useState(false);
+  const [showPageBordersDialog, setShowPageBordersDialog] = useState(false);
 
   return (
     <>
@@ -228,41 +230,13 @@ export function DesignTab() {
             )}
           </div>
           {/* Page Borders */}
-          <div className="relative">
-            <ToolbarButton icon={<Frame size={14} />} label="Page Borders" title="Page Borders" onClick={() => setShowPageBorders(!showPageBorders)} />
-            {showPageBorders && (
-              <div className="absolute top-full left-0 z-50 mt-1 rounded-lg border p-2 shadow-lg w-48"
-                style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
-                <div className="text-[10px] font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>Page Border Style</div>
-                {[
-                  { label: "Simple Box", border: "2px solid #333" },
-                  { label: "Double Line", border: "4px double #333" },
-                  { label: "Shadow", border: "2px solid #333", shadow: "4px 4px 0 #999" },
-                  { label: "Dashed", border: "2px dashed #666" },
-                  { label: "Dotted", border: "3px dotted #666" },
-                  { label: "Thick", border: "4px solid #000" },
-                  { label: "Decorative", border: "3px ridge #8B4513" },
-                  { label: "None", border: "none" },
-                ].map((b) => (
-                  <button key={b.label} className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[var(--muted)]"
-                    style={{ color: "var(--foreground)" }}
-                    onClick={() => {
-                      const page = document.querySelector(".doc-page-container") as HTMLElement;
-                      if (page) {
-                        page.style.border = b.border;
-                        page.style.boxShadow = (b as { shadow?: string }).shadow || "";
-                      }
-                      setShowPageBorders(false);
-                    }}>
-                    {b.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <ToolbarButton icon={<Frame size={14} />} label="Page Borders" title="Page Borders — decorative styles" onClick={() => setShowPageBordersDialog(true)} />
         </div>
         <span className="text-[8px] mt-0.5" style={{ color: "var(--muted-foreground)" }}>Page Background</span>
       </div>
+
+      {/* Page Borders Dialog */}
+      <PageBordersDialog open={showPageBordersDialog} onClose={() => setShowPageBordersDialog(false)} />
     </>
   );
 }
