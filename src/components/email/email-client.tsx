@@ -104,6 +104,15 @@ interface AutoArchiveRule {
   enabled: boolean;
 }
 
+interface EmailRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  condition: { field: 'from' | 'to' | 'subject'; operator: 'contains' | 'equals' | 'starts_with'; value: string; };
+  action: { type: 'move' | 'label' | 'delete' | 'forward'; target?: string; };
+  description?: string;
+}
+
 interface CalendarEvent {
   id: string;
   title: string;
@@ -215,6 +224,13 @@ const DEFAULT_AUTO_ARCHIVE_RULES: AutoArchiveRule[] = [
   { id: 'ar1', name: 'Old newsletters', condition: 'Label: newsletter, Older than 30 days', action: 'Move to Vault Archived', enabled: true },
   { id: 'ar2', name: 'Read promotions', condition: 'Category: Promotions, Read, Older than 14 days', action: 'Move to Vault Archived', enabled: false },
   { id: 'ar3', name: 'Completed threads', condition: 'Label: completed, Older than 60 days', action: 'Move to Vault Retention', enabled: true },
+];
+
+const DEFAULT_EMAIL_RULES: EmailRule[] = [
+  { id: 'er1', name: 'Auto-delete OTPs', enabled: true, condition: { field: 'subject', operator: 'contains', value: 'OTP' }, action: { type: 'delete' }, description: 'Auto-delete OTP/verification emails after 7 days to keep inbox clean' },
+  { id: 'er2', name: 'Smart Newsletter Cleanup', enabled: true, condition: { field: 'subject', operator: 'contains', value: 'newsletter' }, action: { type: 'move', target: 'archive' }, description: 'Move unread newsletters older than 15 days — shows unsubscribe banner' },
+  { id: 'er3', name: 'GitHub Notifications → Dev Label', enabled: true, condition: { field: 'from', operator: 'contains', value: 'github.com' }, action: { type: 'label', target: 'dev' }, description: 'Label all GitHub notifications as "dev" automatically' },
+  { id: 'er4', name: 'Forward HR Announcements', enabled: false, condition: { field: 'from', operator: 'contains', value: 'hr@' }, action: { type: 'forward', target: 'manager@vidyalaya.dev' }, description: 'Forward HR announcements to your manager' },
 ];
 
 const MOCK_EMAILS: Email[] = [
@@ -448,6 +464,25 @@ export function EmailClient() {
   // NEW: AI context actions state
   const [aiContextResult, setAiContextResult] = useState<string | null>(null);
   const [aiActionLoading, setAiActionLoading] = useState<string | null>(null);
+
+  // NEW: Email Rules
+  const [showManageRules, setShowManageRules] = useState(false);
+  const [emailRules, setEmailRules] = useState<EmailRule[]>(DEFAULT_EMAIL_RULES);
+  const [showAddRule, setShowAddRule] = useState(false);
+  const [newRule, setNewRule] = useState<{ name: string; condField: EmailRule['condition']['field']; condOperator: EmailRule['condition']['operator']; condValue: string; actionType: EmailRule['action']['type']; actionTarget: string }>({ name: '', condField: 'from', condOperator: 'contains', condValue: '', actionType: 'move', actionTarget: 'inbox' });
+
+  // NEW: Email Calendar mini view
+  const [showEmailCalendar, setShowEmailCalendar] = useState(false);
+  const [calMiniDate, setCalMiniDate] = useState({ year: 2024, month: 2 }); // March 2024
+
+  // NEW: Compose Meeting Invite
+  const [showComposeMeeting, setShowComposeMeeting] = useState(false);
+  const [meetingInviteData, setMeetingInviteData] = useState({
+    title: '', date: '', time: '', duration: '60', platform: 'vidyalaya',
+    meetingId: `vid-meet-${Math.random().toString(36).substr(2, 5)}`,
+    password: Math.random().toString(36).substr(2, 8).toUpperCase(),
+    roomId: '',
+  });
 
   const allFolders = useMemo(() => [...DEFAULT_FOLDERS, ...customFolders], [customFolders]);
 
@@ -782,10 +817,20 @@ export function EmailClient() {
             <span className="px-1 py-0 rounded-full bg-green-600 text-white text-[8px]">{tasks.filter(t => !t.done).length}</span>
           )}
         </button>
+        {/* Calendar mini view */}
+        <button onClick={() => setShowEmailCalendar(!showEmailCalendar)}
+          className={`px-2 py-1 rounded text-[10px] flex-shrink-0 flex items-center gap-1 ${showEmailCalendar ? 'bg-indigo-600/30 text-indigo-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
+          &#128336; Calendar
+        </button>
         {/* Filter toggle */}
         <button onClick={() => setShowFilters(!showFilters)}
           className={`px-2 py-1 rounded text-[10px] flex items-center gap-1 flex-shrink-0 ${showFilters ? 'bg-blue-600/30 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>
           Filters {activeFilterCount > 0 && <span className="px-1 py-0 rounded-full bg-blue-600 text-white text-[8px]">{activeFilterCount}</span>}
+        </button>
+        {/* Manage Rules */}
+        <button onClick={() => setShowManageRules(true)}
+          className="px-2 py-1 rounded text-[10px] flex-shrink-0 bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] flex items-center gap-1">
+          &#9881; Rules
         </button>
         {/* Accessibility */}
         <button onClick={() => setShowAccessibility(!showAccessibility)}
@@ -1583,6 +1628,94 @@ export function EmailClient() {
                   className={`w-full px-2 py-1.5 rounded bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} text-[10px]`} />
               </div>
             )}
+            {showComposeMeeting && (
+              <div className={`mx-4 mb-2 p-3 rounded-lg border border-indigo-500/30 bg-indigo-950/30`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] font-semibold text-indigo-300">&#128197; Schedule Meeting Invite</p>
+                  <button onClick={() => setShowComposeMeeting(false)} className="text-[9px] text-[var(--text-secondary,#94a3b8)] hover:text-white">x</button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div>
+                    <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-0.5">Meeting Title</label>
+                    <input value={meetingInviteData.title} onChange={e => setMeetingInviteData(p => ({ ...p, title: e.target.value }))}
+                      placeholder="e.g. Project Sync" className={`w-full px-2 py-1 rounded text-[10px] bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} outline-none`} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-0.5">Platform</label>
+                    <select value={meetingInviteData.platform} onChange={e => setMeetingInviteData(p => ({ ...p, platform: e.target.value }))}
+                      className={`w-full px-2 py-1 rounded text-[10px] bg-[var(--bg-secondary,#111827)] border ${highContrastBorder}`}>
+                      <option value="vidyalaya">🟣 Vidyalaya Meet</option>
+                      <option value="teams">🟦 Microsoft Teams</option>
+                      <option value="jiomeet">🔷 Jio Meet</option>
+                      <option value="zoom">🔵 Zoom</option>
+                      <option value="meet">🟢 Google Meet</option>
+                      <option value="webex">🟡 Webex</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-0.5">Date</label>
+                    <input type="date" value={meetingInviteData.date} onChange={e => setMeetingInviteData(p => ({ ...p, date: e.target.value }))}
+                      className={`w-full px-2 py-1 rounded text-[10px] bg-[var(--bg-secondary,#111827)] border ${highContrastBorder}`} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-0.5">Time</label>
+                    <input type="time" value={meetingInviteData.time} onChange={e => setMeetingInviteData(p => ({ ...p, time: e.target.value }))}
+                      className={`w-full px-2 py-1 rounded text-[10px] bg-[var(--bg-secondary,#111827)] border ${highContrastBorder}`} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-0.5">Duration (mins)</label>
+                    <select value={meetingInviteData.duration} onChange={e => setMeetingInviteData(p => ({ ...p, duration: e.target.value }))}
+                      className={`w-full px-2 py-1 rounded text-[10px] bg-[var(--bg-secondary,#111827)] border ${highContrastBorder}`}>
+                      <option value="15">15 min</option>
+                      <option value="30">30 min</option>
+                      <option value="45">45 min</option>
+                      <option value="60">1 hour</option>
+                      <option value="90">1.5 hours</option>
+                      <option value="120">2 hours</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-[var(--text-secondary,#94a3b8)] block mb-0.5">Conference Room</label>
+                    <select value={meetingInviteData.roomId} onChange={e => setMeetingInviteData(p => ({ ...p, roomId: e.target.value }))}
+                      className={`w-full px-2 py-1 rounded text-[10px] bg-[var(--bg-secondary,#111827)] border ${highContrastBorder}`}>
+                      <option value="">No physical room</option>
+                      <option value="r1">Himalaya — 3F (10 ppl)</option>
+                      <option value="r2">Ganges — 2F (6 ppl)</option>
+                      <option value="r4">Bodhi — 1F (4 ppl)</option>
+                      <option value="r5">Arjuna — 3F (8 ppl)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className={`p-2 rounded bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} mb-2`}>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <p className="text-[9px] text-[var(--text-secondary,#94a3b8)]">Meeting ID</p>
+                      <code className="text-[10px] text-indigo-400 font-mono">{meetingInviteData.meetingId}</code>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-[var(--text-secondary,#94a3b8)]">Password</p>
+                      <code className="text-[10px] text-green-400 font-mono">{meetingInviteData.password}</code>
+                    </div>
+                    <button onClick={() => setMeetingInviteData(p => ({ ...p, meetingId: `vid-meet-${Math.random().toString(36).substr(2, 5)}`, password: Math.random().toString(36).substr(2, 8).toUpperCase() }))}
+                      className="text-[9px] text-[var(--text-secondary,#94a3b8)] hover:text-white px-1.5 py-0.5 rounded border border-[var(--border-color,#334155)] hover:border-indigo-500/50 ml-auto">
+                      &#8635; Regenerate
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    const roomLabel = meetingInviteData.roomId ? { r1: 'Himalaya — 3rd Floor', r2: 'Ganges — 2nd Floor', r4: 'Bodhi — 1st Floor', r5: 'Arjuna — 3rd Floor' }[meetingInviteData.roomId] || '' : '';
+                    const durationLabel = { '15': '15 minutes', '30': '30 minutes', '45': '45 minutes', '60': '1 hour', '90': '1.5 hours', '120': '2 hours' }[meetingInviteData.duration] || meetingInviteData.duration + ' min';
+                    const platformLabel = { vidyalaya: '🟣 Vidyalaya Meet', teams: '🟦 Microsoft Teams', jiomeet: '🔷 Jio Meet', zoom: '🔵 Zoom', meet: '🟢 Google Meet', webex: '🟡 Webex' }[meetingInviteData.platform] || meetingInviteData.platform;
+                    const inviteCard = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📅 MEETING INVITATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nTitle:    ${meetingInviteData.title || 'Meeting'}\nDate:     ${meetingInviteData.date || 'TBD'}\nTime:     ${meetingInviteData.time || 'TBD'}\nDuration: ${durationLabel}\nPlatform: ${platformLabel}${roomLabel ? `\nRoom:     ${roomLabel}` : ''}\n\nMeeting ID: ${meetingInviteData.meetingId}\nPassword:   ${meetingInviteData.password}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                    setComposeData(prev => ({ ...prev, body: prev.body + inviteCard, subject: prev.subject || `Meeting Invite: ${meetingInviteData.title || 'Meeting'}` }));
+                    setShowComposeMeeting(false);
+                  }}
+                  className="w-full py-1.5 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium">
+                  Insert Meeting Invite Card into Email
+                </button>
+              </div>
+            )}
             <div className={`flex items-center gap-1.5 px-4 py-2.5 border-t ${highContrastBorder} bg-[var(--bg-tertiary,#0f172a)] rounded-b-xl`}>
               <button onClick={simulateAiDraft} className="px-2 py-1 rounded bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-[9px]">AI Draft</button>
               <button onClick={simulateGrammarCheck} className={`px-2 py-1 rounded text-[9px] ${grammarChecking ? 'bg-yellow-600/20 text-yellow-300' : 'bg-green-600/20 hover:bg-green-600/30 text-green-400'}`}>
@@ -1597,7 +1730,8 @@ export function EmailClient() {
                 <label htmlFor="rr" className="text-[9px] text-[var(--text-secondary,#94a3b8)]">Read receipt</label>
               </div>
               <div className="flex-1" />
-              <button onClick={() => setShowSchedule(!showSchedule)} className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">Schedule</button>
+              <button onClick={() => { setShowComposeMeeting(!showComposeMeeting); setShowSchedule(false); }} className={`px-2 py-1 rounded text-[9px] flex items-center gap-1 ${showComposeMeeting ? 'bg-indigo-600/30 text-indigo-300' : 'bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)]'}`}>&#128197; Meeting</button>
+              <button onClick={() => { setShowSchedule(!showSchedule); setShowComposeMeeting(false); }} className="px-2 py-1 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-[9px]">Schedule</button>
               <button onClick={() => setShowCompose(false)} className="px-3 py-1.5 rounded bg-[var(--bg-secondary,#111827)] hover:bg-[var(--bg-hover,#334155)] text-xs">Discard</button>
               <button onClick={triggerSend}
                 className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium">
@@ -1763,6 +1897,208 @@ export function EmailClient() {
                 <p className="text-[9px] text-amber-400/70">Then: {rule.action}</p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ===== EMAIL RULES MODAL ===== */}
+      {showManageRules && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60">
+          <div className={`w-[640px] max-h-[80vh] bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} rounded-xl shadow-2xl flex flex-col`}>
+            <div className={`flex items-center justify-between px-5 py-3 border-b ${highContrastBorder}`}>
+              <div>
+                <h3 className="text-sm font-semibold">&#9881; Manage Email Rules</h3>
+                <p className="text-[10px] text-[var(--text-secondary,#94a3b8)] mt-0.5">Automate how incoming emails are processed</p>
+              </div>
+              <button onClick={() => { setShowManageRules(false); setShowAddRule(false); }} className="text-[var(--text-secondary,#94a3b8)] hover:text-white text-lg leading-none">&#10005;</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {emailRules.map(rule => (
+                <div key={rule.id} className={`p-3 rounded-lg border ${rule.enabled ? 'border-blue-500/30 bg-blue-950/20' : `${highContrastBorder} bg-[var(--bg-tertiary,#0f172a)]`}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[11px] font-semibold">{rule.name}</span>
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-medium ${rule.enabled ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                          {rule.enabled ? 'Active' : 'Inactive'}
+                        </span>
+                        {(rule.id === 'er1') && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">Preset</span>}
+                        {(rule.id === 'er2') && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400">Smart</span>}
+                      </div>
+                      {rule.description && <p className="text-[9px] text-[var(--text-secondary,#94a3b8)] mb-1.5">{rule.description}</p>}
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] text-[var(--text-secondary,#94a3b8)]">IF</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--bg-secondary,#111827)] text-blue-300 font-mono capitalize">{rule.condition.field}</span>
+                          <span className="text-[9px] text-[var(--text-secondary,#94a3b8)]">{rule.condition.operator.replace('_', ' ')}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--bg-secondary,#111827)] text-yellow-300 font-mono">"{rule.condition.value}"</span>
+                        </div>
+                        <span className="text-[9px] text-[var(--text-secondary,#94a3b8)]">THEN</span>
+                        <div className="flex items-center gap-1">
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${rule.action.type === 'delete' ? 'bg-red-500/20 text-red-400' : rule.action.type === 'label' ? 'bg-green-500/20 text-green-400' : rule.action.type === 'forward' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                            {rule.action.type.charAt(0).toUpperCase() + rule.action.type.slice(1)}
+                          </span>
+                          {rule.action.target && <span className="text-[9px] text-[var(--text-secondary,#94a3b8)]">→ <span className="text-white">{rule.action.target}</span></span>}
+                        </div>
+                      </div>
+                      {rule.id === 'er2' && rule.enabled && (
+                        <div className="mt-1.5 flex items-center gap-1.5 p-1.5 rounded bg-purple-900/20 border border-purple-500/20">
+                          <span className="text-[8px] text-purple-300">&#128240; Shows unsubscribe banner for newsletters unread 15+ days</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={rule.enabled} onChange={() => setEmailRules(prev => prev.map(r => r.id === rule.id ? { ...r, enabled: !r.enabled } : r))} className="sr-only" />
+                        <div className={`w-8 h-4 rounded-full transition-colors ${rule.enabled ? 'bg-blue-600' : 'bg-gray-600'}`}>
+                          <div className={`w-3 h-3 rounded-full bg-white shadow transition-transform m-0.5 ${rule.enabled ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </div>
+                      </label>
+                      <button onClick={() => setEmailRules(prev => prev.filter(r => r.id !== rule.id))}
+                        className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-600/20 text-[var(--text-secondary,#94a3b8)] hover:text-red-400 text-[10px]">&#128465;</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {emailRules.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-8 text-[var(--text-secondary,#94a3b8)]">
+                  <p className="text-xs">No rules configured</p>
+                  <p className="text-[10px] mt-1">Add a rule below to automate email processing</p>
+                </div>
+              )}
+            </div>
+            {/* Add new rule form */}
+            <div className={`border-t ${highContrastBorder} p-4`}>
+              {!showAddRule ? (
+                <button onClick={() => setShowAddRule(true)}
+                  className="w-full py-2 rounded-lg border border-dashed border-blue-500/30 hover:border-blue-500/60 text-[10px] text-blue-400 hover:bg-blue-600/10 transition-colors">
+                  + Add New Rule
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-semibold text-blue-400 mb-2">New Rule</p>
+                  <input value={newRule.name} onChange={e => setNewRule(p => ({ ...p, name: e.target.value }))}
+                    placeholder="Rule name (e.g. Move invoices to Finance)"
+                    className={`w-full px-3 py-1.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none`} />
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-[var(--text-secondary,#94a3b8)] w-6">IF</span>
+                    <select value={newRule.condField} onChange={e => setNewRule(p => ({ ...p, condField: e.target.value as EmailRule['condition']['field'] }))}
+                      className={`flex-1 px-2 py-1.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder}`}>
+                      <option value="from">From</option>
+                      <option value="to">To</option>
+                      <option value="subject">Subject</option>
+                    </select>
+                    <select value={newRule.condOperator} onChange={e => setNewRule(p => ({ ...p, condOperator: e.target.value as EmailRule['condition']['operator'] }))}
+                      className={`flex-1 px-2 py-1.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder}`}>
+                      <option value="contains">contains</option>
+                      <option value="equals">equals</option>
+                      <option value="starts_with">starts with</option>
+                    </select>
+                    <input value={newRule.condValue} onChange={e => setNewRule(p => ({ ...p, condValue: e.target.value }))}
+                      placeholder="value..."
+                      className={`flex-1 px-2 py-1.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none`} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-[var(--text-secondary,#94a3b8)] w-8">THEN</span>
+                    <select value={newRule.actionType} onChange={e => setNewRule(p => ({ ...p, actionType: e.target.value as EmailRule['action']['type'] }))}
+                      className={`flex-1 px-2 py-1.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder}`}>
+                      <option value="move">Move to folder</option>
+                      <option value="label">Apply label</option>
+                      <option value="delete">Delete</option>
+                      <option value="forward">Forward to</option>
+                    </select>
+                    {(newRule.actionType === 'move' || newRule.actionType === 'label' || newRule.actionType === 'forward') && (
+                      <input value={newRule.actionTarget} onChange={e => setNewRule(p => ({ ...p, actionTarget: e.target.value }))}
+                        placeholder={newRule.actionType === 'forward' ? 'email@address.com' : newRule.actionType === 'label' ? 'label name' : 'folder name'}
+                        className={`flex-1 px-2 py-1.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none`} />
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button onClick={() => { setShowAddRule(false); setNewRule({ name: '', condField: 'from', condOperator: 'contains', condValue: '', actionType: 'move', actionTarget: 'inbox' }); }}
+                      className="px-3 py-1.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">Cancel</button>
+                    <button
+                      onClick={() => {
+                        if (!newRule.name || !newRule.condValue) return;
+                        const rule: EmailRule = { id: `er${Date.now()}`, name: newRule.name, enabled: true, condition: { field: newRule.condField, operator: newRule.condOperator, value: newRule.condValue }, action: { type: newRule.actionType, target: newRule.actionTarget || undefined } };
+                        setEmailRules(prev => [...prev, rule]);
+                        setShowAddRule(false);
+                        setNewRule({ name: '', condField: 'from', condOperator: 'contains', condValue: '', actionType: 'move', actionTarget: 'inbox' });
+                      }}
+                      className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-medium">
+                      Save Rule
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== EMAIL CALENDAR POPUP ===== */}
+      {showEmailCalendar && (
+        <div className="fixed inset-0 z-[150] flex items-start justify-center pt-16 bg-black/40" onClick={() => setShowEmailCalendar(false)}>
+          <div className={`w-[520px] bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} rounded-xl shadow-2xl`} onClick={e => e.stopPropagation()}>
+            <div className={`flex items-center justify-between px-4 py-3 border-b ${highContrastBorder}`}>
+              <h3 className="text-sm font-semibold text-indigo-300">&#128336; Calendar</h3>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setCalMiniDate(p => { const d = new Date(p.year, p.month - 1, 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
+                  className="w-6 h-6 flex items-center justify-center rounded hover:bg-[var(--bg-hover,#334155)] text-[10px]">&#8249;</button>
+                <span className="text-[11px] font-semibold w-28 text-center">
+                  {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][calMiniDate.month]} {calMiniDate.year}
+                </span>
+                <button onClick={() => setCalMiniDate(p => { const d = new Date(p.year, p.month + 1, 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
+                  className="w-6 h-6 flex items-center justify-center rounded hover:bg-[var(--bg-hover,#334155)] text-[10px]">&#8250;</button>
+                <button onClick={() => setShowEmailCalendar(false)} className="w-6 h-6 flex items-center justify-center rounded hover:bg-[var(--bg-hover,#334155)] text-[10px] text-[var(--text-secondary,#94a3b8)]">&#10005;</button>
+              </div>
+            </div>
+            <div className="p-4">
+              {/* Mini Calendar Grid */}
+              <div className="grid grid-cols-7 gap-0 mb-3">
+                {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+                  <div key={d} className="h-6 flex items-center justify-center text-[9px] font-semibold text-[var(--text-secondary,#94a3b8)]">{d}</div>
+                ))}
+                {(() => {
+                  const firstDay = new Date(calMiniDate.year, calMiniDate.month, 1).getDay();
+                  const daysInMonth = new Date(calMiniDate.year, calMiniDate.month + 1, 0).getDate();
+                  const cells: (number | null)[] = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
+                  while (cells.length % 7 !== 0) cells.push(null);
+                  return cells.map((day, i) => {
+                    const isToday = day === 20 && calMiniDate.month === 2 && calMiniDate.year === 2024;
+                    const hasMeeting = day && [15, 19, 20, 21, 22].includes(day) && calMiniDate.month === 2;
+                    return (
+                      <div key={i} className={`h-8 flex flex-col items-center justify-center rounded-lg text-[10px] cursor-pointer transition-colors ${day ? 'hover:bg-[var(--bg-hover,#334155)]' : ''} ${isToday ? 'bg-indigo-600 text-white font-bold' : ''}`}>
+                        {day && <span>{day}</span>}
+                        {hasMeeting && !isToday && <div className="w-1 h-1 rounded-full bg-blue-400 mt-0.5" />}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+              {/* Upcoming meetings */}
+              <div className={`border-t ${highContrastBorder} pt-3`}>
+                <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] uppercase tracking-wider mb-2">Upcoming</p>
+                <div className="space-y-2">
+                  {calendarEvents.map(ev => (
+                    <div key={ev.id} className={`flex items-start gap-2 p-2 rounded-lg border ${highContrastBorder} bg-[var(--bg-tertiary,#0f172a)] hover:border-indigo-500/30 cursor-pointer transition-colors`}>
+                      <div className={`w-1 self-stretch rounded-full flex-shrink-0 ${ev.type === 'meeting' ? 'bg-blue-500' : ev.type === 'call' ? 'bg-green-500' : ev.type === 'deadline' ? 'bg-red-500' : 'bg-yellow-500'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-medium truncate">{ev.title}</p>
+                        <p className="text-[9px] text-[var(--text-secondary,#94a3b8)]">{ev.time}{ev.duration && ` · ${ev.duration}`}{ev.location && ` · ${ev.location}`}</p>
+                        {ev.attendees.length > 0 && <p className="text-[8px] text-[var(--text-secondary,#94a3b8)]">{ev.attendees.slice(0,2).join(', ')}{ev.attendees.length > 2 ? ` +${ev.attendees.length-2}` : ''}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Schedule Meeting button */}
+              <div className={`border-t ${highContrastBorder} pt-3 mt-3`}>
+                <button onClick={() => { setShowEmailCalendar(false); setComposeData({ to: '', cc: '', bcc: '', subject: 'Meeting Invite: ', body: '', signature: SIGNATURES[0].content, scheduledAt: '', readReceipt: false, priority: 'normal' }); setShowCompose(true); setShowComposeMeeting(true); }}
+                  className="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium flex items-center justify-center gap-2">
+                  &#128197; Schedule Meeting
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
