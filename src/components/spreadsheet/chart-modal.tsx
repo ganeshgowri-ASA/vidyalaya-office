@@ -91,39 +91,76 @@ export function ChartModal() {
   const [showLegend, setShowLegend] = useState(true);
   const [showDataLabels, setShowDataLabels] = useState(false);
   const [chartMode, setChartMode] = useState<ChartMode>('basic');
+  // Sync chart type from store whenever the modal opens
   const [basicChartType, setBasicChartType] = useState<string>(chartType || 'bar');
   const [advancedConfig, setAdvancedConfig] = useState<ChartConfig | null>(null);
   const [showCustomPanel, setShowCustomPanel] = useState(false);
 
+
+  // Auto-detect data range: use explicit multi-cell selection, else scan from row 0
+  const detectedRange = useMemo(() => {
+    if (selectionStart && selectionEnd) {
+      const minC = Math.min(selectionStart.col, selectionEnd.col);
+      const maxC = Math.max(selectionStart.col, selectionEnd.col);
+      const minR = Math.min(selectionStart.row, selectionEnd.row);
+      const maxR = Math.max(selectionStart.row, selectionEnd.row);
+      // Use explicit selection only if it spans multiple cells
+      if (minC !== maxC || minR !== maxR) {
+        return { minC, maxC, minR, maxR };
+      }
+    }
+    // Auto-detect: scan row 0 for header columns
+    let maxC = -1;
+    for (let c = 0; c < 26; c++) {
+      if (getCellDisplay(c, 0)) maxC = c;
+      else break;
+    }
+    if (maxC < 0) return null;
+    // Find the last row with data
+    let maxR = 0;
+    for (let r = 1; r < 100; r++) {
+      let hasData = false;
+      for (let c = 0; c <= maxC; c++) {
+        if (getCellDisplay(c, r)) { hasData = true; break; }
+      }
+      if (!hasData) break;
+      maxR = r;
+    }
+    return maxR > 0 ? { minC: 0, maxC, minR: 0, maxR } : null;
+  }, [selectionStart, selectionEnd, getCellDisplay]);
+
   const data = useMemo(() => {
-    if (!selectionStart || !selectionEnd) return [];
-    const minR = Math.min(selectionStart.row, selectionEnd.row);
-    const maxR = Math.max(selectionStart.row, selectionEnd.row);
-    const minC = Math.min(selectionStart.col, selectionEnd.col);
-    const maxC = Math.max(selectionStart.col, selectionEnd.col);
+    if (!detectedRange) return [];
+    const { minC, maxC, minR, maxR } = detectedRange;
+    // Treat the first row of the range as headers
+    const headerRow = minR;
+    const dataStartRow = minR + 1;
 
     const result: Record<string, string | number>[] = [];
-    for (let r = minR; r <= maxR; r++) {
+    for (let r = dataStartRow; r <= maxR; r++) {
       const entry: Record<string, string | number> = {};
       entry.name = getCellDisplay(minC, r) || `Row ${r + 1}`;
       for (let c = minC + 1; c <= maxC; c++) {
+        // Use column header as the series key for meaningful legend labels
+        const header = getCellDisplay(c, headerRow) || colToLetter(c);
         const val = getCellDisplay(c, r);
         const num = parseFloat(val.replace(/[$,%]/g, ""));
-        entry[colToLetter(c)] = isNaN(num) ? 0 : num;
+        entry[header] = isNaN(num) ? 0 : num;
       }
       result.push(entry);
     }
     return result;
-  }, [selectionStart, selectionEnd, getCellDisplay]);
+  }, [detectedRange, getCellDisplay]);
 
   const dataKeys = useMemo(() => {
-    if (!selectionStart || !selectionEnd) return [];
-    const minC = Math.min(selectionStart.col, selectionEnd.col);
-    const maxC = Math.max(selectionStart.col, selectionEnd.col);
+    if (!detectedRange) return [];
+    const { minC, maxC, minR } = detectedRange;
     const keys: string[] = [];
-    for (let c = minC + 1; c <= maxC; c++) keys.push(colToLetter(c));
+    for (let c = minC + 1; c <= maxC; c++) {
+      keys.push(getCellDisplay(c, minR) || colToLetter(c));
+    }
     return keys.length ? keys : ["value"];
-  }, [selectionStart, selectionEnd]);
+  }, [detectedRange, getCellDisplay]);
 
   // Build advanced config from spreadsheet data
   const buildAdvancedConfig = useCallback((type: AdvancedChartType): ChartConfig => {
@@ -153,14 +190,14 @@ export function ChartModal() {
 
   if (!showChartModal) return null;
 
-  const noData = data.length === 0;
+  const noData = data.length === 0 || !detectedRange;
 
   const renderBasicChart = () => {
     if (noData) {
       return (
         <div className="text-center py-12 text-sm" style={{ color: "var(--muted-foreground)" }}>
-          Select a range of cells first, then open a chart.<br />
-          First column = labels, other columns = data series.
+          No data detected. Add data to the spreadsheet (row 1 = headers, rows 2+ = data),<br />
+          or select a range before opening a chart.
         </div>
       );
     }

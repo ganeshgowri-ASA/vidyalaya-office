@@ -30,29 +30,57 @@ export function PivotTableModal({
   const [aggregation, setAggregation] = useState<"SUM" | "COUNT" | "AVERAGE" | "MAX" | "MIN" | "MEDIAN" | "STDEV" | "PRODUCT">("SUM");
   const [draggedField, setDraggedField] = useState<PivotField | null>(null);
 
-  // Extract field names from the header row of the selection
-  const availableFields = useMemo(() => {
-    if (!selectionStart || !selectionEnd) return [];
-    const minC = Math.min(selectionStart.col, selectionEnd.col);
-    const maxC = Math.max(selectionStart.col, selectionEnd.col);
-    const headerRow = Math.min(selectionStart.row, selectionEnd.row);
+  // Auto-detect the data range: use explicit multi-cell selection, else scan from row 0
+  const dataRange = useMemo(() => {
+    if (selectionStart && selectionEnd) {
+      const minC = Math.min(selectionStart.col, selectionEnd.col);
+      const maxC = Math.max(selectionStart.col, selectionEnd.col);
+      const minR = Math.min(selectionStart.row, selectionEnd.row);
+      const maxR = Math.max(selectionStart.row, selectionEnd.row);
+      // Only use explicit selection if it spans multiple cells
+      if (minC !== maxC || minR !== maxR) {
+        return { minC, maxC, minR, maxR };
+      }
+    }
+    // Auto-detect: scan row 0 for header columns
+    let maxC = -1;
+    for (let c = 0; c < 52; c++) {
+      if (getCellDisplay(c, 0)) maxC = c;
+      else break;
+    }
+    if (maxC < 0) return null;
+    // Find the last row with data
+    let maxR = 0;
+    for (let r = 1; r < 100; r++) {
+      let hasData = false;
+      for (let c = 0; c <= maxC; c++) {
+        if (getCellDisplay(c, r)) { hasData = true; break; }
+      }
+      if (!hasData) break;
+      maxR = r;
+    }
+    return maxR > 0 ? { minC: 0, maxC, minR: 0, maxR } : null;
+  }, [selectionStart, selectionEnd, getCellDisplay]);
 
+  // Extract field names from the header row (always row 0 or first row of selection)
+  const availableFields = useMemo(() => {
+    if (!dataRange) return [];
+    const { minC, maxC, minR } = dataRange;
     const fields: PivotField[] = [];
     for (let c = minC; c <= maxC; c++) {
-      const name = getCellDisplay(c, headerRow) || colToLetter(c);
+      const name = getCellDisplay(c, minR) || colToLetter(c);
       fields.push({ name, colIndex: c });
     }
     return fields;
-  }, [selectionStart, selectionEnd, getCellDisplay]);
+  }, [dataRange, getCellDisplay]);
 
   // Compute pivot preview
   const pivotPreview = useMemo(() => {
-    if (!selectionStart || !selectionEnd || rowFields.length === 0 || valueFields.length === 0) {
+    if (!dataRange || rowFields.length === 0 || valueFields.length === 0) {
       return null;
     }
 
-    const minR = Math.min(selectionStart.row, selectionEnd.row);
-    const maxR = Math.max(selectionStart.row, selectionEnd.row);
+    const { minR, maxR } = dataRange;
     const dataStartRow = minR + 1; // skip header
 
     // Build groups by row field values
@@ -92,7 +120,7 @@ export function PivotTableModal({
       label: key,
       value: aggregate(vals),
     }));
-  }, [selectionStart, selectionEnd, rowFields, valueFields, aggregation, getCellDisplay]);
+  }, [dataRange, rowFields, valueFields, aggregation, getCellDisplay]);
 
   const handleDragStart = useCallback((field: PivotField) => {
     setDraggedField(field);
@@ -126,7 +154,8 @@ export function PivotTableModal({
 
   if (!open) return null;
 
-  const noSelection = !selectionStart || !selectionEnd;
+  // Show empty state only when we can't detect any data at all
+  const noSelection = availableFields.length === 0;
 
   const DropZoneBox = ({ title, zone, fields }: { title: string; zone: DropZone; fields: PivotField[] }) => (
     <div
@@ -184,7 +213,7 @@ export function PivotTableModal({
         <div className="flex-1 overflow-auto p-4">
           {noSelection ? (
             <div className="text-center py-12 text-sm" style={{ color: "var(--muted-foreground)" }}>
-              Select a range of cells with headers first, then open the pivot table wizard.
+              No data detected. Add column headers in row 1 and data below, then open the pivot table wizard.
             </div>
           ) : (
             <div className="flex gap-4">
