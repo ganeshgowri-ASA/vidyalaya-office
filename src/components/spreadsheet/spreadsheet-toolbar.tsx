@@ -651,57 +651,19 @@ export function SpreadsheetToolbar({
       </RibbonGroup>
 
       <RibbonGroup label="Charts">
-        <DropdownBtn icon={<BarChart3 size={14} />} title="Column/Bar Charts" label="Column">
-          {(close) => (
-            <>
-              <DropdownHeader>Column</DropdownHeader>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Clustered Column</DropdownItem>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Stacked Column</DropdownItem>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>100% Stacked Column</DropdownItem>
-              <DropdownDivider />
-              <DropdownHeader>Bar</DropdownHeader>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Clustered Bar</DropdownItem>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>Stacked Bar</DropdownItem>
-              <DropdownItem icon={<BarChart3 size={12} />} onClick={() => { openChartModal("bar"); close(); }}>100% Stacked Bar</DropdownItem>
-            </>
-          )}
-        </DropdownBtn>
-        <DropdownBtn icon={<LineChart size={14} />} title="Line/Area Charts" label="Line">
-          {(close) => (
-            <>
-              <DropdownHeader>Line</DropdownHeader>
-              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line"); close(); }}>Line</DropdownItem>
-              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line"); close(); }}>Stacked Line</DropdownItem>
-              <DropdownItem icon={<LineChart size={12} />} onClick={() => { openChartModal("line"); close(); }}>Line with Markers</DropdownItem>
-              <DropdownDivider />
-              <DropdownHeader>Area</DropdownHeader>
-              <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area"); close(); }}>Area</DropdownItem>
-              <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area"); close(); }}>Stacked Area</DropdownItem>
-              <DropdownItem icon={<AreaChart size={12} />} onClick={() => { openChartModal("area"); close(); }}>100% Stacked Area</DropdownItem>
-            </>
-          )}
-        </DropdownBtn>
-        <DropdownBtn icon={<PieChart size={14} />} title="Pie/Doughnut Charts" label="Pie">
-          {(close) => (
-            <>
-              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("pie"); close(); }}>Pie</DropdownItem>
-              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("pie"); close(); }}>3-D Pie</DropdownItem>
-              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("doughnut"); close(); }}>Doughnut</DropdownItem>
-              <DropdownItem icon={<PieChart size={12} />} onClick={() => { openChartModal("pie"); close(); }}>Pie of Pie</DropdownItem>
-            </>
-          )}
-        </DropdownBtn>
-        <DropdownBtn icon={<ScatterChart size={14} />} title="Scatter/Bubble Charts" label="XY">
-          {(close) => (
-            <>
-              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("scatter"); close(); }}>Scatter</DropdownItem>
-              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("scatter"); close(); }}>Scatter with Lines</DropdownItem>
-              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("bubble"); close(); }}>Bubble</DropdownItem>
-              <DropdownItem icon={<ScatterChart size={12} />} onClick={() => { openChartModal("bubble"); close(); }}>3-D Bubble</DropdownItem>
-            </>
-          )}
-        </DropdownBtn>
-        <DropdownBtn icon={<BarChart3 size={14} />} title="Other Charts" label="More">
+        <ToolBtn title="Insert Column/Bar Chart" onClick={() => openChartModal("bar")}>
+          <div className="flex flex-col items-center gap-0.5"><BarChart3 size={14} /><span className="text-[9px]">Column</span></div>
+        </ToolBtn>
+        <ToolBtn title="Insert Line/Area Chart" onClick={() => openChartModal("line")}>
+          <div className="flex flex-col items-center gap-0.5"><LineChart size={14} /><span className="text-[9px]">Line</span></div>
+        </ToolBtn>
+        <ToolBtn title="Insert Pie/Doughnut Chart" onClick={() => openChartModal("pie")}>
+          <div className="flex flex-col items-center gap-0.5"><PieChart size={14} /><span className="text-[9px]">Pie</span></div>
+        </ToolBtn>
+        <ToolBtn title="Insert Scatter/Bubble Chart" onClick={() => openChartModal("scatter")}>
+          <div className="flex flex-col items-center gap-0.5"><ScatterChart size={14} /><span className="text-[9px]">XY</span></div>
+        </ToolBtn>
+        <DropdownBtn icon={<BarChart3 size={14} />} title="More Chart Types" label="More">
           {(close) => (
             <>
               <DropdownHeader>Statistical</DropdownHeader>
