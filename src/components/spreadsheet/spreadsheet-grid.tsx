@@ -644,9 +644,25 @@ export function SpreadsheetGrid() {
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") { e.preventDefault(); commitEdit(); if (r < ROWS - 1) setActiveCell(c, r + 1); }
-                            else if (e.key === "Tab") { e.preventDefault(); commitEdit(); if (e.shiftKey) { if (c > 0) setActiveCell(c - 1, r); } else { if (c < COLS - 1) setActiveCell(c + 1, r); } }
-                            else if (e.key === "Escape") cancelEdit();
+                            if (e.key === "Enter") {
+                              e.preventDefault(); e.stopPropagation();
+                              commitEdit();
+                              const nextRow = r < ROWS - 1 ? r + 1 : r;
+                              setActiveCell(c, nextRow);
+                              if (nextRow !== r) startEditing(c, nextRow);
+                            } else if (e.key === "Tab") {
+                              e.preventDefault(); e.stopPropagation();
+                              commitEdit();
+                              if (e.shiftKey) {
+                                const nextCol = c > 0 ? c - 1 : c;
+                                setActiveCell(nextCol, r);
+                                if (nextCol !== c) startEditing(nextCol, r);
+                              } else {
+                                const nextCol = c < COLS - 1 ? c + 1 : c;
+                                setActiveCell(nextCol, r);
+                                if (nextCol !== c) startEditing(nextCol, r);
+                              }
+                            } else if (e.key === "Escape") cancelEdit();
                           }}
                           onBlur={() => commitEdit()}
                         />
