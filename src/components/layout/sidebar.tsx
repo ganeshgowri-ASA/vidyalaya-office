@@ -24,6 +24,7 @@ import {
   MessageSquare,
   Video,
   CalendarDays,
+  FlaskConical,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ const mainNav = [
 
 const editorNav = [
   { label: "Document", href: "/document", icon: FileText },
+  { label: "Research", href: "/research", icon: FlaskConical },
   { label: "Spreadsheet", href: "/spreadsheet", icon: Table2 },
   { label: "Presentation", href: "/presentation", icon: Presentation },
   { label: "Graphics", href: "/graphics", icon: Workflow },
