@@ -6,7 +6,8 @@ import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
   List, ListOrdered, Quote, Link, Image, Table, FlaskConical,
   BookOpen, Download, Eye, EyeOff, Share2, LayoutTemplate,
-  Sigma, FileImage, Sparkles, Save,
+  Sigma, FileImage, Sparkles, Save, Upload, Shield, SpellCheck,
+  Columns, BookA,
 } from 'lucide-react';
 
 const tabs = ['Home', 'Insert', 'Format', 'Review', 'View'] as const;
@@ -46,6 +47,7 @@ export default function ResearchToolbar() {
     setShowTemplateGallery, setShowCitationManager, setShowEquationEditor,
     setShowFigureManager, setShowExportPanel, setShowAIPanel, showAIPanel,
     previewMode, setPreviewMode, setActiveRightPanel,
+    doubleColumnEnabled, setDoubleColumnEnabled,
   } = useResearchStore();
 
   const handleInsertCitation = () => {
@@ -129,11 +131,13 @@ export default function ResearchToolbar() {
         {activeTab === 'Insert' && (
           <>
             <ToolbarButton icon={BookOpen} label="Citation" onClick={handleInsertCitation} />
+            <ToolbarButton icon={Sparkles} label="Smart Cite" onClick={() => setActiveRightPanel('smartcite')} />
             <ToolbarButton icon={Sigma} label="Equation" onClick={() => setShowEquationEditor(true)} />
             <ToolbarButton icon={FileImage} label="Figure" onClick={() => setShowFigureManager(true)} />
             <ToolbarButton icon={Table} label="Table" onClick={() => setShowFigureManager(true)} />
             <ToolbarButton icon={Image} label="Image" />
             <Divider />
+            <ToolbarButton icon={Upload} label="Import" onClick={() => setActiveRightPanel('import')} />
             <ToolbarButton icon={FlaskConical} label="Footnote" />
           </>
         )}
@@ -141,6 +145,8 @@ export default function ResearchToolbar() {
         {activeTab === 'Format' && (
           <>
             <ToolbarButton icon={LayoutTemplate} label="Templates" onClick={() => setShowTemplateGallery(true)} />
+            <ToolbarButton icon={Columns} label={doubleColumnEnabled ? '2-Column' : '1-Column'} onClick={() => setDoubleColumnEnabled(!doubleColumnEnabled)} active={doubleColumnEnabled} />
+            <ToolbarButton icon={BookA} label="Abbreviations" onClick={() => setActiveRightPanel('latex')} />
             <Divider />
             <div className="flex items-center gap-1 px-2">
               <label className="text-xs opacity-60">Heading:</label>
@@ -162,7 +168,7 @@ export default function ResearchToolbar() {
               >
                 <option>10</option>
                 <option>11</option>
-                <option selected>12</option>
+                <option defaultValue="12">12</option>
                 <option>14</option>
               </select>
             </div>
@@ -171,6 +177,9 @@ export default function ResearchToolbar() {
 
         {activeTab === 'Review' && (
           <>
+            <ToolbarButton icon={Shield} label="Plagiarism" onClick={() => setActiveRightPanel('plagiarism')} />
+            <ToolbarButton icon={SpellCheck} label="Spelling" onClick={() => setActiveRightPanel('spelling')} />
+            <Divider />
             <ToolbarButton icon={Sparkles} label="AI Review" onClick={() => { setShowAIPanel(!showAIPanel); }} active={showAIPanel} />
             <Divider />
             <div className="flex items-center gap-2 px-2 text-xs opacity-60">
@@ -198,7 +207,7 @@ export default function ResearchToolbar() {
                 style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)', borderColor: 'var(--border)' }}
               >
                 <option>75%</option>
-                <option selected>100%</option>
+                <option>100%</option>
                 <option>125%</option>
                 <option>150%</option>
               </select>

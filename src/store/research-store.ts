@@ -4,6 +4,73 @@ import { create } from 'zustand';
 export type CitationStyle = 'APA 7th' | 'IEEE' | 'Vancouver' | 'Chicago' | 'Harvard' | 'MLA 9th' | 'Nature' | 'ACS' | 'ACM';
 export type ArticleStatus = 'Draft' | 'In Review' | 'Submitted' | 'Published';
 
+export interface TemplateFormatConfig {
+  fontFamily: string;
+  fontSize: number;
+  headingSize: number;
+  columnCount: 1 | 2;
+  margins: { top: number; bottom: number; left: number; right: number };
+  lineSpacing: number;
+  citationStyle: CitationStyle;
+}
+
+export const journalFormatConfigs: Record<string, TemplateFormatConfig> = {
+  ieee: { fontFamily: 'Times New Roman', fontSize: 10, headingSize: 12, columnCount: 2, margins: { top: 0.75, bottom: 1, left: 0.625, right: 0.625 }, lineSpacing: 1.0, citationStyle: 'IEEE' },
+  wiley: { fontFamily: 'Arial', fontSize: 11, headingSize: 14, columnCount: 1, margins: { top: 1, bottom: 1, left: 1, right: 1 }, lineSpacing: 1.5, citationStyle: 'APA 7th' },
+  elsevier: { fontFamily: 'Times New Roman', fontSize: 12, headingSize: 14, columnCount: 1, margins: { top: 1, bottom: 1, left: 1.25, right: 1.25 }, lineSpacing: 2.0, citationStyle: 'Vancouver' },
+  nature: { fontFamily: 'Arial', fontSize: 11, headingSize: 13, columnCount: 1, margins: { top: 1, bottom: 1, left: 1, right: 1 }, lineSpacing: 1.5, citationStyle: 'Nature' },
+  springer: { fontFamily: 'Times New Roman', fontSize: 11, headingSize: 13, columnCount: 1, margins: { top: 1, bottom: 1, left: 1, right: 1 }, lineSpacing: 1.5, citationStyle: 'APA 7th' },
+  spie: { fontFamily: 'Times New Roman', fontSize: 10, headingSize: 12, columnCount: 1, margins: { top: 1, bottom: 1, left: 0.75, right: 0.75 }, lineSpacing: 1.0, citationStyle: 'Vancouver' },
+  intechopen: { fontFamily: 'Times New Roman', fontSize: 12, headingSize: 14, columnCount: 1, margins: { top: 1, bottom: 1, left: 1.25, right: 1.25 }, lineSpacing: 1.5, citationStyle: 'APA 7th' },
+  hindawi: { fontFamily: 'Times New Roman', fontSize: 12, headingSize: 14, columnCount: 1, margins: { top: 1, bottom: 1, left: 1, right: 1 }, lineSpacing: 1.5, citationStyle: 'Vancouver' },
+  acm: { fontFamily: 'Linux Libertine', fontSize: 10, headingSize: 12, columnCount: 2, margins: { top: 0.75, bottom: 1, left: 0.75, right: 0.75 }, lineSpacing: 1.0, citationStyle: 'ACM' },
+  acs: { fontFamily: 'Times New Roman', fontSize: 10, headingSize: 12, columnCount: 2, margins: { top: 0.75, bottom: 1, left: 0.5, right: 0.5 }, lineSpacing: 1.0, citationStyle: 'ACS' },
+};
+
+export interface PlagiarismMatch {
+  id: string;
+  text: string;
+  source: string;
+  url: string;
+  matchPercentage: number;
+  sectionId: string;
+}
+
+export interface PlagiarismResult {
+  overallScore: number;
+  matches: PlagiarismMatch[];
+  checkedAt: string;
+  excludeQuotes: boolean;
+  excludeBibliography: boolean;
+}
+
+export interface SpellingIssue {
+  id: string;
+  word: string;
+  sectionId: string;
+  offset: number;
+  type: 'spelling' | 'grammar';
+  suggestions: string[];
+  rule?: string;
+}
+
+export interface Abbreviation {
+  abbr: string;
+  fullForm: string;
+}
+
+export interface SmartCitationResult {
+  id: string;
+  title: string;
+  authors: string[];
+  year: number;
+  journal: string;
+  abstract: string;
+  doi: string;
+  citationCount: number;
+  relevanceScore: number;
+}
+
 export interface Author {
   id: string;
   name: string;
@@ -141,6 +208,42 @@ const defaultEquations: Equation[] = [
   { id: 'e2', number: 2, latex: 'RMSE = \\sqrt{\\frac{1}{n}\\sum_{i=1}^{n}(y_i - \\hat{y}_i)^2}', label: 'rmse' },
 ];
 
+const mockSmartCitations: SmartCitationResult[] = [
+  { id: 'sc1', title: 'A Survey on Deep Learning for Time Series Forecasting', authors: ['Torres, J.F.', 'Harid, N.', 'Troncoso, A.'], year: 2021, journal: 'Big Data', abstract: 'A comprehensive survey covering deep learning techniques applied to time series forecasting, including CNNs, RNNs, LSTMs, and attention-based models.', doi: '10.1089/big.2020.0159', citationCount: 312, relevanceScore: 0.95 },
+  { id: 'sc2', title: 'Photovoltaic Power Forecasting Using Machine Learning: A Review', authors: ['Ahmed, R.', 'Sreeram, V.', 'Mishra, Y.'], year: 2020, journal: 'Renewable and Sustainable Energy Reviews', abstract: 'Review of ML-based approaches for PV power forecasting, comparing traditional statistical methods with modern deep learning architectures.', doi: '10.1016/j.rser.2020.109792', citationCount: 458, relevanceScore: 0.93 },
+  { id: 'sc3', title: 'Wind Power Prediction Using Deep Neural Networks', authors: ['Hanifi, S.', 'Liu, X.', 'Lin, Z.'], year: 2020, journal: 'Energies', abstract: 'Investigates deep neural network architectures for short-term and medium-term wind power prediction with emphasis on feature engineering.', doi: '10.3390/en13143956', citationCount: 187, relevanceScore: 0.91 },
+  { id: 'sc4', title: 'Temporal Fusion Transformers for Interpretable Multi-Horizon Time Series Forecasting', authors: ['Lim, B.', 'Arik, S.O.', 'Loeff, N.'], year: 2021, journal: 'International Journal of Forecasting', abstract: 'Proposes an attention-based architecture that combines high-performance multi-horizon forecasting with interpretable insights into temporal dynamics.', doi: '10.1016/j.ijforecast.2021.03.012', citationCount: 892, relevanceScore: 0.90 },
+  { id: 'sc5', title: 'A Review of Deep Learning Models for Solar Irradiance Forecasting', authors: ['Kumari, P.', 'Toshniwal, D.'], year: 2021, journal: 'Solar Energy', abstract: 'Systematic review of deep learning models specifically applied to solar irradiance prediction, comparing CNN, LSTM, GRU, and hybrid approaches.', doi: '10.1016/j.solener.2021.07.062', citationCount: 245, relevanceScore: 0.89 },
+  { id: 'sc6', title: 'Graph Neural Networks in Weather and Climate Science', authors: ['Keisler, R.'], year: 2022, journal: 'Journal of Advances in Modeling Earth Systems', abstract: 'Explores graph neural network architectures for modeling weather and climate systems, with applications to renewable energy forecasting.', doi: '10.1029/2022MS003024', citationCount: 156, relevanceScore: 0.87 },
+  { id: 'sc7', title: 'Transfer Learning for Renewable Energy Systems: A Review', authors: ['Yang, Z.', 'Ce, L.', 'Lian, L.'], year: 2021, journal: 'Applied Energy', abstract: 'Reviews transfer learning methodologies applied to renewable energy systems, addressing data scarcity challenges in wind and solar forecasting.', doi: '10.1016/j.apenergy.2021.117095', citationCount: 198, relevanceScore: 0.86 },
+  { id: 'sc8', title: 'Probabilistic Forecasting of Renewable Energy Generation Using Deep Ensembles', authors: ['Mashlakov, A.', 'Lensu, L.', 'Kaarna, A.'], year: 2021, journal: 'Applied Energy', abstract: 'Proposes deep ensemble methods for probabilistic renewable energy forecasting with calibrated uncertainty estimation.', doi: '10.1016/j.apenergy.2021.116790', citationCount: 134, relevanceScore: 0.85 },
+  { id: 'sc9', title: 'Hybrid Deep Learning Models for Electricity Demand Forecasting', authors: ['Farsi, B.', 'Amayri, M.', 'Bouabdallah, N.'], year: 2021, journal: 'Energy and Buildings', abstract: 'Investigates hybrid CNN-LSTM models for electricity demand forecasting in smart buildings, achieving state-of-the-art accuracy.', doi: '10.1016/j.enbuild.2021.110993', citationCount: 167, relevanceScore: 0.83 },
+  { id: 'sc10', title: 'Physics-Informed Machine Learning for Power Systems', authors: ['Huang, Q.', 'Huang, R.', 'Hao, W.'], year: 2022, journal: 'IEEE Transactions on Power Systems', abstract: 'Integrates physical constraints and domain knowledge into deep learning models for improved power system analysis and forecasting.', doi: '10.1109/TPWRS.2022.3155576', citationCount: 223, relevanceScore: 0.82 },
+  { id: 'sc11', title: 'Self-Supervised Learning for Energy Time Series', authors: ['Yue, Z.', 'Wang, Y.', 'Duan, J.'], year: 2022, journal: 'Nature Machine Intelligence', abstract: 'Introduces self-supervised pre-training strategies for energy time series, significantly reducing the need for labeled data.', doi: '10.1038/s42256-022-00474-2', citationCount: 342, relevanceScore: 0.81 },
+  { id: 'sc12', title: 'Short-Term Solar Power Forecasting Using Convolutional Neural Networks', authors: ['Wang, F.', 'Xuan, Z.', 'Zhen, Z.'], year: 2020, journal: 'Energy Conversion and Management', abstract: 'Applies CNNs to satellite imagery and meteorological data for short-term solar power output prediction with 96% accuracy.', doi: '10.1016/j.enconman.2020.112623', citationCount: 278, relevanceScore: 0.80 },
+  { id: 'sc13', title: 'Attention Mechanisms in Neural Networks for Energy Applications', authors: ['Li, S.', 'Jin, X.', 'Xuan, Y.'], year: 2023, journal: 'Energy and AI', abstract: 'Comprehensive analysis of attention mechanisms in neural networks specifically designed for energy sector applications including forecasting.', doi: '10.1016/j.egyai.2023.100246', citationCount: 89, relevanceScore: 0.79 },
+  { id: 'sc14', title: 'Federated Learning for Distributed Energy Resource Forecasting', authors: ['Briggs, C.', 'Fan, Z.', 'Andras, P.'], year: 2022, journal: 'Applied Energy', abstract: 'Proposes federated learning framework for privacy-preserving distributed renewable energy forecasting across multiple sites.', doi: '10.1016/j.apenergy.2022.119703', citationCount: 112, relevanceScore: 0.78 },
+  { id: 'sc15', title: 'Benchmarking Deep Learning for Wind Turbine Power Curves', authors: ['Morrison, R.', 'Liu, X.', 'Lin, Z.'], year: 2022, journal: 'Renewable Energy', abstract: 'Benchmarks 12 deep learning architectures against traditional methods for wind turbine power curve modeling and prediction.', doi: '10.1016/j.renene.2022.06.017', citationCount: 98, relevanceScore: 0.77 },
+  { id: 'sc16', title: 'Explainable AI for Renewable Energy: A Systematic Review', authors: ['Machlev, R.', 'Heistrene, L.', 'Perl, M.'], year: 2022, journal: 'Energy', abstract: 'Reviews explainability techniques applied to ML/DL models in renewable energy, emphasizing SHAP, LIME, and attention visualization.', doi: '10.1016/j.energy.2022.123452', citationCount: 176, relevanceScore: 0.76 },
+  { id: 'sc17', title: 'Multi-Step Ahead Forecasting of Wind Speed Using Transformer Networks', authors: ['Wu, N.', 'Green, B.', 'Ben, X.'], year: 2020, journal: 'Energy', abstract: 'First application of transformer architecture to multi-step ahead wind speed forecasting, outperforming LSTM by 18% in RMSE.', doi: '10.1016/j.energy.2020.117772', citationCount: 267, relevanceScore: 0.75 },
+  { id: 'sc18', title: 'Reinforcement Learning for Energy System Optimization', authors: ['Perera, A.T.D.', 'Kamalaruban, P.'], year: 2021, journal: 'Renewable and Sustainable Energy Reviews', abstract: 'Explores reinforcement learning approaches for optimizing renewable energy system operations including storage dispatch and grid integration.', doi: '10.1016/j.rser.2021.110618', citationCount: 203, relevanceScore: 0.74 },
+  { id: 'sc19', title: 'Autoregressive Denoising Diffusion Models for Multivariate Time Series', authors: ['Rasul, K.', 'Seward, C.', 'Schuster, I.'], year: 2021, journal: 'Proceedings of ICML', abstract: 'Introduces denoising diffusion probabilistic models for multivariate time series forecasting with applications to energy data.', doi: '10.48550/arXiv.2101.12072', citationCount: 445, relevanceScore: 0.73 },
+  { id: 'sc20', title: 'Battery State of Health Estimation Using Deep Learning', authors: ['Roman, D.', 'Saxena, S.', 'Robu, V.'], year: 2021, journal: 'Journal of Energy Storage', abstract: 'Deep learning methods for estimating battery state of health, critical for renewable energy storage system management.', doi: '10.1016/j.est.2021.102801', citationCount: 189, relevanceScore: 0.72 },
+  { id: 'sc21', title: 'Convolutional LSTM Networks for Spatio-Temporal Precipitation Nowcasting', authors: ['Shi, X.', 'Chen, Z.', 'Wang, H.'], year: 2015, journal: 'Advances in Neural Information Processing Systems', abstract: 'Introduces ConvLSTM architecture for spatio-temporal sequence forecasting, foundational work widely applied in energy forecasting.', doi: '10.48550/arXiv.1506.04214', citationCount: 4521, relevanceScore: 0.71 },
+  { id: 'sc22', title: 'Global Energy Forecasting Competition: Review and Insights', authors: ['Hong, T.', 'Xie, J.', 'Black, J.'], year: 2019, journal: 'International Journal of Forecasting', abstract: 'Reviews methodologies and winning approaches from global energy forecasting competitions, providing benchmarks for the field.', doi: '10.1016/j.ijforecast.2019.04.014', citationCount: 334, relevanceScore: 0.70 },
+];
+
+const defaultAbbreviations: Abbreviation[] = [
+  { abbr: 'MAPE', fullForm: 'Mean Absolute Percentage Error' },
+  { abbr: 'RMSE', fullForm: 'Root Mean Square Error' },
+  { abbr: 'LSTM', fullForm: 'Long Short-Term Memory' },
+  { abbr: 'CNN', fullForm: 'Convolutional Neural Network' },
+  { abbr: 'ANN', fullForm: 'Artificial Neural Network' },
+  { abbr: 'RNN', fullForm: 'Recurrent Neural Network' },
+  { abbr: 'ARIMA', fullForm: 'Autoregressive Integrated Moving Average' },
+  { abbr: 'PRISMA', fullForm: 'Preferred Reporting Items for Systematic Reviews and Meta-Analyses' },
+];
+
 const defaultArticles: Article[] = [
   { id: 'a1', title: 'Deep Learning Approaches for Renewable Energy Forecasting', status: 'Draft', journal: 'Applied Energy', createdAt: '2026-03-01', updatedAt: '2026-03-20', wordCount: 610, citationCount: 7 },
   { id: 'a2', title: 'Transformer Architecture Optimization for Edge Computing', status: 'In Review', journal: 'IEEE Transactions on Neural Networks', createdAt: '2026-01-15', updatedAt: '2026-02-28', wordCount: 8200, citationCount: 42 },
@@ -195,6 +298,8 @@ const journalTemplates: JournalTemplate[] = [
   { id: 'apl', name: 'Applied Physics Letters', category: 'AIP', description: 'AIP Applied Physics Letters concise format', columns: 1, referenceStyle: 'APA 7th', sections: ['Abstract', 'Introduction', 'Methods', 'Results', 'Discussion', 'Conclusion', 'References'], hasAbstract: true, hasKeywords: false, wordLimit: 3500 },
 ];
 
+type RightPanel = 'citations' | 'ai' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import';
+
 interface ResearchState {
   articles: Article[];
   activeArticleId: string;
@@ -214,9 +319,26 @@ interface ResearchState {
   showExportPanel: boolean;
   showAIPanel: boolean;
   showDashboard: boolean;
-  activeRightPanel: 'citations' | 'ai' | 'export' | 'latex' | 'links';
+  activeRightPanel: RightPanel;
   previewMode: boolean;
   editorContent: string;
+
+  // New state for enhanced features
+  plagiarismResult: PlagiarismResult | null;
+  plagiarismChecking: boolean;
+  spellingIssues: SpellingIssue[];
+  spellingEnabled: boolean;
+  autoCorrectEnabled: boolean;
+  customDictionary: string[];
+  abbreviations: Abbreviation[];
+  smartCitationResults: SmartCitationResult[];
+  smartCiteQuery: string;
+  smartCiteSearching: boolean;
+  showCitationPopup: boolean;
+  citationPopupPosition: { x: number; y: number } | null;
+  doubleColumnEnabled: boolean;
+  activeFormatConfig: TemplateFormatConfig | null;
+  importedDocName: string | null;
 
   setActiveSection: (id: string) => void;
   updateSectionContent: (id: string, content: string) => void;
@@ -234,7 +356,7 @@ interface ResearchState {
   setShowExportPanel: (show: boolean) => void;
   setShowAIPanel: (show: boolean) => void;
   setShowDashboard: (show: boolean) => void;
-  setActiveRightPanel: (panel: 'citations' | 'ai' | 'export' | 'latex' | 'links') => void;
+  setActiveRightPanel: (panel: RightPanel) => void;
   applyTemplate: (templateId: string) => void;
   setPreviewMode: (val: boolean) => void;
   addEquation: (latex: string, label?: string) => void;
@@ -243,6 +365,24 @@ interface ResearchState {
   addTable: (caption: string, headers: string[], rows: string[][]) => void;
   createArticle: (title: string, templateId?: string) => void;
   setActiveArticle: (id: string) => void;
+
+  // New actions
+  runPlagiarismCheck: () => void;
+  setPlagiarismExcludeQuotes: (val: boolean) => void;
+  setPlagiarismExcludeBibliography: (val: boolean) => void;
+  runSpellingCheck: () => void;
+  toggleSpelling: (val: boolean) => void;
+  toggleAutoCorrect: (val: boolean) => void;
+  addToCustomDictionary: (word: string) => void;
+  dismissSpellingIssue: (id: string) => void;
+  applySpellingSuggestion: (issueId: string, suggestion: string) => void;
+  addAbbreviation: (abbr: string, fullForm: string) => void;
+  removeAbbreviation: (abbr: string) => void;
+  searchSmartCitations: (query: string) => void;
+  insertSmartCitation: (result: SmartCitationResult) => void;
+  setShowCitationPopup: (show: boolean, position?: { x: number; y: number }) => void;
+  setDoubleColumnEnabled: (val: boolean) => void;
+  importDocument: (name: string, templateId: string) => void;
 }
 
 export const useResearchStore = create<ResearchState>()((set, get) => ({
@@ -267,6 +407,23 @@ export const useResearchStore = create<ResearchState>()((set, get) => ({
   activeRightPanel: 'citations',
   previewMode: false,
   editorContent: '',
+
+  // New enhanced state
+  plagiarismResult: null,
+  plagiarismChecking: false,
+  spellingIssues: [],
+  spellingEnabled: true,
+  autoCorrectEnabled: false,
+  customDictionary: [],
+  abbreviations: defaultAbbreviations,
+  smartCitationResults: [],
+  smartCiteQuery: '',
+  smartCiteSearching: false,
+  showCitationPopup: false,
+  citationPopupPosition: null,
+  doubleColumnEnabled: false,
+  activeFormatConfig: journalFormatConfigs['ieee'] || null,
+  importedDocName: null,
 
   setActiveSection: (id) => set({ activeSection: id }),
 
@@ -367,4 +524,124 @@ export const useResearchStore = create<ResearchState>()((set, get) => ({
   },
 
   setActiveArticle: (id) => set({ activeArticleId: id }),
+
+  // Plagiarism check (simulated)
+  runPlagiarismCheck: () => {
+    set({ plagiarismChecking: true });
+    setTimeout(() => {
+      const sections = get().sections;
+      const matches: PlagiarismMatch[] = [
+        { id: 'pm1', text: 'The global transition toward renewable energy sources has accelerated significantly over the past decade', source: 'IRENA Renewable Energy Statistics 2023', url: 'https://irena.org/statistics', matchPercentage: 72, sectionId: 's5' },
+        { id: 'pm2', text: 'Machine learning approaches, particularly deep neural networks, have emerged as promising alternatives', source: 'Ahmed et al., Renewable and Sustainable Energy Reviews, 2020', url: 'https://doi.org/10.1016/j.rser.2020.109792', matchPercentage: 58, sectionId: 's5' },
+        { id: 'pm3', text: 'Long Short-Term Memory networks, introduced by Hochreiter and Schmidhuber', source: 'Wikipedia - LSTM', url: 'https://en.wikipedia.org/wiki/Long_short-term_memory', matchPercentage: 85, sectionId: 's6' },
+        { id: 'pm4', text: 'Our systematic review followed PRISMA guidelines for literature search and selection', source: 'Moher et al., PRISMA Statement, BMJ 2009', url: 'https://doi.org/10.1136/bmj.b2535', matchPercentage: 44, sectionId: 's7' },
+        { id: 'pm5', text: 'Transformer-based models achieve the lowest MAPE compared to LSTM, CNN, and traditional methods', source: 'Torres et al., Big Data, 2021', url: 'https://doi.org/10.1089/big.2020.0159', matchPercentage: 38, sectionId: 's8' },
+      ];
+      const totalWords = sections.reduce((a, s) => a + s.wordCount, 0);
+      const matchedWords = matches.reduce((a, m) => a + m.text.split(/\s+/).length, 0);
+      const overallScore = Math.round((matchedWords / Math.max(totalWords, 1)) * 100);
+      set({
+        plagiarismChecking: false,
+        plagiarismResult: { overallScore: Math.min(overallScore, 18), matches, checkedAt: new Date().toISOString(), excludeQuotes: false, excludeBibliography: true },
+      });
+    }, 2000);
+  },
+
+  setPlagiarismExcludeQuotes: (val) => set((state) => ({
+    plagiarismResult: state.plagiarismResult ? { ...state.plagiarismResult, excludeQuotes: val } : null,
+  })),
+
+  setPlagiarismExcludeBibliography: (val) => set((state) => ({
+    plagiarismResult: state.plagiarismResult ? { ...state.plagiarismResult, excludeBibliography: val } : null,
+  })),
+
+  // Spelling check (simulated)
+  runSpellingCheck: () => {
+    const issues: SpellingIssue[] = [
+      { id: 'sp1', word: 'methodologies', sectionId: 's3', offset: 85, type: 'grammar', suggestions: ['methods', 'approaches'], rule: 'Consider simpler word' },
+      { id: 'sp2', word: 'recieved', sectionId: 's6', offset: 120, type: 'spelling', suggestions: ['received'] },
+      { id: 'sp3', word: 'dependance', sectionId: 's5', offset: 200, type: 'spelling', suggestions: ['dependence', 'dependency'] },
+      { id: 'sp4', word: 'is demonstrated', sectionId: 's9', offset: 45, type: 'grammar', suggestions: ['demonstrates', 'has demonstrated'], rule: 'Passive voice detected' },
+      { id: 'sp5', word: 'have been introduced', sectionId: 's6', offset: 180, type: 'grammar', suggestions: ['were introduced'], rule: 'Passive voice detected' },
+      { id: 'sp6', word: 'a large amount of', sectionId: 's5', offset: 310, type: 'grammar', suggestions: ['many', 'numerous', 'extensive'], rule: 'Wordy expression' },
+      { id: 'sp7', word: 'utilize', sectionId: 's7', offset: 50, type: 'grammar', suggestions: ['use'], rule: 'Academic style: prefer simpler verbs' },
+      { id: 'sp8', word: 'supplimentary', sectionId: 's12', offset: 10, type: 'spelling', suggestions: ['supplementary'] },
+    ];
+    set({ spellingIssues: issues });
+  },
+
+  toggleSpelling: (val) => set({ spellingEnabled: val }),
+  toggleAutoCorrect: (val) => set({ autoCorrectEnabled: val }),
+
+  addToCustomDictionary: (word) => set((state) => ({
+    customDictionary: [...state.customDictionary, word],
+    spellingIssues: state.spellingIssues.filter((i) => i.word !== word),
+  })),
+
+  dismissSpellingIssue: (id) => set((state) => ({
+    spellingIssues: state.spellingIssues.filter((i) => i.id !== id),
+  })),
+
+  applySpellingSuggestion: (issueId, suggestion) => {
+    const issue = get().spellingIssues.find((i) => i.id === issueId);
+    if (!issue) return;
+    const section = get().sections.find((s) => s.id === issue.sectionId);
+    if (section) {
+      const newContent = section.content.replace(issue.word, suggestion);
+      get().updateSectionContent(section.id, newContent);
+    }
+    set((state) => ({ spellingIssues: state.spellingIssues.filter((i) => i.id !== issueId) }));
+  },
+
+  addAbbreviation: (abbr, fullForm) => set((state) => ({
+    abbreviations: [...state.abbreviations.filter((a) => a.abbr !== abbr), { abbr, fullForm }],
+  })),
+
+  removeAbbreviation: (abbr) => set((state) => ({
+    abbreviations: state.abbreviations.filter((a) => a.abbr !== abbr),
+  })),
+
+  // Smart citation search (simulated)
+  searchSmartCitations: (query) => {
+    set({ smartCiteQuery: query, smartCiteSearching: true });
+    setTimeout(() => {
+      const q = query.toLowerCase();
+      const results = mockSmartCitations.filter(
+        (c) => c.title.toLowerCase().includes(q) || c.abstract.toLowerCase().includes(q) ||
+          c.authors.some((a) => a.toLowerCase().includes(q)) ||
+          c.journal.toLowerCase().includes(q)
+      ).slice(0, 10);
+      set({ smartCitationResults: results.length > 0 ? results : mockSmartCitations.slice(0, 8), smartCiteSearching: false });
+    }, 800);
+  },
+
+  insertSmartCitation: (result) => {
+    const citation: Omit<Citation, 'id'> = {
+      key: `ref_${result.doi.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20)}`,
+      type: 'article',
+      title: result.title,
+      authors: result.authors,
+      year: result.year,
+      journal: result.journal,
+      doi: result.doi,
+      inText: true,
+    };
+    get().addCitation(citation);
+  },
+
+  setShowCitationPopup: (show, position) => set({
+    showCitationPopup: show,
+    citationPopupPosition: position || null,
+  }),
+
+  setDoubleColumnEnabled: (val) => set({ doubleColumnEnabled: val }),
+
+  importDocument: (name, templateId) => {
+    const template = get().journalTemplates.find((t) => t.id === templateId);
+    if (template) {
+      get().applyTemplate(templateId);
+      const config = journalFormatConfigs[templateId] || null;
+      set({ importedDocName: name, activeFormatConfig: config });
+    }
+  },
 }));
