@@ -8,8 +8,7 @@ import {
   BookOpen, Download, Eye, EyeOff, Share2, LayoutTemplate,
   Sigma, FileImage, Sparkles, Save, Upload, Shield, SpellCheck,
   Columns, BookA, ClipboardCheck, Users, FileText, BookOpenCheck,
-  Columns, BookA, FileText,
-  Columns, BookA, History, MessageSquare, ToggleLeft, ToggleRight,
+  History, MessageSquare, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import { useVersionHistoryStore } from '@/store/version-history-store';
 
