@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import {
   FlaskConical, Plus, BookOpen, LayoutGrid, ChevronRight,
   Calendar, FileText, CheckCircle2, Clock, Send, Sparkles,
-  BookMarked, Sigma, FileCode, Link2,
+  BookMarked, Sigma, FileCode, Link2, Shield, SpellCheck, Upload,
 } from 'lucide-react';
 
 import ResearchToolbar from './research-toolbar';
@@ -18,6 +18,10 @@ import ExportPanel from './export-panel';
 import JournalTemplates from './journal-templates';
 import LaTeXSettingsPanel from './latex-settings-panel';
 import CrossModuleLinker from './cross-module-linker';
+import PlagiarismPanel from './plagiarism-panel';
+import SpellingPanel from './spelling-panel';
+import SmartCitationPanel from './smart-citation-panel';
+import ImportPanel from './import-panel';
 
 const statusColors = {
   Draft: 'text-yellow-400',
@@ -327,15 +331,40 @@ export default function ResearchEditor() {
           className="w-72 shrink-0 border-l flex flex-col"
           style={{ borderColor: 'var(--border)' }}
         >
-          {/* Panel tabs */}
+          {/* Panel tabs - row 1 */}
           <div
             className="flex border-b shrink-0"
             style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
           >
             {([
               ['citations', 'Refs', BookOpen],
+              ['smartcite', 'Cite+', Sparkles],
               ['ai', 'AI', Sparkles],
+              ['plagiarism', 'Plag', Shield],
+              ['spelling', 'Spell', SpellCheck],
+            ] as const).map(([panel, label, Icon]) => (
+              <button
+                key={panel}
+                onClick={() => setActiveRightPanel(panel)}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-0.5 py-2 text-[10px] transition-colors border-b-2',
+                  activeRightPanel === panel ? 'font-medium' : 'opacity-50 border-transparent hover:opacity-80'
+                )}
+                style={activeRightPanel === panel ? { borderColor: 'var(--primary)', color: 'var(--foreground)' } : undefined}
+              >
+                <Icon size={11} />
+                {label}
+              </button>
+            ))}
+          </div>
+          {/* Panel tabs - row 2 */}
+          <div
+            className="flex border-b shrink-0"
+            style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+          >
+            {([
               ['export', 'Export', Sigma],
+              ['import', 'Import', Upload],
               ['latex', 'LaTeX', FileCode],
               ['links', 'Links', Link2],
             ] as const).map(([panel, label, Icon]) => (
@@ -343,12 +372,12 @@ export default function ResearchEditor() {
                 key={panel}
                 onClick={() => setActiveRightPanel(panel)}
                 className={cn(
-                  'flex-1 flex items-center justify-center gap-1 py-2 text-xs transition-colors border-b-2',
+                  'flex-1 flex items-center justify-center gap-0.5 py-1.5 text-[10px] transition-colors border-b-2',
                   activeRightPanel === panel ? 'font-medium' : 'opacity-50 border-transparent hover:opacity-80'
                 )}
                 style={activeRightPanel === panel ? { borderColor: 'var(--primary)', color: 'var(--foreground)' } : undefined}
               >
-                <Icon size={13} />
+                <Icon size={11} />
                 {label}
               </button>
             ))}
@@ -357,10 +386,14 @@ export default function ResearchEditor() {
           {/* Panel content */}
           <div className="flex-1 overflow-hidden">
             {activeRightPanel === 'citations' && <CitationManager />}
+            {activeRightPanel === 'smartcite' && <SmartCitationPanel />}
             {activeRightPanel === 'ai' && <ResearchAIPanel />}
             {activeRightPanel === 'export' && <ExportPanel />}
+            {activeRightPanel === 'import' && <ImportPanel />}
             {activeRightPanel === 'latex' && <LaTeXSettingsPanel />}
             {activeRightPanel === 'links' && <CrossModuleLinker />}
+            {activeRightPanel === 'plagiarism' && <PlagiarismPanel />}
+            {activeRightPanel === 'spelling' && <SpellingPanel />}
           </div>
         </div>
       </div>
