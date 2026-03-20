@@ -6,7 +6,7 @@ import {
   FlaskConical, Plus, BookOpen, LayoutGrid, ChevronRight,
   Calendar, FileText, CheckCircle2, Clock, Send, Sparkles,
   BookMarked, Sigma, FileCode, Link2, Shield, SpellCheck, Upload,
-  ClipboardCheck, Users, Mail as MailIcon, BookOpenCheck,
+  ClipboardCheck, Users, Mail as MailIcon, BookOpenCheck, Bot,
 } from 'lucide-react';
 import katex from 'katex';
 
@@ -31,6 +31,7 @@ import CoverLetter from './cover-letter';
 import JournalRecommendation from './journal-recommendation';
 import PdfPreview from './pdf-preview';
 import VersionHistory from './version-history';
+import AIChatAssistant from './ai-chat-assistant';
 import { useVersionHistoryStore } from '@/store/version-history-store';
 
 function renderKatexSafe(latex: string, displayMode: boolean): string {
@@ -200,7 +201,6 @@ export default function ResearchEditor() {
     showTemplateGallery, showEquationEditor, showFigureManager,
     showDashboard, setShowDashboard, setShowTemplateGallery,
     activeRightPanel, setActiveRightPanel,
-    citations, equations, figures,
     setShowEquationEditor, setShowCitationManager,
     citations, equations, figures, pdfPreviewOpen,
   } = useResearchStore();
@@ -340,6 +340,7 @@ export default function ResearchEditor() {
               ['citations', 'Refs', BookOpen],
               ['smartcite', 'Cite+', Sparkles],
               ['ai', 'AI', Sparkles],
+              ['aichat', 'Chat', Bot],
               ['plagiarism', 'Plag', Shield],
               ['spelling', 'Spell', SpellCheck],
             ] as const).map(([panel, label, Icon]) => (
@@ -413,6 +414,7 @@ export default function ResearchEditor() {
             {activeRightPanel === 'citations' && <CitationManager />}
             {activeRightPanel === 'smartcite' && <SmartCitationPanel />}
             {activeRightPanel === 'ai' && <ResearchAIPanel />}
+            {activeRightPanel === 'aichat' && <AIChatAssistant />}
             {activeRightPanel === 'export' && <ExportPanel />}
             {activeRightPanel === 'import' && <ImportPanel />}
             {activeRightPanel === 'latex' && <LaTeXSettingsPanel />}

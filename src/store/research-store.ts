@@ -306,7 +306,31 @@ const journalTemplates: JournalTemplate[] = [
   { id: 'apl', name: 'Applied Physics Letters', category: 'AIP', description: 'AIP Applied Physics Letters concise format', columns: 1, referenceStyle: 'APA 7th', sections: ['Abstract', 'Introduction', 'Methods', 'Results', 'Discussion', 'Conclusion', 'References'], hasAbstract: true, hasKeywords: false, wordLimit: 3500 },
 ];
 
-type RightPanel = 'citations' | 'ai' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import' | 'submission' | 'authors' | 'coverletter' | 'journals';
+type RightPanel = 'citations' | 'ai' | 'aichat' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import' | 'submission' | 'authors' | 'coverletter' | 'journals';
+
+// AI Chat Assistant types
+export interface AIChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  model?: string;
+  slashCommand?: string;
+  isStreaming?: boolean;
+}
+
+export interface AIChatSession {
+  id: string;
+  title: string;
+  messages: AIChatMessage[];
+  model: string;
+  reasoningEffort: 'low' | 'medium' | 'high';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AIModel = 'claude-sonnet-4' | 'claude-opus-4' | 'claude-haiku';
+export type ReasoningEffort = 'low' | 'medium' | 'high';
 
 export interface SubmissionCheck {
   id: string;
@@ -444,6 +468,25 @@ interface ResearchState {
   setShowCoverLetter: (val: boolean) => void;
   setShowJournalRec: (val: boolean) => void;
   setPdfPreviewOpen: (val: boolean) => void;
+
+  // AI Chat Assistant state
+  aiChatSessions: AIChatSession[];
+  activeAIChatSessionId: string | null;
+  aiChatModel: AIModel;
+  aiChatReasoningEffort: ReasoningEffort;
+  aiChatLoading: boolean;
+
+  // AI Chat Assistant actions
+  createAIChatSession: () => string;
+  deleteAIChatSession: (id: string) => void;
+  renameAIChatSession: (id: string, title: string) => void;
+  setActiveAIChatSession: (id: string | null) => void;
+  addAIChatMessage: (sessionId: string, message: Omit<AIChatMessage, 'id' | 'timestamp'>) => void;
+  updateAIChatMessage: (sessionId: string, messageId: string, content: string) => void;
+  setAIChatModel: (model: AIModel) => void;
+  setAIChatReasoningEffort: (effort: ReasoningEffort) => void;
+  setAIChatLoading: (loading: boolean) => void;
+  getActiveAIChatSession: () => AIChatSession | null;
 }
 
 export const useResearchStore = create<ResearchState>()((set, get) => ({
@@ -931,4 +974,86 @@ ${correspondingAuthor?.name || state.authors[0]?.name || 'The Authors'}`;
   setShowAuthorManager: (val) => set({ showAuthorManager: val }),
   setShowCoverLetter: (val) => set({ showCoverLetter: val }),
   setShowJournalRec: (val) => set({ showJournalRec: val }),
+
+  // AI Chat Assistant state
+  aiChatSessions: [],
+  activeAIChatSessionId: null,
+  aiChatModel: 'claude-sonnet-4',
+  aiChatReasoningEffort: 'medium',
+  aiChatLoading: false,
+
+  // AI Chat Assistant actions
+  createAIChatSession: () => {
+    const id = `acs-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const session: AIChatSession = {
+      id,
+      title: 'New Chat',
+      messages: [],
+      model: get().aiChatModel,
+      reasoningEffort: get().aiChatReasoningEffort,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    set((s) => ({
+      aiChatSessions: [session, ...s.aiChatSessions],
+      activeAIChatSessionId: id,
+    }));
+    return id;
+  },
+
+  deleteAIChatSession: (id) =>
+    set((s) => ({
+      aiChatSessions: s.aiChatSessions.filter((c) => c.id !== id),
+      activeAIChatSessionId: s.activeAIChatSessionId === id ? null : s.activeAIChatSessionId,
+    })),
+
+  renameAIChatSession: (id, title) =>
+    set((s) => ({
+      aiChatSessions: s.aiChatSessions.map((c) =>
+        c.id === id ? { ...c, title, updatedAt: new Date().toISOString() } : c
+      ),
+    })),
+
+  setActiveAIChatSession: (id) => set({ activeAIChatSessionId: id }),
+
+  addAIChatMessage: (sessionId, message) => {
+    const msg: AIChatMessage = {
+      ...message,
+      id: `msg-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: new Date().toISOString(),
+    };
+    set((s) => ({
+      aiChatSessions: s.aiChatSessions.map((c) => {
+        if (c.id !== sessionId) return c;
+        const messages = [...c.messages, msg];
+        const title = c.messages.length === 0 && message.role === 'user'
+          ? message.content.slice(0, 45) + (message.content.length > 45 ? '...' : '')
+          : c.title;
+        return { ...c, messages, title, updatedAt: new Date().toISOString() };
+      }),
+    }));
+  },
+
+  updateAIChatMessage: (sessionId, messageId, content) =>
+    set((s) => ({
+      aiChatSessions: s.aiChatSessions.map((c) => {
+        if (c.id !== sessionId) return c;
+        return {
+          ...c,
+          messages: c.messages.map((m) =>
+            m.id === messageId ? { ...m, content, isStreaming: false } : m
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    })),
+
+  setAIChatModel: (model) => set({ aiChatModel: model }),
+  setAIChatReasoningEffort: (effort) => set({ aiChatReasoningEffort: effort }),
+  setAIChatLoading: (loading) => set({ aiChatLoading: loading }),
+
+  getActiveAIChatSession: () => {
+    const { activeAIChatSessionId, aiChatSessions } = get();
+    return aiChatSessions.find((c) => c.id === activeAIChatSessionId) || null;
+  },
 }));
