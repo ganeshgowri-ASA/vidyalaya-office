@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useResearchStore } from '@/store/research-store';
 import { cn } from '@/lib/utils';
 import {
   FlaskConical, Plus, BookOpen, LayoutGrid, ChevronRight,
   Calendar, FileText, CheckCircle2, Clock, Send, Sparkles,
   BookMarked, Sigma, FileCode, Link2, Shield, SpellCheck, Upload,
+  ClipboardCheck, Users, Mail as MailIcon, BookOpenCheck,
 } from 'lucide-react';
 
 import ResearchToolbar from './research-toolbar';
@@ -22,6 +23,10 @@ import PlagiarismPanel from './plagiarism-panel';
 import SpellingPanel from './spelling-panel';
 import SmartCitationPanel from './smart-citation-panel';
 import ImportPanel from './import-panel';
+import SubmissionChecker from './submission-checker';
+import AuthorManager from './author-manager';
+import CoverLetter from './cover-letter';
+import JournalRecommendation from './journal-recommendation';
 
 const statusColors = {
   Draft: 'text-yellow-400',
@@ -183,7 +188,31 @@ export default function ResearchEditor() {
     showDashboard, setShowDashboard, setShowTemplateGallery,
     activeRightPanel, setActiveRightPanel,
     citations, equations, figures,
+    setShowEquationEditor, setShowCitationManager,
   } = useResearchStore();
+
+  // Keyboard shortcuts
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && e.key === 's') {
+      e.preventDefault();
+      // Auto-save trigger (visual feedback only, data is already in Zustand)
+    }
+    if (ctrl && e.key === 'e' && !e.shiftKey) {
+      e.preventDefault();
+      setShowEquationEditor(true);
+    }
+    if (ctrl && e.shiftKey && e.key === 'C') {
+      e.preventDefault();
+      setActiveRightPanel('citations');
+      setShowCitationManager(true);
+    }
+  }, [setShowEquationEditor, setActiveRightPanel, setShowCitationManager]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   const activeS = sections.find((s) => s.id === activeSection);
   const titleSection = sections.find((s) => s.title === 'Title');
@@ -382,6 +411,31 @@ export default function ResearchEditor() {
               </button>
             ))}
           </div>
+          {/* Panel tabs - row 3 (production) */}
+          <div
+            className="flex border-b shrink-0"
+            style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+          >
+            {([
+              ['submission', 'Submit', ClipboardCheck],
+              ['authors', 'Authors', Users],
+              ['coverletter', 'Cover', MailIcon],
+              ['journals', 'Journals', BookOpenCheck],
+            ] as const).map(([panel, label, Icon]) => (
+              <button
+                key={panel}
+                onClick={() => setActiveRightPanel(panel)}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-0.5 py-1.5 text-[10px] transition-colors border-b-2',
+                  activeRightPanel === panel ? 'font-medium' : 'opacity-50 border-transparent hover:opacity-80'
+                )}
+                style={activeRightPanel === panel ? { borderColor: 'var(--primary)', color: 'var(--foreground)' } : undefined}
+              >
+                <Icon size={11} />
+                {label}
+              </button>
+            ))}
+          </div>
 
           {/* Panel content */}
           <div className="flex-1 overflow-hidden">
@@ -394,6 +448,10 @@ export default function ResearchEditor() {
             {activeRightPanel === 'links' && <CrossModuleLinker />}
             {activeRightPanel === 'plagiarism' && <PlagiarismPanel />}
             {activeRightPanel === 'spelling' && <SpellingPanel />}
+            {activeRightPanel === 'submission' && <SubmissionChecker />}
+            {activeRightPanel === 'authors' && <AuthorManager />}
+            {activeRightPanel === 'coverletter' && <CoverLetter />}
+            {activeRightPanel === 'journals' && <JournalRecommendation />}
           </div>
         </div>
       </div>
