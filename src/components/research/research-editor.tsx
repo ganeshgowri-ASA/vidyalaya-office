@@ -31,6 +31,8 @@ import CoverLetter from './cover-letter';
 import JournalRecommendation from './journal-recommendation';
 import PdfPreview from './pdf-preview';
 import VersionHistory from './version-history';
+import ProposedChangesPanel from './proposed-changes-panel';
+import TrackChanges from './track-changes';
 import { useVersionHistoryStore } from '@/store/version-history-store';
 
 function renderKatexSafe(latex: string, displayMode: boolean): string {
@@ -200,9 +202,8 @@ export default function ResearchEditor() {
     showTemplateGallery, showEquationEditor, showFigureManager,
     showDashboard, setShowDashboard, setShowTemplateGallery,
     activeRightPanel, setActiveRightPanel,
-    citations, equations, figures,
-    setShowEquationEditor, setShowCitationManager,
     citations, equations, figures, pdfPreviewOpen,
+    setShowEquationEditor, setShowCitationManager,
   } = useResearchStore();
 
   // Keyboard shortcuts
@@ -428,6 +429,12 @@ export default function ResearchEditor() {
 
         {/* Version History Panel */}
         <VersionHistory />
+
+        {/* Proposed Changes Panel */}
+        <ProposedChangesPanel />
+
+        {/* Track Changes Panel */}
+        <TrackChanges />
       </div>
 
       {/* Modals */}

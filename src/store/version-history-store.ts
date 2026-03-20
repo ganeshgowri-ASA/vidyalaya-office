@@ -29,6 +29,30 @@ export interface SectionAuthorMeta {
   lastEditedAt: string;
 }
 
+export interface ProposedChange {
+  id: string;
+  sectionId: string;
+  originalText: string;
+  proposedText: string;
+  reason: string;
+  author: string;
+  timestamp: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  type: 'addition' | 'deletion' | 'modification';
+}
+
+export interface TrackedChange {
+  id: string;
+  sectionId: string;
+  originalText: string;
+  newText: string;
+  author: string;
+  timestamp: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  type: 'insertion' | 'deletion' | 'replacement';
+  comment?: string;
+}
+
 interface VersionHistoryState {
   snapshots: VersionSnapshot[];
   comments: InlineComment[];
@@ -37,28 +61,148 @@ interface VersionHistoryState {
   showVersionHistory: boolean;
   showCommentsPanel: boolean;
   selectedSnapshotId: string | null;
+  compareSnapshotId: string | null;
   diffViewActive: boolean;
+  diffViewMode: 'unified' | 'side-by-side';
   autoSaveIntervalMs: number;
   lastAutoSaveAt: string | null;
 
+  proposedChanges: ProposedChange[];
+  showProposedChanges: boolean;
+  trackedChanges: TrackedChange[];
+  showTrackChanges: boolean;
+
   addSnapshot: (sections: Section[], label: string, author: string, isAutoSave: boolean) => void;
   removeSnapshot: (id: string) => void;
+  renameSnapshot: (id: string, label: string) => void;
   setSelectedSnapshot: (id: string | null) => void;
+  setCompareSnapshot: (id: string | null) => void;
   setDiffViewActive: (val: boolean) => void;
+  setDiffViewMode: (mode: 'unified' | 'side-by-side') => void;
   setShowVersionHistory: (val: boolean) => void;
   setShowCommentsPanel: (val: boolean) => void;
   setTrackChangesEnabled: (val: boolean) => void;
+  setAutoSaveInterval: (ms: number) => void;
 
   addComment: (comment: Omit<InlineComment, 'id' | 'timestamp' | 'resolved'>) => void;
   resolveComment: (id: string) => void;
   deleteComment: (id: string) => void;
 
   updateSectionAuthor: (sectionId: string, author: string) => void;
+
+  addProposedChange: (change: Omit<ProposedChange, 'id' | 'timestamp' | 'status'>) => void;
+  acceptProposedChange: (id: string) => void;
+  rejectProposedChange: (id: string) => void;
+  acceptAllProposedChanges: () => void;
+  rejectAllProposedChanges: () => void;
+  clearProposedChanges: () => void;
+  setShowProposedChanges: (val: boolean) => void;
+
+  addTrackedChange: (change: Omit<TrackedChange, 'id' | 'timestamp' | 'status'>) => void;
+  acceptTrackedChange: (id: string) => void;
+  rejectTrackedChange: (id: string) => void;
+  acceptAllTrackedChanges: () => void;
+  rejectAllTrackedChanges: () => void;
+  addCommentToTrackedChange: (id: string, comment: string) => void;
+  setShowTrackChanges: (val: boolean) => void;
 }
+
+const defaultProposedChanges: ProposedChange[] = [
+  {
+    id: 'pc_1',
+    sectionId: 's3',
+    originalText: 'We analyze over 200 recent publications focusing on solar, wind, and hybrid energy systems.',
+    proposedText: 'We systematically analyze over 200 peer-reviewed publications from 2015-2024, focusing on solar photovoltaic, wind turbine, and hybrid renewable energy systems.',
+    reason: 'More specific scope and time range improves clarity',
+    author: 'AI Assistant',
+    timestamp: '2026-03-20T13:00:00Z',
+    status: 'pending',
+    type: 'modification',
+  },
+  {
+    id: 'pc_2',
+    sectionId: 's5',
+    originalText: 'Accurate forecasting of energy generation from solar and wind sources remains a critical challenge due to their inherent variability and dependence on meteorological conditions [2,3].',
+    proposedText: 'Accurate forecasting of energy generation from solar and wind sources remains a critical challenge due to their inherent stochastic variability, intermittency, and strong dependence on meteorological conditions [2,3].',
+    reason: 'Added technical specificity with "stochastic" and "intermittency"',
+    author: 'AI Assistant',
+    timestamp: '2026-03-20T13:01:00Z',
+    status: 'pending',
+    type: 'modification',
+  },
+  {
+    id: 'pc_3',
+    sectionId: 's7',
+    originalText: 'Our systematic review followed PRISMA guidelines for literature search and selection.',
+    proposedText: 'Our systematic review followed the PRISMA 2020 guidelines (Page et al., 2021) for transparent reporting of literature search and study selection.',
+    reason: 'Updated to PRISMA 2020 and added citation as suggested in comments',
+    author: 'AI Assistant',
+    timestamp: '2026-03-20T13:02:00Z',
+    status: 'pending',
+    type: 'modification',
+  },
+  {
+    id: 'pc_4',
+    sectionId: 's8',
+    originalText: '',
+    proposedText: 'Furthermore, ensemble methods combining multiple deep learning architectures showed promising results, achieving MAPE values below 2.5% for day-ahead solar forecasting in favorable conditions.',
+    reason: 'Adding discussion of ensemble methods strengthens the results section',
+    author: 'AI Assistant',
+    timestamp: '2026-03-20T13:03:00Z',
+    status: 'pending',
+    type: 'addition',
+  },
+  {
+    id: 'pc_5',
+    sectionId: 's9',
+    originalText: 'though computational requirements limit practical deployment',
+    proposedText: 'although their higher computational requirements and larger training data needs may limit immediate practical deployment in resource-constrained environments',
+    reason: 'More nuanced conclusion about deployment limitations',
+    author: 'AI Assistant',
+    timestamp: '2026-03-20T13:04:00Z',
+    status: 'pending',
+    type: 'modification',
+  },
+];
+
+const defaultTrackedChanges: TrackedChange[] = [
+  {
+    id: 'tc_1',
+    sectionId: 's3',
+    originalText: '',
+    newText: 'Our findings demonstrate that transformer-based architectures achieve 15-23% improvement in prediction accuracy compared to traditional LSTM models.',
+    author: 'Maria Garcia',
+    timestamp: '2026-03-20T10:30:00Z',
+    status: 'pending',
+    type: 'insertion',
+  },
+  {
+    id: 'tc_2',
+    sectionId: 's5',
+    originalText: 'Machine learning approaches, particularly deep neural networks, have emerged as promising alternatives, offering superior performance in high-dimensional feature spaces [5].',
+    newText: 'Machine learning approaches, particularly deep neural networks and attention-based architectures, have emerged as powerful alternatives, demonstrating superior performance in modeling high-dimensional, nonlinear feature spaces [5].',
+    author: 'Wei Chen',
+    timestamp: '2026-03-20T11:15:00Z',
+    status: 'pending',
+    type: 'replacement',
+    comment: 'Updated to reflect current state of the field including attention mechanisms',
+  },
+  {
+    id: 'tc_3',
+    sectionId: 's6',
+    originalText: 'Multiple studies have validated LSTM superiority over conventional methods for both solar irradiance and wind power forecasting.',
+    newText: '',
+    author: 'John Smith',
+    timestamp: '2026-03-20T11:45:00Z',
+    status: 'pending',
+    type: 'deletion',
+    comment: 'This claim is too broad without specific citations - removing until we can add references',
+  },
+];
 
 export const useVersionHistoryStore = create<VersionHistoryState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       snapshots: [
         {
           id: 'snap_initial',
@@ -145,9 +289,16 @@ export const useVersionHistoryStore = create<VersionHistoryState>()(
       showVersionHistory: false,
       showCommentsPanel: false,
       selectedSnapshotId: null,
+      compareSnapshotId: null,
       diffViewActive: false,
+      diffViewMode: 'unified',
       autoSaveIntervalMs: 5 * 60 * 1000,
       lastAutoSaveAt: null,
+
+      proposedChanges: defaultProposedChanges,
+      showProposedChanges: false,
+      trackedChanges: defaultTrackedChanges,
+      showTrackChanges: false,
 
       addSnapshot: (sections, label, author, isAutoSave) => {
         const snapshot: VersionSnapshot = {
@@ -174,11 +325,18 @@ export const useVersionHistoryStore = create<VersionHistoryState>()(
         snapshots: state.snapshots.filter((s) => s.id !== id),
       })),
 
+      renameSnapshot: (id, label) => set((state) => ({
+        snapshots: state.snapshots.map((s) => s.id === id ? { ...s, label } : s),
+      })),
+
       setSelectedSnapshot: (id) => set({ selectedSnapshotId: id }),
+      setCompareSnapshot: (id) => set({ compareSnapshotId: id }),
       setDiffViewActive: (val) => set({ diffViewActive: val }),
+      setDiffViewMode: (mode) => set({ diffViewMode: mode }),
       setShowVersionHistory: (val) => set({ showVersionHistory: val }),
       setShowCommentsPanel: (val) => set({ showCommentsPanel: val }),
       setTrackChangesEnabled: (val) => set({ trackChangesEnabled: val }),
+      setAutoSaveInterval: (ms) => set({ autoSaveIntervalMs: ms }),
 
       addComment: (comment) => set((state) => ({
         comments: [...state.comments, {
@@ -210,6 +368,66 @@ export const useVersionHistoryStore = create<VersionHistoryState>()(
           sectionAuthors: [...state.sectionAuthors, { sectionId, lastEditedBy: author, lastEditedAt: new Date().toISOString() }],
         };
       }),
+
+      addProposedChange: (change) => set((state) => ({
+        proposedChanges: [...state.proposedChanges, {
+          ...change,
+          id: `pc_${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          status: 'pending',
+        }],
+      })),
+
+      acceptProposedChange: (id) => set((state) => ({
+        proposedChanges: state.proposedChanges.map((c) => c.id === id ? { ...c, status: 'accepted' } : c),
+      })),
+
+      rejectProposedChange: (id) => set((state) => ({
+        proposedChanges: state.proposedChanges.map((c) => c.id === id ? { ...c, status: 'rejected' } : c),
+      })),
+
+      acceptAllProposedChanges: () => set((state) => ({
+        proposedChanges: state.proposedChanges.map((c) => c.status === 'pending' ? { ...c, status: 'accepted' } : c),
+      })),
+
+      rejectAllProposedChanges: () => set((state) => ({
+        proposedChanges: state.proposedChanges.map((c) => c.status === 'pending' ? { ...c, status: 'rejected' } : c),
+      })),
+
+      clearProposedChanges: () => set({ proposedChanges: [] }),
+
+      setShowProposedChanges: (val) => set({ showProposedChanges: val }),
+
+      addTrackedChange: (change) => set((state) => ({
+        trackedChanges: [...state.trackedChanges, {
+          ...change,
+          id: `tc_${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          status: 'pending',
+        }],
+      })),
+
+      acceptTrackedChange: (id) => set((state) => ({
+        trackedChanges: state.trackedChanges.map((c) => c.id === id ? { ...c, status: 'accepted' } : c),
+      })),
+
+      rejectTrackedChange: (id) => set((state) => ({
+        trackedChanges: state.trackedChanges.map((c) => c.id === id ? { ...c, status: 'rejected' } : c),
+      })),
+
+      acceptAllTrackedChanges: () => set((state) => ({
+        trackedChanges: state.trackedChanges.map((c) => c.status === 'pending' ? { ...c, status: 'accepted' } : c),
+      })),
+
+      rejectAllTrackedChanges: () => set((state) => ({
+        trackedChanges: state.trackedChanges.map((c) => c.status === 'pending' ? { ...c, status: 'rejected' } : c),
+      })),
+
+      addCommentToTrackedChange: (id, comment) => set((state) => ({
+        trackedChanges: state.trackedChanges.map((c) => c.id === id ? { ...c, comment } : c),
+      })),
+
+      setShowTrackChanges: (val) => set({ showTrackChanges: val }),
     }),
     {
       name: 'vidyalaya-version-history',

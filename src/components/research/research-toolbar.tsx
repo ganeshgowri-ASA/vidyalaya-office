@@ -8,8 +8,8 @@ import {
   BookOpen, Download, Eye, EyeOff, Share2, LayoutTemplate,
   Sigma, FileImage, Sparkles, Save, Upload, Shield, SpellCheck,
   Columns, BookA, ClipboardCheck, Users, FileText, BookOpenCheck,
-  Columns, BookA, FileText,
-  Columns, BookA, History, MessageSquare, ToggleLeft, ToggleRight,
+  History, MessageSquare, ToggleLeft, ToggleRight,
+  GitPullRequestDraft,
 } from 'lucide-react';
 import { useVersionHistoryStore } from '@/store/version-history-store';
 
@@ -58,6 +58,8 @@ export default function ResearchToolbar() {
     showVersionHistory, setShowVersionHistory,
     showCommentsPanel, setShowCommentsPanel,
     trackChangesEnabled, setTrackChangesEnabled,
+    showProposedChanges, setShowProposedChanges,
+    showTrackChanges, setShowTrackChanges,
   } = useVersionHistoryStore();
 
   const handleInsertCitation = () => {
@@ -203,6 +205,9 @@ export default function ResearchToolbar() {
             <ToolbarButton icon={SpellCheck} label="Spelling" onClick={() => setActiveRightPanel('spelling')} />
             <Divider />
             <ToolbarButton icon={Sparkles} label="AI Review" onClick={() => { setShowAIPanel(!showAIPanel); }} active={showAIPanel} />
+            <ToolbarButton icon={Sparkles} label="Proposed" onClick={() => setShowProposedChanges(!showProposedChanges)} active={showProposedChanges} />
+            <ToolbarButton icon={GitPullRequestDraft} label="Track" onClick={() => setShowTrackChanges(!showTrackChanges)} active={showTrackChanges} />
+            <Divider />
             <ToolbarButton icon={FileText} label="Cover Letter" onClick={() => setActiveRightPanel('coverletter')} />
             <ToolbarButton icon={BookOpenCheck} label="Journals" onClick={() => setActiveRightPanel('journals')} />
             <Divider />
