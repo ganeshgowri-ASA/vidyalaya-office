@@ -404,6 +404,7 @@ export interface PresentationActions {
   updateTableCellStyle: (slideIndex: number, elementId: string, cellKey: string, style: TableCellStyle) => void;
   updateSlideTransitionSound: (index: number, sound: TransitionSound) => void;
   updateSlideMasterPlaceholders: (masterId: string, placeholders: PlaceholderPosition[]) => void;
+  applySlideLayout: (slideIndex: number, layout: SlideLayout) => void;
 }
 
 // ── Animation Definitions ───────────────────────────────────────────────────
@@ -1340,6 +1341,19 @@ export const usePresentationStore = create<PresentationState & PresentationActio
     set((state) => ({
       slideNarrations: { ...state.slideNarrations, [slideId]: { audioUrl, duration } },
     })),
+
+  applySlideLayout: (slideIndex, layout) =>
+    set((state) => {
+      const slides = state.slides.map((s, i) => {
+        if (i !== slideIndex) return s;
+        return {
+          ...s,
+          layout,
+          elements: createLayoutElements(layout),
+        };
+      });
+      return { slides };
+    }),
 
   removeSlideNarration: (slideId) =>
     set((state) => {

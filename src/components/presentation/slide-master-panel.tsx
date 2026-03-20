@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Plus, Palette, Type, Edit3, Layout, Move, Image, Hash, Calendar, FileText } from 'lucide-react';
+import { X, Plus, Palette, Type, Edit3, Layout, Move, Image, Hash, Calendar, FileText, Columns, SquareDashedBottom, Heading1, PanelTop } from 'lucide-react';
 import {
   usePresentationStore,
   DEFAULT_SLIDE_MASTERS,
   type SlideMaster,
+  type SlideLayout,
   type PlaceholderPosition,
 } from '@/store/presentation-store';
 import { generateId } from '@/lib/utils';
@@ -26,6 +27,144 @@ const PLACEHOLDER_TYPES: Array<{ type: PlaceholderPosition['type']; label: strin
   { type: 'slideNumber', label: 'Slide #', icon: <Hash size={14} />, defaultPos: { x: 880, y: 510, width: 60, height: 25 } },
   { type: 'logo', label: 'Logo', icon: <Image size={14} />, defaultPos: { x: 860, y: 10, width: 80, height: 40 } },
 ];
+
+// ── Layout Templates ──────────────────────────────────────────────────────────
+
+interface LayoutTemplate {
+  layout: SlideLayout;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  regions: Array<{ x: number; y: number; w: number; h: number; label: string }>;
+}
+
+const LAYOUT_TEMPLATES: LayoutTemplate[] = [
+  {
+    layout: 'title',
+    label: 'Title Slide',
+    description: 'Centered title and subtitle',
+    icon: <Heading1 size={16} />,
+    regions: [
+      { x: 8, y: 30, w: 84, h: 15, label: 'Title' },
+      { x: 17, y: 52, w: 66, h: 10, label: 'Subtitle' },
+    ],
+  },
+  {
+    layout: 'content',
+    label: 'Title + Content',
+    description: 'Title bar with full content area',
+    icon: <PanelTop size={16} />,
+    regions: [
+      { x: 6, y: 5, w: 88, h: 12, label: 'Title' },
+      { x: 6, y: 20, w: 88, h: 72, label: 'Content' },
+    ],
+  },
+  {
+    layout: 'two-column',
+    label: 'Two Content',
+    description: 'Title with two side-by-side columns',
+    icon: <Columns size={16} />,
+    regions: [
+      { x: 6, y: 5, w: 88, h: 12, label: 'Title' },
+      { x: 6, y: 20, w: 42, h: 72, label: 'Left' },
+      { x: 52, y: 20, w: 42, h: 72, label: 'Right' },
+    ],
+  },
+  {
+    layout: 'blank',
+    label: 'Blank',
+    description: 'Empty slide with no placeholders',
+    icon: <SquareDashedBottom size={16} />,
+    regions: [],
+  },
+  {
+    layout: 'section-header',
+    label: 'Section Header',
+    description: 'Large title for section breaks',
+    icon: <Type size={16} />,
+    regions: [
+      { x: 8, y: 37, w: 84, h: 15, label: 'Section Title' },
+      { x: 8, y: 54, w: 84, h: 10, label: 'Description' },
+    ],
+  },
+  {
+    layout: 'title-only',
+    label: 'Title Only',
+    description: 'Just a title bar, rest is open',
+    icon: <Layout size={16} />,
+    regions: [
+      { x: 6, y: 5, w: 88, h: 12, label: 'Title' },
+    ],
+  },
+  {
+    layout: 'comparison',
+    label: 'Comparison',
+    description: 'Compare two options side by side',
+    icon: <Columns size={16} />,
+    regions: [
+      { x: 6, y: 5, w: 88, h: 12, label: 'Title' },
+      { x: 6, y: 20, w: 42, h: 10, label: 'Option A' },
+      { x: 6, y: 32, w: 42, h: 60, label: 'Details A' },
+      { x: 52, y: 20, w: 42, h: 10, label: 'Option B' },
+      { x: 52, y: 32, w: 42, h: 60, label: 'Details B' },
+    ],
+  },
+  {
+    layout: 'picture-caption',
+    label: 'Picture + Caption',
+    description: 'Image area with caption text below',
+    icon: <Image size={16} />,
+    regions: [
+      { x: 6, y: 5, w: 88, h: 68, label: 'Image' },
+      { x: 6, y: 75, w: 88, h: 10, label: 'Caption' },
+      { x: 6, y: 86, w: 88, h: 8, label: 'Description' },
+    ],
+  },
+];
+
+// ── Layout Preview Thumbnail ──────────────────────────────────────────────────
+
+function LayoutThumbnail({ template, isActive, onClick }: { template: LayoutTemplate; isActive: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all hover:opacity-90"
+      style={{
+        borderColor: isActive ? 'var(--primary)' : 'var(--border)',
+        background: isActive ? 'var(--primary)/10' : 'transparent',
+      }}
+    >
+      <div
+        className="w-full rounded border relative overflow-hidden"
+        style={{
+          aspectRatio: '16/9',
+          background: 'linear-gradient(135deg, #334155 0%, #1e293b 100%)',
+          borderColor: 'var(--border)',
+        }}
+      >
+        {template.regions.map((r, i) => (
+          <div
+            key={i}
+            className="absolute border border-dashed border-white/30 rounded-sm flex items-center justify-center"
+            style={{
+              left: `${r.x}%`,
+              top: `${r.y}%`,
+              width: `${r.w}%`,
+              height: `${r.h}%`,
+            }}
+          >
+            <span className="text-white/40 text-[6px] leading-none truncate px-0.5">{r.label}</span>
+          </div>
+        ))}
+      </div>
+      <span className="text-[10px] font-medium leading-tight text-center" style={{ color: 'var(--foreground)' }}>
+        {template.label}
+      </span>
+    </button>
+  );
+}
+
+// ── Helper Components ─────────────────────────────────────────────────────────
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
@@ -51,22 +190,26 @@ function FontSelect({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
+// ── Main Component ────────────────────────────────────────────────────────────
+
 export default function SlideMasterPanel() {
   const {
     showSlideMaster, setShowSlideMaster,
     slideMasters, activeSlideIndex, slides,
     addSlideMaster, updateSlideMaster, applySlideMaster,
-    updateSlideMasterPlaceholders, pushUndo,
+    updateSlideMasterPlaceholders, pushUndo, applySlideLayout,
   } = usePresentationStore();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<SlideMaster>>({});
-  const [activeTab, setActiveTab] = useState<'masters' | 'placeholders'>('masters');
+  const [activeTab, setActiveTab] = useState<'layouts' | 'masters' | 'placeholders'>('layouts');
   const [editPlaceholders, setEditPlaceholders] = useState<PlaceholderPosition[]>([]);
 
   if (!showSlideMaster) return null;
 
   const editingMaster = editingId ? slideMasters.find((m) => m.id === editingId) : null;
+  const currentSlide = slides[activeSlideIndex];
+  const currentLayout = currentSlide?.layout || 'content';
 
   const startEditing = (master: SlideMaster) => {
     setEditingId(master.id);
@@ -77,6 +220,7 @@ export default function SlideMasterPanel() {
       headingFont: master.headingFont,
     });
     setEditPlaceholders(master.placeholders || []);
+    setActiveTab('masters');
   };
 
   const saveEditing = () => {
@@ -87,12 +231,14 @@ export default function SlideMasterPanel() {
     setEditingId(null);
     setEditDraft({});
     setEditPlaceholders([]);
+    setActiveTab('layouts');
   };
 
   const cancelEditing = () => {
     setEditingId(null);
     setEditDraft({});
     setEditPlaceholders([]);
+    setActiveTab('layouts');
   };
 
   const handleAddMaster = () => {
@@ -119,6 +265,11 @@ export default function SlideMasterPanel() {
     slides.forEach((_, idx) => applySlideMaster(idx, masterId));
   };
 
+  const handleApplyLayout = (layout: SlideLayout) => {
+    pushUndo();
+    applySlideLayout(activeSlideIndex, layout);
+  };
+
   const addPlaceholder = (type: PlaceholderPosition['type']) => {
     const def = PLACEHOLDER_TYPES.find(p => p.type === type);
     if (!def) return;
@@ -143,16 +294,132 @@ export default function SlideMasterPanel() {
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-2">
             <Palette size={18} style={{ color: 'var(--foreground)' }} />
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--card-foreground)' }}>Slide Masters</h2>
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--card-foreground)' }}>Slide Master & Layouts</h2>
           </div>
           <button onClick={() => setShowSlideMaster(false)} className="p-1 rounded hover:opacity-80" style={{ color: 'var(--muted-foreground)' }}>
             <X size={20} />
           </button>
         </div>
 
+        {/* Top-level tabs */}
+        {!editingId && (
+          <div className="flex gap-1 px-4 pt-3 pb-1">
+            <button onClick={() => setActiveTab('layouts')}
+              className="px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              style={{
+                background: activeTab === 'layouts' ? 'var(--primary)' : 'transparent',
+                color: activeTab === 'layouts' ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+              }}>
+              Layout Templates
+            </button>
+            <button onClick={() => setActiveTab('masters')}
+              className="px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              style={{
+                background: activeTab === 'masters' ? 'var(--primary)' : 'transparent',
+                color: activeTab === 'masters' ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+              }}>
+              Slide Masters
+            </button>
+          </div>
+        )}
+
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {editingMaster && editingId ? (
+          {/* ── Layout Templates Tab ── */}
+          {activeTab === 'layouts' && !editingId && (
+            <div className="space-y-3">
+              <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                Apply a layout to Slide {activeSlideIndex + 1}. This replaces the slide&apos;s elements with the chosen layout template.
+              </p>
+              <div className="grid grid-cols-4 gap-3">
+                {LAYOUT_TEMPLATES.map((tpl) => (
+                  <LayoutThumbnail
+                    key={tpl.layout}
+                    template={tpl}
+                    isActive={currentLayout === tpl.layout}
+                    onClick={() => handleApplyLayout(tpl.layout)}
+                  />
+                ))}
+              </div>
+
+              {/* Current slide info */}
+              <div className="mt-4 p-3 rounded-lg border" style={{ borderColor: 'var(--border)', background: 'var(--muted)' }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-medium" style={{ color: 'var(--foreground)' }}>
+                      Current: <strong>{LAYOUT_TEMPLATES.find(t => t.layout === currentLayout)?.label || currentLayout}</strong>
+                    </span>
+                    <span className="text-xs ml-2" style={{ color: 'var(--muted-foreground)' }}>
+                      (Slide {activeSlideIndex + 1} of {slides.length})
+                    </span>
+                  </div>
+                  <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                    {currentSlide?.elements.length || 0} elements
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Masters Tab (list view) ── */}
+          {activeTab === 'masters' && !editingId && (
+            <>
+              {slideMasters.map((master) => (
+                <div key={master.id} className="border rounded-lg p-3 hover:opacity-95 transition-opacity" style={{ borderColor: 'var(--border)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-20 h-12 rounded border shrink-0 relative overflow-hidden"
+                      style={{ background: master.background, borderColor: 'var(--border)' }}>
+                      {master.placeholders?.slice(0, 3).map(ph => (
+                        <div key={ph.id} className="absolute border border-dashed border-white/20"
+                          style={{ left: `${(ph.x / 960) * 100}%`, top: `${(ph.y / 540) * 100}%`, width: `${(ph.width / 960) * 100}%`, height: `${(ph.height / 540) * 100}%` }} />
+                      ))}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--card-foreground)' }}>{master.name}</h3>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded-full border" title="Title" style={{ background: master.titleColor, borderColor: 'var(--border)' }} />
+                          <div className="w-3 h-3 rounded-full border" title="Text" style={{ background: master.textColor, borderColor: 'var(--border)' }} />
+                          <div className="w-3 h-3 rounded-full border" title="Accent" style={{ background: master.accentColor, borderColor: 'var(--border)' }} />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Type size={12} style={{ color: 'var(--muted-foreground)' }} />
+                        <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                          {master.headingFont} / {master.fontFamily}
+                          {master.placeholders ? ` · ${master.placeholders.length} placeholders` : ''}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => startEditing(master)}
+                        className="p-1.5 rounded hover:opacity-80" style={{ color: 'var(--muted-foreground)' }} title="Edit">
+                        <Edit3 size={15} />
+                      </button>
+                      <button onClick={() => handleApply(master.id)}
+                        className="px-2.5 py-1 rounded text-xs font-medium hover:opacity-90"
+                        style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>
+                        Apply
+                      </button>
+                      <button onClick={() => handleApplyToAll(master.id)}
+                        className="px-2 py-1 rounded text-xs border hover:opacity-80"
+                        style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}>
+                        All
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button onClick={handleAddMaster}
+                className="w-full border border-dashed rounded-lg p-3 flex items-center justify-center gap-2 text-sm hover:opacity-80 transition-opacity"
+                style={{ borderColor: 'var(--border)', color: 'var(--muted-foreground)' }}>
+                <Plus size={16} /> Add New Master
+              </button>
+            </>
+          )}
+
+          {/* ── Editing a Master ── */}
+          {editingMaster && editingId && (
             <div className="space-y-4">
               {/* Edit tabs */}
               <div className="flex gap-1 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
@@ -275,66 +542,15 @@ export default function SlideMasterPanel() {
                   style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>Save Changes</button>
               </div>
             </div>
-          ) : (
-            <>
-              {slideMasters.map((master) => (
-                <div key={master.id} className="border rounded-lg p-3 hover:opacity-95 transition-opacity" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-20 h-12 rounded border shrink-0 relative overflow-hidden"
-                      style={{ background: master.background, borderColor: 'var(--border)' }}>
-                      {master.placeholders?.slice(0, 3).map(ph => (
-                        <div key={ph.id} className="absolute border border-dashed border-white/20"
-                          style={{ left: `${(ph.x / 960) * 100}%`, top: `${(ph.y / 540) * 100}%`, width: `${(ph.width / 960) * 100}%`, height: `${(ph.height / 540) * 100}%` }} />
-                      ))}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--card-foreground)' }}>{master.name}</h3>
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded-full border" title="Title" style={{ background: master.titleColor, borderColor: 'var(--border)' }} />
-                          <div className="w-3 h-3 rounded-full border" title="Text" style={{ background: master.textColor, borderColor: 'var(--border)' }} />
-                          <div className="w-3 h-3 rounded-full border" title="Accent" style={{ background: master.accentColor, borderColor: 'var(--border)' }} />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Type size={12} style={{ color: 'var(--muted-foreground)' }} />
-                        <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                          {master.headingFont} / {master.fontFamily}
-                          {master.placeholders ? ` · ${master.placeholders.length} placeholders` : ''}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => startEditing(master)}
-                        className="p-1.5 rounded hover:opacity-80" style={{ color: 'var(--muted-foreground)' }} title="Edit">
-                        <Edit3 size={15} />
-                      </button>
-                      <button onClick={() => handleApply(master.id)}
-                        className="px-2.5 py-1 rounded text-xs font-medium hover:opacity-90"
-                        style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>
-                        Apply
-                      </button>
-                      <button onClick={() => handleApplyToAll(master.id)}
-                        className="px-2 py-1 rounded text-xs border hover:opacity-80"
-                        style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}>
-                        All
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <button onClick={handleAddMaster}
-                className="w-full border border-dashed rounded-lg p-3 flex items-center justify-center gap-2 text-sm hover:opacity-80 transition-opacity"
-                style={{ borderColor: 'var(--border)', color: 'var(--muted-foreground)' }}>
-                <Plus size={16} /> Add New Master
-              </button>
-            </>
           )}
         </div>
 
         {!editingId && (
           <div className="px-4 py-2 border-t text-xs shrink-0" style={{ borderColor: 'var(--border)', color: 'var(--muted-foreground)' }}>
-            Click <strong>Apply</strong> to set a master on the current slide, <strong>All</strong> for all slides, or <strong>Edit</strong> to customize.
+            {activeTab === 'layouts'
+              ? <>Click a layout to apply it to the current slide. This will replace existing content.</>
+              : <>Click <strong>Apply</strong> to set a master on the current slide, <strong>All</strong> for all slides, or <strong>Edit</strong> to customize.</>
+            }
           </div>
         )}
       </div>
