@@ -7,8 +7,9 @@ import {
   List, ListOrdered, Quote, Link, Image, Table, FlaskConical,
   BookOpen, Download, Eye, EyeOff, Share2, LayoutTemplate,
   Sigma, FileImage, Sparkles, Save, Upload, Shield, SpellCheck,
-  Columns, BookA,
+  Columns, BookA, History, MessageSquare, ToggleLeft, ToggleRight,
 } from 'lucide-react';
+import { useVersionHistoryStore } from '@/store/version-history-store';
 
 const tabs = ['Home', 'Insert', 'Format', 'Review', 'View'] as const;
 type Tab = typeof tabs[number];
@@ -49,6 +50,12 @@ export default function ResearchToolbar() {
     previewMode, setPreviewMode, setActiveRightPanel,
     doubleColumnEnabled, setDoubleColumnEnabled,
   } = useResearchStore();
+
+  const {
+    showVersionHistory, setShowVersionHistory,
+    showCommentsPanel, setShowCommentsPanel,
+    trackChangesEnabled, setTrackChangesEnabled,
+  } = useVersionHistoryStore();
 
   const handleInsertCitation = () => {
     setActiveRightPanel('citations');
@@ -199,6 +206,10 @@ export default function ResearchToolbar() {
         {activeTab === 'View' && (
           <>
             <ToolbarButton icon={previewMode ? EyeOff : Eye} label={previewMode ? 'Edit Mode' : 'Preview'} onClick={() => setPreviewMode(!previewMode)} active={previewMode} />
+            <Divider />
+            <ToolbarButton icon={History} label="Versions" onClick={() => setShowVersionHistory(!showVersionHistory)} active={showVersionHistory} />
+            <ToolbarButton icon={MessageSquare} label="Comments" onClick={() => { setShowVersionHistory(true); }} active={showCommentsPanel} />
+            <ToolbarButton icon={trackChangesEnabled ? ToggleRight : ToggleLeft} label="Track Changes" onClick={() => setTrackChangesEnabled(!trackChangesEnabled)} active={trackChangesEnabled} />
             <Divider />
             <div className="flex items-center gap-1 px-2">
               <label className="text-xs opacity-60">Zoom:</label>
