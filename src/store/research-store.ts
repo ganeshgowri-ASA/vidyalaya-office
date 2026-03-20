@@ -214,7 +214,7 @@ interface ResearchState {
   showExportPanel: boolean;
   showAIPanel: boolean;
   showDashboard: boolean;
-  activeRightPanel: 'citations' | 'ai' | 'export';
+  activeRightPanel: 'citations' | 'ai' | 'export' | 'latex' | 'links';
   previewMode: boolean;
   editorContent: string;
 
@@ -234,7 +234,7 @@ interface ResearchState {
   setShowExportPanel: (show: boolean) => void;
   setShowAIPanel: (show: boolean) => void;
   setShowDashboard: (show: boolean) => void;
-  setActiveRightPanel: (panel: 'citations' | 'ai' | 'export') => void;
+  setActiveRightPanel: (panel: 'citations' | 'ai' | 'export' | 'latex' | 'links') => void;
   applyTemplate: (templateId: string) => void;
   setPreviewMode: (val: boolean) => void;
   addEquation: (latex: string, label?: string) => void;

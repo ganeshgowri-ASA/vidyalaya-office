@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useResearchStore } from '@/store/research-store';
-import { Download, FileText, FileCode, FileDown, BookOpen, CheckSquare, Square, ChevronDown, ChevronUp } from 'lucide-react';
+import { getLatexTemplate, generatePreamble } from '@/lib/latex-template-registry';
+import { Download, FileText, FileCode, FileDown, BookOpen, CheckSquare, Square, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const exportFormats = [
@@ -67,8 +68,12 @@ export default function ExportPanel() {
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [showChecklist, setShowChecklist] = useState(true);
   const [checklist, setChecklist] = useState(ieeeChecklist);
+  const [showPreamble, setShowPreamble] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const template = journalTemplates.find((t) => t.id === selectedTemplateId);
+  const latexTemplate = getLatexTemplate(selectedTemplateId);
+  const preamble = latexTemplate ? generatePreamble(latexTemplate) : '';
   const completedChecks = checklist.filter((c) => c.done).length;
 
   const handleExport = (formatId: string) => {
@@ -78,6 +83,13 @@ export default function ExportPanel() {
 
   const toggleCheck = (id: string) => {
     setChecklist(checklist.map((c) => c.id === id ? { ...c, done: !c.done } : c));
+  };
+
+  const handleCopyPreamble = () => {
+    navigator.clipboard.writeText(preamble).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
   };
 
   return (
@@ -102,6 +114,46 @@ export default function ExportPanel() {
           </div>
         )}
       </div>
+
+      {/* LaTeX preamble quick-access */}
+      {latexTemplate && (
+        <div className="mx-3 mt-2 rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+          <button
+            onClick={() => setShowPreamble(!showPreamble)}
+            className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold"
+            style={{ backgroundColor: 'var(--card)' }}
+          >
+            <span className="flex items-center gap-1.5">
+              <FileCode size={12} className="text-yellow-400" />
+              LaTeX Preamble — {latexTemplate.name}
+            </span>
+            {showPreamble ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          {showPreamble && (
+            <div style={{ backgroundColor: 'var(--background)' }}>
+              <div className="relative">
+                <pre className="text-[10px] leading-relaxed px-3 py-2 overflow-x-auto whitespace-pre font-mono opacity-80" style={{ maxHeight: 180 }}>
+                  {preamble}
+                </pre>
+                <button
+                  onClick={handleCopyPreamble}
+                  className={cn(
+                    'absolute top-2 right-2 flex items-center gap-1 text-[10px] px-2 py-0.5 rounded',
+                    copied ? 'text-green-400' : 'opacity-50 hover:opacity-80'
+                  )}
+                  style={{ backgroundColor: 'var(--card)' }}
+                >
+                  {copied ? <Check size={10} /> : <Copy size={10} />}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+              <div className="px-3 pb-2 text-[10px] opacity-40">
+                Engine: {latexTemplate.bibliographyEngine === 'biber' ? 'Biber' : 'BibTeX'} · bst: {latexTemplate.bibliographyStyle}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Export formats */}
       <div className="p-3 space-y-2">

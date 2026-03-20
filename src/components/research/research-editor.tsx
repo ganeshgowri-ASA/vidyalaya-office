@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import {
   FlaskConical, Plus, BookOpen, LayoutGrid, ChevronRight,
   Calendar, FileText, CheckCircle2, Clock, Send, Sparkles,
-  BookMarked, Sigma,
+  BookMarked, Sigma, FileCode, Link2,
 } from 'lucide-react';
 
 import ResearchToolbar from './research-toolbar';
@@ -16,6 +16,8 @@ import FigureTableManager from './figure-table-manager';
 import ResearchAIPanel from './research-ai-panel';
 import ExportPanel from './export-panel';
 import JournalTemplates from './journal-templates';
+import LaTeXSettingsPanel from './latex-settings-panel';
+import CrossModuleLinker from './cross-module-linker';
 
 const statusColors = {
   Draft: 'text-yellow-400',
@@ -331,9 +333,11 @@ export default function ResearchEditor() {
             style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
           >
             {([
-              ['citations', 'Citations', BookOpen],
+              ['citations', 'Refs', BookOpen],
               ['ai', 'AI', Sparkles],
               ['export', 'Export', Sigma],
+              ['latex', 'LaTeX', FileCode],
+              ['links', 'Links', Link2],
             ] as const).map(([panel, label, Icon]) => (
               <button
                 key={panel}
@@ -355,6 +359,8 @@ export default function ResearchEditor() {
             {activeRightPanel === 'citations' && <CitationManager />}
             {activeRightPanel === 'ai' && <ResearchAIPanel />}
             {activeRightPanel === 'export' && <ExportPanel />}
+            {activeRightPanel === 'latex' && <LaTeXSettingsPanel />}
+            {activeRightPanel === 'links' && <CrossModuleLinker />}
           </div>
         </div>
       </div>
