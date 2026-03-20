@@ -130,6 +130,14 @@ export interface Equation {
   number: number;
   latex: string;
   label?: string;
+  sectionId?: string;
+}
+
+export interface SavedEquation {
+  id: string;
+  latex: string;
+  label: string;
+  usageCount: number;
 }
 
 export interface JournalTemplate {
@@ -362,6 +370,8 @@ interface ResearchState {
   doubleColumnEnabled: boolean;
   activeFormatConfig: TemplateFormatConfig | null;
   importedDocName: string | null;
+  pdfPreviewOpen: boolean;
+  savedEquations: SavedEquation[];
 
   setActiveSection: (id: string) => void;
   updateSectionContent: (id: string, content: string) => void;
@@ -382,8 +392,11 @@ interface ResearchState {
   setActiveRightPanel: (panel: RightPanel) => void;
   applyTemplate: (templateId: string) => void;
   setPreviewMode: (val: boolean) => void;
-  addEquation: (latex: string, label?: string) => void;
+  addEquation: (latex: string, label?: string, sectionId?: string) => void;
   removeEquation: (id: string) => void;
+  saveEquationToLibrary: (latex: string, label: string) => void;
+  removeSavedEquation: (id: string) => void;
+  insertEquationFromLibrary: (savedEqId: string, sectionId?: string) => void;
   addFigure: (caption: string) => void;
   addTable: (caption: string, headers: string[], rows: string[][]) => void;
   createArticle: (title: string, templateId?: string) => void;
@@ -430,6 +443,7 @@ interface ResearchState {
   setShowAuthorManager: (val: boolean) => void;
   setShowCoverLetter: (val: boolean) => void;
   setShowJournalRec: (val: boolean) => void;
+  setPdfPreviewOpen: (val: boolean) => void;
 }
 
 export const useResearchStore = create<ResearchState>()((set, get) => ({
@@ -471,6 +485,10 @@ export const useResearchStore = create<ResearchState>()((set, get) => ({
   doubleColumnEnabled: false,
   activeFormatConfig: journalFormatConfigs['ieee'] || null,
   importedDocName: null,
+  pdfPreviewOpen: false,
+  savedEquations: typeof window !== 'undefined' && localStorage.getItem('research-saved-equations')
+    ? JSON.parse(localStorage.getItem('research-saved-equations') || '[]')
+    : [],
 
   setActiveSection: (id) => set({ activeSection: id }),
 
@@ -540,15 +558,41 @@ export const useResearchStore = create<ResearchState>()((set, get) => ({
     set({ selectedTemplateId: templateId, sections: newSections, citationStyle: template.referenceStyle, showTemplateGallery: false });
   },
 
-  addEquation: (latex, label) => set((state) => ({
+  addEquation: (latex, label, sectionId) => set((state) => ({
     equations: [...state.equations, {
-      id: `e${Date.now()}`, number: state.equations.length + 1, latex, label,
+      id: `e${Date.now()}`, number: state.equations.length + 1, latex, label, sectionId,
     }],
   })),
 
   removeEquation: (id) => set((state) => ({
     equations: state.equations.filter((e) => e.id !== id),
   })),
+
+  saveEquationToLibrary: (latex, label) => set((state) => {
+    const exists = state.savedEquations.find((e) => e.latex === latex);
+    let updated: SavedEquation[];
+    if (exists) {
+      updated = state.savedEquations.map((e) => e.latex === latex ? { ...e, usageCount: e.usageCount + 1 } : e);
+    } else {
+      updated = [...state.savedEquations, { id: `se${Date.now()}`, latex, label, usageCount: 1 }];
+    }
+    if (typeof window !== 'undefined') localStorage.setItem('research-saved-equations', JSON.stringify(updated));
+    return { savedEquations: updated };
+  }),
+
+  removeSavedEquation: (id) => set((state) => {
+    const updated = state.savedEquations.filter((e) => e.id !== id);
+    if (typeof window !== 'undefined') localStorage.setItem('research-saved-equations', JSON.stringify(updated));
+    return { savedEquations: updated };
+  }),
+
+  insertEquationFromLibrary: (savedEqId, sectionId) => {
+    const saved = get().savedEquations.find((e) => e.id === savedEqId);
+    if (saved) {
+      get().addEquation(saved.latex, saved.label, sectionId);
+      get().saveEquationToLibrary(saved.latex, saved.label);
+    }
+  },
 
   addFigure: (caption) => set((state) => ({
     figures: [...state.figures, { id: `f${Date.now()}`, number: state.figures.length + 1, caption }],
@@ -682,6 +726,8 @@ export const useResearchStore = create<ResearchState>()((set, get) => ({
   }),
 
   setDoubleColumnEnabled: (val) => set({ doubleColumnEnabled: val }),
+
+  setPdfPreviewOpen: (val) => set({ pdfPreviewOpen: val }),
 
   importDocument: (name, templateId) => {
     const template = get().journalTemplates.find((t) => t.id === templateId);

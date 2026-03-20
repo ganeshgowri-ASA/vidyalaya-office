@@ -8,7 +8,10 @@ import {
   BookOpen, Download, Eye, EyeOff, Share2, LayoutTemplate,
   Sigma, FileImage, Sparkles, Save, Upload, Shield, SpellCheck,
   Columns, BookA, ClipboardCheck, Users, FileText, BookOpenCheck,
+  Columns, BookA, FileText,
+  Columns, BookA, History, MessageSquare, ToggleLeft, ToggleRight,
 } from 'lucide-react';
+import { useVersionHistoryStore } from '@/store/version-history-store';
 
 const tabs = ['Home', 'Insert', 'Format', 'Review', 'View'] as const;
 type Tab = typeof tabs[number];
@@ -48,7 +51,14 @@ export default function ResearchToolbar() {
     setShowFigureManager, setShowExportPanel, setShowAIPanel, showAIPanel,
     previewMode, setPreviewMode, setActiveRightPanel,
     doubleColumnEnabled, setDoubleColumnEnabled,
+    pdfPreviewOpen, setPdfPreviewOpen,
   } = useResearchStore();
+
+  const {
+    showVersionHistory, setShowVersionHistory,
+    showCommentsPanel, setShowCommentsPanel,
+    trackChangesEnabled, setTrackChangesEnabled,
+  } = useVersionHistoryStore();
 
   const handleInsertCitation = () => {
     setActiveRightPanel('citations');
@@ -87,6 +97,16 @@ export default function ResearchToolbar() {
           >
             {previewMode ? <EyeOff size={14} /> : <Eye size={14} />}
             {previewMode ? 'Edit' : 'Preview'}
+          </button>
+          <button
+            onClick={() => setPdfPreviewOpen(!pdfPreviewOpen)}
+            className={cn(
+              'flex items-center gap-1 px-2 py-1 rounded text-xs transition-opacity',
+              pdfPreviewOpen ? 'opacity-100' : 'opacity-70 hover:opacity-100'
+            )}
+            style={pdfPreviewOpen ? { backgroundColor: 'var(--sidebar-accent)', color: 'var(--primary-foreground)' } : undefined}
+          >
+            <FileText size={14} /> PDF Preview
           </button>
           <button
             onClick={() => { setActiveRightPanel('export'); setShowExportPanel(true); }}
@@ -203,6 +223,11 @@ export default function ResearchToolbar() {
         {activeTab === 'View' && (
           <>
             <ToolbarButton icon={previewMode ? EyeOff : Eye} label={previewMode ? 'Edit Mode' : 'Preview'} onClick={() => setPreviewMode(!previewMode)} active={previewMode} />
+            <ToolbarButton icon={FileText} label="PDF Preview" onClick={() => setPdfPreviewOpen(!pdfPreviewOpen)} active={pdfPreviewOpen} />
+            <Divider />
+            <ToolbarButton icon={History} label="Versions" onClick={() => setShowVersionHistory(!showVersionHistory)} active={showVersionHistory} />
+            <ToolbarButton icon={MessageSquare} label="Comments" onClick={() => { setShowVersionHistory(true); }} active={showCommentsPanel} />
+            <ToolbarButton icon={trackChangesEnabled ? ToggleRight : ToggleLeft} label="Track Changes" onClick={() => setTrackChangesEnabled(!trackChangesEnabled)} active={trackChangesEnabled} />
             <Divider />
             <div className="flex items-center gap-1 px-2">
               <label className="text-xs opacity-60">Zoom:</label>
