@@ -112,6 +112,7 @@ export interface SpreadsheetState {
   namedRanges: Record<string, string>;
   comments: Record<string, CellComment>;
   protectedSheet: boolean;
+  printArea: string | null;
 
   // Actions
   setActiveCell: (col: number, row: number) => void;
@@ -321,6 +322,7 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
     namedRanges: {},
     comments: {},
     protectedSheet: false,
+    printArea: null,
 
     getActiveSheet: () => {
       const state = get();

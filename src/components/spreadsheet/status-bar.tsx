@@ -78,6 +78,8 @@ export function StatusBar() {
             <span>Average: {stats.avg.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
             <span>Count: {stats.numCount}</span>
             <span>Sum: {stats.sum.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+            <span>Min: {stats.min.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+            <span>Max: {stats.max.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
           </>
         )}
       </div>

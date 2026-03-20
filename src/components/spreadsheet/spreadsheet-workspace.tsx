@@ -24,6 +24,11 @@ import { CellCommentsDialog } from "./cell-comments-dialog";
 import { FreezePanesDialog } from "./freeze-panes-dialog";
 import { CellFormattingDialog } from "./cell-formatting-dialog";
 import { FinancialAnalysisModal } from "./financial-analysis-modal";
+import { PowerQueryModal } from "./power-query-modal";
+import { MacrosRecorderModal } from "./macros-recorder-modal";
+import { SheetProtectionDialog } from "./sheet-protection-dialog";
+import { VlookupHelperModal } from "./vlookup-helper-modal";
+import { SplitView } from "./split-view";
 import { ImportDialog } from "@/components/shared/import-dialog";
 import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
 import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
@@ -54,6 +59,11 @@ export default function SpreadsheetWorkspace() {
   const [showFinancialAnalysis, setShowFinancialAnalysis] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [showPowerQuery, setShowPowerQuery] = useState(false);
+  const [showMacros, setShowMacros] = useState(false);
+  const [showSheetProtection, setShowSheetProtection] = useState(false);
+  const [showVlookupHelper, setShowVlookupHelper] = useState(false);
+  const [splitView, setSplitView] = useState<"horizontal" | "vertical" | null>(null);
 
   // Export handlers
   const handleExportCSV = useCallback(() => {
@@ -173,6 +183,18 @@ export default function SpreadsheetWorkspace() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Listen for custom events from context menu
+  useEffect(() => {
+    const handleOpenFormatCells = () => setShowCellFormatting(true);
+    const handleOpenSortFilter = () => setShowSortFilter(true);
+    window.addEventListener("spreadsheet:openFormatCells", handleOpenFormatCells);
+    window.addEventListener("spreadsheet:openSortFilter", handleOpenSortFilter);
+    return () => {
+      window.removeEventListener("spreadsheet:openFormatCells", handleOpenFormatCells);
+      window.removeEventListener("spreadsheet:openSortFilter", handleOpenSortFilter);
+    };
+  }, []);
+
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: "var(--background)" }}>
       {/* Toolbar */}
@@ -192,6 +214,13 @@ export default function SpreadsheetWorkspace() {
         onOpenFreezePanes={() => setShowFreezePanes(true)}
         onOpenCellFormatting={() => setShowCellFormatting(true)}
         onOpenFinancialAnalysis={() => setShowFinancialAnalysis(true)}
+        onOpenPowerQuery={() => setShowPowerQuery(true)}
+        onOpenMacros={() => setShowMacros(true)}
+        onOpenSheetProtection={() => setShowSheetProtection(true)}
+        onOpenVlookupHelper={() => setShowVlookupHelper(true)}
+        onSplitView={(dir) => setSplitView(dir)}
+        onRemoveSplit={() => setSplitView(null)}
+        splitView={splitView}
         onImportCSV={() => {
           const input = document.createElement("input");
           input.type = "file";
@@ -217,10 +246,14 @@ export default function SpreadsheetWorkspace() {
 
       {/* Main content area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Grid */}
-        <div className="flex-1 overflow-hidden">
-          <SpreadsheetGrid />
-        </div>
+        {/* Grid or Split View */}
+        {splitView ? (
+          <SplitView direction={splitView} onClose={() => setSplitView(null)} />
+        ) : (
+          <div className="flex-1 overflow-hidden">
+            <SpreadsheetGrid />
+          </div>
+        )}
 
         {/* AI Panel */}
         {showAiPanel && (
@@ -256,6 +289,10 @@ export default function SpreadsheetWorkspace() {
       <FreezePanesDialog open={showFreezePanes} onClose={() => setShowFreezePanes(false)} />
       <CellFormattingDialog open={showCellFormatting} onClose={() => setShowCellFormatting(false)} />
       <FinancialAnalysisModal open={showFinancialAnalysis} onClose={() => setShowFinancialAnalysis(false)} />
+      <PowerQueryModal open={showPowerQuery} onClose={() => setShowPowerQuery(false)} />
+      <MacrosRecorderModal open={showMacros} onClose={() => setShowMacros(false)} />
+      <SheetProtectionDialog open={showSheetProtection} onClose={() => setShowSheetProtection(false)} />
+      <VlookupHelperModal open={showVlookupHelper} onClose={() => setShowVlookupHelper(false)} />
       <ImportDialog
         open={showImport}
         onClose={() => setShowImport(false)}

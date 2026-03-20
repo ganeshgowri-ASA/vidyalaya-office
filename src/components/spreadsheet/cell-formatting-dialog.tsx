@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { X } from "lucide-react";
 import { useSpreadsheetStore, type CellStyle } from "@/store/spreadsheet-store";
 
-type Tab = "number" | "alignment" | "borders" | "fill";
+type Tab = "number" | "custom" | "alignment" | "borders" | "fill";
 
 const NUMBER_FORMATS: { label: string; value: CellStyle["format"]; example: string }[] = [
   { label: "General", value: "general", example: "1234.5" },
@@ -63,6 +63,7 @@ export function CellFormattingDialog({
   }, [activeCell, getCellData]);
 
   const [format, setFormat] = useState<CellStyle["format"]>(currentStyle.format || "general");
+  const [customPattern, setCustomPattern] = useState("");
   const [align, setAlign] = useState<CellStyle["align"]>(currentStyle.align || "left");
   const [verticalAlign, setVerticalAlign] = useState<CellStyle["verticalAlign"]>(currentStyle.verticalAlign || "middle");
   const [wrapText, setWrapText] = useState(currentStyle.wrapText || false);
@@ -140,6 +141,7 @@ export function CellFormattingDialog({
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "number", label: "Number" },
+    { id: "custom", label: "Custom" },
     { id: "alignment", label: "Alignment" },
     { id: "borders", label: "Borders" },
     { id: "fill", label: "Fill" },
@@ -193,6 +195,61 @@ export function CellFormattingDialog({
                     <span className="font-mono" style={{ color: "var(--muted-foreground)" }}>{fmt.example}</span>
                   </button>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Custom Number Format */}
+          {activeTab === "custom" && (
+            <div className="space-y-3">
+              <div className="text-xs font-semibold mb-2" style={{ color: "var(--muted-foreground)" }}>Custom Number Format</div>
+              <div>
+                <label className="text-xs block mb-1" style={{ color: "var(--muted-foreground)" }}>Format Code</label>
+                <input
+                  type="text"
+                  className="w-full text-sm rounded px-2 py-1.5 border outline-none font-mono"
+                  style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                  placeholder="e.g. #,##0.00 or 0.00% or $#,##0"
+                  value={customPattern}
+                  onChange={(e) => setCustomPattern(e.target.value)}
+                />
+              </div>
+              <div className="text-xs font-semibold mt-3 mb-1" style={{ color: "var(--muted-foreground)" }}>Common Patterns</div>
+              <div className="space-y-1">
+                {[
+                  { pattern: "0", example: "1235", desc: "No decimals" },
+                  { pattern: "0.00", example: "1234.50", desc: "2 decimal places" },
+                  { pattern: "#,##0", example: "1,235", desc: "Thousands separator" },
+                  { pattern: "#,##0.00", example: "1,234.50", desc: "Thousands + 2 decimals" },
+                  { pattern: "$#,##0.00", example: "$1,234.50", desc: "Currency" },
+                  { pattern: "0.00%", example: "12.50%", desc: "Percentage" },
+                  { pattern: "0.00E+00", example: "1.23E+03", desc: "Scientific" },
+                  { pattern: "MM/DD/YYYY", example: "03/20/2026", desc: "Date" },
+                  { pattern: "HH:MM:SS", example: "14:30:00", desc: "Time" },
+                  { pattern: "[Red]0;[Black]0", example: "-5 in red", desc: "Negative in red" },
+                  { pattern: "#,##0;(#,##0)", example: "(1,234)", desc: "Parentheses for negative" },
+                  { pattern: "000-000-0000", example: "555-123-4567", desc: "Phone number" },
+                  { pattern: "00000", example: "01234", desc: "ZIP code (5 digit)" },
+                ].map((p) => (
+                  <button
+                    key={p.pattern}
+                    className="w-full flex items-center justify-between px-3 py-1.5 rounded text-xs hover:opacity-80"
+                    style={{
+                      backgroundColor: customPattern === p.pattern ? "rgba(59,130,246,0.15)" : "var(--muted)",
+                      border: customPattern === p.pattern ? "1px solid var(--primary)" : "1px solid transparent",
+                    }}
+                    onClick={() => setCustomPattern(p.pattern)}
+                  >
+                    <div>
+                      <span className="font-mono">{p.pattern}</span>
+                      <span className="ml-2" style={{ color: "var(--muted-foreground)" }}>- {p.desc}</span>
+                    </div>
+                    <span className="font-mono" style={{ color: "var(--muted-foreground)" }}>{p.example}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="text-[10px] p-2 rounded" style={{ backgroundColor: "var(--muted)", color: "var(--muted-foreground)" }}>
+                Note: Custom patterns define how numbers are displayed. Use # for optional digits, 0 for required digits, and , for thousands separator.
               </div>
             </div>
           )}

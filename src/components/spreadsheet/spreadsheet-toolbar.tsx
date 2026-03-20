@@ -211,6 +211,13 @@ export function SpreadsheetToolbar({
   onOpenFinancialAnalysis,
   onPrintPreview,
   onImport,
+  onOpenPowerQuery,
+  onOpenMacros,
+  onOpenSheetProtection,
+  onOpenVlookupHelper,
+  onSplitView,
+  onRemoveSplit,
+  splitView,
 }: {
   onExportCSV: () => void; onPrint: () => void;
   onOpenPivot?: () => void; onOpenValidation?: () => void;
@@ -224,6 +231,13 @@ export function SpreadsheetToolbar({
   onOpenFinancialAnalysis?: () => void;
   onPrintPreview?: () => void;
   onImport?: () => void;
+  onOpenPowerQuery?: () => void;
+  onOpenMacros?: () => void;
+  onOpenSheetProtection?: () => void;
+  onOpenVlookupHelper?: () => void;
+  onSplitView?: (direction: "horizontal" | "vertical") => void;
+  onRemoveSplit?: () => void;
+  splitView?: "horizontal" | "vertical" | null;
 }) {
   const setSelectionStyle = useSpreadsheetStore((s) => s.setSelectionStyle);
   const activeCell = useSpreadsheetStore((s) => s.activeCell);
@@ -747,16 +761,31 @@ export function SpreadsheetToolbar({
         <ToolBtn title="Orientation" onClick={() => onPageSetup?.()}><FileText size={14} /></ToolBtn>
         <ToolBtn title="Size" onClick={() => onPageSetup?.()}><Maximize2 size={14} /></ToolBtn>
         <DropdownBtn icon={<Printer size={14} />} title="Print Area">
-          {(close) => (
-            <>
-              <DropdownItem onClick={() => {
-                const bounds = getSelectionBounds();
-                if (bounds) alert(`Print area set: ${colToLetter(bounds.minC)}${bounds.minR + 1}:${colToLetter(bounds.maxC)}${bounds.maxR + 1}`);
-                close();
-              }}>Set Print Area</DropdownItem>
-              <DropdownItem onClick={() => { alert("Print area cleared"); close(); }}>Clear Print Area</DropdownItem>
-            </>
-          )}
+          {(close) => {
+            const printArea = useSpreadsheetStore.getState().printArea;
+            return (
+              <>
+                <DropdownItem onClick={() => {
+                  const bounds = getSelectionBounds();
+                  if (bounds) {
+                    const range = `${colToLetter(bounds.minC)}${bounds.minR + 1}:${colToLetter(bounds.maxC)}${bounds.maxR + 1}`;
+                    useSpreadsheetStore.setState({ printArea: range });
+                  }
+                  close();
+                }}>Set Print Area</DropdownItem>
+                <DropdownItem onClick={() => {
+                  useSpreadsheetStore.setState({ printArea: null });
+                  close();
+                }}>Clear Print Area</DropdownItem>
+                {printArea && (
+                  <>
+                    <DropdownDivider />
+                    <DropdownHeader>Current: {printArea}</DropdownHeader>
+                  </>
+                )}
+              </>
+            );
+          }}
         </DropdownBtn>
         <ToolBtn title="Print Titles" onClick={() => onPageSetup?.()}><Rows3 size={14} /></ToolBtn>
       </RibbonGroup>
@@ -838,8 +867,9 @@ export function SpreadsheetToolbar({
                 <DropdownItem key={fn} onClick={() => { if (activeCell) setCellValue(activeCell.col, activeCell.row, `=${fn}()`); close(); }}>{fn}</DropdownItem>
               ))}
               <DropdownDivider />
-              <DropdownItem onClick={() => { alert("VLOOKUP Visual Helper:\n\nVLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])\n\n• lookup_value: The value to search for in column 1\n• table_array: The range containing the data (e.g. A1:D100)\n• col_index_num: The column number to return from the table\n• range_lookup: FALSE for exact match, TRUE for approximate\n\nExample: =VLOOKUP(A2, ProductTable, 3, FALSE)"); close(); }}>VLOOKUP Visual Helper...</DropdownItem>
-              <DropdownItem onClick={() => { alert("XLOOKUP Visual Helper:\n\nXLOOKUP(lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode])\n\n• lookup_value: The value to search for\n• lookup_array: The array or range to search\n• return_array: The array or range to return\n• if_not_found: Value to return if not found (optional)\n• match_mode: 0=Exact, -1=Exact or next smaller, 1=Exact or next larger\n• search_mode: 1=First to last, -1=Last to first, 2=Binary asc, -2=Binary desc\n\nExample: =XLOOKUP(E2, A:A, C:C, 'Not Found')"); close(); }}>XLOOKUP Visual Helper...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenVlookupHelper?.(); close(); }}>VLOOKUP Visual Helper...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenVlookupHelper?.(); close(); }}>XLOOKUP Visual Helper...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenVlookupHelper?.(); close(); }}>INDEX-MATCH Helper...</DropdownItem>
             </>
           )}
         </DropdownBtn>
@@ -933,12 +963,12 @@ export function SpreadsheetToolbar({
         <DropdownBtn icon={<Sparkles size={14} />} title="Power Query">
           {(close) => (
             <>
-              <DropdownItem onClick={() => { alert("Power Query Editor: Transform and shape data from multiple sources"); close(); }}>Launch Power Query Editor</DropdownItem>
-              <DropdownItem onClick={() => { alert("New Query from CSV: Import and transform CSV file"); close(); }}>From CSV...</DropdownItem>
-              <DropdownItem onClick={() => { alert("New Query from Web: Connect to a web data source"); close(); }}>From Web...</DropdownItem>
-              <DropdownItem onClick={() => { alert("New Query from JSON: Import and parse JSON data"); close(); }}>From JSON...</DropdownItem>
-              <DropdownItem onClick={() => { alert("Combine Queries: Merge or append multiple queries"); close(); }}>Combine Queries</DropdownItem>
-              <DropdownItem onClick={() => { alert("Query Dependencies: View relationships between queries"); close(); }}>Query Dependencies</DropdownItem>
+              <DropdownItem onClick={() => { onOpenPowerQuery?.(); close(); }}>Launch Power Query Editor</DropdownItem>
+              <DropdownItem onClick={() => { onOpenPowerQuery?.(); close(); }}>From CSV...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenPowerQuery?.(); close(); }}>From Web...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenPowerQuery?.(); close(); }}>From JSON...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenPowerQuery?.(); close(); }}>Combine Queries</DropdownItem>
+              <DropdownItem onClick={() => { onOpenPowerQuery?.(); close(); }}>Query Dependencies</DropdownItem>
             </>
           )}
         </DropdownBtn>
@@ -1061,22 +1091,25 @@ export function SpreadsheetToolbar({
       </RibbonGroup>
 
       <RibbonGroup label="Protect">
-        <ToolBtn title="Protect Sheet" active={protectedSheet} onClick={() => {
-          useSpreadsheetStore.setState({ protectedSheet: !protectedSheet });
+        <ToolBtn title="Protect Sheet" active={protectedSheet} onClick={() => onOpenSheetProtection?.()}><Lock size={14} /></ToolBtn>
+        <ToolBtn title="Lock Cells" onClick={() => {
+          if (!activeCell) return;
+          const cellData = getActiveSheet().cells[`${colToLetter(activeCell.col)}${activeCell.row + 1}`];
+          const isLocked = cellData?.style?.bgColor === "#1e293b";
+          setCellStyle(activeCell.col, activeCell.row, { bgColor: isLocked ? undefined : "#1e293b" });
         }}><Lock size={14} /></ToolBtn>
-        <ToolBtn title="Lock Cells" onClick={() => alert("Lock Cells: Prevent editing of selected cells (requires sheet protection)")}><Lock size={14} /></ToolBtn>
-        <ToolBtn title="Protect Workbook" onClick={() => alert("Protect Workbook: Prevent structural changes to workbook")}><ShieldCheck size={14} /></ToolBtn>
-        <ToolBtn title="Allow Edit Ranges" onClick={() => alert("Allow Edit Ranges: Specify which cells can be edited when sheet is protected")}><Users size={14} /></ToolBtn>
+        <ToolBtn title="Protect Workbook" onClick={() => onOpenSheetProtection?.()}><ShieldCheck size={14} /></ToolBtn>
+        <ToolBtn title="Allow Edit Ranges" onClick={() => onOpenSheetProtection?.()}><Users size={14} /></ToolBtn>
       </RibbonGroup>
       <RibbonGroup label="Macros">
-        <ToolBtn title="Record Macro" onClick={() => alert("Macro Recorder: Recording started. Perform actions then stop recording.")}><Circle size={14} className="text-red-400" /></ToolBtn>
-        <ToolBtn title="Stop Recording" onClick={() => alert("Stop Recording: Macro saved as 'Macro1'")}><Square size={14} /></ToolBtn>
+        <ToolBtn title="Record Macro" onClick={() => onOpenMacros?.()}><Circle size={14} className="text-red-400" /></ToolBtn>
+        <ToolBtn title="Stop Recording" onClick={() => onOpenMacros?.()}><Square size={14} /></ToolBtn>
         <DropdownBtn icon={<Play size={14} />} title="Macros">
           {(close) => (
             <>
-              <DropdownItem onClick={() => { alert("Run Macro: No macros recorded yet"); close(); }}>Run Macro...</DropdownItem>
-              <DropdownItem onClick={() => { alert("Macro Editor: Opening VBA-like editor"); close(); }}>Edit Macros...</DropdownItem>
-              <DropdownItem onClick={() => { alert("Macro Security: Macro settings and trusted locations"); close(); }}>Macro Security...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenMacros?.(); close(); }}>Run Macro...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenMacros?.(); close(); }}>Edit Macros...</DropdownItem>
+              <DropdownItem onClick={() => { onOpenMacros?.(); close(); }}>Macro Security...</DropdownItem>
             </>
           )}
         </DropdownBtn>
@@ -1126,10 +1159,9 @@ export function SpreadsheetToolbar({
         <DropdownBtn icon={<Columns3 size={14} />} title="Split View">
           {(close) => (
             <>
-              <DropdownItem onClick={() => { alert("Split Horizontally: View two sections of the sheet side by side"); close(); }}>Split Horizontally</DropdownItem>
-              <DropdownItem onClick={() => { alert("Split Vertically: View two sections of the sheet top and bottom"); close(); }}>Split Vertically</DropdownItem>
-              <DropdownItem onClick={() => { alert("Split into 4 panes"); close(); }}>Split into 4 Panes</DropdownItem>
-              <DropdownItem onClick={() => { alert("Remove Split: Sheet split removed"); close(); }}>Remove Split</DropdownItem>
+              <DropdownItem onClick={() => { onSplitView?.("horizontal"); close(); }}>Split Horizontally</DropdownItem>
+              <DropdownItem onClick={() => { onSplitView?.("vertical"); close(); }}>Split Vertically</DropdownItem>
+              <DropdownItem onClick={() => { onRemoveSplit?.(); close(); }}>Remove Split</DropdownItem>
             </>
           )}
         </DropdownBtn>
