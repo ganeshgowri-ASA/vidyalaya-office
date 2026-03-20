@@ -13,9 +13,6 @@ import {
   Activity,
   Pin,
   BarChart3,
-  CheckCircle,
-  MessageSquare,
-  Edit3,
   Upload,
   Trash2,
   Grid3X3,
@@ -55,6 +52,7 @@ import {
   Cell,
 } from "recharts";
 import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
+import { ActivityFeed } from "@/components/dashboard/activity-feed";
 
 const quickCreate: { label: string; type: FileType; href: string; icon: React.ElementType }[] = [
   { label: "New Document", type: "document", href: "/document", icon: FileText },
@@ -84,25 +82,6 @@ const typeExtensions: Record<FileType, string> = {
   pdf: ".pdf",
 };
 
-const activityIcons: Record<string, React.ElementType> = {
-  edit: Edit3,
-  approve: CheckCircle,
-  comment: MessageSquare,
-  share: Share2,
-  upload: Upload,
-  delete: Trash2,
-  create: FileText,
-};
-
-const activityColors: Record<string, string> = {
-  edit: "var(--primary)",
-  approve: "#16a34a",
-  comment: "#f59e0b",
-  share: "#8b5cf6",
-  upload: "#3b82f6",
-  delete: "#dc2626",
-  create: "#16a34a",
-};
 
 function formatFileSize(bytes?: number): string {
   if (!bytes) return "—";
@@ -258,7 +237,7 @@ function FileContextMenu({
 }
 
 export default function DashboardPage() {
-  const { recentFiles, toggleStar, activities, dashboardView, setDashboardView, onboardingComplete, setOnboardingComplete } = useAppStore();
+  const { recentFiles, toggleStar, dashboardView, setDashboardView, onboardingComplete, setOnboardingComplete } = useAppStore();
   const starredFiles = recentFiles.filter((f) => f.starred);
   const [dashSearch, setDashSearch] = useState("");
   const [contextMenu, setContextMenu] = useState<{ fileId: string; x: number; y: number } | null>(null);
@@ -584,30 +563,7 @@ export default function DashboardPage() {
       {/* Activity Feed + Quick Links */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Activity Feed */}
-        <section>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-            <Activity size={14} /> Recent Activity
-          </h2>
-          <div className="rounded-xl border divide-y" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
-            {activities.map((item) => {
-              const Icon = activityIcons[item.type] || Edit3;
-              const color = activityColors[item.type] || "var(--primary)";
-              return (
-                <div key={item.id} className="flex items-start gap-3 px-4 py-3" style={{ borderColor: "var(--border)" }}>
-                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${color}15`, color }}>
-                    <Icon size={14} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm" style={{ color: "var(--card-foreground)" }}>
-                      <span className="font-medium">{item.user}</span> {item.action} <span className="font-medium">{item.item}</span>
-                    </p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{item.tool} &middot; {item.time}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        <ActivityFeed />
 
         {/* Quick Links */}
         <section>

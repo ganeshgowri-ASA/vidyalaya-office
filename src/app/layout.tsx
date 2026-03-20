@@ -7,6 +7,7 @@ import { Topbar } from "@/components/layout/topbar";
 import { KeyboardShortcutsModal } from "@/components/layout/keyboard-shortcuts-modal";
 import { AIChatWrapper } from "@/components/ai-chat/ai-chat-wrapper";
 import { AIProviders } from "@/providers/ai-providers";
+import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 
 export const metadata: Metadata = {
   title: "Vidyalaya Office - AI-Native Office Suite",
@@ -32,6 +33,7 @@ export default function RootLayout({
             </div>
             <KeyboardShortcutsModal />
             <AIChatWrapper />
+            <OnboardingTour />
           </AIProviders>
         </ThemeProvider>
       </body>
