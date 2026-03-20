@@ -306,7 +306,30 @@ const journalTemplates: JournalTemplate[] = [
   { id: 'apl', name: 'Applied Physics Letters', category: 'AIP', description: 'AIP Applied Physics Letters concise format', columns: 1, referenceStyle: 'APA 7th', sections: ['Abstract', 'Introduction', 'Methods', 'Results', 'Discussion', 'Conclusion', 'References'], hasAbstract: true, hasKeywords: false, wordLimit: 3500 },
 ];
 
-type RightPanel = 'citations' | 'ai' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import' | 'pdfpreview';
+type RightPanel = 'citations' | 'ai' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import' | 'submission' | 'authors' | 'coverletter' | 'journals';
+
+export interface SubmissionCheck {
+  id: string;
+  label: string;
+  status: 'pass' | 'warn' | 'fail';
+  message: string;
+}
+
+export interface CoverLetterData {
+  journalName: string;
+  editorName: string;
+  articleTitle: string;
+  keyFindings: string;
+  generatedText: string;
+}
+
+export interface JournalRecommendation {
+  templateId: string;
+  name: string;
+  category: string;
+  matchScore: number;
+  reasons: string[];
+}
 
 interface ResearchState {
   articles: Article[];
@@ -396,6 +419,30 @@ interface ResearchState {
   setShowCitationPopup: (show: boolean, position?: { x: number; y: number }) => void;
   setDoubleColumnEnabled: (val: boolean) => void;
   importDocument: (name: string, templateId: string) => void;
+
+  // Production polish state
+  authors: Author[];
+  submissionChecks: SubmissionCheck[];
+  coverLetter: CoverLetterData;
+  journalRecommendations: JournalRecommendation[];
+  showSubmissionChecker: boolean;
+  showAuthorManager: boolean;
+  showCoverLetter: boolean;
+  showJournalRec: boolean;
+
+  // Production polish actions
+  addAuthor: (author: Omit<Author, 'id'>) => void;
+  removeAuthor: (id: string) => void;
+  updateAuthor: (id: string, data: Partial<Author>) => void;
+  reorderAuthors: (fromIndex: number, toIndex: number) => void;
+  runSubmissionCheck: () => void;
+  updateCoverLetter: (data: Partial<CoverLetterData>) => void;
+  generateCoverLetter: () => void;
+  recommendJournals: () => void;
+  setShowSubmissionChecker: (val: boolean) => void;
+  setShowAuthorManager: (val: boolean) => void;
+  setShowCoverLetter: (val: boolean) => void;
+  setShowJournalRec: (val: boolean) => void;
   setPdfPreviewOpen: (val: boolean) => void;
 }
 
@@ -690,4 +737,198 @@ export const useResearchStore = create<ResearchState>()((set, get) => ({
       set({ importedDocName: name, activeFormatConfig: config });
     }
   },
+
+  // Production polish defaults
+  authors: [
+    { id: 'auth1', name: 'John Smith', email: 'jsmith@mit.edu', affiliation: 'Department of Computer Science, MIT, Cambridge, MA 02139, USA', orcid: '0000-0001-2345-6789', corresponding: true },
+    { id: 'auth2', name: 'Maria Garcia', email: 'mgarcia@stanford.edu', affiliation: 'School of Engineering, Stanford University, Stanford, CA 94305, USA', orcid: '0000-0002-3456-7890', corresponding: false },
+    { id: 'auth3', name: 'Wei Chen', email: 'wchen@mit.edu', affiliation: 'Department of Computer Science, MIT, Cambridge, MA 02139, USA', orcid: '0000-0003-4567-8901', corresponding: false },
+  ],
+  submissionChecks: [],
+  coverLetter: { journalName: '', editorName: '', articleTitle: '', keyFindings: '', generatedText: '' },
+  journalRecommendations: [],
+  showSubmissionChecker: false,
+  showAuthorManager: false,
+  showCoverLetter: false,
+  showJournalRec: false,
+
+  addAuthor: (author) => set((state) => ({
+    authors: [...state.authors, { ...author, id: `auth${Date.now()}` }],
+  })),
+
+  removeAuthor: (id) => set((state) => ({
+    authors: state.authors.filter((a) => a.id !== id),
+  })),
+
+  updateAuthor: (id, data) => set((state) => ({
+    authors: state.authors.map((a) => a.id === id ? { ...a, ...data } : a),
+  })),
+
+  reorderAuthors: (fromIndex, toIndex) => set((state) => {
+    const newAuthors = [...state.authors];
+    const [moved] = newAuthors.splice(fromIndex, 1);
+    newAuthors.splice(toIndex, 0, moved);
+    return { authors: newAuthors };
+  }),
+
+  runSubmissionCheck: () => {
+    const state = get();
+    const checks: SubmissionCheck[] = [];
+    const sectionTitles = state.sections.map((s) => s.title.toLowerCase());
+    const totalWords = state.sections.reduce((a, s) => a + s.wordCount, 0);
+
+    // Required sections
+    const requiredSections = ['title', 'abstract', 'introduction', 'methodology', 'results', 'conclusion', 'references'];
+    const missingSections: string[] = [];
+    requiredSections.forEach((req) => {
+      const found = sectionTitles.some((t) => t.includes(req) || (req === 'results' && t.includes('results')) || (req === 'methodology' && (t.includes('method') || t.includes('materials'))));
+      if (!found) missingSections.push(req);
+    });
+    checks.push({
+      id: 'sc1', label: 'Required Sections',
+      status: missingSections.length === 0 ? 'pass' : missingSections.length <= 2 ? 'warn' : 'fail',
+      message: missingSections.length === 0 ? 'All required sections present' : `Missing: ${missingSections.join(', ')}`,
+    });
+
+    // Abstract word count
+    const abstractSection = state.sections.find((s) => s.title.toLowerCase() === 'abstract');
+    const abstractWords = abstractSection?.wordCount || 0;
+    checks.push({
+      id: 'sc2', label: 'Abstract Length (150-300 words)',
+      status: abstractWords >= 150 && abstractWords <= 300 ? 'pass' : abstractWords >= 100 && abstractWords <= 350 ? 'warn' : 'fail',
+      message: `${abstractWords} words${abstractWords < 150 ? ' (too short)' : abstractWords > 300 ? ' (too long)' : ''}`,
+    });
+
+    // Reference count (minimum 15)
+    checks.push({
+      id: 'sc3', label: 'References (min 15)',
+      status: state.citations.length >= 15 ? 'pass' : state.citations.length >= 10 ? 'warn' : 'fail',
+      message: `${state.citations.length} references found`,
+    });
+
+    // Figures/tables
+    const figTableCount = state.figures.length + state.tables.length;
+    checks.push({
+      id: 'sc4', label: 'Figures & Tables (min 2)',
+      status: figTableCount >= 2 ? 'pass' : figTableCount >= 1 ? 'warn' : 'fail',
+      message: `${state.figures.length} figures, ${state.tables.length} tables`,
+    });
+
+    // Author count
+    checks.push({
+      id: 'sc5', label: 'Authors (min 1)',
+      status: state.authors.length >= 1 ? 'pass' : 'fail',
+      message: `${state.authors.length} author(s)`,
+    });
+
+    // Corresponding author
+    const hasCorresponding = state.authors.some((a) => a.corresponding);
+    checks.push({
+      id: 'sc6', label: 'Corresponding Author',
+      status: hasCorresponding ? 'pass' : 'fail',
+      message: hasCorresponding ? 'Designated' : 'No corresponding author selected',
+    });
+
+    // Word count total
+    checks.push({
+      id: 'sc7', label: 'Total Word Count',
+      status: totalWords >= 3000 ? 'pass' : totalWords >= 1500 ? 'warn' : 'fail',
+      message: `${totalWords} words`,
+    });
+
+    // Keywords
+    const keywordsSection = state.sections.find((s) => s.title.toLowerCase() === 'keywords');
+    const keywordCount = keywordsSection ? keywordsSection.content.split(',').filter(Boolean).length : 0;
+    checks.push({
+      id: 'sc8', label: 'Keywords (3-8)',
+      status: keywordCount >= 3 && keywordCount <= 8 ? 'pass' : keywordCount >= 1 ? 'warn' : 'fail',
+      message: `${keywordCount} keywords`,
+    });
+
+    set({ submissionChecks: checks });
+  },
+
+  updateCoverLetter: (data) => set((state) => ({
+    coverLetter: { ...state.coverLetter, ...data },
+  })),
+
+  generateCoverLetter: () => {
+    const state = get();
+    const titleSection = state.sections.find((s) => s.title === 'Title');
+    const articleTitle = state.coverLetter.articleTitle || titleSection?.content.split('\n')[0] || 'Untitled';
+    const journalName = state.coverLetter.journalName || 'the journal';
+    const editorName = state.coverLetter.editorName || 'Editor-in-Chief';
+    const keyFindings = state.coverLetter.keyFindings || 'significant findings in the field';
+    const authorNames = state.authors.map((a) => a.name).join(', ');
+    const correspondingAuthor = state.authors.find((a) => a.corresponding);
+
+    const text = `Dear ${editorName},
+
+We are pleased to submit our manuscript entitled "${articleTitle}" for consideration for publication in ${journalName}.
+
+This manuscript presents ${keyFindings}. We believe that our work makes a significant contribution to the field and would be of great interest to the readership of ${journalName}.
+
+The manuscript has not been published elsewhere and is not under consideration by any other journal. All authors have approved the manuscript and agree with its submission to ${journalName}.
+
+${authorNames.length > 0 ? `Authors: ${authorNames}` : ''}
+${correspondingAuthor ? `\nCorresponding author: ${correspondingAuthor.name} (${correspondingAuthor.email})` : ''}
+
+We look forward to your favorable response.
+
+Sincerely,
+${correspondingAuthor?.name || state.authors[0]?.name || 'The Authors'}`;
+
+    set((state_inner) => ({ coverLetter: { ...state_inner.coverLetter, articleTitle, generatedText: text } }));
+  },
+
+  recommendJournals: () => {
+    const state = get();
+    const abstractSection = state.sections.find((s) => s.title.toLowerCase() === 'abstract');
+    const keywordsSection = state.sections.find((s) => s.title.toLowerCase() === 'keywords');
+    const text = ((abstractSection?.content || '') + ' ' + (keywordsSection?.content || '')).toLowerCase();
+
+    const keywordSets: Record<string, string[]> = {
+      'ieee': ['deep learning', 'neural network', 'machine learning', 'computing', 'systems', 'transformer', 'optimization', 'algorithm'],
+      'elsevier': ['energy', 'materials', 'applied', 'engineering', 'sustainable', 'environment', 'chemical'],
+      'nature': ['novel', 'breakthrough', 'discovery', 'genome', 'quantum', 'climate', 'fundamental'],
+      'springer': ['analysis', 'review', 'methodology', 'framework', 'computational', 'data', 'statistical'],
+      'solar-energy': ['solar', 'photovoltaic', 'irradiance', 'renewable', 'pv', 'sun'],
+      'acm': ['computing', 'software', 'algorithm', 'database', 'interface', 'security', 'system'],
+      'mdpi': ['open access', 'sensors', 'sustainability', 'materials', 'electronics', 'processes'],
+      'frontiers': ['neuroscience', 'biology', 'psychology', 'medicine', 'ecology', 'genetics'],
+      'plos': ['biology', 'medicine', 'genetics', 'ecology', 'health', 'public'],
+      'wiley': ['chemistry', 'biology', 'ecology', 'social', 'management', 'psychology'],
+      'acs': ['chemistry', 'nano', 'polymer', 'catalysis', 'molecular', 'surface'],
+      'pip': ['photovoltaic', 'solar cell', 'efficiency', 'silicon', 'perovskite'],
+      'jpv': ['photovoltaic', 'solar cell', 'module', 'device', 'efficiency'],
+      'ieee-conference': ['deep learning', 'neural', 'conference', 'method', 'proposed'],
+      'taylor': ['social', 'education', 'policy', 'management', 'business'],
+    };
+
+    const recommendations: JournalRecommendation[] = [];
+    state.journalTemplates.forEach((template) => {
+      const keywords = keywordSets[template.id] || [];
+      const matchedKeywords = keywords.filter((kw) => text.includes(kw));
+      if (matchedKeywords.length > 0 || keywords.length === 0) {
+        const score = keywords.length > 0 ? Math.round((matchedKeywords.length / keywords.length) * 100) : 10;
+        if (score >= 20) {
+          recommendations.push({
+            templateId: template.id,
+            name: template.name,
+            category: template.category,
+            matchScore: score,
+            reasons: matchedKeywords.length > 0 ? matchedKeywords.map((k) => `Matches "${k}"`) : ['General match'],
+          });
+        }
+      }
+    });
+
+    recommendations.sort((a, b) => b.matchScore - a.matchScore);
+    set({ journalRecommendations: recommendations.slice(0, 10) });
+  },
+
+  setShowSubmissionChecker: (val) => set({ showSubmissionChecker: val }),
+  setShowAuthorManager: (val) => set({ showAuthorManager: val }),
+  setShowCoverLetter: (val) => set({ showCoverLetter: val }),
+  setShowJournalRec: (val) => set({ showJournalRec: val }),
 }));

@@ -7,6 +7,7 @@ import {
   List, ListOrdered, Quote, Link, Image, Table, FlaskConical,
   BookOpen, Download, Eye, EyeOff, Share2, LayoutTemplate,
   Sigma, FileImage, Sparkles, Save, Upload, Shield, SpellCheck,
+  Columns, BookA, ClipboardCheck, Users, FileText, BookOpenCheck,
   Columns, BookA, FileText,
   Columns, BookA, History, MessageSquare, ToggleLeft, ToggleRight,
 } from 'lucide-react';
@@ -156,6 +157,7 @@ export default function ResearchToolbar() {
             <ToolbarButton icon={Table} label="Table" onClick={() => setShowFigureManager(true)} />
             <ToolbarButton icon={Image} label="Image" />
             <Divider />
+            <ToolbarButton icon={Users} label="Authors" onClick={() => setActiveRightPanel('authors')} />
             <ToolbarButton icon={Upload} label="Import" onClick={() => setActiveRightPanel('import')} />
             <ToolbarButton icon={FlaskConical} label="Footnote" />
           </>
@@ -196,10 +198,13 @@ export default function ResearchToolbar() {
 
         {activeTab === 'Review' && (
           <>
+            <ToolbarButton icon={ClipboardCheck} label="Submission" onClick={() => setActiveRightPanel('submission')} />
             <ToolbarButton icon={Shield} label="Plagiarism" onClick={() => setActiveRightPanel('plagiarism')} />
             <ToolbarButton icon={SpellCheck} label="Spelling" onClick={() => setActiveRightPanel('spelling')} />
             <Divider />
             <ToolbarButton icon={Sparkles} label="AI Review" onClick={() => { setShowAIPanel(!showAIPanel); }} active={showAIPanel} />
+            <ToolbarButton icon={FileText} label="Cover Letter" onClick={() => setActiveRightPanel('coverletter')} />
+            <ToolbarButton icon={BookOpenCheck} label="Journals" onClick={() => setActiveRightPanel('journals')} />
             <Divider />
             <div className="flex items-center gap-2 px-2 text-xs opacity-60">
               <span className="px-2 py-1 rounded" style={{ backgroundColor: 'var(--background)' }}>
