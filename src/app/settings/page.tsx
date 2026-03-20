@@ -179,6 +179,16 @@ export default function SettingsPage() {
   const [db, setDb] = useState<DbSettings>({ connectionString: "", status: "idle", tables: [] });
   const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
+  const [ragConfig, setRagConfig] = useState({
+    pineconeApiKey: '',
+    pineconeIndex: '',
+    pineconeEnvironment: '',
+    pineconeIndexHost: '',
+    llmProvider: 'openai',
+    llmApiKey: '',
+    llmModel: 'gpt-4o-mini',
+  });
+  const [ragTestStatus, setRagTestStatus] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle');
 
   /* Load from localStorage on mount */
   useEffect(() => {
@@ -195,6 +205,8 @@ export default function SettingsPage() {
         const parsed = JSON.parse(storedDb);
         setDb({ ...parsed, status: "idle", tables: [] });
       }
+      const storedRag = localStorage.getItem("research-ai-config");
+      if (storedRag) setRagConfig(JSON.parse(storedRag));
     } catch {
       /* ignore corrupt storage */
     }
@@ -243,6 +255,7 @@ export default function SettingsPage() {
     localStorage.setItem("vidyalaya_providers", JSON.stringify(providers));
     localStorage.setItem("vidyalaya_general", JSON.stringify(general));
     localStorage.setItem("vidyalaya_db", JSON.stringify({ connectionString: db.connectionString }));
+    localStorage.setItem("research-ai-config", JSON.stringify(ragConfig));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -251,9 +264,26 @@ export default function SettingsPage() {
     setProviders(defaultProviders);
     setGeneral(defaultGeneral);
     setDb({ connectionString: "", status: "idle", tables: [] });
+    setRagConfig({ pineconeApiKey: '', pineconeIndex: '', pineconeEnvironment: '', pineconeIndexHost: '', llmProvider: 'openai', llmApiKey: '', llmModel: 'gpt-4o-mini' });
     localStorage.removeItem("vidyalaya_providers");
     localStorage.removeItem("vidyalaya_general");
     localStorage.removeItem("vidyalaya_db");
+    localStorage.removeItem("research-ai-config");
+  };
+
+  const testRagConnection = async () => {
+    setRagTestStatus('testing');
+    try {
+      const res = await fetch('/api/research-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: 'IEC 60904', mode: 'standards', domain: 'Physics', config: ragConfig }),
+      });
+      setRagTestStatus(res.ok ? 'ok' : 'error');
+    } catch {
+      setRagTestStatus('error');
+    }
+    setTimeout(() => setRagTestStatus('idle'), 4000);
   };
 
   /* ---- General ---- */
@@ -479,6 +509,144 @@ export default function SettingsPage() {
               </button>
             </div>
           ))}
+        </div>
+
+        {/* Research AI RAG Config */}
+        <div
+          className="rounded-lg border p-5 space-y-4"
+          style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold flex items-center gap-2" style={{ color: "var(--foreground)" }}>
+              <Cpu className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
+              Research AI (RAG)
+            </h3>
+            <div className="flex items-center gap-2">
+              <StatusDot status={ragTestStatus} />
+              <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                {ragTestStatus === 'ok' ? 'Connected' : ragTestStatus === 'error' ? 'Failed' : ragTestStatus === 'testing' ? 'Testing...' : 'Not tested'}
+              </span>
+            </div>
+          </div>
+          <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+            Configure Pinecone vector database + LLM for the Research Assistant RAG system. Stored under <code className="font-mono">research-ai-config</code>.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Pinecone API Key */}
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>Pinecone API Key</label>
+              <div className="relative">
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "var(--muted-foreground)" }} />
+                <input
+                  type={visibleKeys['rag-pine'] ? 'text' : 'password'}
+                  value={ragConfig.pineconeApiKey}
+                  onChange={(e) => setRagConfig((p) => ({ ...p, pineconeApiKey: e.target.value }))}
+                  placeholder="Enter Pinecone API key"
+                  className={inputClasses + " pl-9 pr-9"}
+                  style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                />
+                <button type="button" onClick={() => toggleKeyVisibility('rag-pine')} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "var(--muted-foreground)" }}>
+                  {visibleKeys['rag-pine'] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+            </div>
+            {/* Pinecone Index */}
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>Pinecone Index Name</label>
+              <input
+                type="text"
+                value={ragConfig.pineconeIndex}
+                onChange={(e) => setRagConfig((p) => ({ ...p, pineconeIndex: e.target.value }))}
+                placeholder="my-research-index"
+                className={inputClasses}
+                style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+              />
+            </div>
+            {/* Pinecone Environment */}
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>Pinecone Environment</label>
+              <div className="relative">
+                <select
+                  value={ragConfig.pineconeEnvironment}
+                  onChange={(e) => setRagConfig((p) => ({ ...p, pineconeEnvironment: e.target.value }))}
+                  className={selectClasses}
+                  style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                >
+                  <option value="">Select environment</option>
+                  {PINECONE_ENVIRONMENTS.map((env) => <option key={env} value={env}>{env}</option>)}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: "var(--muted-foreground)" }} />
+              </div>
+            </div>
+            {/* Pinecone Index Host (optional) */}
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>Pinecone Index Host (optional)</label>
+              <input
+                type="text"
+                value={ragConfig.pineconeIndexHost}
+                onChange={(e) => setRagConfig((p) => ({ ...p, pineconeIndexHost: e.target.value }))}
+                placeholder="https://xxx.svc.environment.pinecone.io"
+                className={inputClasses}
+                style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+              />
+            </div>
+            {/* LLM Provider */}
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>LLM Provider</label>
+              <div className="relative">
+                <select
+                  value={ragConfig.llmProvider}
+                  onChange={(e) => setRagConfig((p) => ({ ...p, llmProvider: e.target.value }))}
+                  className={selectClasses}
+                  style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                >
+                  {['openai', 'anthropic', 'deepseek', 'groq', 'openrouter'].map((prov) => (
+                    <option key={prov} value={prov}>{prov.charAt(0).toUpperCase() + prov.slice(1)}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: "var(--muted-foreground)" }} />
+              </div>
+            </div>
+            {/* LLM API Key */}
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>LLM API Key</label>
+              <div className="relative">
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "var(--muted-foreground)" }} />
+                <input
+                  type={visibleKeys['rag-llm'] ? 'text' : 'password'}
+                  value={ragConfig.llmApiKey}
+                  onChange={(e) => setRagConfig((p) => ({ ...p, llmApiKey: e.target.value }))}
+                  placeholder="Enter LLM API key"
+                  className={inputClasses + " pl-9 pr-9"}
+                  style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                />
+                <button type="button" onClick={() => toggleKeyVisibility('rag-llm')} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "var(--muted-foreground)" }}>
+                  {visibleKeys['rag-llm'] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+            </div>
+            {/* LLM Model */}
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>LLM Model</label>
+              <input
+                type="text"
+                value={ragConfig.llmModel}
+                onChange={(e) => setRagConfig((p) => ({ ...p, llmModel: e.target.value }))}
+                placeholder="gpt-4o-mini / claude-haiku-4-5-20251001"
+                className={inputClasses}
+                style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+              />
+            </div>
+          </div>
+          <button
+            onClick={testRagConnection}
+            disabled={ragTestStatus === 'testing' || !ragConfig.llmApiKey}
+            className={btnOutline + " mt-2"}
+            style={{ borderColor: "var(--border)", color: "var(--foreground)", opacity: ragTestStatus === 'testing' || !ragConfig.llmApiKey ? 0.5 : 1 }}
+          >
+            {ragTestStatus === 'testing' ? <Loader2 className="h-4 w-4 animate-spin" /> : ragTestStatus === 'ok' ? <Wifi className="h-4 w-4 text-green-500" /> : ragTestStatus === 'error' ? <WifiOff className="h-4 w-4 text-red-500" /> : <Wifi className="h-4 w-4" />}
+            Test Research AI Connection
+          </button>
         </div>
 
         {/* Save / Reset */}
