@@ -4,7 +4,17 @@ import { useResearchStore } from '@/store/research-store';
 import { cn } from '@/lib/utils';
 import { X, Check, Columns, AlignLeft } from 'lucide-react';
 
-const categories = ['All', 'IEEE', 'Elsevier', 'Springer Nature', 'Nature', 'PLOS', 'MDPI', 'ACS', 'RSC', 'Wiley', 'Taylor & Francis', 'Custom'];
+const categories = [
+  'All',
+  // Existing publishers
+  'IEEE', 'Elsevier', 'Springer Nature', 'Nature', 'PLOS', 'MDPI', 'ACS', 'RSC', 'Wiley', 'Taylor & Francis',
+  // New publishers
+  'Hindawi', 'SPIE', 'IntechOpen', 'Frontiers', 'IOP', 'SAGE', 'Cambridge', 'Oxford', 'ACM', 'AAAS', 'Cell Press',
+  'De Gruyter', 'Emerald', 'Copernicus', 'ASME', 'ASCE',
+  // Categories
+  'Conference', 'Review', 'Academic', 'Technical',
+  'Custom',
+];
 
 export default function JournalTemplates() {
   const { journalTemplates, selectedTemplateId, applyTemplate, setShowTemplateGallery } = useResearchStore();
