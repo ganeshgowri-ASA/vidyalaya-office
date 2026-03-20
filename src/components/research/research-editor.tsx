@@ -7,6 +7,7 @@ import {
   Calendar, FileText, CheckCircle2, Clock, Send, Sparkles,
   BookMarked, Sigma, FileCode, Link2, Shield, SpellCheck, Upload,
 } from 'lucide-react';
+import katex from 'katex';
 
 import ResearchToolbar from './research-toolbar';
 import SectionOutline from './section-outline';
@@ -23,6 +24,16 @@ import SpellingPanel from './spelling-panel';
 import SmartCitationPanel from './smart-citation-panel';
 import ImportPanel from './import-panel';
 import PdfPreview from './pdf-preview';
+import VersionHistory from './version-history';
+import { useVersionHistoryStore } from '@/store/version-history-store';
+
+function renderKatexSafe(latex: string, displayMode: boolean): string {
+  try {
+    return katex.renderToString(latex, { displayMode, throwOnError: false, strict: false });
+  } catch {
+    return `<code>${latex}</code>`;
+  }
+}
 
 const statusColors = {
   Draft: 'text-yellow-400',
@@ -310,10 +321,13 @@ export default function ResearchEditor() {
                           <div>
                             <p className="text-[10px] uppercase tracking-wider opacity-40 mb-1 px-1">Equations</p>
                             {equations.map((eq) => (
-                              <div key={eq.id} className="text-[10px] px-2 py-1 rounded cursor-pointer hover:opacity-80"
+                              <div key={eq.id} className="text-[10px] px-2 py-1 rounded cursor-pointer hover:opacity-80 mb-1"
                                 style={{ backgroundColor: 'var(--background)' }}>
-                                <p className="font-medium opacity-60">Eq. ({eq.number})</p>
-                                <code className="opacity-40 leading-tight line-clamp-1 font-mono text-[9px]">{eq.latex}</code>
+                                <p className="font-medium opacity-60">Eq. ({eq.number}){eq.label ? ` #${eq.label}` : ''}</p>
+                                <div
+                                  className="opacity-70 overflow-hidden text-[9px]"
+                                  dangerouslySetInnerHTML={{ __html: renderKatexSafe(eq.latex, false) }}
+                                />
                               </div>
                             ))}
                           </div>
@@ -400,6 +414,9 @@ export default function ResearchEditor() {
             {activeRightPanel === 'spelling' && <SpellingPanel />}
           </div>
         </div>
+
+        {/* Version History Panel */}
+        <VersionHistory />
       </div>
 
       {/* Modals */}
