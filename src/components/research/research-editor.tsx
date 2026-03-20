@@ -6,7 +6,7 @@ import {
   FlaskConical, Plus, BookOpen, LayoutGrid, ChevronRight,
   Calendar, FileText, CheckCircle2, Clock, Send, Sparkles,
   BookMarked, Sigma, FileCode, Link2, Shield, SpellCheck, Upload,
-  ClipboardCheck, Users, Mail as MailIcon, BookOpenCheck,
+  ClipboardCheck, Users, Mail as MailIcon, BookOpenCheck, Wand2,
 } from 'lucide-react';
 import katex from 'katex';
 
@@ -33,6 +33,8 @@ import PdfPreview from './pdf-preview';
 import VersionHistory from './version-history';
 import ProposedChangesPanel from './proposed-changes-panel';
 import TrackChanges from './track-changes';
+import ZoteroIntegration from './zotero-integration';
+import ProjectWizard from './project-wizard';
 import { useVersionHistoryStore } from '@/store/version-history-store';
 
 function renderKatexSafe(latex: string, displayMode: boolean): string {
@@ -86,7 +88,7 @@ function ArticlePreview({ content, title }: { content: string; title: string }) 
 
 function ResearchDashboard() {
   const {
-    articles, setShowDashboard, createArticle, setActiveArticle, setShowTemplateGallery,
+    articles, setShowDashboard, createArticle, setActiveArticle, setShowTemplateGallery, setShowProjectWizard,
   } = useResearchStore();
 
   return (
@@ -110,6 +112,13 @@ function ResearchDashboard() {
               style={{ borderColor: 'var(--border)' }}
             >
               <LayoutGrid size={15} /> Templates
+            </button>
+            <button
+              onClick={() => setShowProjectWizard(true)}
+              className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg border"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              <Wand2 size={15} /> Project Wizard
             </button>
             <button
               onClick={() => { createArticle('Untitled Research Article'); setShowDashboard(false); }}
@@ -202,8 +211,9 @@ export default function ResearchEditor() {
     showTemplateGallery, showEquationEditor, showFigureManager,
     showDashboard, setShowDashboard, setShowTemplateGallery,
     activeRightPanel, setActiveRightPanel,
+        setShowEquationEditor, setShowCitationManager,
     citations, equations, figures, pdfPreviewOpen,
-    setShowEquationEditor, setShowCitationManager,
+    showProjectWizard, setShowProjectWizard,
   } = useResearchStore();
 
   // Keyboard shortcuts
@@ -238,6 +248,7 @@ export default function ResearchEditor() {
       <>
         <ResearchDashboard />
         {showTemplateGallery && <JournalTemplates />}
+        {showProjectWizard && <ProjectWizard onClose={() => setShowProjectWizard(false)} />}
       </>
     );
   }
@@ -383,7 +394,7 @@ export default function ResearchEditor() {
               </button>
             ))}
           </div>
-          {/* Panel tabs - row 3 (production) */}
+          {/* Panel tabs - row 3 (production + zotero) */}
           <div
             className="flex border-b shrink-0"
             style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
@@ -393,6 +404,7 @@ export default function ResearchEditor() {
               ['authors', 'Authors', Users],
               ['coverletter', 'Cover', MailIcon],
               ['journals', 'Journals', BookOpenCheck],
+              ['zotero', 'Zotero', BookOpen],
             ] as const).map(([panel, label, Icon]) => (
               <button
                 key={panel}
@@ -424,6 +436,7 @@ export default function ResearchEditor() {
             {activeRightPanel === 'authors' && <AuthorManager />}
             {activeRightPanel === 'coverletter' && <CoverLetter />}
             {activeRightPanel === 'journals' && <JournalRecommendation />}
+            {activeRightPanel === 'zotero' && <ZoteroIntegration />}
           </div>
         </div>
 
@@ -441,6 +454,7 @@ export default function ResearchEditor() {
       {showTemplateGallery && <JournalTemplates />}
       {showEquationEditor && <EquationEditor />}
       {showFigureManager && <FigureTableManager />}
+      {showProjectWizard && <ProjectWizard onClose={() => setShowProjectWizard(false)} />}
     </div>
   );
 }
