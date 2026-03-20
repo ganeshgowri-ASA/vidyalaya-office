@@ -50,6 +50,9 @@ const createShape = (type: Shape['type'], x: number, y: number): Shape => {
   }
 };
 
+interface Guide { id: string; orientation: 'horizontal' | 'vertical'; position: number; }
+interface PenPath { points: Point[]; }
+
 export default function GraphicsEditor() {
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -61,7 +64,7 @@ export default function GraphicsEditor() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showGrid, setShowGrid] = useState(true);
   const [showRulers, setShowRulers] = useState(true);
-  const [showGuides, setShowGuides] = useState(false);
+  const [showGuides, setShowGuides] = useState(true);
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [gridSize] = useState(20);
   const [history, setHistory] = useState<Shape[][]>([[]]);
@@ -80,6 +83,17 @@ export default function GraphicsEditor() {
   const [gradientAngle, setGradientAngle] = useState(45);
   const [gradientType, setGradientType] = useState<'linear' | 'radial'>('linear');
   const [gradientStops, setGradientStops] = useState<GradientStop[]>([{ offset: 0, color: '#3b82f6' }, { offset: 1, color: '#8b5cf6' }]);
+  // Guides state
+  const [guides, setGuides] = useState<Guide[]>([
+    { id: 'g1', orientation: 'horizontal', position: 200 },
+    { id: 'g2', orientation: 'vertical', position: 300 },
+  ]);
+  const [draggingGuide, setDraggingGuide] = useState<string | null>(null);
+  // Pen/Freehand drawing state
+  const [penPath, setPenPath] = useState<PenPath | null>(null);
+  const [isDrawingPen, setIsDrawingPen] = useState(false);
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; shapeId: string } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const selectedShape = shapes.find(s => s.id === selectedId);
   const pushHistory = useCallback((ns: Shape[]) => { const h = history.slice(0, historyIndex + 1); h.push(ns); setHistory(h); setHistoryIndex(h.length - 1); }, [history, historyIndex]);
@@ -226,6 +240,115 @@ export default function GraphicsEditor() {
     setShowGradientEditor(false);
   }, [selectedId, gradientType, gradientStops, gradientAngle, updateShape]);
 
+  // Export to PDF (renders SVG to canvas then to PDF-like download)
+  const exportPDF = useCallback(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasWidth; canvas.height = canvasHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'diagram.pdf'; a.click();
+        URL.revokeObjectURL(url);
+      }, 'application/pdf');
+      // Fallback: download as PNG with .pdf extension for environments without PDF blob support
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a'); a.href = url; a.download = 'diagram.pdf'; a.click();
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  }, [canvasWidth, canvasHeight]);
+
+  // Pen/freehand drawing handlers
+  const handlePenMouseDown = useCallback((e: React.MouseEvent) => {
+    if (tool !== 'pen') return;
+    const svg = svgRef.current; if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const x = (e.clientX - rect.left - pan.x) / zoom;
+    const y = (e.clientY - rect.top - pan.y) / zoom;
+    setIsDrawingPen(true);
+    setPenPath({ points: [{ x, y }] });
+  }, [tool, pan, zoom]);
+
+  const handlePenMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDrawingPen || tool !== 'pen' || !penPath) return;
+    const svg = svgRef.current; if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const x = (e.clientX - rect.left - pan.x) / zoom;
+    const y = (e.clientY - rect.top - pan.y) / zoom;
+    setPenPath(prev => prev ? { points: [...prev.points, { x, y }] } : null);
+  }, [isDrawingPen, tool, penPath, pan, zoom]);
+
+  const handlePenMouseUp = useCallback(() => {
+    if (!isDrawingPen || !penPath || penPath.points.length < 2) {
+      setIsDrawingPen(false); setPenPath(null); return;
+    }
+    // Convert pen path to a line shape using bounding box
+    const xs = penPath.points.map(p => p.x);
+    const ys = penPath.points.map(p => p.y);
+    const minX = Math.min(...xs), minY = Math.min(...ys);
+    const maxX = Math.max(...xs), maxY = Math.max(...ys);
+    const s: LineShape = {
+      id: genId(), type: 'line', x: minX, y: minY,
+      width: Math.max(maxX - minX, 10), height: Math.max(maxY - minY, 10),
+      rotation: 0, fill: 'transparent', stroke: '#e2e8f0', strokeWidth: 2,
+      opacity: 1, label: 'Freehand', locked: false, visible: true, layerOpacity: 1, gradient: null,
+      startPoint: penPath.points[0], endPoint: penPath.points[penPath.points.length - 1],
+      lineStyle: 'solid',
+    };
+    const ns = [...shapes, s];
+    setShapes(ns); pushHistory(ns); setSelectedId(s.id); setSelectedIds([s.id]);
+    setIsDrawingPen(false); setPenPath(null);
+  }, [isDrawingPen, penPath, shapes, pushHistory]);
+
+  // Guide management
+  const addGuide = useCallback((orientation: 'horizontal' | 'vertical') => {
+    const pos = orientation === 'horizontal' ? 400 : 500;
+    setGuides(prev => [...prev, { id: `guide_${Date.now()}`, orientation, position: pos }]);
+  }, []);
+
+  const removeGuide = useCallback((id: string) => {
+    setGuides(prev => prev.filter(g => g.id !== id));
+  }, []);
+
+  const handleGuideMouseDown = useCallback((e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setDraggingGuide(id);
+  }, []);
+
+  const handleGuideDrag = useCallback((e: React.MouseEvent) => {
+    if (!draggingGuide) return;
+    const svg = svgRef.current; if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const guide = guides.find(g => g.id === draggingGuide);
+    if (!guide) return;
+    const pos = guide.orientation === 'horizontal'
+      ? (e.clientY - rect.top - pan.y) / zoom
+      : (e.clientX - rect.left - pan.x) / zoom;
+    setGuides(prev => prev.map(g => g.id === draggingGuide ? { ...g, position: pos } : g));
+  }, [draggingGuide, guides, pan, zoom]);
+
+  const handleGuideMouseUp = useCallback(() => {
+    setDraggingGuide(null);
+  }, []);
+
+  // Right-click context menu
+  const handleContextMenu = useCallback((e: React.MouseEvent, shapeId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, shapeId });
+    setSelectedId(shapeId);
+    setSelectedIds([shapeId]);
+  }, []);
+
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === 'Delete' && selectedId && document.activeElement?.tagName !== 'INPUT') deleteShape(selectedId);
@@ -240,6 +363,7 @@ export default function GraphicsEditor() {
   }, [selectedId, deleteShape, undo, redo, duplicateShape, groupSelected]);
 
   const handleCanvasClick = (e: React.MouseEvent) => {
+    setContextMenu(null);
     if (tool === 'select') { setSelectedId(null); setSelectedIds([]); return; }
     const svg = svgRef.current; if (!svg) return;
     if (tool !== 'hand' && tool !== 'pen') addShape(tool as Shape['type']);
@@ -346,10 +470,16 @@ export default function GraphicsEditor() {
         <button onClick={() => setShowGrid(!showGrid)} className={`px-2 py-1.5 rounded text-xs ${showGrid ? 'bg-blue-600/30 text-blue-400' : ''}`}>Grid</button>
         <button onClick={() => setSnapToGrid(!snapToGrid)} className={`px-2 py-1.5 rounded text-xs ${snapToGrid ? 'bg-blue-600/30 text-blue-400' : ''}`}>Snap</button>
         <button onClick={() => setShowRulers(!showRulers)} className={`px-2 py-1.5 rounded text-xs ${showRulers ? 'bg-blue-600/30 text-blue-400' : ''}`}>Rulers</button>
+        <button onClick={() => setShowGuides(!showGuides)} className={`px-2 py-1.5 rounded text-xs ${showGuides ? 'bg-yellow-600/30 text-yellow-400' : ''}`}>Guides</button>
+        {showGuides && (<>
+          <button onClick={() => addGuide('horizontal')} className="px-1.5 py-1 rounded text-[10px] hover:bg-[var(--bg-hover,#334155)]" title="Add horizontal guide">+H</button>
+          <button onClick={() => addGuide('vertical')} className="px-1.5 py-1 rounded text-[10px] hover:bg-[var(--bg-hover,#334155)]" title="Add vertical guide">+V</button>
+        </>)}
         <div className="flex-1" />
         <button onClick={() => setShowCanvasResize(true)} className="px-2 py-1 rounded hover:bg-[var(--bg-hover,#334155)] text-xs">⛶ Canvas</button>
         <button onClick={exportSVG} className="px-2 py-1 rounded bg-green-600/20 text-green-400 text-xs hover:bg-green-600/30">SVG ⬇</button>
         <button onClick={exportPNG} className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/30">PNG ⬇</button>
+        <button onClick={exportPDF} className="px-2 py-1 rounded bg-purple-600/20 text-purple-400 text-xs hover:bg-purple-600/30">PDF ⬇</button>
         <div className="w-px h-6 bg-[var(--border-color,#334155)] mx-1" />
         <button onClick={() => setZoom(z => Math.max(0.25, z - 0.1))} className="px-2 py-1 rounded hover:bg-[var(--bg-hover,#334155)] text-sm">−</button>
         <span className="text-xs w-12 text-center">{Math.round(zoom * 100)}%</span>
@@ -393,6 +523,20 @@ export default function GraphicsEditor() {
               {shapes.length === 0 && <p className="text-[10px] text-[var(--text-secondary,#94a3b8)] text-center py-4">Click canvas to add shapes</p>}
             </div>
           </div>
+          {showGuides && guides.length > 0 && (
+            <div className="border-t border-[var(--border-color,#334155)] p-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-yellow-400 mb-2">Guides ({guides.length})</h3>
+              <div className="space-y-1">
+                {guides.map(g => (
+                  <div key={g.id} className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)]">
+                    <span className="text-yellow-400">{g.orientation === 'horizontal' ? '━' : '┃'}</span>
+                    <span className="flex-1">{g.orientation} @ {Math.round(g.position)}px</span>
+                    <button onClick={() => removeGuide(g.id)} className="text-red-400 hover:text-red-300">✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>)}
 
         {/* SVG Canvas with Rulers */}
@@ -428,10 +572,11 @@ export default function GraphicsEditor() {
 
           <svg ref={svgRef}
             className={`w-full h-full ${showRulers ? 'mt-0 ml-0' : ''}`}
-            style={showRulers ? { paddingTop: '24px', paddingLeft: '24px' } : {}}
+            style={showRulers ? { paddingTop: '24px', paddingLeft: '24px', cursor: tool === 'pen' ? 'crosshair' : undefined } : { cursor: tool === 'pen' ? 'crosshair' : undefined }}
             onClick={handleCanvasClick}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
+            onMouseDown={handlePenMouseDown}
+            onMouseMove={e => { handleMouseMove(e); handlePenMouseMove(e); handleGuideDrag(e); }}
+            onMouseUp={() => { handleMouseUp(); handlePenMouseUp(); handleGuideMouseUp(); }}
             onWheel={e => { e.preventDefault(); setZoom(z => Math.max(0.25, Math.min(4, z + (e.deltaY > 0 ? -0.05 : 0.05)))); }}>
             <defs>
               <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" /></marker>
@@ -439,9 +584,57 @@ export default function GraphicsEditor() {
             {showGrid && <pattern id="grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse"><path d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} fill="none" stroke="#1e293b" strokeWidth="0.5" /></pattern>}
             {showGrid && <rect width="100%" height="100%" fill="url(#grid)" />}
             <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
-              {shapes.filter(s => s.visible).map(renderShape)}
+              {shapes.filter(s => s.visible).map(s => (
+                <g key={s.id} onContextMenu={e => handleContextMenu(e, s.id)}>
+                  {renderShape(s)}
+                </g>
+              ))}
+              {/* Freehand pen path preview */}
+              {isDrawingPen && penPath && penPath.points.length > 1 && (
+                <polyline
+                  points={penPath.points.map(p => `${p.x},${p.y}`).join(' ')}
+                  fill="none" stroke="#60a5fa" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+                />
+              )}
+              {/* Draggable guides */}
+              {showGuides && guides.map(g => (
+                <g key={g.id}>
+                  {g.orientation === 'horizontal' ? (
+                    <line x1={-10000} y1={g.position} x2={10000} y2={g.position}
+                      stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" opacity={0.7}
+                      style={{ cursor: 'ns-resize' }}
+                      onMouseDown={e => handleGuideMouseDown(e, g.id)} />
+                  ) : (
+                    <line x1={g.position} y1={-10000} x2={g.position} y2={10000}
+                      stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" opacity={0.7}
+                      style={{ cursor: 'ew-resize' }}
+                      onMouseDown={e => handleGuideMouseDown(e, g.id)} />
+                  )}
+                </g>
+              ))}
             </g>
           </svg>
+
+          {/* Context Menu */}
+          {contextMenu && (
+            <div className="fixed z-50 w-44 rounded-lg border py-1 shadow-xl"
+              style={{ top: contextMenu.y, left: contextMenu.x, backgroundColor: 'var(--bg-secondary,#1e293b)', borderColor: 'var(--border-color,#334155)' }}>
+              {[
+                { label: 'Duplicate', action: () => { duplicateShape(contextMenu.shapeId); setContextMenu(null); } },
+                { label: 'Bring to Front', action: () => { bringToFront(contextMenu.shapeId); setContextMenu(null); } },
+                { label: 'Send to Back', action: () => { sendToBack(contextMenu.shapeId); setContextMenu(null); } },
+                { label: 'Group', action: () => { groupSelected(); setContextMenu(null); }, disabled: selectedIds.length < 2 },
+                { label: 'Lock / Unlock', action: () => { const s = shapes.find(sh => sh.id === contextMenu.shapeId); if (s) updateShape(s.id, { locked: !s.locked }); setContextMenu(null); } },
+                { label: 'Delete', action: () => { deleteShape(contextMenu.shapeId); setContextMenu(null); }, danger: true },
+              ].map(item => (
+                <button key={item.label} onClick={item.action}
+                  disabled={'disabled' in item ? item.disabled : false}
+                  className={`w-full text-left px-3 py-1.5 text-xs transition-colors hover:bg-[var(--bg-hover,#334155)] ${'danger' in item && item.danger ? 'text-red-400' : ''} ${'disabled' in item && item.disabled ? 'opacity-30 cursor-not-allowed' : ''}`}>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="absolute bottom-2 left-8 flex items-center gap-3 text-[10px] text-[var(--text-secondary,#94a3b8)] bg-[var(--bg-secondary,#1e293b)]/90 rounded px-2 py-1">
             <span>Objects: {shapes.length}</span>
@@ -502,13 +695,18 @@ export default function GraphicsEditor() {
                     <input type="color" value={stop.color} onChange={e => { const s = [...gradientStops]; s[i] = { ...s[i], color: e.target.value }; setGradientStops(s); }} className="w-6 h-6 rounded" />
                     <input type="range" min={0} max={1} step={0.01} value={stop.offset} onChange={e => { const s = [...gradientStops]; s[i] = { ...s[i], offset: +e.target.value }; setGradientStops(s); }} className="flex-1" />
                     <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">{Math.round(stop.offset * 100)}%</span>
+                    {gradientStops.length > 2 && <button onClick={() => setGradientStops(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 text-[10px]">✕</button>}
                   </div>
                 ))}
-                <button onClick={applyGradient} className="w-full py-1 rounded bg-purple-600 hover:bg-purple-700 text-white text-[10px]">Apply Gradient</button>
+                <div className="flex gap-1">
+                  <button onClick={() => setGradientStops(prev => [...prev, { offset: 0.5, color: '#22c55e' }])} className="flex-1 py-0.5 rounded bg-[var(--bg-secondary,#1e293b)] text-[10px] hover:bg-[var(--bg-hover,#334155)]">+ Stop</button>
+                  <button onClick={applyGradient} className="flex-1 py-0.5 rounded bg-purple-600 hover:bg-purple-700 text-white text-[10px]">Apply</button>
+                </div>
               </div>
             )}
 
             <div><label className="block text-[10px] text-[var(--text-secondary,#94a3b8)] mb-1">Stroke</label><div className="flex gap-1 flex-wrap">{colors.map(c => <button key={c} onClick={() => updateShape(selectedShape.id, { stroke: c })} className={`w-5 h-5 rounded border-2 ${selectedShape.stroke === c ? 'border-white' : 'border-transparent'}`} style={{ backgroundColor: c }} />)}</div></div>
+            <div><label className="block text-[10px] text-[var(--text-secondary,#94a3b8)] mb-1">Rotation: {selectedShape.rotation}°</label><input type="range" min={0} max={360} step={1} value={selectedShape.rotation} onChange={e => updateShape(selectedShape.id, { rotation: +e.target.value })} className="w-full" /></div>
             <div><label className="block text-[10px] text-[var(--text-secondary,#94a3b8)] mb-1">Opacity: {Math.round(selectedShape.opacity * 100)}%</label><input type="range" min={0} max={1} step={0.1} value={selectedShape.opacity} onChange={e => updateShape(selectedShape.id, { opacity: +e.target.value })} className="w-full" /></div>
             <div><label className="block text-[10px] text-[var(--text-secondary,#94a3b8)] mb-1">Stroke Width: {selectedShape.strokeWidth}</label><input type="range" min={0} max={10} step={1} value={selectedShape.strokeWidth} onChange={e => updateShape(selectedShape.id, { strokeWidth: +e.target.value })} className="w-full" /></div>
 

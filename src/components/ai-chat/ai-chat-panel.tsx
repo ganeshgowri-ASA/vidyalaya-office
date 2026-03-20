@@ -7,7 +7,8 @@ import {
   FileText, Table2, Presentation, FileImage, ChevronDown,
   Zap, BookOpen, PenLine, BarChart3, ScanText, Type,
   ListOrdered, Languages, Wand2, ArrowLeft,
-      Image, Palette, Paintbrush, Layers, Mail, Reply, Forward, Inbox, AtSign, PenTool,
+  Image, Palette, Paintbrush, Layers, Mail, Reply, Forward, Inbox, AtSign, PenTool,
+  StickyNote, Video, Calendar,
 } from "lucide-react";
 import { useAIChatStore, type EditorContext } from "@/store/ai-chat-store";
 import { usePathname } from "next/navigation";
@@ -87,6 +88,20 @@ const QUICK_ACTIONS: Record<EditorContext, QuickAction[]> = {
     { label: "Meeting agenda", icon: <ListOrdered size={13} />, prompt: "Create a meeting agenda based on this conversation thread." },
     { label: "Action items", icon: <Zap size={13} />, prompt: "Extract all action items and deadlines from this conversation." },
   ],
+  notes: [
+    { label: "Summarize notes", icon: <StickyNote size={13} />, prompt: "Summarize these meeting notes into key decisions, action items, and follow-ups." },
+    { label: "Extract decisions", icon: <Zap size={13} />, prompt: "Extract all decisions made from these meeting notes and list them clearly." },
+    { label: "Create follow-up", icon: <ListOrdered size={13} />, prompt: "Create a follow-up email draft from these meeting notes with action items and deadlines." },
+    { label: "Action items", icon: <BookOpen size={13} />, prompt: "Extract all action items, owners, and deadlines from these meeting notes." },
+    { label: "Meeting minutes", icon: <FileText size={13} />, prompt: "Format these notes into professional meeting minutes with agenda items, discussions, and outcomes." },
+  ],
+  meetings: [
+    { label: "Prepare agenda", icon: <ListOrdered size={13} />, prompt: "Help me prepare a meeting agenda for: " },
+    { label: "Summarize meeting", icon: <Video size={13} />, prompt: "Summarize this meeting recording/transcript into key takeaways and action items." },
+    { label: "Schedule follow-up", icon: <Calendar size={13} />, prompt: "Draft a follow-up meeting invitation based on the outcomes of this meeting." },
+    { label: "Meeting prep", icon: <BookOpen size={13} />, prompt: "Help me prepare for an upcoming meeting about: " },
+    { label: "Talking points", icon: <PenLine size={13} />, prompt: "Generate talking points and discussion topics for a meeting about: " },
+  ],
 };
 
 const EDITOR_LABELS: Record<EditorContext, { label: string; icon: React.ReactNode }> = {
@@ -94,9 +109,11 @@ const EDITOR_LABELS: Record<EditorContext, { label: string; icon: React.ReactNod
   spreadsheet: { label: "Spreadsheet", icon: <Table2 size={14} /> },
   presentation: { label: "Presentation", icon: <Presentation size={14} /> },
   pdf: { label: "PDF", icon: <FileImage size={14} /> },
-    graphics: { label: "Graphics", icon: <Image size={14} /> },
+  graphics: { label: "Graphics", icon: <Image size={14} /> },
   email: { label: "Email", icon: <Mail size={14} /> },
   chat: { label: "Chat", icon: <MessageSquare size={14} /> },
+  notes: { label: "Notes", icon: <StickyNote size={14} /> },
+  meetings: { label: "Meetings", icon: <Video size={14} /> },
   general: { label: "General", icon: <Sparkles size={14} /> },
 };
 
@@ -116,9 +133,11 @@ function getEditorContext(pathname: string): EditorContext {
   if (pathname.startsWith("/spreadsheet")) return "spreadsheet";
   if (pathname.startsWith("/presentation")) return "presentation";
   if (pathname.startsWith("/pdf")) return "pdf";
-    if (pathname.startsWith("/graphics")) return "graphics";
+  if (pathname.startsWith("/graphics")) return "graphics";
   if (pathname.startsWith("/email")) return "email";
   if (pathname.startsWith("/chat")) return "chat";
+  if (pathname.startsWith("/notes")) return "notes";
+  if (pathname.startsWith("/meetings")) return "meetings";
   return "general";
 }
 

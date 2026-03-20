@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type EditorContext = "document" | "spreadsheet" | "presentation" | "pdf" | "graphics" | "email" | "chat" | "general";
+export type EditorContext = "document" | "spreadsheet" | "presentation" | "pdf" | "graphics" | "email" | "chat" | "notes" | "meetings" | "general";
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
