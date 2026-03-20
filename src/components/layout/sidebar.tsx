@@ -25,6 +25,8 @@ import {
   Video,
   CalendarDays,
   FlaskConical,
+  StickyNote,
+  CheckSquare,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -49,6 +51,11 @@ const communicateNav = [
   { label: "Chat", href: "/chat", icon: MessageSquare },
   { label: "Meetings", href: "/meetings", icon: Video },
   { label: "Calendar", href: "/calendar", icon: CalendarDays },
+];
+
+const productivityNav = [
+  { label: "Notes", href: "/notes", icon: StickyNote },
+  { label: "Tasks", href: "/tasks", icon: CheckSquare },
 ];
 
 const manageNav = [
@@ -165,6 +172,8 @@ export function Sidebar() {
           <NavSection label="Editors" items={editorNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Communicate" items={communicateNav} pathname={pathname} sidebarOpen={sidebarOpen} />
+          {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
+          <NavSection label="Productivity" items={productivityNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Manage" items={manageNav} pathname={pathname} sidebarOpen={sidebarOpen} />
         </nav>
