@@ -31,6 +31,8 @@ import CoverLetter from './cover-letter';
 import JournalRecommendation from './journal-recommendation';
 import PdfPreview from './pdf-preview';
 import VersionHistory from './version-history';
+import ProposedChangesPanel from './proposed-changes-panel';
+import TrackChanges from './track-changes';
 import ZoteroIntegration from './zotero-integration';
 import ProjectWizard from './project-wizard';
 import { useVersionHistoryStore } from '@/store/version-history-store';
@@ -209,7 +211,7 @@ export default function ResearchEditor() {
     showTemplateGallery, showEquationEditor, showFigureManager,
     showDashboard, setShowDashboard, setShowTemplateGallery,
     activeRightPanel, setActiveRightPanel,
-    setShowEquationEditor, setShowCitationManager,
+        setShowEquationEditor, setShowCitationManager,
     citations, equations, figures, pdfPreviewOpen,
     showProjectWizard, setShowProjectWizard,
   } = useResearchStore();
@@ -440,6 +442,12 @@ export default function ResearchEditor() {
 
         {/* Version History Panel */}
         <VersionHistory />
+
+        {/* Proposed Changes Panel */}
+        <ProposedChangesPanel />
+
+        {/* Track Changes Panel */}
+        <TrackChanges />
       </div>
 
       {/* Modals */}

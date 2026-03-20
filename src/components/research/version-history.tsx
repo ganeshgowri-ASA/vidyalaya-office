@@ -4,9 +4,11 @@ import { useVersionHistoryStore } from '@/store/version-history-store';
 import { useResearchStore } from '@/store/research-store';
 import { cn } from '@/lib/utils';
 import {
-  History, Clock, RotateCcw, GitCompare, Eye, Save,
+  History, Clock, RotateCcw, GitCompare, Save,
   MessageSquare, CheckCircle2, Trash2, X, User, ChevronDown,
   ChevronRight, FileText, Plus, Download, ToggleLeft, ToggleRight,
+  Pencil, Timer, Columns2, Rows3, Tag, AlertTriangle,
+  GitBranch, Settings,
 } from 'lucide-react';
 import type { VersionSnapshot } from '@/store/version-history-store';
 
@@ -64,7 +66,7 @@ function formatRelative(iso: string): string {
 
 // --- Sub-components ---
 
-function DiffView({ snapshot }: { snapshot: VersionSnapshot }) {
+function UnifiedDiffView({ snapshot, compareSnapshot }: { snapshot: VersionSnapshot; compareSnapshot?: VersionSnapshot | null }) {
   const sections = useResearchStore((s) => s.sections);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
@@ -77,15 +79,21 @@ function DiffView({ snapshot }: { snapshot: VersionSnapshot }) {
     });
   };
 
+  const baseSections = compareSnapshot ? compareSnapshot.sections : sections;
+
   const sectionDiffs = useMemo(() => {
-    return sections.map((current) => {
-      const old = snapshot.sections.find((s) => s.id === current.id);
-      const oldContent = old?.content || '';
-      const diff = computeDiff(oldContent, current.content);
+    const targetSections = compareSnapshot ? snapshot.sections : sections;
+    return targetSections.map((current) => {
+      const old = (compareSnapshot ? compareSnapshot.sections : snapshot.sections).find((s) => s.id === current.id);
+      const oldContent = compareSnapshot ? (old?.content || '') : (snapshot.sections.find((s) => s.id === current.id)?.content || '');
+      const newContent = compareSnapshot ? current.content : current.content;
+      const actualOld = compareSnapshot ? oldContent : oldContent;
+      const actualNew = compareSnapshot ? newContent : sections.find((s) => s.id === current.id)?.content || '';
+      const diff = computeDiff(actualOld, actualNew);
       const hasChanges = diff.some((d) => d.type !== 'same');
-      return { sectionId: current.id, title: current.title, diff, hasChanges, oldContent, newContent: current.content };
+      return { sectionId: current.id, title: current.title, diff, hasChanges };
     });
-  }, [sections, snapshot]);
+  }, [sections, snapshot, compareSnapshot]);
 
   return (
     <div className="space-y-1 p-2">
@@ -133,11 +141,76 @@ function DiffView({ snapshot }: { snapshot: VersionSnapshot }) {
   );
 }
 
-function SnapshotTimeline() {
-  const { snapshots, selectedSnapshotId, setSelectedSnapshot, setDiffViewActive, removeSnapshot } = useVersionHistoryStore();
+function SideBySideDiffView({ snapshot, compareSnapshot }: { snapshot: VersionSnapshot; compareSnapshot?: VersionSnapshot | null }) {
+  const sections = useResearchStore((s) => s.sections);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+
+  const toggleSection = (id: string) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const currentSections = compareSnapshot ? snapshot.sections : sections;
+
+  return (
+    <div className="space-y-1 p-2">
+      <div className="grid grid-cols-2 gap-1 px-2 py-1 text-[10px] opacity-40">
+        <span>{compareSnapshot ? compareSnapshot.label : snapshot.label}</span>
+        <span>{compareSnapshot ? snapshot.label : 'Current'}</span>
+      </div>
+      {currentSections.map((current) => {
+        const oldSection = (compareSnapshot ? compareSnapshot.sections : snapshot.sections).find((s) => s.id === current.id);
+        const oldContent = oldSection?.content || '';
+        const newContent = compareSnapshot ? current.content : (sections.find((s) => s.id === current.id)?.content || '');
+        const hasChanges = oldContent !== newContent;
+        const isExpanded = expandedSections.has(current.id);
+
+        return (
+          <div key={current.id} className="rounded border" style={{ borderColor: 'var(--border)' }}>
+            <button
+              onClick={() => toggleSection(current.id)}
+              className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-medium hover:opacity-80"
+            >
+              {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              <span>{current.title}</span>
+              {hasChanges ? (
+                <span className="ml-auto text-[10px] text-yellow-400">Modified</span>
+              ) : (
+                <span className="ml-auto text-[10px] opacity-30">No changes</span>
+              )}
+            </button>
+            {isExpanded && (
+              <div className="grid grid-cols-2 divide-x border-t" style={{ borderColor: 'var(--border)' }}>
+                <div className="px-2 py-1.5 text-[10px] leading-relaxed bg-red-500/5">
+                  {oldContent || <span className="opacity-30 italic">empty</span>}
+                </div>
+                <div className="px-2 py-1.5 text-[10px] leading-relaxed bg-green-500/5">
+                  {newContent || <span className="opacity-30 italic">empty</span>}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function VersionTimeline() {
+  const {
+    snapshots, selectedSnapshotId, compareSnapshotId,
+    setSelectedSnapshot, setCompareSnapshot, setDiffViewActive,
+    removeSnapshot, renameSnapshot,
+  } = useVersionHistoryStore();
   const sections = useResearchStore((s) => s.sections);
   const updateSectionContent = useResearchStore((s) => s.updateSectionContent);
   const [confirmRestore, setConfirmRestore] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState<string | null>(null);
+  const [labelText, setLabelText] = useState('');
 
   const sorted = useMemo(
     () => [...snapshots].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
@@ -152,87 +225,190 @@ function SnapshotTimeline() {
     setSelectedSnapshot(null);
   };
 
+  const handleExportVersion = (snapshot: VersionSnapshot) => {
+    let doc = `${snapshot.label}\n${'='.repeat(snapshot.label.length)}\n`;
+    doc += `Author: ${snapshot.author} | Date: ${formatDate(snapshot.timestamp)}\n`;
+    doc += `Words: ${snapshot.totalWordCount} | Sections: ${snapshot.sections.length}\n\n`;
+    snapshot.sections.forEach((s) => {
+      doc += `--- ${s.title} ---\n${s.content}\n\n`;
+    });
+    const blob = new Blob([doc], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${snapshot.label.replace(/\s+/g, '-').toLowerCase()}-${new Date(snapshot.timestamp).toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const startRename = (snap: VersionSnapshot) => {
+    setEditingLabel(snap.id);
+    setLabelText(snap.label);
+  };
+
+  const saveRename = () => {
+    if (editingLabel && labelText.trim()) {
+      renameSnapshot(editingLabel, labelText.trim());
+    }
+    setEditingLabel(null);
+  };
+
+  // Group by date
+  const groupedByDate = useMemo(() => {
+    const groups: { date: string; items: VersionSnapshot[] }[] = [];
+    sorted.forEach((snap) => {
+      const date = formatDate(snap.timestamp);
+      const existing = groups.find((g) => g.date === date);
+      if (existing) existing.items.push(snap);
+      else groups.push({ date, items: [snap] });
+    });
+    return groups;
+  }, [sorted]);
+
   return (
     <div className="space-y-1 p-2">
-      {sorted.map((snap) => {
-        const isSelected = selectedSnapshotId === snap.id;
-        return (
-          <div
-            key={snap.id}
-            className={cn(
-              'rounded-lg border p-2 cursor-pointer transition-all',
-              isSelected ? 'ring-1' : 'hover:opacity-90'
-            )}
-            style={{
-              backgroundColor: isSelected ? 'var(--sidebar-accent)' : 'var(--background)',
-              borderColor: isSelected ? 'var(--primary)' : 'var(--border)',
-            }}
-            onClick={() => {
-              setSelectedSnapshot(isSelected ? null : snap.id);
-              setDiffViewActive(!isSelected);
-            }}
-          >
-            <div className="flex items-start gap-2">
+      {groupedByDate.map((group) => (
+        <div key={group.date}>
+          <p className="text-[10px] opacity-30 px-2 py-1 font-medium">{group.date}</p>
+          {group.items.map((snap) => {
+            const isSelected = selectedSnapshotId === snap.id;
+            const isCompare = compareSnapshotId === snap.id;
+            return (
               <div
-                className={cn('w-2 h-2 rounded-full mt-1.5 shrink-0', snap.isAutoSave ? 'bg-blue-400' : 'bg-green-400')}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate">{snap.label}</p>
-                <div className="flex items-center gap-2 mt-0.5 text-[10px] opacity-50">
-                  <User size={9} />
-                  <span>{snap.author}</span>
-                  <span>-</span>
-                  <Clock size={9} />
-                  <span>{formatTime(snap.timestamp)}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5 text-[10px] opacity-40">
-                  <FileText size={9} />
-                  <span>{snap.sections.length} sections</span>
-                  <span>-</span>
-                  <span>{snap.totalWordCount} words</span>
-                </div>
-              </div>
-            </div>
-
-            {isSelected && (
-              <div className="flex items-center gap-1 mt-2 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setDiffViewActive(true); }}
-                  className="flex items-center gap-1 px-2 py-1 rounded text-[10px] hover:opacity-80"
-                  style={{ backgroundColor: 'var(--background)' }}
-                >
-                  <GitCompare size={10} /> Diff
-                </button>
-                {confirmRestore === snap.id ? (
-                  <div className="flex items-center gap-1 ml-auto">
-                    <span className="text-[10px] text-yellow-400">Restore?</span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleRestore(snap); }}
-                      className="px-2 py-0.5 rounded text-[10px] bg-green-600 text-white hover:bg-green-500"
-                    >
-                      Yes
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmRestore(null); }}
-                      className="px-2 py-0.5 rounded text-[10px] opacity-60 hover:opacity-100"
-                    >
-                      No
-                    </button>
+                key={snap.id}
+                className={cn(
+                  'rounded-lg border p-2 cursor-pointer transition-all mb-1',
+                  isSelected ? 'ring-1' : isCompare ? 'ring-1 ring-blue-400/50' : 'hover:opacity-90'
+                )}
+                style={{
+                  backgroundColor: isSelected ? 'var(--sidebar-accent)' : isCompare ? 'rgba(96, 165, 250, 0.05)' : 'var(--background)',
+                  borderColor: isSelected ? 'var(--primary)' : isCompare ? 'rgba(96, 165, 250, 0.3)' : 'var(--border)',
+                }}
+                onClick={() => {
+                  if (isSelected) {
+                    setSelectedSnapshot(null);
+                    setDiffViewActive(false);
+                  } else {
+                    setSelectedSnapshot(snap.id);
+                    setDiffViewActive(true);
+                  }
+                }}
+              >
+                <div className="flex items-start gap-2">
+                  {/* Timeline dot */}
+                  <div className="flex flex-col items-center mt-1">
+                    <div
+                      className={cn('w-2.5 h-2.5 rounded-full shrink-0', snap.isAutoSave ? 'bg-blue-400' : 'bg-green-400')}
+                    />
+                    <div className="w-px h-4 opacity-20" style={{ backgroundColor: 'var(--foreground)' }} />
                   </div>
-                ) : (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setConfirmRestore(snap.id); }}
-                    className="flex items-center gap-1 px-2 py-1 rounded text-[10px] hover:opacity-80 ml-auto"
-                    style={{ backgroundColor: 'var(--background)' }}
-                  >
-                    <RotateCcw size={10} /> Restore
-                  </button>
+                  <div className="flex-1 min-w-0">
+                    {editingLabel === snap.id ? (
+                      <div className="flex gap-1 mb-1">
+                        <input
+                          value={labelText}
+                          onChange={(e) => setLabelText(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && saveRename()}
+                          onBlur={saveRename}
+                          className="text-xs px-1.5 py-0.5 rounded border bg-transparent flex-1"
+                          style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <Tag size={9} className="opacity-30" />
+                        <p className="text-xs font-medium truncate">{snap.label}</p>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); startRename(snap); }}
+                          className="opacity-0 group-hover:opacity-50 hover:opacity-100 ml-0.5"
+                          title="Rename snapshot"
+                        >
+                          <Pencil size={9} />
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] opacity-50">
+                      <User size={9} />
+                      <span>{snap.author}</span>
+                      <span>·</span>
+                      <Clock size={9} />
+                      <span>{formatTime(snap.timestamp)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] opacity-40">
+                      <FileText size={9} />
+                      <span>{snap.sections.length} sections</span>
+                      <span>·</span>
+                      <span>{snap.totalWordCount} words</span>
+                      {snap.isAutoSave && (
+                        <span className="text-blue-400 flex items-center gap-0.5">
+                          <Timer size={8} /> auto
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {isSelected && (
+                  <div className="flex items-center gap-1 mt-2 pt-2 border-t flex-wrap" style={{ borderColor: 'var(--border)' }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDiffViewActive(true); }}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] hover:opacity-80"
+                      style={{ backgroundColor: 'var(--background)' }}
+                    >
+                      <GitCompare size={10} /> Diff
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCompareSnapshot(snap.id); }}
+                      className={cn('flex items-center gap-1 px-2 py-1 rounded text-[10px] hover:opacity-80', isCompare && 'ring-1 ring-blue-400')}
+                      style={{ backgroundColor: 'var(--background)' }}
+                    >
+                      <GitBranch size={10} /> Compare
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleExportVersion(snap); }}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] hover:opacity-80"
+                      style={{ backgroundColor: 'var(--background)' }}
+                    >
+                      <Download size={10} /> Export
+                    </button>
+                    {confirmRestore === snap.id ? (
+                      <div className="flex items-center gap-1 ml-auto">
+                        <AlertTriangle size={10} className="text-yellow-400" />
+                        <span className="text-[10px] text-yellow-400">Restore?</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRestore(snap); }}
+                          className="px-2 py-0.5 rounded text-[10px] bg-green-600 text-white hover:bg-green-500"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setConfirmRestore(null); }}
+                          className="px-2 py-0.5 rounded text-[10px] opacity-60 hover:opacity-100"
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmRestore(snap.id); }}
+                        className="flex items-center gap-1 px-2 py-1 rounded text-[10px] hover:opacity-80 ml-auto"
+                        style={{ backgroundColor: 'var(--background)' }}
+                      >
+                        <RotateCcw size={10} /> Restore
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        );
-      })}
+            );
+          })}
+        </div>
+      ))}
+      {sorted.length === 0 && (
+        <p className="text-xs opacity-40 text-center py-4">No snapshots yet</p>
+      )}
     </div>
   );
 }
@@ -384,6 +560,42 @@ function CommentsPanel() {
   );
 }
 
+function AutoSaveSettings() {
+  const { autoSaveIntervalMs, setAutoSaveInterval } = useVersionHistoryStore();
+  const intervals = [
+    { label: '1 min', ms: 60000 },
+    { label: '2 min', ms: 120000 },
+    { label: '5 min', ms: 300000 },
+    { label: '10 min', ms: 600000 },
+    { label: '15 min', ms: 900000 },
+    { label: '30 min', ms: 1800000 },
+  ];
+
+  return (
+    <div className="px-3 py-2 space-y-2">
+      <div className="flex items-center gap-2 text-[10px] opacity-50">
+        <Settings size={10} />
+        <span>Auto-save interval</span>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {intervals.map((iv) => (
+          <button
+            key={iv.ms}
+            onClick={() => setAutoSaveInterval(iv.ms)}
+            className={cn(
+              'px-2 py-1 rounded text-[10px]',
+              autoSaveIntervalMs === iv.ms ? 'font-medium' : 'opacity-40'
+            )}
+            style={autoSaveIntervalMs === iv.ms ? { backgroundColor: 'var(--sidebar-accent)' } : undefined}
+          >
+            {iv.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ExportComparisonButton() {
   const { snapshots, selectedSnapshotId } = useVersionHistoryStore();
   const sections = useResearchStore((s) => s.sections);
@@ -436,19 +648,19 @@ function ExportComparisonButton() {
 export default function VersionHistory() {
   const {
     showVersionHistory, setShowVersionHistory,
-    showCommentsPanel, setShowCommentsPanel,
     trackChangesEnabled, setTrackChangesEnabled,
-    snapshots, selectedSnapshotId, diffViewActive, setDiffViewActive,
+    snapshots, selectedSnapshotId, compareSnapshotId, diffViewActive, setDiffViewActive,
+    diffViewMode, setDiffViewMode,
     addSnapshot, lastAutoSaveAt, autoSaveIntervalMs,
     sectionAuthors,
   } = useVersionHistoryStore();
 
   const sections = useResearchStore((s) => s.sections);
 
-  const [activeTab, setActiveTab] = useState<'history' | 'comments' | 'authors'>('history');
+  const [activeTab, setActiveTab] = useState<'history' | 'comments' | 'authors' | 'settings'>('history');
   const [snapshotLabel, setSnapshotLabel] = useState('');
 
-  // Auto-save every 5 minutes
+  // Auto-save
   useEffect(() => {
     const interval = setInterval(() => {
       addSnapshot(sections, 'Auto-save', 'John Smith', true);
@@ -463,6 +675,7 @@ export default function VersionHistory() {
   }, [sections, snapshotLabel, addSnapshot]);
 
   const selectedSnapshot = snapshots.find((s) => s.id === selectedSnapshotId);
+  const compareSnapshot = snapshots.find((s) => s.id === compareSnapshotId);
 
   if (!showVersionHistory) return null;
 
@@ -489,6 +702,7 @@ export default function VersionHistory() {
           ['history', 'History', History],
           ['comments', 'Comments', MessageSquare],
           ['authors', 'Authors', User],
+          ['settings', 'Config', Settings],
         ] as const).map(([tab, label, Icon]) => (
           <button
             key={tab}
@@ -527,7 +741,7 @@ export default function VersionHistory() {
                 <input
                   value={snapshotLabel}
                   onChange={(e) => setSnapshotLabel(e.target.value)}
-                  placeholder="Snapshot label..."
+                  placeholder="Checkpoint name..."
                   className="flex-1 text-xs px-2 py-1.5 rounded border bg-transparent"
                   style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
                   onKeyDown={(e) => e.key === 'Enter' && handleManualSave()}
@@ -552,18 +766,35 @@ export default function VersionHistory() {
               <div>
                 <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
                   <GitCompare size={12} />
-                  <span className="text-[10px] font-medium">Comparing: {selectedSnapshot.label}</span>
+                  <span className="text-[10px] font-medium truncate flex-1">
+                    {compareSnapshot
+                      ? `${compareSnapshot.label} → ${selectedSnapshot.label}`
+                      : `${selectedSnapshot.label} → Current`
+                    }
+                  </span>
+                  {/* Diff mode toggle */}
+                  <button
+                    onClick={() => setDiffViewMode(diffViewMode === 'unified' ? 'side-by-side' : 'unified')}
+                    className="flex items-center gap-0.5 text-[10px] opacity-50 hover:opacity-100"
+                    title={diffViewMode === 'unified' ? 'Switch to side-by-side' : 'Switch to unified'}
+                  >
+                    {diffViewMode === 'unified' ? <Rows3 size={10} /> : <Columns2 size={10} />}
+                  </button>
                   <button
                     onClick={() => setDiffViewActive(false)}
-                    className="ml-auto text-[10px] opacity-50 hover:opacity-100"
+                    className="text-[10px] opacity-50 hover:opacity-100"
                   >
                     <X size={12} />
                   </button>
                 </div>
-                <DiffView snapshot={selectedSnapshot} />
+                {diffViewMode === 'unified' ? (
+                  <UnifiedDiffView snapshot={selectedSnapshot} compareSnapshot={compareSnapshot} />
+                ) : (
+                  <SideBySideDiffView snapshot={selectedSnapshot} compareSnapshot={compareSnapshot} />
+                )}
               </div>
             ) : (
-              <SnapshotTimeline />
+              <VersionTimeline />
             )}
           </>
         )}
@@ -597,6 +828,8 @@ export default function VersionHistory() {
             })}
           </div>
         )}
+
+        {activeTab === 'settings' && <AutoSaveSettings />}
       </div>
     </div>
   );
