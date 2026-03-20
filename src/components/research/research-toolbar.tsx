@@ -200,6 +200,8 @@ export default function ResearchToolbar() {
           <>
             <ToolbarButton icon={previewMode ? EyeOff : Eye} label={previewMode ? 'Edit Mode' : 'Preview'} onClick={() => setPreviewMode(!previewMode)} active={previewMode} />
             <Divider />
+            <ToolbarButton icon={Columns} label={doubleColumnEnabled ? '2-Column' : '1-Column'} onClick={() => setDoubleColumnEnabled(!doubleColumnEnabled)} active={doubleColumnEnabled} />
+            <Divider />
             <div className="flex items-center gap-1 px-2">
               <label className="text-xs opacity-60">Zoom:</label>
               <select
