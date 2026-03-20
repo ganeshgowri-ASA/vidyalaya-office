@@ -140,7 +140,7 @@ export default function ExportPanel() {
           className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold"
           style={{ backgroundColor: 'var(--card)' }}
         >
-          <span>Submission Checklist ({completedChecks}/{checklist.length})</span>
+          <span>Submission Checklist — {template ? template.name : 'General'} ({completedChecks}/{checklist.length})</span>
           {showChecklist ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
 
