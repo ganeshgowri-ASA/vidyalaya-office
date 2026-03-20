@@ -22,6 +22,8 @@ import PlagiarismPanel from './plagiarism-panel';
 import SpellingPanel from './spelling-panel';
 import SmartCitationPanel from './smart-citation-panel';
 import ImportPanel from './import-panel';
+import VersionHistory from './version-history';
+import { useVersionHistoryStore } from '@/store/version-history-store';
 
 const statusColors = {
   Draft: 'text-yellow-400',
@@ -396,6 +398,9 @@ export default function ResearchEditor() {
             {activeRightPanel === 'spelling' && <SpellingPanel />}
           </div>
         </div>
+
+        {/* Version History Panel */}
+        <VersionHistory />
       </div>
 
       {/* Modals */}
