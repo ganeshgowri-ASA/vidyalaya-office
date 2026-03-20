@@ -108,22 +108,40 @@ export function ReviewTab() {
       {/* ===== CHANGES GROUP ===== */}
       <div className="flex flex-col items-center border-r pr-2 mr-1" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-0.5">
-          <ToolbarButton icon={<Check size={14} />} label="Accept" title="Accept Change" onClick={() => {
+          <ToolbarButton icon={<Check size={14} />} label="Accept" title="Accept All Changes" onClick={() => {
             const editor = document.getElementById("doc-editor");
             if (editor) {
+              // Accept insertions: unwrap tracked insert spans (keep content)
               const insertions = editor.querySelectorAll("ins, .track-insert");
               insertions.forEach((ins) => {
                 const parent = ins.parentNode;
                 while (ins.firstChild) parent?.insertBefore(ins.firstChild, ins);
                 parent?.removeChild(ins);
               });
-            }
-          }} />
-          <ToolbarButton icon={<X size={14} />} label="Reject" title="Reject Change" onClick={() => {
-            const editor = document.getElementById("doc-editor");
-            if (editor) {
+              // Accept deletions: remove tracked delete spans (content was deleted)
               const deletions = editor.querySelectorAll("del, .track-delete");
               deletions.forEach((del) => del.remove());
+              // Update store
+              const store = useDocumentStore.getState();
+              store.trackChangesList.filter((c) => c.accepted === null).forEach((c) => store.acceptTrackChange(c.id));
+            }
+          }} />
+          <ToolbarButton icon={<X size={14} />} label="Reject" title="Reject All Changes" onClick={() => {
+            const editor = document.getElementById("doc-editor");
+            if (editor) {
+              // Reject insertions: remove tracked insert spans (undo insertions)
+              const insertions = editor.querySelectorAll("ins, .track-insert");
+              insertions.forEach((ins) => ins.remove());
+              // Reject deletions: unwrap tracked delete spans (restore content)
+              const deletions = editor.querySelectorAll("del, .track-delete");
+              deletions.forEach((del) => {
+                const parent = del.parentNode;
+                while (del.firstChild) parent?.insertBefore(del.firstChild, del);
+                parent?.removeChild(del);
+              });
+              // Update store
+              const store = useDocumentStore.getState();
+              store.trackChangesList.filter((c) => c.accepted === null).forEach((c) => store.rejectTrackChange(c.id));
             }
           }} />
           <ToolbarButton icon={<ChevronLeft size={14} />} title="Previous Change" onClick={() => {}} />

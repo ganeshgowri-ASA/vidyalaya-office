@@ -632,6 +632,14 @@ export function InsertTab() {
                   Custom Text...
                 </button>
                 <button className="w-full text-left text-xs px-3 py-1.5 rounded hover:bg-[var(--muted)]"
+                  style={{ color: "var(--primary)" }}
+                  onClick={() => {
+                    useDocumentStore.getState().setShowWatermarkDialog(true);
+                    setShowWatermarkMenu(false);
+                  }}>
+                  Watermark Settings...
+                </button>
+                <button className="w-full text-left text-xs px-3 py-1.5 rounded hover:bg-[var(--muted)]"
                   style={{ color: showWatermark ? "var(--primary)" : "var(--foreground)" }}
                   onClick={() => { toggleWatermark(); setShowWatermarkMenu(false); }}>
                   {showWatermark ? "Remove Watermark" : "Show Watermark"}
