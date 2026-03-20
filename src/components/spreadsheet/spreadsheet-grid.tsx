@@ -497,6 +497,14 @@ export function SpreadsheetGrid() {
       const name = prompt("Name:");
       if (name) setNamedRange(name, `${colToLetter(bounds.minC)}${bounds.minR + 1}:${colToLetter(bounds.maxC)}${bounds.maxR + 1}`);
     }},
+    { label: "---" },
+    { label: "Format Cells...", action: () => {
+      // Dispatch custom event to open format cells dialog from workspace
+      window.dispatchEvent(new CustomEvent("spreadsheet:openFormatCells"));
+    }},
+    { label: "Filter", action: () => {
+      window.dispatchEvent(new CustomEvent("spreadsheet:openSortFilter"));
+    }},
   ];
 
   return (
