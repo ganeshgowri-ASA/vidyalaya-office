@@ -298,7 +298,7 @@ const journalTemplates: JournalTemplate[] = [
   { id: 'apl', name: 'Applied Physics Letters', category: 'AIP', description: 'AIP Applied Physics Letters concise format', columns: 1, referenceStyle: 'APA 7th', sections: ['Abstract', 'Introduction', 'Methods', 'Results', 'Discussion', 'Conclusion', 'References'], hasAbstract: true, hasKeywords: false, wordLimit: 3500 },
 ];
 
-type RightPanel = 'citations' | 'ai' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import';
+type RightPanel = 'citations' | 'ai' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import' | 'pdfpreview';
 
 interface ResearchState {
   articles: Article[];
@@ -339,6 +339,7 @@ interface ResearchState {
   doubleColumnEnabled: boolean;
   activeFormatConfig: TemplateFormatConfig | null;
   importedDocName: string | null;
+  pdfPreviewOpen: boolean;
 
   setActiveSection: (id: string) => void;
   updateSectionContent: (id: string, content: string) => void;
@@ -383,6 +384,7 @@ interface ResearchState {
   setShowCitationPopup: (show: boolean, position?: { x: number; y: number }) => void;
   setDoubleColumnEnabled: (val: boolean) => void;
   importDocument: (name: string, templateId: string) => void;
+  setPdfPreviewOpen: (val: boolean) => void;
 }
 
 export const useResearchStore = create<ResearchState>()((set, get) => ({
@@ -424,6 +426,7 @@ export const useResearchStore = create<ResearchState>()((set, get) => ({
   doubleColumnEnabled: false,
   activeFormatConfig: journalFormatConfigs['ieee'] || null,
   importedDocName: null,
+  pdfPreviewOpen: false,
 
   setActiveSection: (id) => set({ activeSection: id }),
 
@@ -635,6 +638,8 @@ export const useResearchStore = create<ResearchState>()((set, get) => ({
   }),
 
   setDoubleColumnEnabled: (val) => set({ doubleColumnEnabled: val }),
+
+  setPdfPreviewOpen: (val) => set({ pdfPreviewOpen: val }),
 
   importDocument: (name, templateId) => {
     const template = get().journalTemplates.find((t) => t.id === templateId);
