@@ -68,7 +68,7 @@ interface Contact {
   phone?: string;
   company?: string;
   department?: string;
-  group: 'personal' | 'work' | 'company';
+  group: 'personal' | 'work' | 'company' | 'external';
   avatar?: string;
 }
 
@@ -80,6 +80,12 @@ interface AccessibilitySettings {
   previewLines: 1 | 2 | 3;
 }
 
+interface FilterPreset {
+  id: string;
+  name: string;
+  filters: FilterState;
+}
+
 interface FilterState {
   unreadOnly: boolean;
   hasAttachments: boolean;
@@ -87,6 +93,8 @@ interface FilterState {
   dateFrom: string;
   dateTo: string;
   label: string;
+  fromText: string;
+  toText: string;
 }
 
 interface ContextMenuState {
@@ -210,6 +218,9 @@ const MOCK_CONTACTS: Contact[] = [
   { id: 'c8', name: 'Henry Wilson', email: 'henry@partner.co', phone: '+1 555-0108', company: 'PartnerCo', department: 'Engineering', group: 'company' },
   { id: 'c9', name: 'Irene Taylor', email: 'irene@vidyalaya.dev', phone: '+1 555-0109', company: 'Vidyalaya', department: 'Marketing', group: 'work' },
   { id: 'c10', name: 'James Brown', email: 'james.b@yahoo.com', phone: '+1 555-0110', group: 'personal' },
+  { id: 'c11', name: 'Karen Lopez', email: 'karen@vendor.co', phone: '+1 555-0111', company: 'VendorCo', department: 'Supply Chain', group: 'external' },
+  { id: 'c12', name: 'Leo Nakamura', email: 'leo@freelance.dev', phone: '+1 555-0112', company: 'Freelance', department: 'Consulting', group: 'external' },
+  { id: 'c13', name: 'Monica Patel', email: 'monica@clientfirm.com', phone: '+1 555-0113', company: 'ClientFirm', department: 'Legal', group: 'external' },
 ];
 
 const EMAIL_TEMPLATES: EmailTemplate[] = [
@@ -294,6 +305,43 @@ const MOCK_EMAILS: Email[] = [
     body: 'Your profile was viewed by:\n- Senior Recruiter at Google\n- CTO at StartupXYZ\n- Engineering Manager at Meta\n- VP Engineering at Stripe\n- Tech Lead at Vercel',
     date: '2024-03-11 09:00', read: true, starred: false, flagged: false, folder: 'inbox',
     labels: ['social'], attachments: [], priority: 'low', threadId: 'th8', category: 'social',
+  },
+  // Vault emails
+  {
+    id: '9', from: 'legal@vidyalaya.dev', fromName: 'Legal Department', to: 'user@vidyalaya.dev',
+    subject: 'Contract Review: Vendor Agreement FY2024',
+    body: 'Please find the finalized vendor agreement for FY2024. This document is under legal hold and must be retained per compliance policy CP-204.\n\nRetention: 7 years\nClassification: Confidential\nLegal Hold: Active',
+    date: '2024-01-15 10:00', read: true, starred: false, flagged: true, folder: 'vault-legal',
+    labels: ['legal'], attachments: [{ name: 'vendor-agreement.pdf', size: '4.2 MB', type: 'pdf' }],
+    priority: 'high', threadId: 'th9', category: 'primary',
+    retentionPolicy: '7-Year Retention (CP-204)', vaultDate: '2024-01-20',
+  },
+  {
+    id: '10', from: 'compliance@vidyalaya.dev', fromName: 'Compliance Office', to: 'all@vidyalaya.dev',
+    subject: 'Quarterly Compliance Report - Q4 2023',
+    body: 'Attached is the Q4 2023 compliance report. All teams must review and acknowledge by end of month.\n\nCompliance Tag: SOX-402\nAudit Trail: Enabled',
+    date: '2024-01-08 14:30', read: true, starred: false, flagged: false, folder: 'vault-compliance',
+    labels: ['compliance'], attachments: [{ name: 'q4-compliance.pdf', size: '2.8 MB', type: 'pdf' }],
+    priority: 'normal', threadId: 'th10', category: 'updates',
+    retentionPolicy: '5-Year Retention (SOX-402)', vaultDate: '2024-01-10',
+  },
+  {
+    id: '11', from: 'finance@vidyalaya.dev', fromName: 'Finance Team', to: 'user@vidyalaya.dev',
+    subject: 'Invoice Archive: Project Alpha Payments',
+    body: 'All invoices related to Project Alpha have been processed and archived.\n\nTotal: $245,000\nPO Numbers: PO-2023-441, PO-2023-442, PO-2023-443\nRetention: Auto-archived per policy.',
+    date: '2023-12-20 09:15', read: true, starred: false, flagged: false, folder: 'vault-archived',
+    labels: ['finance'], attachments: [{ name: 'invoices-alpha.zip', size: '8.1 MB', type: 'zip' }],
+    priority: 'low', threadId: 'th11', category: 'updates',
+    retentionPolicy: '3-Year Retention (FIN-101)', vaultDate: '2023-12-22',
+  },
+  {
+    id: '12', from: 'hr@vidyalaya.dev', fromName: 'HR Department', to: 'user@vidyalaya.dev',
+    subject: 'Employee Records Retention Notice',
+    body: 'Per regulatory requirements, employee records from 2021 onboarding batch have been moved to retention vault.\n\nRecords Count: 47\nCompliance Tag: GDPR-Art17\nLegal Hold: Pending Review',
+    date: '2024-02-01 11:00', read: true, starred: false, flagged: true, folder: 'vault-retention',
+    labels: ['hr', 'compliance'], attachments: [],
+    priority: 'normal', threadId: 'th12', category: 'updates',
+    retentionPolicy: '10-Year Retention (GDPR-Art17)', vaultDate: '2024-02-05',
   },
 ];
 
@@ -398,9 +446,11 @@ export function EmailClient() {
 
   // NEW: Address Book state
   const [showAddressBook, setShowAddressBook] = useState(false);
-  const [contacts] = useState<Contact[]>(MOCK_CONTACTS);
+  const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
+  const [contactSuggestField, setContactSuggestField] = useState<'to' | 'cc' | 'bcc' | null>(null);
+  const [contactSuggestions, setContactSuggestions] = useState<Contact[]>([]);
   const [contactSearch, setContactSearch] = useState('');
-  const [contactGroup, setContactGroup] = useState<'all' | 'personal' | 'work' | 'company'>('all');
+  const [contactGroup, setContactGroup] = useState<'all' | 'personal' | 'work' | 'company' | 'external'>('all');
 
   // NEW: Context menu state
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, emailId: null });
@@ -413,8 +463,14 @@ export function EmailClient() {
   // NEW: Advanced filters
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
-    unreadOnly: false, hasAttachments: false, priority: 'all', dateFrom: '', dateTo: '', label: 'all',
+    unreadOnly: false, hasAttachments: false, priority: 'all', dateFrom: '', dateTo: '', label: 'all', fromText: '', toText: '',
   });
+  const [filterPresets, setFilterPresets] = useState<FilterPreset[]>([
+    { id: 'fp1', name: 'Unread High Priority', filters: { unreadOnly: true, hasAttachments: false, priority: 'high', dateFrom: '', dateTo: '', label: 'all', fromText: '', toText: '' } },
+    { id: 'fp2', name: 'With Attachments', filters: { unreadOnly: false, hasAttachments: true, priority: 'all', dateFrom: '', dateTo: '', label: 'all', fromText: '', toText: '' } },
+  ]);
+  const [showSavePreset, setShowSavePreset] = useState(false);
+  const [presetName, setPresetName] = useState('');
 
   // NEW: Accessibility settings
   const [showAccessibility, setShowAccessibility] = useState(false);
@@ -422,12 +478,19 @@ export function EmailClient() {
     fontSize: 'medium', density: 'default', readingPane: 'right', highContrast: false, previewLines: 2,
   });
 
-  // NEW: Custom folders
-  const [customFolders, setCustomFolders] = useState<Folder[]>([]);
+  // NEW: Custom folders with nested subfolder support
+  const [customFolders, setCustomFolders] = useState<Folder[]>([
+    { id: 'custom-clients', name: 'Clients', icon: 'CF', count: 0, color: 'green', isCustom: true },
+    { id: 'custom-clients-techcorp', name: 'TechCorp', icon: 'CF', count: 0, color: 'green', isCustom: true, parentId: 'custom-clients' },
+    { id: 'custom-clients-startupio', name: 'StartupIO', icon: 'CF', count: 0, color: 'green', isCustom: true, parentId: 'custom-clients' },
+    { id: 'custom-projects', name: 'Projects', icon: 'CF', count: 0, color: 'purple', isCustom: true },
+  ]);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderColor, setNewFolderColor] = useState('blue');
+  const [newFolderParent, setNewFolderParent] = useState('');
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['custom-clients']));
   const [folderContextMenu, setFolderContextMenu] = useState<{ visible: boolean; x: number; y: number; folderId: string | null }>({ visible: false, x: 0, y: 0, folderId: null });
 
   // NEW: Enterprise Vault state
@@ -494,6 +557,8 @@ export function EmailClient() {
     if (filters.dateFrom) count++;
     if (filters.dateTo) count++;
     if (filters.label !== 'all') count++;
+    if (filters.fromText) count++;
+    if (filters.toText) count++;
     return count;
   }, [filters]);
 
@@ -531,6 +596,8 @@ export function EmailClient() {
       const matchDateFrom = !filters.dateFrom || new Date(e.date) >= new Date(filters.dateFrom);
       const matchDateTo = !filters.dateTo || new Date(e.date) <= new Date(filters.dateTo);
       const matchLabel = filters.label === 'all' || e.labels.includes(filters.label);
+      const matchFromText = !filters.fromText || e.from.toLowerCase().includes(filters.fromText.toLowerCase()) || e.fromName.toLowerCase().includes(filters.fromText.toLowerCase());
+      const matchToText = !filters.toText || e.to.toLowerCase().includes(filters.toText.toLowerCase());
       // Advanced search fields
       const matchAdvSubject = advancedSearch.subject === '' || e.subject.toLowerCase().includes(advancedSearch.subject.toLowerCase());
       const matchAdvBody = advancedSearch.body === '' || e.body.toLowerCase().includes(advancedSearch.body.toLowerCase());
@@ -538,7 +605,7 @@ export function EmailClient() {
       const matchAdvTo = advancedSearch.to === '' || e.to.toLowerCase().includes(advancedSearch.to.toLowerCase());
       const matchAdvFlagged = !advancedSearch.flaggedOnly || e.flagged;
       const matchAdvCategory = advancedSearch.category === 'all' || e.category === advancedSearch.category;
-      return matchFolder && matchSearch && matchCategory && matchUnread && matchAttach && matchPriority && matchDateFrom && matchDateTo && matchLabel && matchAdvSubject && matchAdvBody && matchAdvFrom && matchAdvTo && matchAdvFlagged && matchAdvCategory;
+      return matchFolder && matchSearch && matchCategory && matchUnread && matchAttach && matchPriority && matchDateFrom && matchDateTo && matchLabel && matchFromText && matchToText && matchAdvSubject && matchAdvBody && matchAdvFrom && matchAdvTo && matchAdvFlagged && matchAdvCategory;
     });
     filtered.sort((a, b) => {
       if (sortBy === 'date') return new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -670,11 +737,22 @@ export function EmailClient() {
       count: 0,
       color: newFolderColor,
       isCustom: true,
+      parentId: newFolderParent || undefined,
     };
     setCustomFolders(prev => [...prev, newFolder]);
     setNewFolderName('');
+    setNewFolderParent('');
     setShowNewFolder(false);
-  }, [newFolderName, newFolderColor]);
+  }, [newFolderName, newFolderColor, newFolderParent]);
+
+  const toggleFolderExpand = useCallback((folderId: string) => {
+    setExpandedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(folderId)) next.delete(folderId);
+      else next.add(folderId);
+      return next;
+    });
+  }, []);
 
   const deleteCustomFolder = useCallback((folderId: string) => {
     setCustomFolders(prev => prev.filter(f => f.id !== folderId));
@@ -692,7 +770,63 @@ export function EmailClient() {
   }, []);
 
   const clearFilters = useCallback(() => {
-    setFilters({ unreadOnly: false, hasAttachments: false, priority: 'all', dateFrom: '', dateTo: '', label: 'all' });
+    setFilters({ unreadOnly: false, hasAttachments: false, priority: 'all', dateFrom: '', dateTo: '', label: 'all', fromText: '', toText: '' });
+  }, []);
+
+  const saveFilterPreset = useCallback(() => {
+    if (!presetName.trim()) return;
+    const preset: FilterPreset = { id: `fp-${Date.now()}`, name: presetName.trim(), filters: { ...filters } };
+    setFilterPresets(prev => [...prev, preset]);
+    setPresetName('');
+    setShowSavePreset(false);
+  }, [presetName, filters]);
+
+  const loadFilterPreset = useCallback((preset: FilterPreset) => {
+    setFilters({ ...preset.filters });
+    setShowFilters(true);
+  }, []);
+
+  const deleteFilterPreset = useCallback((id: string) => {
+    setFilterPresets(prev => prev.filter(p => p.id !== id));
+  }, []);
+
+  const addContactFromSender = useCallback((email: Email) => {
+    const exists = contacts.some(c => c.email === email.from);
+    if (exists) return;
+    const newContact: Contact = {
+      id: `c-${Date.now()}`,
+      name: email.fromName,
+      email: email.from,
+      group: email.from.includes('vidyalaya.dev') ? 'work' : 'external',
+    };
+    setContacts(prev => [...prev, newContact]);
+  }, [contacts]);
+
+  const handleComposeFieldChange = useCallback((field: 'to' | 'cc' | 'bcc', value: string) => {
+    setComposeData(prev => ({ ...prev, [field]: value }));
+    const lastPart = value.split(',').pop()?.trim() || '';
+    if (lastPart.length >= 2) {
+      const matches = contacts.filter(c =>
+        c.name.toLowerCase().includes(lastPart.toLowerCase()) ||
+        c.email.toLowerCase().includes(lastPart.toLowerCase())
+      ).slice(0, 5);
+      setContactSuggestions(matches);
+      setContactSuggestField(field);
+    } else {
+      setContactSuggestions([]);
+      setContactSuggestField(null);
+    }
+  }, [contacts]);
+
+  const applySuggestion = useCallback((contact: Contact, field: 'to' | 'cc' | 'bcc') => {
+    setComposeData(prev => {
+      const parts = prev[field].split(',').map(s => s.trim()).filter(Boolean);
+      parts.pop(); // remove partial input
+      parts.push(contact.email);
+      return { ...prev, [field]: parts.join(', ') + ', ' };
+    });
+    setContactSuggestions([]);
+    setContactSuggestField(null);
   }, []);
 
   const clearAdvancedSearch = useCallback(() => {
@@ -787,14 +921,15 @@ export function EmailClient() {
   const highContrastBorder = a11y.highContrast ? 'border-white/30' : 'border-[var(--border-color,#334155)]';
 
   return (
-    <div className={`flex flex-col h-full ${highContrastBg} ${highContrastText}`}>
+    <div className={`flex flex-col h-full ${highContrastBg} ${highContrastText}`} role="main" aria-label="Email client">
       {/* ===== TOP RIBBON BAR ===== */}
-      <div className={`flex items-center gap-2 px-4 py-2 border-b ${highContrastBorder} bg-[var(--bg-secondary,#111827)]`}>
+      <div className={`flex items-center gap-2 px-4 py-2 border-b ${highContrastBorder} bg-[var(--bg-secondary,#111827)]`} role="toolbar" aria-label="Email toolbar">
         <h2 className="text-sm font-bold flex items-center gap-2">Email</h2>
         <div className={`flex items-center gap-1 px-2 py-1 rounded bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} flex-1 max-w-xl`}>
           <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">&#128269;</span>
           <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search emails, contacts, subjects..."
+            aria-label="Search emails"
             className="bg-transparent text-xs outline-none flex-1 placeholder:text-[var(--text-secondary,#94a3b8)]" />
           {searchQuery && (
             <button onClick={() => setSearchQuery('')} className="text-[10px] text-[var(--text-secondary,#94a3b8)] hover:text-white px-1">x</button>
@@ -908,9 +1043,41 @@ export function EmailClient() {
               <option key={l} value={l}>{l}</option>
             ))}
           </select>
+          <div className="flex items-center gap-1 text-[10px]">
+            <span className="text-[var(--text-secondary,#94a3b8)]">From:</span>
+            <input type="text" value={filters.fromText} onChange={e => setFilters({ ...filters, fromText: e.target.value })}
+              placeholder="sender..."
+              className={`w-20 px-1 py-0.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} ${highContrastText} outline-none`} />
+          </div>
+          <div className="flex items-center gap-1 text-[10px]">
+            <span className="text-[var(--text-secondary,#94a3b8)]">To:</span>
+            <input type="text" value={filters.toText} onChange={e => setFilters({ ...filters, toText: e.target.value })}
+              placeholder="recipient..."
+              className={`w-20 px-1 py-0.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} ${highContrastText} outline-none`} />
+          </div>
           <button onClick={clearFilters} className="px-2 py-0.5 rounded text-[10px] bg-red-600/20 hover:bg-red-600/30 text-red-400">
             Clear all
           </button>
+          <button onClick={() => setShowSavePreset(!showSavePreset)} className="px-2 py-0.5 rounded text-[10px] bg-green-600/20 hover:bg-green-600/30 text-green-400">
+            Save preset
+          </button>
+          {filterPresets.length > 0 && filterPresets.map(p => (
+            <button key={p.id} onClick={() => loadFilterPreset(p)}
+              className="px-2 py-0.5 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 flex items-center gap-1">
+              {p.name}
+              <span onClick={(e) => { e.stopPropagation(); deleteFilterPreset(p.id); }} className="text-[8px] hover:text-red-400 ml-0.5">x</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {showSavePreset && showFilters && (
+        <div className={`flex items-center gap-2 px-4 py-1.5 border-b ${highContrastBorder} bg-[var(--bg-secondary,#111827)]`}>
+          <span className="text-[10px] text-green-400">Save current filters as:</span>
+          <input value={presetName} onChange={e => setPresetName(e.target.value)} placeholder="Preset name..."
+            onKeyDown={e => e.key === 'Enter' && saveFilterPreset()}
+            className={`px-2 py-0.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none flex-1 max-w-xs`} />
+          <button onClick={saveFilterPreset} className="px-2 py-0.5 rounded text-[10px] bg-green-600 hover:bg-green-700 text-white">Save</button>
+          <button onClick={() => { setShowSavePreset(false); setPresetName(''); }} className="px-2 py-0.5 rounded text-[10px] text-[var(--text-secondary,#94a3b8)] hover:text-white">Cancel</button>
         </div>
       )}
 
@@ -985,7 +1152,7 @@ export function EmailClient() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* ===== FOLDERS SIDEBAR ===== */}
-        <div className={`w-52 border-r ${highContrastBorder} bg-[var(--bg-secondary,#111827)] overflow-y-auto flex-shrink-0`}>
+        <nav className={`w-52 border-r ${highContrastBorder} bg-[var(--bg-secondary,#111827)] overflow-y-auto flex-shrink-0`} aria-label="Email folders">
           <div className="p-2 space-y-0.5">
             {DEFAULT_FOLDERS.map(f => (
               <button key={f.id} onClick={() => { setActiveFolder(f.id); setSelectedEmail(null); setActiveCategory('all'); }}
@@ -1005,40 +1172,85 @@ export function EmailClient() {
               <button onClick={() => setShowNewFolder(true)} className="text-[10px] text-blue-400 hover:text-blue-300">+</button>
             </div>
             {showNewFolder && (
-              <div className="flex items-center gap-1 mb-2">
-                <input value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="Folder name"
-                  className={`flex-1 px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none`}
-                  onKeyDown={e => e.key === 'Enter' && createCustomFolder()} />
-                <select value={newFolderColor} onChange={e => setNewFolderColor(e.target.value)}
-                  className={`px-1 py-1 rounded text-[9px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder}`}>
-                  <option value="blue">Blue</option>
-                  <option value="green">Green</option>
-                  <option value="red">Red</option>
-                  <option value="purple">Purple</option>
-                  <option value="orange">Orange</option>
-                  <option value="pink">Pink</option>
-                </select>
-                <button onClick={createCustomFolder} className="text-[10px] text-green-400 hover:text-green-300 px-1">OK</button>
-                <button onClick={() => { setShowNewFolder(false); setNewFolderName(''); }} className="text-[10px] text-red-400 hover:text-red-300 px-1">X</button>
+              <div className="space-y-1 mb-2">
+                <div className="flex items-center gap-1">
+                  <input value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="Folder name"
+                    className={`flex-1 px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none`}
+                    onKeyDown={e => e.key === 'Enter' && createCustomFolder()} aria-label="New folder name" />
+                  <select value={newFolderColor} onChange={e => setNewFolderColor(e.target.value)}
+                    className={`px-1 py-1 rounded text-[9px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder}`} aria-label="Folder color">
+                    <option value="blue">Blue</option>
+                    <option value="green">Green</option>
+                    <option value="red">Red</option>
+                    <option value="purple">Purple</option>
+                    <option value="orange">Orange</option>
+                    <option value="pink">Pink</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <select value={newFolderParent} onChange={e => setNewFolderParent(e.target.value)}
+                    className={`flex-1 px-1 py-1 rounded text-[9px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder}`} aria-label="Parent folder">
+                    <option value="">No parent (root)</option>
+                    {customFolders.filter(f => !f.parentId).map(f => (
+                      <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
+                  <button onClick={createCustomFolder} className="text-[10px] text-green-400 hover:text-green-300 px-1">OK</button>
+                  <button onClick={() => { setShowNewFolder(false); setNewFolderName(''); setNewFolderParent(''); }} className="text-[10px] text-red-400 hover:text-red-300 px-1">X</button>
+                </div>
               </div>
             )}
-            {customFolders.map(f => (
-              <div key={f.id} className="relative">
-                <button onClick={() => { setActiveFolder(f.id); setSelectedEmail(null); }}
-                  onContextMenu={(e) => { e.preventDefault(); setFolderContextMenu({ visible: true, x: e.clientX, y: e.clientY, folderId: f.id }); }}
-                  className={`w-full flex items-center gap-2 py-1.5 px-2 rounded hover:bg-[var(--bg-hover,#334155)] text-xs cursor-pointer ${activeFolder === f.id ? 'bg-blue-600/20 text-blue-400' : 'text-[var(--text-secondary,#94a3b8)]'}`}>
-                  <span className={`w-2 h-2 rounded-full bg-${f.color || 'blue'}-400`} />
-                  {editingFolder === f.id ? (
-                    <input autoFocus defaultValue={f.name}
-                      onBlur={e => renameCustomFolder(f.id, e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') renameCustomFolder(f.id, (e.target as HTMLInputElement).value); }}
-                      className="flex-1 bg-transparent outline-none text-[10px]" />
-                  ) : (
-                    <span className="flex-1 text-left text-[10px]">{f.name}</span>
+            {customFolders.filter(f => !f.parentId).map(f => {
+              const children = customFolders.filter(cf => cf.parentId === f.id);
+              const hasChildren = children.length > 0;
+              const isExpanded = expandedFolders.has(f.id);
+              return (
+                <div key={f.id}>
+                  <div className="relative flex items-center">
+                    {hasChildren && (
+                      <button onClick={() => toggleFolderExpand(f.id)}
+                        className="text-[8px] text-[var(--text-secondary,#94a3b8)] hover:text-white w-4 flex-shrink-0" aria-label={isExpanded ? 'Collapse folder' : 'Expand folder'}>
+                        {isExpanded ? '▼' : '▶'}
+                      </button>
+                    )}
+                    <button onClick={() => { setActiveFolder(f.id); setSelectedEmail(null); }}
+                      onContextMenu={(e) => { e.preventDefault(); setFolderContextMenu({ visible: true, x: e.clientX, y: e.clientY, folderId: f.id }); }}
+                      className={`flex-1 flex items-center gap-2 py-1.5 ${hasChildren ? 'px-0' : 'px-2'} rounded hover:bg-[var(--bg-hover,#334155)] text-xs cursor-pointer ${activeFolder === f.id ? 'bg-blue-600/20 text-blue-400' : 'text-[var(--text-secondary,#94a3b8)]'}`}>
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0`} style={{ backgroundColor: `var(--${f.color || 'blue'})` || undefined }} />
+                      {editingFolder === f.id ? (
+                        <input autoFocus defaultValue={f.name}
+                          onBlur={e => renameCustomFolder(f.id, e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') renameCustomFolder(f.id, (e.target as HTMLInputElement).value); }}
+                          className="flex-1 bg-transparent outline-none text-[10px]" />
+                      ) : (
+                        <span className="flex-1 text-left text-[10px]">{f.name}</span>
+                      )}
+                    </button>
+                  </div>
+                  {hasChildren && isExpanded && (
+                    <div className="ml-4 border-l border-[var(--border-color,#334155)] pl-1">
+                      {children.map(cf => (
+                        <div key={cf.id} className="relative">
+                          <button onClick={() => { setActiveFolder(cf.id); setSelectedEmail(null); }}
+                            onContextMenu={(e) => { e.preventDefault(); setFolderContextMenu({ visible: true, x: e.clientX, y: e.clientY, folderId: cf.id }); }}
+                            className={`w-full flex items-center gap-2 py-1 px-2 rounded hover:bg-[var(--bg-hover,#334155)] text-[10px] cursor-pointer ${activeFolder === cf.id ? 'bg-blue-600/20 text-blue-400' : 'text-[var(--text-secondary,#94a3b8)]'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0`} style={{ backgroundColor: `var(--${cf.color || f.color || 'blue'})` || undefined }} />
+                            {editingFolder === cf.id ? (
+                              <input autoFocus defaultValue={cf.name}
+                                onBlur={e => renameCustomFolder(cf.id, e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') renameCustomFolder(cf.id, (e.target as HTMLInputElement).value); }}
+                                className="flex-1 bg-transparent outline-none text-[10px]" />
+                            ) : (
+                              <span className="flex-1 text-left">{cf.name}</span>
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </button>
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
 
           {/* Labels */}
@@ -1088,10 +1300,24 @@ export function EmailClient() {
             </div>
             <p className="text-[9px] text-[var(--text-secondary,#94a3b8)] mt-1">2.4 GB of 15 GB used</p>
           </div>
-        </div>
+        </nav>
 
         {/* ===== EMAIL LIST ===== */}
-        <div className={`${viewMode === 'split' ? 'w-96' : 'flex-1'} border-r ${highContrastBorder} overflow-y-auto flex-shrink-0`}>
+        <div className={`${viewMode === 'split' ? 'w-96' : 'flex-1'} border-r ${highContrastBorder} overflow-y-auto flex-shrink-0`}
+          role="list" aria-label="Email list"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+              e.preventDefault();
+              const idx = selectedEmail ? filteredEmails.findIndex(em => em.id === selectedEmail.id) : -1;
+              const next = e.key === 'ArrowDown' ? Math.min(idx + 1, filteredEmails.length - 1) : Math.max(idx - 1, 0);
+              if (filteredEmails[next]) { setSelectedEmail(filteredEmails[next]); markRead(filteredEmails[next].id); }
+            } else if (e.key === 'Enter' && selectedEmail) {
+              // already selected, no-op
+            } else if (e.key === 'Delete' && selectedEmail) {
+              moveToFolder(selectedEmail.id, 'trash');
+            }
+          }}>
           {/* Bulk action bar */}
           <div className={`flex items-center gap-2 px-3 py-1.5 border-b ${highContrastBorder} bg-[var(--bg-secondary,#111827)]`}>
             <input type="checkbox" checked={selectedEmails.length === filteredEmails.length && filteredEmails.length > 0}
@@ -1117,6 +1343,9 @@ export function EmailClient() {
             </div>
           ) : filteredEmails.map(email => (
             <div key={email.id}
+              role="listitem"
+              aria-label={`${email.read ? '' : 'Unread '}Email from ${email.fromName}: ${email.subject}`}
+              aria-selected={selectedEmail?.id === email.id}
               onClick={() => { setSelectedEmail(email); markRead(email.id); }}
               onContextMenu={(e) => handleContextMenu(e, email.id)}
               className={`flex items-start gap-2 px-3 ${densityClass} border-b ${highContrastBorder} cursor-pointer transition-all border-l-[3px] ${getCategoryColor(email.category)} ${selectedEmail?.id === email.id ? 'bg-blue-600/10' : 'hover:bg-[var(--bg-hover,#334155)]'} ${!email.read ? 'bg-[var(--bg-tertiary,#0f172a)]' : ''}`}>
@@ -1148,6 +1377,7 @@ export function EmailClient() {
                       {email.attachments.length > 0 && <span className="text-[9px] text-[var(--text-secondary,#94a3b8)]">[Attach: {email.attachments.length}]</span>}
                       {email.readReceipt && <span className="text-[9px] text-green-400">RR</span>}
                       {email.retentionPolicy && <span className="text-[8px] px-1 py-0 rounded bg-amber-600/20 text-amber-400">{email.retentionPolicy}</span>}
+                      {email.folder === 'vault-legal' && <span className="text-[8px] px-1 py-0 rounded bg-red-600/20 text-red-400 font-semibold">LEGAL HOLD</span>}
                     </div>
                   </div>
                 </div>
@@ -1158,9 +1388,9 @@ export function EmailClient() {
 
         {/* ===== EMAIL VIEWER ===== */}
         {viewMode === 'split' && (
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" role="region" aria-label="Email reading pane">
             {selectedEmail ? (
-              <div className="p-4">
+              <div className="p-4" aria-live="polite">
                 {/* Action bar */}
                 <div className={`flex items-center gap-2 mb-4 pb-3 border-b ${highContrastBorder}`}>
                   <button onClick={() => replyToEmail(selectedEmail)} className="px-2 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-[10px]">Reply</button>
@@ -1241,7 +1471,12 @@ export function EmailClient() {
                         <span className="text-sm font-medium">{selectedEmail.fromName}</span>
                         <span className="text-[10px] text-[var(--text-secondary,#94a3b8)]">&lt;{selectedEmail.from}&gt;</span>
                         {/* Quick add contact button */}
-                        <button onClick={() => setShowAddressBook(true)} className="text-[9px] text-blue-400 hover:text-blue-300">+ Add to Contacts</button>
+                        {!contacts.some(c => c.email === selectedEmail.from) ? (
+                          <button onClick={() => { addContactFromSender(selectedEmail); setShowAddressBook(true); }}
+                            className="text-[9px] text-blue-400 hover:text-blue-300" aria-label="Add sender to contacts">+ Add to Contacts</button>
+                        ) : (
+                          <span className="text-[9px] text-green-400">In Contacts</span>
+                        )}
                       </div>
                       <div className="text-[10px] text-[var(--text-secondary,#94a3b8)]">
                         To: {selectedEmail.to}
@@ -1260,11 +1495,31 @@ export function EmailClient() {
                   </div>
                 </div>
 
-                {/* Retention Policy (if vault email) */}
+                {/* Retention Policy & Compliance (if vault email) */}
                 {selectedEmail.retentionPolicy && (
-                  <div className={`mb-4 p-2 rounded-lg bg-amber-600/10 border border-amber-600/20 text-[10px] text-amber-400`}>
-                    Retention Policy: {selectedEmail.retentionPolicy}
-                    {selectedEmail.vaultDate && <span className="ml-2">| Archived: {selectedEmail.vaultDate}</span>}
+                  <div className={`mb-4 p-3 rounded-lg bg-amber-600/10 border border-amber-600/20`} role="status" aria-label="Vault compliance information">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px] font-semibold text-amber-400">Vault Record</span>
+                      {selectedEmail.folder === 'vault-legal' && (
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-semibold">LEGAL HOLD</span>
+                      )}
+                      {selectedEmail.retentionPolicy.includes('SOX') && (
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-blue-600/20 text-blue-400 font-semibold">SOX</span>
+                      )}
+                      {selectedEmail.retentionPolicy.includes('GDPR') && (
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-purple-600/20 text-purple-400 font-semibold">GDPR</span>
+                      )}
+                      {selectedEmail.retentionPolicy.includes('FIN') && (
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-600/20 text-green-400 font-semibold">FINANCIAL</span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-amber-400/80">
+                      <span>Retention: {selectedEmail.retentionPolicy}</span>
+                      {selectedEmail.vaultDate && <span className="ml-2">| Archived: {selectedEmail.vaultDate}</span>}
+                    </div>
+                    {selectedEmail.folder === 'vault-legal' && (
+                      <p className="text-[9px] text-red-400/70 mt-1">This email is under legal hold. Deletion is restricted until hold is released.</p>
+                    )}
                   </div>
                 )}
 
@@ -1470,19 +1725,27 @@ export function EmailClient() {
             <div className="p-2">
               <input value={contactSearch} onChange={e => setContactSearch(e.target.value)} placeholder="Search contacts..."
                 className={`w-full px-2 py-1.5 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} outline-none mb-2`} />
-              <div className="flex gap-1 mb-3">
-                {(['all', 'personal', 'work', 'company'] as const).map(g => (
+              <div className="flex gap-1 mb-2 flex-wrap">
+                {(['all', 'personal', 'work', 'company', 'external'] as const).map(g => (
                   <button key={g} onClick={() => setContactGroup(g)}
                     className={`px-2 py-1 rounded text-[9px] capitalize ${contactGroup === g ? 'bg-blue-600/30 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)] text-[var(--text-secondary,#94a3b8)]'}`}>
                     {g}
                   </button>
                 ))}
               </div>
+              <div className="flex gap-1 mb-3">
+                <button className="px-2 py-1 rounded text-[8px] bg-green-600/20 hover:bg-green-600/30 text-green-400 flex items-center gap-1" aria-label="Import contacts">
+                  Import
+                </button>
+                <button className="px-2 py-1 rounded text-[8px] bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 flex items-center gap-1" aria-label="Export contacts">
+                  Export
+                </button>
+              </div>
               <div className="space-y-1">
                 {filteredContacts.map(c => (
                   <div key={c.id} className={`p-2 rounded-lg bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} hover:border-blue-500/30 transition-colors`}>
                     <div className="flex items-center gap-2">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 ${c.group === 'work' ? 'bg-blue-600' : c.group === 'company' ? 'bg-green-600' : 'bg-purple-600'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 ${c.group === 'work' ? 'bg-blue-600' : c.group === 'company' ? 'bg-green-600' : c.group === 'external' ? 'bg-orange-600' : 'bg-purple-600'}`}>
                         {c.name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1510,30 +1773,69 @@ export function EmailClient() {
       {/* ===== COMPOSE MODAL ===== */}
       {showCompose && (
         <div className="fixed inset-0 z-50 flex items-end justify-end p-4 pointer-events-none">
-          <div className={`w-[560px] max-h-[90vh] bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} rounded-xl shadow-2xl pointer-events-auto flex flex-col`}>
+          <div className={`w-[560px] max-h-[90vh] bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} rounded-xl shadow-2xl pointer-events-auto flex flex-col`} role="dialog" aria-label="Compose email" aria-modal="true">
             <div className="flex items-center px-4 py-2 bg-[var(--bg-tertiary,#0f172a)] rounded-t-xl">
               <span className="text-xs font-semibold">New Message</span>
               <div className="flex-1" />
               <button onClick={() => setShowCompose(false)} className="text-[var(--text-secondary,#94a3b8)] hover:text-white text-sm">X</button>
             </div>
             <div className="flex flex-col gap-0 p-0 overflow-y-auto flex-1">
-              <div className={`flex items-center border-b ${highContrastBorder} px-4 py-2`}>
+              <div className={`relative flex items-center border-b ${highContrastBorder} px-4 py-2`}>
                 <span className="text-[10px] text-[var(--text-secondary,#94a3b8)] w-8">To</span>
-                <input value={composeData.to} onChange={e => setComposeData({ ...composeData, to: e.target.value })}
-                  placeholder="Recipients" className="flex-1 bg-transparent text-xs outline-none" />
+                <input value={composeData.to} onChange={e => handleComposeFieldChange('to', e.target.value)}
+                  onBlur={() => setTimeout(() => { if (contactSuggestField === 'to') { setContactSuggestions([]); setContactSuggestField(null); } }, 200)}
+                  placeholder="Recipients" className="flex-1 bg-transparent text-xs outline-none" aria-label="To recipients" />
                 <button onClick={() => setShowCcBcc(!showCcBcc)} className="text-[9px] text-blue-400 hover:text-blue-300">CC/BCC</button>
+                {contactSuggestField === 'to' && contactSuggestions.length > 0 && (
+                  <div className={`absolute left-8 top-full w-72 bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} rounded-lg shadow-xl z-50 py-1 max-h-40 overflow-y-auto`}>
+                    {contactSuggestions.map(c => (
+                      <button key={c.id} onMouseDown={() => applySuggestion(c, 'to')}
+                        className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[var(--bg-hover,#334155)] flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[8px] text-white font-bold flex-shrink-0">{c.name.charAt(0)}</span>
+                        <span className="truncate">{c.name}</span>
+                        <span className="text-[var(--text-secondary,#94a3b8)] truncate">&lt;{c.email}&gt;</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               {showCcBcc && (
                 <>
-                  <div className={`flex items-center border-b ${highContrastBorder} px-4 py-2`}>
+                  <div className={`relative flex items-center border-b ${highContrastBorder} px-4 py-2`}>
                     <span className="text-[10px] text-[var(--text-secondary,#94a3b8)] w-8">CC</span>
-                    <input value={composeData.cc} onChange={e => setComposeData({ ...composeData, cc: e.target.value })}
-                      placeholder="CC recipients" className="flex-1 bg-transparent text-xs outline-none" />
+                    <input value={composeData.cc} onChange={e => handleComposeFieldChange('cc', e.target.value)}
+                      onBlur={() => setTimeout(() => { if (contactSuggestField === 'cc') { setContactSuggestions([]); setContactSuggestField(null); } }, 200)}
+                      placeholder="CC recipients" className="flex-1 bg-transparent text-xs outline-none" aria-label="CC recipients" />
+                    {contactSuggestField === 'cc' && contactSuggestions.length > 0 && (
+                      <div className={`absolute left-8 top-full w-72 bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} rounded-lg shadow-xl z-50 py-1 max-h-40 overflow-y-auto`}>
+                        {contactSuggestions.map(c => (
+                          <button key={c.id} onMouseDown={() => applySuggestion(c, 'cc')}
+                            className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[var(--bg-hover,#334155)] flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center text-[8px] text-white font-bold flex-shrink-0">{c.name.charAt(0)}</span>
+                            <span className="truncate">{c.name}</span>
+                            <span className="text-[var(--text-secondary,#94a3b8)] truncate">&lt;{c.email}&gt;</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className={`flex items-center border-b ${highContrastBorder} px-4 py-2`}>
+                  <div className={`relative flex items-center border-b ${highContrastBorder} px-4 py-2`}>
                     <span className="text-[10px] text-[var(--text-secondary,#94a3b8)] w-8">BCC</span>
-                    <input value={composeData.bcc} onChange={e => setComposeData({ ...composeData, bcc: e.target.value })}
-                      placeholder="BCC recipients" className="flex-1 bg-transparent text-xs outline-none" />
+                    <input value={composeData.bcc} onChange={e => handleComposeFieldChange('bcc', e.target.value)}
+                      onBlur={() => setTimeout(() => { if (contactSuggestField === 'bcc') { setContactSuggestions([]); setContactSuggestField(null); } }, 200)}
+                      placeholder="BCC recipients" className="flex-1 bg-transparent text-xs outline-none" aria-label="BCC recipients" />
+                    {contactSuggestField === 'bcc' && contactSuggestions.length > 0 && (
+                      <div className={`absolute left-8 top-full w-72 bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} rounded-lg shadow-xl z-50 py-1 max-h-40 overflow-y-auto`}>
+                        {contactSuggestions.map(c => (
+                          <button key={c.id} onMouseDown={() => applySuggestion(c, 'bcc')}
+                            className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[var(--bg-hover,#334155)] flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-[8px] text-white font-bold flex-shrink-0">{c.name.charAt(0)}</span>
+                            <span className="truncate">{c.name}</span>
+                            <span className="text-[var(--text-secondary,#94a3b8)] truncate">&lt;{c.email}&gt;</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -1746,7 +2048,8 @@ export function EmailClient() {
       {contextMenu.visible && contextMenu.emailId && (
         <div ref={contextMenuRef}
           style={{ position: 'fixed', top: contextMenu.y, left: contextMenu.x, zIndex: 100 }}
-          className={`w-48 bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} rounded-lg shadow-xl py-1`}>
+          className={`w-48 bg-[var(--bg-secondary,#111827)] border ${highContrastBorder} rounded-lg shadow-xl py-1`}
+          role="menu" aria-label="Email context menu">
           <button onClick={() => { const em = emails.find(e => e.id === contextMenu.emailId); if (em) replyToEmail(em); setContextMenu({ visible: false, x: 0, y: 0, emailId: null }); }}
             className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-[var(--bg-hover,#334155)]">Reply</button>
           <button onClick={() => { const em = emails.find(e => e.id === contextMenu.emailId); if (em) { setComposeData({ to: '', cc: em.from, bcc: '', subject: `Re: ${em.subject}`, body: '', signature: SIGNATURES[0].content, scheduledAt: '', readReceipt: false, priority: 'normal' }); setShowCompose(true); } setContextMenu({ visible: false, x: 0, y: 0, emailId: null }); }}
@@ -1868,6 +2171,27 @@ export function EmailClient() {
                     {n}
                   </button>
                 ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)] mb-2 uppercase tracking-wider">Keyboard Navigation</p>
+              <div className={`p-2 rounded-lg bg-[var(--bg-tertiary,#0f172a)] border ${highContrastBorder} space-y-1`}>
+                <div className="flex items-center gap-2 text-[9px]">
+                  <span className="px-1.5 py-0.5 rounded bg-[var(--bg-secondary,#111827)] font-mono">↑↓</span>
+                  <span className="text-[var(--text-secondary,#94a3b8)]">Navigate emails</span>
+                </div>
+                <div className="flex items-center gap-2 text-[9px]">
+                  <span className="px-1.5 py-0.5 rounded bg-[var(--bg-secondary,#111827)] font-mono">Enter</span>
+                  <span className="text-[var(--text-secondary,#94a3b8)]">Open selected email</span>
+                </div>
+                <div className="flex items-center gap-2 text-[9px]">
+                  <span className="px-1.5 py-0.5 rounded bg-[var(--bg-secondary,#111827)] font-mono">Del</span>
+                  <span className="text-[var(--text-secondary,#94a3b8)]">Delete selected email</span>
+                </div>
+                <div className="flex items-center gap-2 text-[9px]">
+                  <span className="px-1.5 py-0.5 rounded bg-[var(--bg-secondary,#111827)] font-mono">Tab</span>
+                  <span className="text-[var(--text-secondary,#94a3b8)]">Move between panels</span>
+                </div>
               </div>
             </div>
           </div>
