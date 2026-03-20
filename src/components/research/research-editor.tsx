@@ -23,6 +23,7 @@ import PlagiarismPanel from './plagiarism-panel';
 import SpellingPanel from './spelling-panel';
 import SmartCitationPanel from './smart-citation-panel';
 import ImportPanel from './import-panel';
+import PdfPreview from './pdf-preview';
 import VersionHistory from './version-history';
 import { useVersionHistoryStore } from '@/store/version-history-store';
 
@@ -193,7 +194,7 @@ export default function ResearchEditor() {
     showTemplateGallery, showEquationEditor, showFigureManager,
     showDashboard, setShowDashboard, setShowTemplateGallery,
     activeRightPanel, setActiveRightPanel,
-    citations, equations, figures,
+    citations, equations, figures, pdfPreviewOpen,
   } = useResearchStore();
 
   const activeS = sections.find((s) => s.id === activeSection);
@@ -339,6 +340,9 @@ export default function ResearchEditor() {
             </>
           )}
         </div>
+
+        {/* PDF Preview Pane */}
+        {pdfPreviewOpen && <PdfPreview />}
 
         {/* Right: Panels */}
         <div
