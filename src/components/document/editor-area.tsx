@@ -5,6 +5,39 @@ import { useDocumentStore } from "@/store/document-store";
 import { PAGE_SIZES, MARGIN_PRESETS } from "./constants";
 import { Calendar, Hash, Type, Scissors, ClipboardCopy, ClipboardPaste, Bold, Italic, Link, Languages, BookOpen } from "lucide-react";
 
+// Track Changes helper: wrap inserted text in a tracked span
+function wrapInsertionWithTracking(text: string): string {
+  const id = `tc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  return `<span class="track-insert" data-track-id="${id}" data-track-author="User" data-track-time="${new Date().toISOString()}">${text}</span>`;
+}
+
+// Track Changes helper: wrap deleted content in a tracked span instead of removing
+function wrapDeletionWithTracking(): boolean {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) return false;
+
+  const range = sel.getRangeAt(0);
+  const fragment = range.cloneContents();
+  const wrapper = document.createElement("span");
+  wrapper.className = "track-delete";
+  wrapper.dataset.trackId = `tc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  wrapper.dataset.trackAuthor = "User";
+  wrapper.dataset.trackTime = new Date().toISOString();
+  wrapper.appendChild(fragment);
+
+  range.deleteContents();
+  range.insertNode(wrapper);
+
+  // Move cursor after the deletion mark
+  sel.removeAllRanges();
+  const newRange = document.createRange();
+  newRange.setStartAfter(wrapper);
+  newRange.collapse(true);
+  sel.addRange(newRange);
+
+  return true;
+}
+
 const AUTOSAVE_KEY = "vidyalaya-doc-content";
 const AUTOSAVE_INTERVAL = 15000;
 
@@ -241,6 +274,7 @@ export function EditorArea() {
     showLineNumbers, setParagraphCount,
     pageNumberPosition, pageNumberFormat, differentFirstPage, showHeaderFooter: showHF,
     watermarkPosition, watermarkRotation, watermarkFontSize, columnSpacing,
+    trackChanges, addTrackChange,
   } = useDocumentStore();
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -377,6 +411,59 @@ export function EditorArea() {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY });
   }, []);
+
+  // Track Changes: intercept input events to wrap changes with tracking markup
+  const handleBeforeInput = useCallback((e: React.FormEvent<HTMLDivElement>) => {
+    if (!trackChanges) return;
+
+    const inputEvent = e.nativeEvent as InputEvent;
+    const inputType = inputEvent.inputType;
+
+    // Handle text insertion
+    if (inputType === "insertText" && inputEvent.data) {
+      e.preventDefault();
+      const wrappedHtml = wrapInsertionWithTracking(inputEvent.data);
+      document.execCommand("insertHTML", false, wrappedHtml);
+
+      addTrackChange({
+        id: `tc-${Date.now()}`,
+        type: "insert",
+        content: inputEvent.data,
+        author: "User",
+        timestamp: new Date().toISOString(),
+        accepted: null,
+      });
+      return;
+    }
+
+    // Handle paragraph insertion (Enter key)
+    if (inputType === "insertParagraph") {
+      // Let default behavior happen for line breaks
+      return;
+    }
+
+    // Handle deletion (Backspace/Delete)
+    if (inputType === "deleteContentBackward" || inputType === "deleteContentForward") {
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed) {
+        e.preventDefault();
+        const deletedText = sel.toString();
+        wrapDeletionWithTracking();
+
+        addTrackChange({
+          id: `tc-${Date.now()}`,
+          type: "delete",
+          content: deletedText,
+          author: "User",
+          timestamp: new Date().toISOString(),
+          accepted: null,
+        });
+      }
+      // For single character deletion, let it happen naturally
+      // (wrapping single chars would be too intrusive)
+      return;
+    }
+  }, [trackChanges, addTrackChange]);
 
   // View mode adaptations
   const isWebLayout = viewMode === "web";
@@ -520,6 +607,7 @@ export function EditorArea() {
             contentEditable={!isReadMode}
             suppressContentEditableWarning
             onInput={handleInput}
+            onBeforeInput={handleBeforeInput}
             onContextMenu={handleContextMenu}
             className="outline-none min-h-[800px] relative flex-1"
             style={{
