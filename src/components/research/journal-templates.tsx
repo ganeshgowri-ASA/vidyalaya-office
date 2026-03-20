@@ -10,7 +10,7 @@ const categories = [
   'IEEE', 'Elsevier', 'Springer Nature', 'Nature', 'PLOS', 'MDPI', 'ACS', 'RSC', 'Wiley', 'Taylor & Francis',
   // New publishers
   'Hindawi', 'SPIE', 'IntechOpen', 'Frontiers', 'IOP', 'SAGE', 'Cambridge', 'Oxford', 'ACM', 'AAAS', 'Cell Press',
-  'De Gruyter', 'Emerald', 'Copernicus', 'ASME', 'ASCE',
+  'De Gruyter', 'Emerald', 'Copernicus', 'ASME', 'ASCE', 'AIP',
   // Categories
   'Conference', 'Review', 'Academic', 'Technical',
   'Custom',
