@@ -24,6 +24,7 @@ import PlagiarismPanel from './plagiarism-panel';
 import SpellingPanel from './spelling-panel';
 import SmartCitationPanel from './smart-citation-panel';
 import ImportPanel from './import-panel';
+import WysiwygCanvas from './wysiwyg-canvas';
 import SubmissionChecker from './submission-checker';
 import AuthorManager from './author-manager';
 import CoverLetter from './cover-letter';
@@ -195,7 +196,7 @@ function ResearchDashboard() {
 
 export default function ResearchEditor() {
   const {
-    sections, activeSection, updateSectionContent, previewMode,
+    sections, activeSection, previewMode,
     showTemplateGallery, showEquationEditor, showFigureManager,
     showDashboard, setShowDashboard, setShowTemplateGallery,
     activeRightPanel, setActiveRightPanel,
@@ -315,56 +316,7 @@ export default function ResearchEditor() {
                 {previewMode ? (
                   <ArticlePreview content={activeS.content} title={activeS.title} />
                 ) : (
-                  <div className="h-full flex">
-                    {/* Text editor */}
-                    <div className="flex-1 overflow-y-auto">
-                      <div className="max-w-3xl mx-auto px-8 py-6">
-                        <textarea
-                          value={activeS.content}
-                          onChange={(e) => updateSectionContent(activeS.id, e.target.value)}
-                          className="w-full min-h-[60vh] text-sm leading-relaxed outline-none resize-none bg-transparent"
-                          style={{ color: 'var(--foreground)' }}
-                          placeholder={`Write your ${activeS.title.toLowerCase()} here...\n\nTips:\n• Use **text** for bold, *text* for italics\n• Insert citations with [1] or use the Cite button\n• Insert equations with $$...$$\n• Cross-reference figures as (Fig. 1) and tables as (Table 1)`}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Quick reference panel (inline figures/equations preview) */}
-                    {(figures.length > 0 || equations.length > 0) && (
-                      <div
-                        className="w-48 border-l overflow-y-auto p-2 shrink-0 space-y-2"
-                        style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
-                      >
-                        {figures.length > 0 && (
-                          <div>
-                            <p className="text-[10px] uppercase tracking-wider opacity-40 mb-1 px-1">Figures</p>
-                            {figures.map((fig) => (
-                              <div key={fig.id} className="text-[10px] px-2 py-1 rounded cursor-pointer hover:opacity-80"
-                                style={{ backgroundColor: 'var(--background)' }}>
-                                <p className="font-medium opacity-60">Fig. {fig.number}</p>
-                                <p className="opacity-40 leading-tight line-clamp-1">{fig.caption}</p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {equations.length > 0 && (
-                          <div>
-                            <p className="text-[10px] uppercase tracking-wider opacity-40 mb-1 px-1">Equations</p>
-                            {equations.map((eq) => (
-                              <div key={eq.id} className="text-[10px] px-2 py-1 rounded cursor-pointer hover:opacity-80 mb-1"
-                                style={{ backgroundColor: 'var(--background)' }}>
-                                <p className="font-medium opacity-60">Eq. ({eq.number}){eq.label ? ` #${eq.label}` : ''}</p>
-                                <div
-                                  className="opacity-70 overflow-hidden text-[9px]"
-                                  dangerouslySetInnerHTML={{ __html: renderKatexSafe(eq.latex, false) }}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <WysiwygCanvas />
                 )}
               </div>
             </>

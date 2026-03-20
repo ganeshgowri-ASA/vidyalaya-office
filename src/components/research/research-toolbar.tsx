@@ -229,6 +229,8 @@ export default function ResearchToolbar() {
             <ToolbarButton icon={MessageSquare} label="Comments" onClick={() => { setShowVersionHistory(true); }} active={showCommentsPanel} />
             <ToolbarButton icon={trackChangesEnabled ? ToggleRight : ToggleLeft} label="Track Changes" onClick={() => setTrackChangesEnabled(!trackChangesEnabled)} active={trackChangesEnabled} />
             <Divider />
+            <ToolbarButton icon={Columns} label={doubleColumnEnabled ? '2-Column' : '1-Column'} onClick={() => setDoubleColumnEnabled(!doubleColumnEnabled)} active={doubleColumnEnabled} />
+            <Divider />
             <div className="flex items-center gap-1 px-2">
               <label className="text-xs opacity-60">Zoom:</label>
               <select
