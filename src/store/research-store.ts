@@ -306,7 +306,7 @@ const journalTemplates: JournalTemplate[] = [
   { id: 'apl', name: 'Applied Physics Letters', category: 'AIP', description: 'AIP Applied Physics Letters concise format', columns: 1, referenceStyle: 'APA 7th', sections: ['Abstract', 'Introduction', 'Methods', 'Results', 'Discussion', 'Conclusion', 'References'], hasAbstract: true, hasKeywords: false, wordLimit: 3500 },
 ];
 
-type RightPanel = 'citations' | 'ai' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import' | 'submission' | 'authors' | 'coverletter' | 'journals';
+type RightPanel = 'citations' | 'ai' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import' | 'submission' | 'authors' | 'coverletter' | 'journals' | 'zotero';
 
 export interface SubmissionCheck {
   id: string;
@@ -429,6 +429,7 @@ interface ResearchState {
   showAuthorManager: boolean;
   showCoverLetter: boolean;
   showJournalRec: boolean;
+  showProjectWizard: boolean;
 
   // Production polish actions
   addAuthor: (author: Omit<Author, 'id'>) => void;
@@ -444,6 +445,7 @@ interface ResearchState {
   setShowCoverLetter: (val: boolean) => void;
   setShowJournalRec: (val: boolean) => void;
   setPdfPreviewOpen: (val: boolean) => void;
+  setShowProjectWizard: (val: boolean) => void;
 }
 
 export const useResearchStore = create<ResearchState>()((set, get) => ({
@@ -751,6 +753,7 @@ export const useResearchStore = create<ResearchState>()((set, get) => ({
   showAuthorManager: false,
   showCoverLetter: false,
   showJournalRec: false,
+  showProjectWizard: false,
 
   addAuthor: (author) => set((state) => ({
     authors: [...state.authors, { ...author, id: `auth${Date.now()}` }],
@@ -931,4 +934,5 @@ ${correspondingAuthor?.name || state.authors[0]?.name || 'The Authors'}`;
   setShowAuthorManager: (val) => set({ showAuthorManager: val }),
   setShowCoverLetter: (val) => set({ showCoverLetter: val }),
   setShowJournalRec: (val) => set({ showJournalRec: val }),
+  setShowProjectWizard: (val) => set({ showProjectWizard: val }),
 }));
