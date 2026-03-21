@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { generateId } from "@/lib/utils";
 
 export type Priority = "Critical" | "High" | "Medium" | "Low";
-export type TaskStatus = "Backlog" | "To Do" | "In Progress" | "Review" | "Done";
+export type TaskStatus = "Backlog" | "To Do" | "In Progress" | "Review" | "Done" | "Blocked";
 export type TaskLabel = "Bug" | "Feature" | "Enhancement" | "Documentation" | "Urgent";
 export type ViewMode = "kanban" | "gantt" | "list";
 
@@ -20,12 +20,15 @@ export type Task = {
   assigneeColor: string;
   deadline: string;
   labels: TaskLabel[];
+  tags: string[];
   subtasks: SubTask[];
   comments: TaskComment[];
   blockedBy?: string[];
   createdAt: string;
   startDate?: string;
   order: number;
+  category?: string;
+  reminderAt?: string;
 };
 
 interface TasksState {
@@ -58,6 +61,9 @@ interface TasksState {
   clearSelection: () => void;
   bulkUpdateStatus: (status: TaskStatus) => void;
   bulkDelete: () => void;
+  createTaskFromNote: (title: string, description: string, priority: Priority) => void;
+  filterTag: string;
+  setFilterTag: (t: string) => void;
 }
 
 const daysFromNow = (n: number) => new Date(Date.now() + n * 86400000).toISOString().split("T")[0];
@@ -66,7 +72,7 @@ const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString()
 const SAMPLE_TASKS: Task[] = [
   {
     id: "t1", title: "Redesign authentication flow", description: "Update login/signup screens with new design system components including social auth and SSO support.", status: "In Progress", priority: "High",
-    assignee: "Alice Chen", assigneeColor: "#8b5cf6", deadline: daysFromNow(5), labels: ["Feature", "Enhancement"],
+    assignee: "Alice Chen", assigneeColor: "#8b5cf6", deadline: daysFromNow(5), labels: ["Feature", "Enhancement"], tags: ["auth", "design"],
     subtasks: [
       { id: "s1", text: "Create wireframes", done: true },
       { id: "s2", text: "Implement OAuth providers", done: true },
@@ -84,7 +90,7 @@ const SAMPLE_TASKS: Task[] = [
       { id: "s6", text: "Implement lazy loading", done: true },
       { id: "s7", text: "Add Redis caching layer", done: false },
     ],
-    comments: [], blockedBy: [], createdAt: daysAgo(5), startDate: daysAgo(2), order: 2,
+    comments: [], blockedBy: [], createdAt: daysAgo(5), startDate: daysAgo(2), tags: ["performance", "backend"], order: 2,
   },
   {
     id: "t3", title: "PDF export feature", description: "Allow users to export any document to PDF with custom page sizes and margins.", status: "Review", priority: "High",
@@ -97,7 +103,7 @@ const SAMPLE_TASKS: Task[] = [
     comments: [
       { id: "c2", author: "Alice Chen", text: "LGTM! Just a few minor style fixes needed.", createdAt: daysAgo(0) },
     ],
-    createdAt: daysAgo(10), startDate: daysAgo(8), order: 1,
+    createdAt: daysAgo(10), startDate: daysAgo(8), tags: ["pdf", "export"], order: 1,
   },
   {
     id: "t4", title: "Fix spreadsheet formula parser bug", description: "Nested IF formulas with more than 3 levels cause stack overflow. Needs refactoring of recursive parser.", status: "To Do", priority: "Critical",
@@ -107,7 +113,7 @@ const SAMPLE_TASKS: Task[] = [
       { id: "s12", text: "Refactor parser to iterative", done: false },
       { id: "s13", text: "Add regression tests", done: false },
     ],
-    comments: [], blockedBy: [], createdAt: daysAgo(2), order: 1,
+    comments: [], blockedBy: [], createdAt: daysAgo(2), tags: ["bug", "spreadsheet"], order: 1,
   },
   {
     id: "t5", title: "Write API documentation", description: "Document all REST endpoints with request/response examples, error codes, and authentication details.", status: "To Do", priority: "Medium",
@@ -117,17 +123,17 @@ const SAMPLE_TASKS: Task[] = [
       { id: "s15", text: "Document file management APIs", done: false },
       { id: "s16", text: "Add OpenAPI spec", done: false },
     ],
-    comments: [], createdAt: daysAgo(4), order: 2,
+    comments: [], createdAt: daysAgo(4), tags: ["docs", "api"], order: 2,
   },
   {
     id: "t6", title: "Mobile app architecture spike", description: "Research and document the recommended architecture for the React Native mobile app.", status: "Backlog", priority: "High",
     assignee: "Alice Chen", assigneeColor: "#8b5cf6", deadline: daysFromNow(20), labels: ["Feature"],
-    subtasks: [], comments: [], createdAt: daysAgo(1), order: 1,
+    subtasks: [], comments: [], createdAt: daysAgo(1), tags: ["mobile", "architecture"], order: 1,
   },
   {
     id: "t7", title: "User onboarding flow", description: "Create guided onboarding for new users: welcome screen, feature tour, initial workspace setup.", status: "Backlog", priority: "Medium",
     assignee: "David Lee", assigneeColor: "#f59e0b", deadline: daysFromNow(30), labels: ["Feature", "Enhancement"],
-    subtasks: [], comments: [], createdAt: daysAgo(0), order: 2,
+    subtasks: [], comments: [], createdAt: daysAgo(0), tags: ["ux", "onboarding"], order: 2,
   },
   {
     id: "t8", title: "Deploy hotfix to staging", description: "Deploy the authentication hotfix and PDF export to staging environment for QA validation.", status: "Done", priority: "High",
@@ -138,7 +144,7 @@ const SAMPLE_TASKS: Task[] = [
       { id: "s19", text: "Notify QA team", done: true },
     ],
     comments: [{ id: "c3", author: "Alice Chen", text: "All checks passed. Great work!", createdAt: daysAgo(1) }],
-    createdAt: daysAgo(3), startDate: daysAgo(3), order: 1,
+    createdAt: daysAgo(3), startDate: daysAgo(3), tags: ["devops", "deploy"], order: 1,
   },
   {
     id: "t9", title: "Setup monitoring and alerts", description: "Configure Datadog APM and set up PagerDuty alerts for error rate and latency thresholds.", status: "Done", priority: "Medium",
@@ -148,12 +154,33 @@ const SAMPLE_TASKS: Task[] = [
       { id: "s21", text: "Configure dashboards", done: true },
       { id: "s22", text: "Set up PagerDuty integration", done: true },
     ],
-    comments: [], createdAt: daysAgo(14), startDate: daysAgo(12), order: 2,
+    comments: [], createdAt: daysAgo(14), startDate: daysAgo(12), tags: ["devops", "monitoring"], order: 2,
   },
   {
     id: "t10", title: "Add dark mode support to mobile", description: "Implement system-aware dark mode throughout the mobile app.", status: "Backlog", priority: "Low",
     assignee: "Carol White", assigneeColor: "#10b981", deadline: daysFromNow(45), labels: ["Enhancement"],
-    subtasks: [], comments: [], createdAt: daysAgo(0), order: 3,
+    subtasks: [], comments: [], createdAt: daysAgo(0), tags: ["mobile", "ui"], order: 3,
+  },
+  {
+    id: "t11", title: "Third-party API integration blocked by legal review", description: "Integration with payment provider requires legal sign-off on data processing agreement. Cannot proceed until resolved.", status: "Blocked", priority: "High",
+    assignee: "Bob Kumar", assigneeColor: "#06b6d4", deadline: daysFromNow(14), labels: ["Feature"],
+    subtasks: [
+      { id: "s23", text: "Submit DPA to legal", done: true },
+      { id: "s24", text: "Await legal approval", done: false },
+      { id: "s25", text: "Implement integration", done: false },
+    ],
+    comments: [{ id: "c4", author: "Bob Kumar", text: "Waiting on legal team. Estimated 1-2 weeks.", createdAt: daysAgo(2) }],
+    blockedBy: ["Legal Review"], createdAt: daysAgo(6), tags: ["integration", "payment"], order: 1,
+  },
+  {
+    id: "t12", title: "Database migration blocked by ops team", description: "Schema migration to Postgres 15 is blocked pending ops team availability for maintenance window approval.", status: "Blocked", priority: "Critical",
+    assignee: "Alice Chen", assigneeColor: "#8b5cf6", deadline: daysFromNow(5), labels: ["Enhancement", "Urgent"],
+    subtasks: [
+      { id: "s26", text: "Prepare migration scripts", done: true },
+      { id: "s27", text: "Test on staging DB", done: true },
+      { id: "s28", text: "Schedule maintenance window", done: false },
+    ],
+    comments: [], blockedBy: ["Ops Team Approval"], createdAt: daysAgo(4), tags: ["database", "devops"], order: 2,
   },
 ];
 
@@ -165,6 +192,7 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   filterPriority: "All",
   filterAssignee: "",
   filterLabel: "All",
+  filterTag: "",
   myTasksOnly: false,
   selectedIds: [],
 
@@ -175,6 +203,7 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   setFilterAssignee: (a) => set({ filterAssignee: a }),
   setFilterLabel: (l) => set({ filterLabel: l }),
   toggleMyTasks: () => set((s) => ({ myTasksOnly: !s.myTasksOnly })),
+  setFilterTag: (t) => set({ filterTag: t }),
 
   createTask: (status = "To Do") => {
     const id = generateId();
@@ -182,10 +211,23 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     const task: Task = {
       id, title: "New Task", description: "", status, priority: "Medium",
       assignee: "Alice Chen", assigneeColor: "#8b5cf6",
-      deadline: daysFromNow(7), labels: [], subtasks: [], comments: [],
+      deadline: daysFromNow(7), labels: [], tags: [], subtasks: [], comments: [],
       createdAt: new Date().toISOString(), order: cols.length + 1,
     };
     set((s) => ({ tasks: [...s.tasks, task], selectedTaskId: id }));
+  },
+
+  createTaskFromNote: (title, description, priority) => {
+    const id = generateId();
+    const cols = get().tasks.filter((t) => t.status === "To Do");
+    const task: Task = {
+      id, title, description, status: "To Do", priority,
+      assignee: "Alice Chen", assigneeColor: "#8b5cf6",
+      deadline: daysFromNow(7), labels: [], tags: ["from-note"], subtasks: [], comments: [],
+      createdAt: new Date().toISOString(), order: cols.length + 1,
+    };
+    set((s) => ({ tasks: [...s.tasks, task], selectedTaskId: id }));
+    return id;
   },
 
   updateTask: (id, changes) =>

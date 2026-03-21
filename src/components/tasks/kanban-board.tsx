@@ -12,6 +12,7 @@ const COLUMNS: Array<{ status: TaskStatus; color: string }> = [
   { status: "In Progress", color: "#f59e0b" },
   { status: "Review", color: "#8b5cf6" },
   { status: "Done", color: "#10b981" },
+  { status: "Blocked", color: "#ef4444" },
 ];
 
 export function KanbanBoard() {
