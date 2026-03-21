@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { GuestCollabPrompt } from "@/components/collaboration/guest-collab-prompt";
 import { RealtimeCursors } from "@/components/collaboration/realtime-cursors";
+import { GlobalSearchReplace } from "@/components/shared/global-search-replace";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,6 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+      <GlobalSearchReplace />
     </div>
   );
 }

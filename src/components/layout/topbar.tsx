@@ -17,8 +17,10 @@ import {
   HelpCircle,
   Keyboard,
   MessageSquare,
+  Replace,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
+import { useSearchReplaceStore } from "@/store/search-replace-store";
 import { useThemeStore, themes } from "@/store/theme-store";
 import { useAIChatStore } from "@/store/ai-chat-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -57,6 +59,24 @@ const breadcrumbMap: Record<string, string> = {
   "/doc-control": "Doc Control",
   "/cloud-storage": "Cloud Storage",
 };
+
+function GlobalSearchReplaceButton() {
+  const toggle = useSearchReplaceStore((s) => s.toggle);
+  const isOpen = useSearchReplaceStore((s) => s.isOpen);
+  return (
+    <button
+      onClick={toggle}
+      className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors hover:opacity-80"
+      title="Global Search & Replace (Ctrl+Shift+H)"
+      style={{
+        backgroundColor: isOpen ? "var(--primary)" : undefined,
+        color: isOpen ? "var(--primary-foreground)" : undefined,
+      }}
+    >
+      <Replace size={16} />
+    </button>
+  );
+}
 
 export function Topbar() {
   const pathname = usePathname();
@@ -194,6 +214,9 @@ export function Topbar() {
               </div>
             )}
           </div>
+
+          {/* Global Search & Replace */}
+          <GlobalSearchReplaceButton />
 
           {/* Recent Files dropdown */}
           <div ref={recentRef} className="relative hidden sm:block">
