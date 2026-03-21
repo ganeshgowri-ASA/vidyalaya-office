@@ -28,6 +28,7 @@ import {
   StickyNote,
   CheckSquare,
   Bot,
+  Grid2X2,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,7 @@ const productivityNav = [
   { label: "Notes", href: "/notes", icon: StickyNote },
   { label: "Sticky Notes", href: "/sticky-notes", icon: StickyNote },
   { label: "Tasks", href: "/tasks", icon: CheckSquare },
+  { label: "Priority Matrix", href: "/priority-matrix", icon: Grid2X2 },
 ];
 
 const manageNav = [
