@@ -26,8 +26,6 @@ import { formatDate } from "@/lib/utils";
 import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useCollaborationStore } from "@/store/collaboration-store";
-import { formatDate } from "@/lib/utils";
-import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
 import { CloudSyncStatus } from "@/components/shared/cloud-sync-status";
 import type { ThemeName } from "@/types";
 

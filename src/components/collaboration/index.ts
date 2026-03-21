@@ -6,3 +6,5 @@ export { VersionHistoryPanel } from "./version-history-panel";
 export { NotificationBadge } from "./notification-badge";
 export { InlineCommentLayer } from "./inline-comment-marker";
 export { ReviewWorkflowPanel, ReviewStatusBadge } from "./review-workflow-panel";
+export { SharedDocumentsPage } from "./shared-documents-page";
+export { PermissionManagementPanel } from "./permission-management-panel";
