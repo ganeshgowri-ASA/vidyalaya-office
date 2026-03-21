@@ -30,6 +30,7 @@ import {
   Bot,
   Grid2X2,
   Cloud,
+  Share2,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ import { cn } from "@/lib/utils";
 const mainNav = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "File Manager", href: "/file-manager", icon: FolderOpen },
+  { label: "Shared with Me", href: "/shared", icon: Share2 },
   { label: "Search", href: "/search", icon: Search },
 ];
 
