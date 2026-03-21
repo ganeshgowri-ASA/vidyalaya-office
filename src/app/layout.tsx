@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import "@/styles/globals.css";
 import "katex/dist/katex.min.css";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Topbar } from "@/components/layout/topbar";
 import { KeyboardShortcutsModal } from "@/components/layout/keyboard-shortcuts-modal";
 import { AIChatWrapper } from "@/components/ai-chat/ai-chat-wrapper";
 import { AIProviders } from "@/providers/ai-providers";
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { AppShell } from "@/components/layout/app-shell";
 import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import { PWAInstallPrompt } from "@/components/pwa/pwa-install-prompt";
 import { OfflineIndicator } from "@/components/pwa/offline-indicator";
@@ -37,6 +37,14 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <ThemeProvider>
+          <AuthProvider>
+            <AIProviders>
+              <AppShell>{children}</AppShell>
+              <KeyboardShortcutsModal />
+              <AIChatWrapper />
+              <OnboardingTour />
+            </AIProviders>
+          </AuthProvider>
           <AIProviders>
             <div className="flex h-screen overflow-hidden">
               <Sidebar />
