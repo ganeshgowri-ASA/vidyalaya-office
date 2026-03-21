@@ -128,6 +128,23 @@ export interface Sheet {
   dataValidations?: Record<string, DataValidationRule>;
 }
 
+export interface EmbeddedChart {
+  id: string;
+  sheetId: string;
+  chartType: string;
+  title: string;
+  dataRange: { startCol: number; startRow: number; endCol: number; endRow: number } | null;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  showLegend: boolean;
+  showDataLabels: boolean;
+  showGridlines: boolean;
+  colors: string[];
+  axisLabels: { x: string; y: string };
+}
+
 export interface SpreadsheetState {
   sheets: Sheet[];
   activeSheetId: string;
@@ -154,6 +171,8 @@ export interface SpreadsheetState {
   protectedSheet: boolean;
   printArea: string | null;
   validationErrors: Record<string, ValidationError>;
+  embeddedCharts: EmbeddedChart[];
+  selectedChartId: string | null;
 
   // Actions
   setActiveCell: (col: number, row: number) => void;
@@ -251,6 +270,13 @@ export interface SpreadsheetState {
 
   // Import
   importCSV: (csvContent: string) => void;
+
+  // Embedded charts
+  addEmbeddedChart: (chart: Omit<EmbeddedChart, 'id'>) => void;
+  updateEmbeddedChart: (id: string, updates: Partial<EmbeddedChart>) => void;
+  removeEmbeddedChart: (id: string) => void;
+  setSelectedChart: (id: string | null) => void;
+  getChartsForActiveSheet: () => EmbeddedChart[];
 }
 
 function makeSheet(id: string, name: string): Sheet {
@@ -367,6 +393,8 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
     protectedSheet: false,
     printArea: null,
     validationErrors: {},
+    embeddedCharts: [],
+    selectedChartId: null,
 
     getActiveSheet: () => {
       const state = get();
@@ -1058,6 +1086,30 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
 
     getValidationErrors: () => {
       return get().validationErrors;
+    },
+
+    // Embedded charts
+    addEmbeddedChart: (chart) => {
+      const id = `chart-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      set({ embeddedCharts: [...get().embeddedCharts, { ...chart, id }], selectedChartId: id });
+    },
+    updateEmbeddedChart: (id, updates) => {
+      set({
+        embeddedCharts: get().embeddedCharts.map((c) =>
+          c.id === id ? { ...c, ...updates } : c
+        ),
+      });
+    },
+    removeEmbeddedChart: (id) => {
+      set({
+        embeddedCharts: get().embeddedCharts.filter((c) => c.id !== id),
+        selectedChartId: get().selectedChartId === id ? null : get().selectedChartId,
+      });
+    },
+    setSelectedChart: (id) => set({ selectedChartId: id }),
+    getChartsForActiveSheet: () => {
+      const state = get();
+      return state.embeddedCharts.filter((c) => c.sheetId === state.activeSheetId);
     },
 
     // Import CSV

@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import { useSpreadsheetStore } from "@/store/spreadsheet-store";
 import { colToLetter } from "./formula-engine";
-import { X } from "lucide-react";
+import { X, Download, ImagePlus, Table2 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -87,6 +87,9 @@ export function ChartModal() {
   const selectionEnd = useSpreadsheetStore((s) => s.selectionEnd);
   const getCellDisplay = useSpreadsheetStore((s) => s.getCellDisplay);
 
+  const addEmbeddedChart = useSpreadsheetStore((s) => s.addEmbeddedChart);
+  const activeSheetId = useSpreadsheetStore((s) => s.activeSheetId);
+
   const [chartTitle, setChartTitle] = useState("Chart");
   const [showLegend, setShowLegend] = useState(true);
   const [showDataLabels, setShowDataLabels] = useState(false);
@@ -95,28 +98,91 @@ export function ChartModal() {
   const [basicChartType, setBasicChartType] = useState<string>(chartType || 'bar');
   const [advancedConfig, setAdvancedConfig] = useState<ChartConfig | null>(null);
   const [showCustomPanel, setShowCustomPanel] = useState(false);
+  const [rangeInput, setRangeInput] = useState("");
+  const [showRangeSelector, setShowRangeSelector] = useState(false);
+  const [axisLabelX, setAxisLabelX] = useState("");
+  const [axisLabelY, setAxisLabelY] = useState("");
+  const chartAreaRef = useRef<HTMLDivElement>(null);
+
+  // Parse range input like "A1:D6" to col/row indices
+  const parseRangeInput = useCallback((input: string) => {
+    const match = input.trim().toUpperCase().match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+    if (!match) return null;
+    const startCol = match[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+    const startRow = parseInt(match[2]) - 1;
+    const endCol = match[3].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+    const endRow = parseInt(match[4]) - 1;
+    return { minC: startCol, maxC: endCol, minR: startRow, maxR: endRow };
+  }, []);
+
+  // Export chart as PNG
+  const exportChartPng = useCallback(() => {
+    const el = chartAreaRef.current;
+    if (!el) return;
+    const svg = el.querySelector("svg");
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const rect = svg.getBoundingClientRect();
+    canvas.width = rect.width * 2;
+    canvas.height = rect.height * 2;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(2, 2);
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = "#1e1e2e";
+      ctx.fillRect(0, 0, rect.width, rect.height);
+      ctx.drawImage(img, 0, 0, rect.width, rect.height);
+      const a = document.createElement("a");
+      a.download = `${chartTitle || "chart"}.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  }, [chartTitle]);
+
+  // Export chart as SVG
+  const exportChartSvg = useCallback(() => {
+    const el = chartAreaRef.current;
+    if (!el) return;
+    const svg = el.querySelector("svg");
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([svgData], { type: "image/svg+xml" });
+    const a = document.createElement("a");
+    a.download = `${chartTitle || "chart"}.svg`;
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, [chartTitle]);
 
 
-  // Auto-detect data range: use explicit multi-cell selection, else scan from row 0
+
+  // Auto-detect data range: use manual range input, explicit selection, or scan from row 0
   const detectedRange = useMemo(() => {
+    // 1. Manual range input
+    if (rangeInput.trim()) {
+      const parsed = parseRangeInput(rangeInput);
+      if (parsed) return parsed;
+    }
+    // 2. Explicit multi-cell selection
     if (selectionStart && selectionEnd) {
       const minC = Math.min(selectionStart.col, selectionEnd.col);
       const maxC = Math.max(selectionStart.col, selectionEnd.col);
       const minR = Math.min(selectionStart.row, selectionEnd.row);
       const maxR = Math.max(selectionStart.row, selectionEnd.row);
-      // Use explicit selection only if it spans multiple cells
       if (minC !== maxC || minR !== maxR) {
         return { minC, maxC, minR, maxR };
       }
     }
-    // Auto-detect: scan row 0 for header columns
+    // 3. Auto-detect: scan row 0 for header columns
     let maxC = -1;
     for (let c = 0; c < 26; c++) {
       if (getCellDisplay(c, 0)) maxC = c;
       else break;
     }
     if (maxC < 0) return null;
-    // Find the last row with data
     let maxR = 0;
     for (let r = 1; r < 100; r++) {
       let hasData = false;
@@ -127,7 +193,33 @@ export function ChartModal() {
       maxR = r;
     }
     return maxR > 0 ? { minC: 0, maxC, minR: 0, maxR } : null;
-  }, [selectionStart, selectionEnd, getCellDisplay]);
+  }, [selectionStart, selectionEnd, getCellDisplay, rangeInput, parseRangeInput]);
+
+  // Insert chart as embedded in spreadsheet
+  const insertAsEmbeddedChart = useCallback(() => {
+    const range = detectedRange ? {
+      startCol: detectedRange.minC,
+      startRow: detectedRange.minR,
+      endCol: detectedRange.maxC,
+      endRow: detectedRange.maxR,
+    } : null;
+    addEmbeddedChart({
+      sheetId: activeSheetId,
+      chartType: basicChartType,
+      title: chartTitle,
+      dataRange: range,
+      x: 100,
+      y: 50,
+      width: 500,
+      height: 350,
+      showLegend,
+      showDataLabels,
+      showGridlines: true,
+      colors: CHART_COLORS,
+      axisLabels: { x: axisLabelX, y: axisLabelY },
+    });
+    closeChartModal();
+  }, [addEmbeddedChart, activeSheetId, basicChartType, chartTitle, detectedRange, showLegend, showDataLabels, axisLabelX, axisLabelY, closeChartModal]);
 
   const data = useMemo(() => {
     if (!detectedRange) return [];
@@ -734,6 +826,21 @@ export function ChartModal() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={exportChartPng}
+              className="text-[10px] px-2 py-0.5 border rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1"
+              style={{ borderColor: "var(--border)" }} title="Export as PNG">
+              <Download size={10} /> PNG
+            </button>
+            <button onClick={exportChartSvg}
+              className="text-[10px] px-2 py-0.5 border rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1"
+              style={{ borderColor: "var(--border)" }} title="Export as SVG">
+              <Download size={10} /> SVG
+            </button>
+            <button onClick={insertAsEmbeddedChart}
+              className="text-[10px] px-2 py-0.5 border rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1"
+              title="Insert chart into spreadsheet">
+              <ImagePlus size={10} /> Insert Chart
+            </button>
             {chartMode === 'advanced' && (
               <button onClick={() => setShowCustomPanel(!showCustomPanel)}
                 className="text-[10px] px-2 py-0.5 border rounded hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -800,15 +907,38 @@ export function ChartModal() {
 
         {/* Chart settings for basic mode */}
         {chartMode === 'basic' && (
-          <div className="flex items-center gap-3 px-4 py-2 border-b text-xs" style={{ borderColor: "var(--border)" }}>
+          <div className="flex flex-wrap items-center gap-3 px-4 py-2 border-b text-xs" style={{ borderColor: "var(--border)" }}>
             <label className="flex items-center gap-1">
               Title:
               <input
-                className="border rounded px-1 py-0.5 text-xs w-32"
+                className="border rounded px-1 py-0.5 text-xs w-28"
                 style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
                 value={chartTitle}
                 onChange={(e) => setChartTitle(e.target.value)}
               />
+            </label>
+            <label className="flex items-center gap-1">
+              <Table2 size={12} style={{ color: "var(--muted-foreground)" }} />
+              Range:
+              <input
+                className="border rounded px-1 py-0.5 text-xs w-20 font-mono"
+                style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                value={rangeInput}
+                onChange={(e) => setRangeInput(e.target.value)}
+                placeholder={detectedRange ? `${colToLetter(detectedRange.minC)}${detectedRange.minR + 1}:${colToLetter(detectedRange.maxC)}${detectedRange.maxR + 1}` : "A1:D6"}
+              />
+            </label>
+            <label className="flex items-center gap-1">
+              X:
+              <input className="border rounded px-1 py-0.5 text-xs w-16"
+                style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                value={axisLabelX} onChange={(e) => setAxisLabelX(e.target.value)} placeholder="X Axis" />
+            </label>
+            <label className="flex items-center gap-1">
+              Y:
+              <input className="border rounded px-1 py-0.5 text-xs w-16"
+                style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                value={axisLabelY} onChange={(e) => setAxisLabelY(e.target.value)} placeholder="Y Axis" />
             </label>
             <label className="flex items-center gap-1">
               <input type="checkbox" checked={showLegend} onChange={() => setShowLegend(!showLegend)} className="w-3 h-3" />
@@ -816,7 +946,7 @@ export function ChartModal() {
             </label>
             <label className="flex items-center gap-1">
               <input type="checkbox" checked={showDataLabels} onChange={() => setShowDataLabels(!showDataLabels)} className="w-3 h-3" />
-              Data Labels
+              Labels
             </label>
           </div>
         )}
@@ -824,7 +954,7 @@ export function ChartModal() {
         {/* Chart content */}
         <div className="flex flex-1 overflow-hidden">
           {/* Chart area */}
-          <div className="flex-1 p-4 overflow-auto">
+          <div ref={chartAreaRef} className="flex-1 p-4 overflow-auto">
             {chartMode === 'basic' ? (
               <>
                 {chartTitle && (

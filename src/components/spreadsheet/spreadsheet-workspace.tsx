@@ -29,6 +29,7 @@ import { MacrosRecorderModal } from "./macros-recorder-modal";
 import { SheetProtectionDialog } from "./sheet-protection-dialog";
 import { VlookupHelperModal } from "./vlookup-helper-modal";
 import { SplitView } from "./split-view";
+import { EmbeddedChartComponent } from "./embedded-chart";
 import { ImportDialog } from "@/components/shared/import-dialog";
 import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
 import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
@@ -43,6 +44,8 @@ export default function SpreadsheetWorkspace() {
   const activeCell = useSpreadsheetStore((s) => s.activeCell);
   const setDataValidation = useSpreadsheetStore((s) => s.setDataValidation);
   const importCSV = useSpreadsheetStore((s) => s.importCSV);
+  const getChartsForActiveSheet = useSpreadsheetStore((s) => s.getChartsForActiveSheet);
+  const setSelectedChart = useSpreadsheetStore((s) => s.setSelectedChart);
 
   // Modal states
   const [showPivot, setShowPivot] = useState(false);
@@ -295,8 +298,12 @@ export default function SpreadsheetWorkspace() {
         {splitView ? (
           <SplitView direction={splitView} onClose={() => setSplitView(null)} />
         ) : (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden relative" onClick={() => setSelectedChart(null)}>
             <SpreadsheetGrid />
+            {/* Embedded Charts Overlay */}
+            {getChartsForActiveSheet().map((chart) => (
+              <EmbeddedChartComponent key={chart.id} chart={chart} />
+            ))}
           </div>
         )}
 
