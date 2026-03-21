@@ -8,10 +8,20 @@ import { KeyboardShortcutsModal } from "@/components/layout/keyboard-shortcuts-m
 import { AIChatWrapper } from "@/components/ai-chat/ai-chat-wrapper";
 import { AIProviders } from "@/providers/ai-providers";
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
+import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
+import { PWAInstallPrompt } from "@/components/pwa/pwa-install-prompt";
+import { OfflineIndicator } from "@/components/pwa/offline-indicator";
 
 export const metadata: Metadata = {
   title: "Vidyalaya Office - AI-Native Office Suite",
   description: "An AI-powered office suite with Document, Spreadsheet, Presentation, and PDF tools.",
+  manifest: "/manifest.json",
+  themeColor: "#7c73e6",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Vidyalaya Office",
+  },
 };
 
 export default function RootLayout({
@@ -21,12 +31,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+      </head>
       <body className="font-sans antialiased">
         <ThemeProvider>
           <AIProviders>
             <div className="flex h-screen overflow-hidden">
               <Sidebar />
               <div className="flex flex-1 flex-col overflow-hidden">
+                <OfflineIndicator />
                 <Topbar />
                 <main className="flex-1 overflow-y-auto p-6">{children}</main>
               </div>
@@ -34,6 +49,8 @@ export default function RootLayout({
             <KeyboardShortcutsModal />
             <AIChatWrapper />
             <OnboardingTour />
+            <ServiceWorkerRegistrar />
+            <PWAInstallPrompt />
           </AIProviders>
         </ThemeProvider>
       </body>
