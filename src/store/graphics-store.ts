@@ -15,6 +15,7 @@ export interface ShapeBase {
   shadow?: ShadowDef;
   textWrap?: TextWrap;
   groupId?: string;
+  containerId?: string; // ID of parent swimlane lane or container
 }
 
 export interface RectShape extends ShapeBase { type: 'rect'; }
@@ -34,15 +35,43 @@ export interface BracketShape extends ShapeBase { type: 'bracket'; side: 'left' 
 export interface BannerShape extends ShapeBase { type: 'banner'; }
 export interface RibbonShape extends ShapeBase { type: 'ribbon'; }
 
+export interface SwimlaneLane {
+  id: string;
+  label: string;
+  size: number; // height for horizontal, width for vertical
+  color: string;
+}
+
+export interface SwimlanePoolShape extends ShapeBase {
+  type: 'swimlanePool';
+  orientation: 'horizontal' | 'vertical';
+  lanes: SwimlaneLane[];
+  headerSize: number; // width of pool header
+  laneHeaderSize: number; // height/width of lane headers
+}
+
+export interface ContainerShape extends ShapeBase {
+  type: 'container';
+  containerLabel: string;
+  headerHeight: number;
+  containerColor: string;
+  collapsed: boolean;
+}
+
 export type Shape =
   | RectShape | EllipseShape | DiamondShape | TriangleShape | StarShape
   | ArrowShape | TextShape | LineShape | HexagonShape | CloudShape
   | CylinderShape | CalloutShape | BlockArrowShape | BracketShape
-  | BannerShape | RibbonShape;
+  | BannerShape | RibbonShape | SwimlanePoolShape | ContainerShape;
 
 export type ShapeType = Shape['type'];
 
 export type Tool = 'select' | ShapeType | 'pen' | 'hand';
+
+export const LANE_COLORS = [
+  '#1e3a5f', '#2d1b4e', '#1b3a2f', '#3a2e1b', '#3a1b2e',
+  '#1b2e3a', '#2e3a1b', '#3a1b1b', '#1b3a3a', '#2e1b3a',
+];
 
 export interface Guide { id: string; orientation: 'horizontal' | 'vertical'; position: number; }
 export interface SmartGuide { orientation: 'horizontal' | 'vertical'; position: number; }
@@ -78,6 +107,26 @@ export const createShape = (type: ShapeType, x: number, y: number): Shape => {
     case 'bracket': return { ...base, type: 'bracket', side: 'both', fill: 'transparent', borderRadius: undefined };
     case 'banner': return { ...base, type: 'banner', height: 60, borderRadius: undefined };
     case 'ribbon': return { ...base, type: 'ribbon', height: 50, borderRadius: undefined };
+    case 'swimlanePool': {
+      const defaultLanes: SwimlaneLane[] = [
+        { id: genId(), label: 'Lane 1', size: 150, color: '#1e3a5f' },
+        { id: genId(), label: 'Lane 2', size: 150, color: '#1e3a5f' },
+        { id: genId(), label: 'Lane 3', size: 150, color: '#1e3a5f' },
+      ];
+      return {
+        ...base, type: 'swimlanePool', width: 800, height: 450,
+        fill: '#0f2744', stroke: '#3b82f6', strokeWidth: 2,
+        label: 'Pool', borderRadius: 0,
+        orientation: 'horizontal' as const, lanes: defaultLanes,
+        headerSize: 40, laneHeaderSize: 30,
+      };
+    }
+    case 'container': return {
+      ...base, type: 'container', width: 240, height: 200,
+      fill: 'rgba(59,130,246,0.05)', stroke: '#3b82f6', strokeWidth: 2,
+      label: '', borderRadius: 8,
+      containerLabel: 'Container', headerHeight: 32, containerColor: '#3b82f6', collapsed: false,
+    };
     default: return { ...base, type: 'rect' };
   }
 };

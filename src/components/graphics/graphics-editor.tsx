@@ -12,6 +12,7 @@ const TOOLS = [
   { id: 'banner', icon: '〜', label: 'Banner' }, { id: 'ribbon', icon: '⬡', label: 'Ribbon' },
   { id: 'arrow', icon: '→', label: 'Connector' }, { id: 'line', icon: '—', label: 'Line' }, { id: 'text', icon: 'T', label: 'Text' },
   { id: 'pen', icon: '✒', label: 'Pen' }, { id: 'hand', icon: '✋', label: 'Pan' },
+  { id: 'swimlanePool', icon: '⊞', label: 'Pool' }, { id: 'container', icon: '▣', label: 'Container' },
 ];
 
 export default function GraphicsEditor() {

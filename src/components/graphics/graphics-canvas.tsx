@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useGraphicsStore, createShape, genId, Shape, ShapeBase, SmartGuide, Point, ArrowShape, LineShape, StarShape, TextShape, BlockArrowShape, BracketShape } from '@/store/graphics-store';
+import { useGraphicsStore, createShape, genId, Shape, ShapeBase, SmartGuide, Point, ArrowShape, LineShape, StarShape, TextShape, BlockArrowShape, BracketShape, SwimlanePoolShape, ContainerShape, SwimlaneLane, LANE_COLORS } from '@/store/graphics-store';
 
 const snap = (v: number, grid: number, enabled: boolean) => enabled ? Math.round(v / grid) * grid : v;
 
@@ -91,6 +91,84 @@ export default function GraphicsCanvas() {
       case 'bracket': { const side = (shape as BracketShape).side ?? 'both'; const bw = Math.min(18, w * 0.25); const paths: string[] = []; if (side === 'left' || side === 'both') paths.push(`M ${x + bw} ${y} L ${x} ${y} L ${x} ${y + h} L ${x + bw} ${y + h}`); if (side === 'right' || side === 'both') paths.push(`M ${x + w - bw} ${y} L ${x + w} ${y} L ${x + w} ${y + h} L ${x + w - bw} ${y + h}`); return <g {...gProps}>{selR}{paths.map((d, i) => <path key={i} d={d} fill="none" stroke={st} strokeWidth={sw} strokeLinecap="round" />)}{lbl}</g>; }
       case 'banner': { const wv = Math.min(12, h * 0.18); const d = `M ${x} ${y + wv} Q ${x + w / 4} ${y} ${x + w / 2} ${y + wv} Q ${x + 3 * w / 4} ${y + 2 * wv} ${x + w} ${y + wv} L ${x + w} ${y + h - wv} Q ${x + 3 * w / 4} ${y + h} ${x + w / 2} ${y + h - wv} Q ${x + w / 4} ${y + h - 2 * wv} ${x} ${y + h - wv} Z`; return <g {...gProps}>{defs}{selR}<path d={d} fill={fill} stroke={st} strokeWidth={sw} {...filterAttr} />{lbl}</g>; }
       case 'ribbon': { const fold = Math.min(14, w * 0.12); const d = `M ${x + fold} ${y} L ${x + w - fold} ${y} L ${x + w} ${y + h / 2} L ${x + w - fold} ${y + h} L ${x + fold} ${y + h} L ${x} ${y + h / 2} Z`; const dL = `M ${x} ${y + h / 2} L ${x + fold} ${y} L ${x + fold} ${y + h} Z`; const dR = `M ${x + w} ${y + h / 2} L ${x + w - fold} ${y} L ${x + w - fold} ${y + h} Z`; return <g {...gProps}>{defs}{selR}<path d={d} fill={fill} stroke={st} strokeWidth={sw} {...filterAttr} /><path d={dL} fill={fill} stroke={st} strokeWidth={sw} opacity={0.65} /><path d={dR} fill={fill} stroke={st} strokeWidth={sw} opacity={0.65} />{lbl}</g>; }
+      case 'swimlanePool': {
+        const pool = shape as SwimlanePoolShape;
+        const isHoriz = pool.orientation === 'horizontal';
+        const hdr = pool.headerSize;
+        const lhdr = pool.laneHeaderSize;
+        const lanes = pool.lanes;
+        let offset = 0;
+        return (
+          <g {...gProps}>
+            {selR}
+            {/* Pool outer border */}
+            <rect x={x} y={y} width={w} height={h} fill="none" stroke={st} strokeWidth={sw} rx={2} />
+            {/* Pool header */}
+            {isHoriz ? (
+              <>
+                <rect x={x} y={y} width={hdr} height={h} fill={pool.fill} stroke={st} strokeWidth={sw} rx={2} />
+                <text x={x + hdr / 2} y={y + h / 2} textAnchor="middle" dominantBaseline="middle" fill="#93c5fd" fontSize={13} fontWeight="bold" transform={`rotate(-90 ${x + hdr / 2} ${y + h / 2})`} pointerEvents="none">{pool.label || 'Pool'}</text>
+              </>
+            ) : (
+              <>
+                <rect x={x} y={y} width={w} height={hdr} fill={pool.fill} stroke={st} strokeWidth={sw} rx={2} />
+                <text x={x + w / 2} y={y + hdr / 2} textAnchor="middle" dominantBaseline="middle" fill="#93c5fd" fontSize={13} fontWeight="bold" pointerEvents="none">{pool.label || 'Pool'}</text>
+              </>
+            )}
+            {/* Lanes */}
+            {lanes.map((lane, i) => {
+              const laneOffset = offset;
+              offset += lane.size;
+              if (isHoriz) {
+                const ly = y + laneOffset;
+                return (
+                  <g key={lane.id}>
+                    <rect x={x + hdr} y={ly} width={w - hdr} height={lane.size} fill={lane.color} stroke={st} strokeWidth={1} opacity={0.4} />
+                    {/* Lane header */}
+                    <rect x={x + hdr} y={ly} width={lhdr} height={lane.size} fill={lane.color} stroke={st} strokeWidth={1} opacity={0.7} />
+                    <text x={x + hdr + lhdr / 2} y={ly + lane.size / 2} textAnchor="middle" dominantBaseline="middle" fill="#e2e8f0" fontSize={11} fontWeight="500" transform={`rotate(-90 ${x + hdr + lhdr / 2} ${ly + lane.size / 2})`} pointerEvents="none">{lane.label}</text>
+                    {/* Lane separator */}
+                    {i < lanes.length - 1 && <line x1={x + hdr} y1={ly + lane.size} x2={x + w} y2={ly + lane.size} stroke={st} strokeWidth={1} strokeDasharray="4 2" opacity={0.5} />}
+                  </g>
+                );
+              } else {
+                const lx = x + laneOffset;
+                return (
+                  <g key={lane.id}>
+                    <rect x={lx} y={y + hdr} width={lane.size} height={h - hdr} fill={lane.color} stroke={st} strokeWidth={1} opacity={0.4} />
+                    {/* Lane header */}
+                    <rect x={lx} y={y + hdr} width={lane.size} height={lhdr} fill={lane.color} stroke={st} strokeWidth={1} opacity={0.7} />
+                    <text x={lx + lane.size / 2} y={y + hdr + lhdr / 2} textAnchor="middle" dominantBaseline="middle" fill="#e2e8f0" fontSize={11} fontWeight="500" pointerEvents="none">{lane.label}</text>
+                    {/* Lane separator */}
+                    {i < lanes.length - 1 && <line x1={lx + lane.size} y1={y + hdr} x2={lx + lane.size} y2={y + h} stroke={st} strokeWidth={1} strokeDasharray="4 2" opacity={0.5} />}
+                  </g>
+                );
+              }
+            })}
+          </g>
+        );
+      }
+      case 'container': {
+        const cont = shape as ContainerShape;
+        const hh = cont.headerHeight;
+        const cc = cont.containerColor;
+        return (
+          <g {...gProps}>
+            {defs}{selR}
+            {/* Container body */}
+            <rect x={x} y={y} width={w} height={cont.collapsed ? hh : h} fill={cont.collapsed ? 'transparent' : fill} stroke={cc} strokeWidth={sw} rx={shape.borderRadius ?? 8} {...filterAttr} />
+            {/* Header bar */}
+            <rect x={x} y={y} width={w} height={hh} fill={cc} stroke={cc} strokeWidth={sw} rx={shape.borderRadius ?? 8} opacity={0.3} />
+            {/* Clip the bottom corners of header */}
+            {!cont.collapsed && <rect x={x} y={y + hh - 8} width={w} height={8} fill={cc} opacity={0.3} />}
+            {/* Header text */}
+            <text x={x + 10} y={y + hh / 2} textAnchor="start" dominantBaseline="middle" fill="#e2e8f0" fontSize={12} fontWeight="bold" pointerEvents="none">{cont.containerLabel || 'Container'}</text>
+            {/* Collapse indicator */}
+            <text x={x + w - 16} y={y + hh / 2} textAnchor="middle" dominantBaseline="middle" fill="#94a3b8" fontSize={10} pointerEvents="none">{cont.collapsed ? '▶' : '▼'}</text>
+            {lbl}
+          </g>
+        );
+      }
       default: return null;
     }
   };
@@ -151,7 +229,17 @@ export default function GraphicsCanvas() {
     const dx2 = (e.clientX - dragStart.x) / zoom, dy2 = (e.clientY - dragStart.y) / zoom;
     setDragStart({ x: e.clientX, y: e.clientY });
     const ids = selectedIds.length > 1 ? selectedIds : [selectedId];
-    const ns = shapes.map(s => ids.includes(s.id) && !s.locked ? { ...s, x: snap(s.x + dx2, gridSize, snapEnabled), y: snap(s.y + dy2, gridSize, snapEnabled) } as Shape : s);
+    // Collect contained shape IDs for containers/pools being dragged
+    const containedIds = new Set<string>();
+    ids.forEach(id => {
+      shapes.forEach(s => { if (s.containerId === id && !ids.includes(s.id)) containedIds.add(s.id); });
+    });
+    const ns = shapes.map(s => {
+      if ((ids.includes(s.id) || containedIds.has(s.id)) && !s.locked) {
+        return { ...s, x: snap(s.x + dx2, gridSize, snapEnabled), y: snap(s.y + dy2, gridSize, snapEnabled) } as Shape;
+      }
+      return s;
+    });
     setShapes(ns);
     // Smart guides
     if (smartGuidesEnabled) {
@@ -162,7 +250,30 @@ export default function GraphicsCanvas() {
 
   const handleMouseUp = () => {
     if (resizeHandle) { pushHistory(shapes); setResizeHandle(null); resizeRef.current = null; }
-    if (isDragging && selectedId) pushHistory(shapes);
+    if (isDragging && selectedId) {
+      // Auto-containment: check if dropped shape is inside a container/pool
+      const draggedIds = selectedIds.length > 1 ? selectedIds : [selectedId];
+      let updated = [...shapes];
+      draggedIds.forEach(id => {
+        const s = updated.find(sh => sh.id === id);
+        if (!s || s.type === 'swimlanePool' || s.type === 'container') return;
+        let newContainerId: string | undefined;
+        // Check containers and pools (reverse order for z-priority)
+        for (let i = updated.length - 1; i >= 0; i--) {
+          const c = updated[i];
+          if (c.id === id) continue;
+          if ((c.type === 'swimlanePool' || c.type === 'container') &&
+              s.x >= c.x && s.y >= c.y && s.x + s.width <= c.x + c.width && s.y + s.height <= c.y + c.height) {
+            newContainerId = c.id;
+            break;
+          }
+        }
+        if (s.containerId !== newContainerId) {
+          updated = updated.map(sh => sh.id === id ? { ...sh, containerId: newContainerId } as Shape : sh);
+        }
+      });
+      pushHistory(updated);
+    }
     setIsDragging(false); setDraggingGuide(null); setActiveSmartGuides([]);
   };
 

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { useGraphicsStore, createShape, genId, Shape, ShapeBase, ShapeType } from '@/store/graphics-store';
+import { useGraphicsStore, createShape, genId, Shape, ShapeBase, ShapeType, SwimlanePoolShape, ContainerShape, SwimlaneLane, LANE_COLORS } from '@/store/graphics-store';
 
 const SHAPE_CATEGORIES = [
   { name: 'Basic', shapes: [{ type: 'rect', icon: '▭', label: 'Rectangle' }, { type: 'ellipse', icon: '○', label: 'Ellipse' }, { type: 'diamond', icon: '◇', label: 'Diamond' }, { type: 'triangle', icon: '△', label: 'Triangle' }, { type: 'hexagon', icon: '⬡', label: 'Hexagon' }, { type: 'star', icon: '☆', label: 'Star' }, { type: 'cloud', icon: '☁', label: 'Cloud' }, { type: 'cylinder', icon: '⌀', label: 'Cylinder' }] },
@@ -9,6 +9,7 @@ const SHAPE_CATEGORIES = [
   { name: 'Brackets', shapes: [{ type: 'bracket', icon: '[ ]', label: 'Bracket' }] },
   { name: 'Banners', shapes: [{ type: 'banner', icon: '〜', label: 'Banner' }, { type: 'ribbon', icon: '⬡', label: 'Ribbon' }] },
   { name: 'Text', shapes: [{ type: 'text', icon: 'T', label: 'Text Box' }] },
+  { name: 'Swimlanes', shapes: [{ type: 'swimlanePool', icon: '⊞', label: 'H Pool' }, { type: 'container', icon: '▣', label: 'Container' }] },
 ] as { name: string; shapes: { type: ShapeType; icon: string; label: string }[] }[];
 
 const PALETTES = {
@@ -203,6 +204,98 @@ export function PropertiesPanel() {
         <button onClick={() => { const ns = shapes.map(s => s.id === selectedShape.id ? { ...s, locked: !s.locked } as Shape : s); pushHistory(ns); }} className="flex-1 px-2 py-1.5 rounded bg-[#0f172a] hover:bg-[#334155] text-xs">{selectedShape.locked ? '🔒 Unlock' : '🔓 Lock'}</button>
       </div>
       <button onClick={deleteSelected} className="w-full px-2 py-1.5 rounded bg-red-600/20 hover:bg-red-600/40 text-red-400 text-xs">Delete</button>
+
+      {/* Swimlane Pool Properties */}
+      {selectedShape.type === 'swimlanePool' && (() => {
+        const pool = selectedShape as SwimlanePoolShape;
+        const updatePool = (u: Partial<SwimlanePoolShape>) => {
+          const ns = shapes.map(s => s.id === pool.id ? { ...s, ...u } as Shape : s);
+          pushHistory(ns);
+        };
+        const updateLane = (laneId: string, u: Partial<SwimlaneLane>) => {
+          const newLanes = pool.lanes.map(l => l.id === laneId ? { ...l, ...u } : l);
+          updatePool({ lanes: newLanes });
+        };
+        const addLane = () => {
+          const colorIdx = pool.lanes.length % LANE_COLORS.length;
+          const newLane: SwimlaneLane = { id: genId(), label: `Lane ${pool.lanes.length + 1}`, size: 150, color: LANE_COLORS[colorIdx] };
+          const newLanes = [...pool.lanes, newLane];
+          const totalSize = newLanes.reduce((a, l) => a + l.size, 0);
+          if (pool.orientation === 'horizontal') updatePool({ lanes: newLanes, height: totalSize });
+          else updatePool({ lanes: newLanes, width: totalSize + pool.headerSize });
+        };
+        const removeLane = (laneId: string) => {
+          if (pool.lanes.length <= 1) return;
+          const newLanes = pool.lanes.filter(l => l.id !== laneId);
+          const totalSize = newLanes.reduce((a, l) => a + l.size, 0);
+          if (pool.orientation === 'horizontal') updatePool({ lanes: newLanes, height: totalSize });
+          else updatePool({ lanes: newLanes, width: totalSize + pool.headerSize });
+        };
+        const moveLane = (idx: number, dir: number) => {
+          const ni = idx + dir;
+          if (ni < 0 || ni >= pool.lanes.length) return;
+          const newLanes = [...pool.lanes];
+          [newLanes[idx], newLanes[ni]] = [newLanes[ni], newLanes[idx]];
+          updatePool({ lanes: newLanes });
+        };
+        const toggleOrientation = () => {
+          const totalLaneSize = pool.lanes.reduce((a, l) => a + l.size, 0);
+          if (pool.orientation === 'horizontal') {
+            updatePool({ orientation: 'vertical', width: totalLaneSize + pool.headerSize, height: 400 });
+          } else {
+            updatePool({ orientation: 'horizontal', width: 800, height: totalLaneSize });
+          }
+        };
+        return (
+          <div className="space-y-2 border-t border-[#334155] pt-2">
+            <p className="text-[10px] font-semibold uppercase text-[#94a3b8]">Swimlane Pool</p>
+            <div className="flex gap-1">
+              <button onClick={toggleOrientation} className={`flex-1 py-1 rounded text-[10px] ${pool.orientation === 'horizontal' ? 'bg-blue-600 text-white' : 'bg-[#0f172a] text-[#94a3b8]'}`}>Horizontal</button>
+              <button onClick={toggleOrientation} className={`flex-1 py-1 rounded text-[10px] ${pool.orientation === 'vertical' ? 'bg-blue-600 text-white' : 'bg-[#0f172a] text-[#94a3b8]'}`}>Vertical</button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div><label className={lbl}>Header</label><input type="number" value={pool.headerSize} onChange={e => updatePool({ headerSize: Math.max(20, +e.target.value) })} className={inp} /></div>
+              <div><label className={lbl}>Lane Hdr</label><input type="number" value={pool.laneHeaderSize} onChange={e => updatePool({ laneHeaderSize: Math.max(15, +e.target.value) })} className={inp} /></div>
+            </div>
+            <div className="flex items-center justify-between">
+              <label className={lbl + ' mb-0'}>Lanes ({pool.lanes.length})</label>
+              <button onClick={addLane} className="px-2 py-0.5 rounded bg-green-600/20 text-green-400 text-[10px] hover:bg-green-600/30">+ Add</button>
+            </div>
+            <div className="space-y-1 max-h-40 overflow-y-auto">
+              {pool.lanes.map((lane, idx) => (
+                <div key={lane.id} className="flex items-center gap-1 p-1 rounded bg-[#0f172a]">
+                  <input type="color" value={lane.color} onChange={e => updateLane(lane.id, { color: e.target.value })} className="w-4 h-4 rounded cursor-pointer flex-shrink-0" />
+                  <input value={lane.label} onChange={e => updateLane(lane.id, { label: e.target.value })} className="flex-1 px-1 py-0.5 rounded bg-transparent border border-[#334155] text-[10px] text-[#e2e8f0] min-w-0" />
+                  <input type="number" value={lane.size} onChange={e => updateLane(lane.id, { size: Math.max(60, +e.target.value) })} className="w-12 px-1 py-0.5 rounded bg-transparent border border-[#334155] text-[10px] text-[#e2e8f0]" />
+                  <button onClick={() => moveLane(idx, -1)} className="text-[10px] text-[#94a3b8] hover:text-white" title="Move up">↑</button>
+                  <button onClick={() => moveLane(idx, 1)} className="text-[10px] text-[#94a3b8] hover:text-white" title="Move down">↓</button>
+                  {pool.lanes.length > 1 && <button onClick={() => removeLane(lane.id)} className="text-[10px] text-red-400">✕</button>}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Container Properties */}
+      {selectedShape.type === 'container' && (() => {
+        const cont = selectedShape as ContainerShape;
+        const updateCont = (u: Partial<ContainerShape>) => {
+          const ns = shapes.map(s => s.id === cont.id ? { ...s, ...u } as Shape : s);
+          pushHistory(ns);
+        };
+        return (
+          <div className="space-y-2 border-t border-[#334155] pt-2">
+            <p className="text-[10px] font-semibold uppercase text-[#94a3b8]">Container</p>
+            <div><label className={lbl}>Title</label><input value={cont.containerLabel} onChange={e => updateCont({ containerLabel: e.target.value })} className={inp} /></div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1"><label className={lbl}>Header H</label><input type="number" value={cont.headerHeight} onChange={e => updateCont({ headerHeight: Math.max(20, +e.target.value) })} className={inp} /></div>
+              <div className="flex-1"><label className={lbl}>Color</label><input type="color" value={cont.containerColor} onChange={e => updateCont({ containerColor: e.target.value })} className="w-full h-7 rounded cursor-pointer" /></div>
+            </div>
+            <button onClick={() => updateCont({ collapsed: !cont.collapsed })} className={`w-full py-1 rounded text-[10px] ${cont.collapsed ? 'bg-yellow-600/20 text-yellow-400' : 'bg-[#0f172a] text-[#94a3b8]'}`}>{cont.collapsed ? 'Expand' : 'Collapse'}</button>
+          </div>
+        );
+      })()}
     </div>
   );
 }
