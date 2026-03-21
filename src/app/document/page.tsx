@@ -46,6 +46,9 @@ import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
 import { ExportManager, type ExportFormat } from "@/lib/export-manager";
 import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
 import { TemplateVariableModal } from "@/components/shared/template-variable-modal";
+import { FileVersionHistory } from "@/components/shared/file-version-history";
+import { useAutoSaveVersions } from "@/components/shared/use-auto-save-versions";
+import { useFileVersionStore } from "@/store/file-version-store";
 
 export default function DocumentPage() {
   const {
@@ -64,6 +67,20 @@ export default function DocumentPage() {
     showCollabComments,
     showVersionHistory: showCollabVersionHistory,
   } = useCollaborationStore();
+
+  const { showPanel: showFileVersions, setShowPanel: setShowFileVersions } = useFileVersionStore();
+
+  // Auto-save version hook: creates snapshots every 5 min
+  const getContentForVersions = useCallback(() => {
+    if (typeof window === "undefined") return "";
+    return getEditorContent();
+  }, []);
+
+  const { saveVersion: saveManualVersion } = useAutoSaveVersions({
+    fileId: `doc-${fileName}`,
+    fileType: "document",
+    getContent: getContentForVersions,
+  });
 
   const [showPageSetup, setShowPageSetup] = React.useState(false);
   const [showHeaderFooterEditor, setShowHeaderFooterEditor] = React.useState(false);
@@ -102,6 +119,8 @@ export default function DocumentPage() {
             if (editor) {
               localStorage.setItem("vidyalaya-doc-content", editor.innerHTML);
               useDocumentStore.getState().setLastSaved(new Date().toLocaleTimeString());
+              // Also create a version snapshot on manual save
+              saveManualVersion("Manual save (Ctrl+S)");
             }
             break;
           case "b":
@@ -165,7 +184,7 @@ export default function DocumentPage() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [setShowFindReplace, showKeyboardShortcuts, setShowKeyboardShortcuts]);
+  }, [setShowFindReplace, showKeyboardShortcuts, setShowKeyboardShortcuts, saveManualVersion]);
 
   const handleExport = useCallback(async (format: ExportFormat) => {
     const content = getEditorContent();
@@ -252,6 +271,7 @@ export default function DocumentPage() {
         onToggleDeveloper={() => setShowDeveloper(!showDeveloper)}
         onShowDocProperties={() => setShowDocProperties(true)}
         onShowKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
+        onToggleFileVersions={() => setShowFileVersions(!showFileVersions)}
       />
 
       {/* Track Changes Panel */}
@@ -299,6 +319,12 @@ export default function DocumentPage() {
           currentContent={typeof window !== "undefined" ? getEditorContent() : ""}
           onRestore={handleVersionRestore}
           documentName={fileName}
+        />
+
+        {/* File Version History (IndexedDB-backed) */}
+        <FileVersionHistory
+          onRestore={handleVersionRestore}
+          getCurrentContent={() => typeof window !== "undefined" ? getEditorContent() : ""}
         />
 
         {/* Word Count Statistics Panel */}
