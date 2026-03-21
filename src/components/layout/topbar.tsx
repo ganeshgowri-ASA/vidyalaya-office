@@ -26,9 +26,9 @@ import { formatDate } from "@/lib/utils";
 import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useCollaborationStore } from "@/store/collaboration-store";
-import { formatDate } from "@/lib/utils";
-import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
 import { CloudSyncStatus } from "@/components/shared/cloud-sync-status";
+import { SyncIndicator } from "@/components/collaboration/sync-indicator";
+import { ActiveUsersPanel } from "@/components/collaboration/active-users-panel";
 import type { ThemeName } from "@/types";
 
 const themeSwatches: Record<ThemeName, string> = {
@@ -233,6 +233,12 @@ export function Topbar() {
               </span>
             )}
           </button>
+
+          {/* Real-time sync indicator */}
+          <SyncIndicator />
+
+          {/* Active users / collaboration */}
+          <ActiveUsersPanel />
 
           {/* Notifications */}
           {/* Cloud sync status */}
