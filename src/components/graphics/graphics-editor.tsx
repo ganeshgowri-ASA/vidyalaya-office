@@ -3,6 +3,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useGraphicsStore, createShape, genId, Shape, ShapeBase } from '@/store/graphics-store';
 import GraphicsCanvas from './graphics-canvas';
 import { ShapeLibraryPanel, PropertiesPanel } from './graphics-shape-panel';
+import { ExportModal, ImportModal } from './export-import-modal';
 
 const TOOLS = [
   { id: 'select', icon: '▷', label: 'Select' }, { id: 'rect', icon: '▭', label: 'Rect' }, { id: 'ellipse', icon: '○', label: 'Ellipse' },
@@ -20,6 +21,8 @@ export default function GraphicsEditor() {
     setGuides, pushHistory, undo, redo, clipboard, setClipboard } = useGraphicsStore();
 
   const [showCanvasResize, setShowCanvasResize] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [activeTab, setActiveTab] = useState<'layers' | 'templates'>('layers');
   const [localW, setLocalW] = useState(canvasWidth);
@@ -117,8 +120,10 @@ export default function GraphicsEditor() {
         </>}
         <div className="flex-1" />
         <button onClick={() => { setLocalW(canvasWidth); setLocalH(canvasHeight); setShowCanvasResize(true); }} className="px-2 py-1 rounded hover:bg-[#334155] text-xs">⛶ Canvas</button>
-        <button onClick={exportSVG} className="px-2 py-1 rounded bg-green-600/20 text-green-400 text-xs hover:bg-green-600/30">SVG ⬇</button>
-        <button onClick={exportPNG} className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/30">PNG ⬇</button>
+        <button onClick={() => setShowImportModal(true)} className="px-2 py-1 rounded bg-amber-600/20 text-amber-400 text-xs hover:bg-amber-600/30">⬆ Import</button>
+        <button onClick={() => setShowExportModal(true)} className="px-2 py-1 rounded bg-green-600/20 text-green-400 text-xs hover:bg-green-600/30">⬇ Export</button>
+        <button onClick={exportSVG} className="px-2 py-1 rounded bg-green-600/20 text-green-400 text-xs hover:bg-green-600/30" title="Quick SVG export">SVG</button>
+        <button onClick={exportPNG} className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/30" title="Quick PNG export">PNG</button>
         <div className="w-px h-5 bg-[#334155] mx-1" />
         <button onClick={() => setZoom(z => Math.max(0.25, z - 0.1))} className="px-2 py-1 rounded hover:bg-[#334155]">−</button>
         <span className="text-xs w-12 text-center">{Math.round(zoom * 100)}%</span>
@@ -181,6 +186,10 @@ export default function GraphicsEditor() {
           </div>
         )}
       </div>
+
+      {/* Export/Import Modals */}
+      <ExportModal open={showExportModal} onClose={() => setShowExportModal(false)} />
+      <ImportModal open={showImportModal} onClose={() => setShowImportModal(false)} />
 
       {/* Canvas Resize Modal */}
       {showCanvasResize && (
