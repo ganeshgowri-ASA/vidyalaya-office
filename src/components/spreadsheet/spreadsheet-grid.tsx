@@ -1,13 +1,28 @@
 "use client";
 
 import { useCallback, useRef, useEffect, useState } from "react";
-import { useSpreadsheetStore, type CellStyle, type CellComment } from "@/store/spreadsheet-store";
+import { useSpreadsheetStore, type CellStyle, type CellComment, type DataValidationRule, type ValidationError } from "@/store/spreadsheet-store";
 import { colToLetter } from "./formula-engine";
+import { ChevronDown, AlertTriangle, ShieldX, X } from "lucide-react";
 
 const ROWS = 100;
 const COLS = 52; // A-AZ
 const DEFAULT_COL_WIDTH = 80;
 const DEFAULT_ROW_HEIGHT = 24;
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+function interpolateColor(c1: string, c2: string, t: number): string {
+  const [r1, g1, b1] = hexToRgb(c1);
+  const [r2, g2, b2] = hexToRgb(c2);
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
 
 interface ContextMenuState {
   visible: boolean;
@@ -54,6 +69,9 @@ export function SpreadsheetGrid() {
   const zoom = useSpreadsheetStore((s) => s.zoom);
   const showGridlines = useSpreadsheetStore((s) => s.showGridlines);
   const showHeadings = useSpreadsheetStore((s) => s.showHeadings);
+  const getDataValidation = useSpreadsheetStore((s) => s.getDataValidation);
+  const validationErrors = useSpreadsheetStore((s) => s.validationErrors);
+  const clearValidationError = useSpreadsheetStore((s) => s.clearValidationError);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -77,8 +95,144 @@ export function SpreadsheetGrid() {
   // Tooltip for comments
   const [hoveredComment, setHoveredComment] = useState<{ x: number; y: number; comment: CellComment } | null>(null);
 
+  // Dropdown state for list validations
+  const [dropdownCell, setDropdownCell] = useState<{ col: number; row: number; x: number; y: number; width: number } | null>(null);
+  const [dropdownFilter, setDropdownFilter] = useState("");
+
+  // Validation error toast
+  const [visibleError, setVisibleError] = useState<ValidationError | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const sheet = getActiveSheet();
   const scale = zoom / 100;
+  const conditionalFormats = sheet.conditionalFormats || [];
+
+  // Compute conditional formatting for a cell
+  const getConditionalStyle = useCallback(
+    (col: number, row: number): Partial<CellStyle> | null => {
+      if (conditionalFormats.length === 0) return null;
+      const ck = `${colToLetter(col)}${row + 1}`;
+      const display = getCellDisplay(col, row);
+      const numVal = parseFloat(display);
+
+      for (const rule of conditionalFormats) {
+        // Check if cell is in range
+        const rangeMatch = rule.range.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+        if (!rangeMatch) continue;
+        const rStartCol = rangeMatch[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 65, 0);
+        const rStartRow = parseInt(rangeMatch[2]) - 1;
+        const rEndCol = rangeMatch[3].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 65, 0);
+        const rEndRow = parseInt(rangeMatch[4]) - 1;
+        if (col < rStartCol || col > rEndCol || row < rStartRow || row > rEndRow) continue;
+
+        switch (rule.type) {
+          case "greaterThan":
+            if (!isNaN(numVal) && rule.value1 && numVal > parseFloat(rule.value1))
+              return rule.format;
+            break;
+          case "lessThan":
+            if (!isNaN(numVal) && rule.value1 && numVal < parseFloat(rule.value1))
+              return rule.format;
+            break;
+          case "between":
+            if (!isNaN(numVal) && rule.value1 && rule.value2 && numVal >= parseFloat(rule.value1) && numVal <= parseFloat(rule.value2))
+              return rule.format;
+            break;
+          case "equalTo":
+            if (display === rule.value1) return rule.format;
+            break;
+          case "textContains":
+            if (rule.value1 && display.toLowerCase().includes(rule.value1.toLowerCase()))
+              return rule.format;
+            break;
+          case "duplicates": {
+            // Check if value appears more than once in range
+            let count = 0;
+            for (let r2 = rStartRow; r2 <= rEndRow && count < 2; r2++) {
+              for (let c2 = rStartCol; c2 <= rEndCol && count < 2; c2++) {
+                if (getCellDisplay(c2, r2) === display && display) count++;
+              }
+            }
+            if (count >= 2) return rule.format;
+            break;
+          }
+          case "colorScale2":
+          case "colorScale3": {
+            if (isNaN(numVal) || !display) break;
+            // Collect all numeric values in range
+            const vals: number[] = [];
+            for (let r2 = rStartRow; r2 <= rEndRow; r2++) {
+              for (let c2 = rStartCol; c2 <= rEndCol; c2++) {
+                const v = parseFloat(getCellDisplay(c2, r2));
+                if (!isNaN(v)) vals.push(v);
+              }
+            }
+            if (vals.length < 2) break;
+            const minV = Math.min(...vals);
+            const maxV = Math.max(...vals);
+            if (maxV === minV) break;
+            const ratio = (numVal - minV) / (maxV - minV);
+            const minColor = rule.colorScaleMin || "#f87171";
+            const maxColor = rule.colorScaleMax || "#22c55e";
+            const midColor = rule.colorScaleMid || "#fbbf24";
+            let bgColor: string;
+            if (rule.type === "colorScale3") {
+              if (ratio <= 0.5) {
+                const t = ratio * 2;
+                bgColor = interpolateColor(minColor, midColor, t);
+              } else {
+                const t = (ratio - 0.5) * 2;
+                bgColor = interpolateColor(midColor, maxColor, t);
+              }
+            } else {
+              bgColor = interpolateColor(minColor, maxColor, ratio);
+            }
+            return { bgColor };
+          }
+          case "dataBar": {
+            // Data bars are handled separately in rendering
+            break;
+          }
+          default:
+            break;
+        }
+      }
+      return null;
+    },
+    [conditionalFormats, getCellDisplay]
+  );
+
+  // Get data bar percentage for a cell
+  const getDataBarInfo = useCallback(
+    (col: number, row: number): { percentage: number; color: string } | null => {
+      const display = getCellDisplay(col, row);
+      const numVal = parseFloat(display);
+      if (isNaN(numVal) || !display) return null;
+      for (const rule of conditionalFormats) {
+        if (rule.type !== "dataBar") continue;
+        const rangeMatch = rule.range.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+        if (!rangeMatch) continue;
+        const rStartCol = rangeMatch[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 65, 0);
+        const rStartRow = parseInt(rangeMatch[2]) - 1;
+        const rEndCol = rangeMatch[3].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 65, 0);
+        const rEndRow = parseInt(rangeMatch[4]) - 1;
+        if (col < rStartCol || col > rEndCol || row < rStartRow || row > rEndRow) continue;
+        const vals: number[] = [];
+        for (let r2 = rStartRow; r2 <= rEndRow; r2++) {
+          for (let c2 = rStartCol; c2 <= rEndCol; c2++) {
+            const v = parseFloat(getCellDisplay(c2, r2));
+            if (!isNaN(v)) vals.push(v);
+          }
+        }
+        if (vals.length === 0) return null;
+        const maxV = Math.max(...vals);
+        if (maxV === 0) return null;
+        return { percentage: Math.max(0, Math.min(100, (numVal / maxV) * 100)), color: rule.dataBarColor || "#3b82f6" };
+      }
+      return null;
+    },
+    [conditionalFormats, getCellDisplay]
+  );
 
   const getColWidth = useCallback(
     (col: number) => sheet.colWidths[col] || DEFAULT_COL_WIDTH,
@@ -115,6 +269,35 @@ export function SpreadsheetGrid() {
   useEffect(() => {
     if (editingCell && inputRef.current) inputRef.current.focus();
   }, [editingCell]);
+
+  // Show validation errors as toast
+  useEffect(() => {
+    const keys = Object.keys(validationErrors);
+    if (keys.length > 0) {
+      const latestKey = keys[keys.length - 1];
+      const err = validationErrors[latestKey];
+      setVisibleError(err);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = setTimeout(() => {
+        setVisibleError(null);
+        clearValidationError(latestKey);
+      }, 4000);
+    }
+  }, [validationErrors, clearValidationError]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownCell) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-dropdown-list]")) {
+        setDropdownCell(null);
+        setDropdownFilter("");
+      }
+    };
+    window.addEventListener("mousedown", handleClick);
+    return () => window.removeEventListener("mousedown", handleClick);
+  }, [dropdownCell]);
 
   // Column resize
   const handleResizeColStart = useCallback(
@@ -590,8 +773,19 @@ export function SpreadsheetGrid() {
                   const cellStyle = getCellStyle(c, r);
                   const cellData = getCellData(c, r);
                   const hasComment = !!cellData?.comment;
+                  const ck = `${colToLetter(c)}${r + 1}`;
+                  const validation = getDataValidation(ck);
+                  const hasValidation = !!validation;
+                  const isListValidation = validation?.type === "list";
+                  const cellHasError = !!validationErrors[ck];
                   const isFrozenBorderRight = frozenCols > 0 && c === frozenCols - 1;
                   const isFrozenBorderBottom = frozenRows > 0 && r === frozenRows - 1;
+                  const condStyle = getConditionalStyle(c, r);
+                  const dataBar = getDataBarInfo(c, r);
+                  const effectiveBg = selected && !active
+                    ? "rgba(59,130,246,0.25)"
+                    : condStyle?.bgColor || cellStyle.bgColor || "var(--background)";
+                  const effectiveTextColor = condStyle?.textColor || cellStyle.textColor || "var(--foreground)";
 
                   return (
                     <td
@@ -603,9 +797,7 @@ export function SpreadsheetGrid() {
                         width: getColWidth(c), minWidth: getColWidth(c), maxWidth: getColWidth(c),
                         height: getRowHeight(r), padding: 0,
                         border: showGridlines ? "1px solid var(--border)" : "1px solid transparent",
-                        backgroundColor: selected && !active
-                          ? "rgba(59,130,246,0.25)"
-                          : cellStyle.bgColor || "var(--background)",
+                        backgroundColor: effectiveBg,
                         outline: active ? "2px solid #3b82f6" : "none",
                         outlineOffset: "-1px",
                         zIndex: active ? 5 : undefined,
@@ -638,6 +830,43 @@ export function SpreadsheetGrid() {
                           }}
                           onMouseLeave={() => setHoveredComment(null)}
                         />
+                      )}
+
+                      {/* Validation indicator (green triangle bottom-left) */}
+                      {hasValidation && (
+                        <div
+                          className="absolute bottom-0 left-0 w-0 h-0"
+                          style={{
+                            borderRight: "5px solid transparent",
+                            borderBottom: cellHasError ? "5px solid #ef4444" : "5px solid #22c55e",
+                          }}
+                        />
+                      )}
+
+                      {/* Dropdown button for list validation */}
+                      {isListValidation && active && !editing && (
+                        <button
+                          className="absolute right-0 top-0 h-full flex items-center justify-center hover:opacity-80"
+                          style={{
+                            width: 18,
+                            backgroundColor: "var(--muted)",
+                            borderLeft: "1px solid var(--border)",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
+                            setDropdownCell({
+                              col: c,
+                              row: r,
+                              x: rect.left,
+                              y: rect.bottom,
+                              width: rect.width,
+                            });
+                            setDropdownFilter("");
+                          }}
+                        >
+                          <ChevronDown size={12} />
+                        </button>
                       )}
 
                       {editing ? (
@@ -676,7 +905,7 @@ export function SpreadsheetGrid() {
                         />
                       ) : (
                         <div
-                          className="w-full h-full px-1 flex items-center overflow-hidden"
+                          className="w-full h-full px-1 flex items-center overflow-hidden relative"
                           style={{
                             fontWeight: cellStyle.bold ? 700 : 400,
                             fontStyle: cellStyle.italic ? "italic" : "normal",
@@ -687,14 +916,26 @@ export function SpreadsheetGrid() {
                             textAlign: cellStyle.align || "left",
                             justifyContent: cellStyle.align === "center" ? "center" : cellStyle.align === "right" ? "flex-end" : "flex-start",
                             alignItems: cellStyle.verticalAlign === "top" ? "flex-start" : cellStyle.verticalAlign === "bottom" ? "flex-end" : "center",
-                            color: cellStyle.textColor || "var(--foreground)",
+                            color: effectiveTextColor,
                             fontFamily: cellStyle.fontFamily || "inherit",
                             fontSize: cellStyle.fontSize ? `${cellStyle.fontSize}px` : "inherit",
                             whiteSpace: cellStyle.wrapText ? "pre-wrap" : "nowrap",
                             textOverflow: cellStyle.wrapText ? "clip" : "ellipsis",
                           }}
                         >
-                          {getCellDisplay(c, r)}
+                          {/* Data bar */}
+                          {dataBar && (
+                            <div
+                              className="absolute left-0 top-0 h-full"
+                              style={{
+                                width: `${dataBar.percentage}%`,
+                                backgroundColor: dataBar.color,
+                                opacity: 0.2,
+                                zIndex: 0,
+                              }}
+                            />
+                          )}
+                          <span className="relative z-[1]">{getCellDisplay(c, r)}</span>
                         </div>
                       )}
 
@@ -766,6 +1007,118 @@ export function SpreadsheetGrid() {
               </button>
             )
           )}
+        </div>
+      )}
+
+      {/* Dropdown list for list validation */}
+      {dropdownCell && (() => {
+        const dcKey = `${colToLetter(dropdownCell.col)}${dropdownCell.row + 1}`;
+        const dcRule = getDataValidation(dcKey);
+        if (!dcRule || dcRule.type !== "list") return null;
+        const items = (dcRule.listItems || "").split(",").map((s) => s.trim()).filter(Boolean);
+        const filtered = dropdownFilter
+          ? items.filter((item) => item.toLowerCase().includes(dropdownFilter.toLowerCase()))
+          : items;
+        return (
+          <div
+            data-dropdown-list
+            className="fixed z-50 rounded border shadow-xl"
+            style={{
+              left: dropdownCell.x,
+              top: dropdownCell.y,
+              minWidth: Math.max(dropdownCell.width, 120),
+              maxHeight: 200,
+              backgroundColor: "var(--card)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <input
+              autoFocus
+              className="w-full px-2 py-1.5 text-xs border-b outline-none"
+              style={{
+                backgroundColor: "var(--background)",
+                borderColor: "var(--border)",
+                color: "var(--foreground)",
+              }}
+              placeholder="Search..."
+              value={dropdownFilter}
+              onChange={(e) => setDropdownFilter(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setDropdownCell(null);
+                  setDropdownFilter("");
+                } else if (e.key === "Enter" && filtered.length > 0) {
+                  pushUndo();
+                  setCellValue(dropdownCell.col, dropdownCell.row, filtered[0]);
+                  setDropdownCell(null);
+                  setDropdownFilter("");
+                }
+              }}
+            />
+            <div className="overflow-auto" style={{ maxHeight: 160 }}>
+              {filtered.length === 0 ? (
+                <div className="px-2 py-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>
+                  No matches
+                </div>
+              ) : (
+                filtered.map((item, i) => (
+                  <button
+                    key={i}
+                    className="w-full text-left px-2 py-1.5 text-xs hover:opacity-80 transition-colors"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "var(--foreground)",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--muted)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    onClick={() => {
+                      pushUndo();
+                      setCellValue(dropdownCell.col, dropdownCell.row, item);
+                      setDropdownCell(null);
+                      setDropdownFilter("");
+                    }}
+                  >
+                    {item}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Validation error toast */}
+      {visibleError && (
+        <div
+          className="fixed bottom-16 right-4 z-50 flex items-start gap-2 p-3 rounded-lg border shadow-xl max-w-sm"
+          style={{
+            backgroundColor: visibleError.style === "reject" ? "#1c1917" : "#1c1917",
+            borderColor: visibleError.style === "reject" ? "#ef4444" : "#f59e0b",
+            color: "var(--foreground)",
+          }}
+        >
+          {visibleError.style === "reject" ? (
+            <ShieldX size={16} className="mt-0.5 flex-shrink-0" style={{ color: "#ef4444" }} />
+          ) : (
+            <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" style={{ color: "#f59e0b" }} />
+          )}
+          <div className="flex-1">
+            <div className="text-xs font-semibold" style={{ color: visibleError.style === "reject" ? "#ef4444" : "#f59e0b" }}>
+              {visibleError.title}
+            </div>
+            <div className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
+              {visibleError.message}
+            </div>
+          </div>
+          <button
+            className="flex-shrink-0 hover:opacity-70"
+            onClick={() => {
+              setVisibleError(null);
+              clearValidationError(visibleError.cellKey);
+            }}
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
     </div>
