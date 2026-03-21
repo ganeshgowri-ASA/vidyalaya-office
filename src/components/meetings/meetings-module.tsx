@@ -1,6 +1,18 @@
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { useMeetingIntegrationsStore } from '@/store/meeting-integrations-store';
+import MeetingInsightsDashboard from './meeting-insights-dashboard';
+import AskFred from './ask-fred';
+import MeetingComments from './meeting-comments';
+import MeetingShareModal from './meeting-share-modal';
+import MeetingExportModal from './meeting-export-modal';
+import WebhookConfigPanel from './webhook-config';
+import SlackIntegration from './slack-integration';
+import MeetingIntelligence from './meeting-intelligence';
+import SmartSearch from './smart-search';
+import CalendarIntegrationPanel from './calendar-integration-panel';
 
 // ==================== TYPES ====================
 interface Meeting {
@@ -254,6 +266,14 @@ export default function MeetingsModule() {
   // Room booking
   const [roomFilter, setRoomFilter] = useState({ minCapacity: 0, feature: 'all' });
 
+  // Integration panels
+  const { activeIntegrationPanel, setActiveIntegrationPanel, firefliesTranscripts, selectedTranscriptId, selectTranscript } = useMeetingIntegrationsStore();
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showSlackModal, setShowSlackModal] = useState(false);
+
+  const selectedTranscript = firefliesTranscripts.find(t => t.id === selectedTranscriptId) || firefliesTranscripts[0] || null;
+
   // Calendar view state
   const [calYear, setCalYear] = useState(2024);
   const [calMonth, setCalMonth] = useState(2); // March = index 2
@@ -385,8 +405,24 @@ export default function MeetingsModule() {
             </button>
           ))}
         </div>
+        <Link href="/meetings/transcription"
+          className="px-2 py-1 rounded text-[10px] bg-purple-600/20 text-purple-400 hover:bg-purple-600/30">🎙️ Transcription</Link>
         <button onClick={() => setShowRooms(!showRooms)}
           className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">🏢 Rooms</button>
+        <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'intelligence' ? null : 'intelligence')}
+          className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'intelligence' ? 'bg-purple-600/20 text-purple-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>🧠 Intelligence</button>
+        <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'smartsearch' ? null : 'smartsearch')}
+          className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'smartsearch' ? 'bg-blue-600/20 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>🔍 Smart Search</button>
+        <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'calendar' ? null : 'calendar')}
+          className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'calendar' ? 'bg-green-600/20 text-green-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>📅 Calendar</button>
+        <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'insights' ? null : 'insights')}
+          className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'insights' ? 'bg-blue-600/20 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>📊 Insights</button>
+        <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'askfred' ? null : 'askfred')}
+          className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'askfred' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>✨ AskFred</button>
+        <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'fireflies' ? null : 'fireflies')}
+          className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'fireflies' ? 'bg-purple-600/20 text-purple-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>🔥 Fireflies</button>
+        <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'webhooks' ? null : 'webhooks')}
+          className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'webhooks' ? 'bg-orange-600/20 text-orange-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>🔗 Webhooks</button>
         <button onClick={() => setShowSchedule(true)}
           className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium">➕ New Meeting</button>
       </div>
@@ -641,6 +677,23 @@ export default function MeetingsModule() {
                 <button className="px-2 py-1 rounded text-[10px] bg-purple-600/20 hover:bg-purple-600/30 text-purple-300">Create Tasks</button>
               </div>
             </div>
+
+            {/* Integration Actions */}
+            <div className="mt-4 p-3 rounded-lg bg-gradient-to-r from-blue-900/20 to-green-900/20 border border-blue-500/20">
+              <p className="text-[10px] font-semibold text-blue-400 mb-2">🔗 Integrations</p>
+              <div className="flex flex-wrap gap-1.5">
+                <button onClick={() => { if (selectedTranscript) { selectTranscript(selectedTranscript.id); } setShowShareModal(true); }}
+                  className="px-2 py-1 rounded text-[10px] bg-blue-600/20 hover:bg-blue-600/30 text-blue-300">📤 Share Notes</button>
+                <button onClick={() => { if (selectedTranscript) { selectTranscript(selectedTranscript.id); } setShowExportModal(true); }}
+                  className="px-2 py-1 rounded text-[10px] bg-green-600/20 hover:bg-green-600/30 text-green-300">📥 Export (Notion/Docs)</button>
+                <button onClick={() => { if (selectedTranscript) { selectTranscript(selectedTranscript.id); } setShowSlackModal(true); }}
+                  className="px-2 py-1 rounded text-[10px] bg-green-600/20 hover:bg-green-600/30 text-green-300">💬 Post to Slack</button>
+                <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'comments' ? null : 'comments')}
+                  className="px-2 py-1 rounded text-[10px] bg-orange-600/20 hover:bg-orange-600/30 text-orange-300">💬 Comments</button>
+                <button onClick={() => setActiveIntegrationPanel('askfred')}
+                  className="px-2 py-1 rounded text-[10px] bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-300">✨ Ask Fred</button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -827,6 +880,79 @@ export default function MeetingsModule() {
                 <div className="px-3 py-2 border-t border-gray-800 flex gap-1">
                   <button className="flex-1 py-1 text-[8px] rounded bg-gray-800 hover:bg-gray-700 text-gray-300">Copy All</button>
                   <button className="flex-1 py-1 text-[8px] rounded bg-gray-800 hover:bg-gray-700 text-gray-300">Export .txt</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== INTEGRATION PANELS ===== */}
+        {activeIntegrationPanel && !showCallUI && (
+          <div className="w-80 border-l border-[var(--border-color,#334155)] overflow-hidden flex flex-col">
+            {activeIntegrationPanel === 'intelligence' && (
+              <MeetingIntelligence onClose={() => setActiveIntegrationPanel(null)} />
+            )}
+            {activeIntegrationPanel === 'smartsearch' && (
+              <SmartSearch onClose={() => setActiveIntegrationPanel(null)} />
+            )}
+            {activeIntegrationPanel === 'calendar' && (
+              <CalendarIntegrationPanel onClose={() => setActiveIntegrationPanel(null)} />
+            )}
+            {activeIntegrationPanel === 'insights' && (
+              <MeetingInsightsDashboard onClose={() => setActiveIntegrationPanel(null)} />
+            )}
+            {activeIntegrationPanel === 'askfred' && (
+              <AskFred onClose={() => setActiveIntegrationPanel(null)} />
+            )}
+            {activeIntegrationPanel === 'webhooks' && (
+              <WebhookConfigPanel onClose={() => setActiveIntegrationPanel(null)} />
+            )}
+            {activeIntegrationPanel === 'comments' && selectedTranscript && (
+              <MeetingComments meetingId={selectedTranscript.id} onClose={() => setActiveIntegrationPanel(null)} />
+            )}
+            {activeIntegrationPanel === 'comments' && !selectedTranscript && (
+              <div className="flex flex-col items-center justify-center h-full p-4 text-center" style={{ color: 'var(--muted-foreground, #94a3b8)' }}>
+                <p className="text-xs">Select a meeting to view comments</p>
+                <button onClick={() => setActiveIntegrationPanel(null)} className="mt-2 text-[10px] text-blue-400 hover:underline">Close</button>
+              </div>
+            )}
+            {activeIntegrationPanel === 'fireflies' && (
+              <div className="flex flex-col h-full overflow-hidden" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
+                <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">🔥</span>
+                    <h3 className="text-sm font-semibold">Fireflies Transcripts</h3>
+                  </div>
+                  <button onClick={() => setActiveIntegrationPanel(null)} className="p-1 rounded hover:bg-white/10 text-xs">✕</button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                  {firefliesTranscripts.map(t => (
+                    <div key={t.id}
+                      onClick={() => selectTranscript(t.id)}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedTranscriptId === t.id ? 'border-purple-500/50 bg-purple-500/10' : 'hover:border-purple-500/30'}`}
+                      style={{ borderColor: selectedTranscriptId === t.id ? undefined : 'var(--border, #334155)', backgroundColor: selectedTranscriptId === t.id ? undefined : 'var(--card, #111827)' }}>
+                      <div className="text-xs font-medium mb-1">{t.title}</div>
+                      <div className="text-[9px] mb-1" style={{ color: 'var(--muted-foreground, #94a3b8)' }}>
+                        {new Date(t.date).toLocaleDateString()} · {t.duration} min · {t.meeting_attendees.length} attendees
+                      </div>
+                      <div className="text-[10px] line-clamp-2" style={{ color: 'var(--muted-foreground, #94a3b8)' }}>
+                        {t.summary.overview}
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {t.summary.keywords.slice(0, 3).map(kw => (
+                          <span key={kw} className="text-[8px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400">{kw}</span>
+                        ))}
+                      </div>
+                      <div className="flex gap-1 mt-2">
+                        <button onClick={(e) => { e.stopPropagation(); selectTranscript(t.id); setShowExportModal(true); }}
+                          className="px-1.5 py-0.5 rounded text-[8px] bg-green-600/20 text-green-400 hover:bg-green-600/30">Export</button>
+                        <button onClick={(e) => { e.stopPropagation(); selectTranscript(t.id); setShowShareModal(true); }}
+                          className="px-1.5 py-0.5 rounded text-[8px] bg-blue-600/20 text-blue-400 hover:bg-blue-600/30">Share</button>
+                        <button onClick={(e) => { e.stopPropagation(); selectTranscript(t.id); setShowSlackModal(true); }}
+                          className="px-1.5 py-0.5 rounded text-[8px] bg-green-600/20 text-green-400 hover:bg-green-600/30">Slack</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -1173,6 +1299,20 @@ export default function MeetingsModule() {
             </div>
           </div>
         </div>
+      )}
+      {/* ===== SHARE MODAL ===== */}
+      {showShareModal && selectedTranscript && (
+        <MeetingShareModal meeting={selectedTranscript} onClose={() => setShowShareModal(false)} />
+      )}
+
+      {/* ===== EXPORT MODAL ===== */}
+      {showExportModal && selectedTranscript && (
+        <MeetingExportModal meeting={selectedTranscript} onClose={() => setShowExportModal(false)} />
+      )}
+
+      {/* ===== SLACK MODAL ===== */}
+      {showSlackModal && (
+        <SlackIntegration meeting={selectedTranscript} onClose={() => setShowSlackModal(false)} />
       )}
     </div>
   );

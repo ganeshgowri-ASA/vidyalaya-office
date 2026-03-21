@@ -27,6 +27,7 @@ import {
   FlaskConical,
   StickyNote,
   CheckSquare,
+  Bot,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,7 @@ const communicateNav = [
   { label: "Email", href: "/email", icon: Mail },
   { label: "Chat", href: "/chat", icon: MessageSquare },
   { label: "Meetings", href: "/meetings", icon: Video },
+  { label: "Meeting Bot", href: "/meetings/bot", icon: Bot },
   { label: "Calendar", href: "/calendar", icon: CalendarDays },
 ];
 
