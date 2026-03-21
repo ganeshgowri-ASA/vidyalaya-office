@@ -19,6 +19,7 @@ import type {
   SignatureMode,
   MeasurementAnnotation,
   CreatorElement,
+  SavedSignature,
 } from "@/components/pdf/types";
 
 // ─── Local types ─────────────────────────────────────────────────────────────
@@ -107,6 +108,12 @@ interface PdfStore {
   setTypedSignatureFont: (f: string) => void;
   uploadedSignatureDataUrl: string | null;
   setUploadedSignatureDataUrl: (url: string | null) => void;
+
+  // Saved signatures
+  savedSignatures: SavedSignature[];
+  addSavedSignature: (sig: SavedSignature) => void;
+  removeSavedSignature: (id: string) => void;
+  setSavedSignatures: (sigs: SavedSignature[]) => void;
 
   // Merge state
   mergeFiles: MergeFile[];
@@ -442,6 +449,12 @@ export const usePdfStore = create<PdfStore>((set) => ({
   uploadedSignatureDataUrl: null,
   setUploadedSignatureDataUrl: (url) => set({ uploadedSignatureDataUrl: url }),
 
+  // Saved signatures
+  savedSignatures: [],
+  addSavedSignature: (sig) => set((state) => ({ savedSignatures: [...state.savedSignatures, sig] })),
+  removeSavedSignature: (id) => set((state) => ({ savedSignatures: state.savedSignatures.filter((s) => s.id !== id) })),
+  setSavedSignatures: (sigs) => set({ savedSignatures: sigs }),
+
   // Merge state
   mergeFiles: [],
   setMergeFiles: (f) => {
@@ -713,6 +726,7 @@ export const usePdfStore = create<PdfStore>((set) => ({
       typedSignatureText: "",
       typedSignatureFont: "Dancing Script, cursive",
       uploadedSignatureDataUrl: null,
+      savedSignatures: [],
       mergeFiles: [],
       merging: false,
       splitPages: 0,

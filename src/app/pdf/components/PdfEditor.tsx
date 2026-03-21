@@ -7,7 +7,7 @@ import {
   Image, Ruler, Hash, Droplets, AlignCenter, ShieldCheck, Award,
   ScanText, Loader2, X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
   SquareIcon, CircleIcon, Minus, ArrowRightIcon, Star, Hexagon,
-  Upload, Bold, Italic,
+  Upload, Bold, Italic, Save, Trash2, Download, Move,
 } from "lucide-react";
 import type { Annotation } from "./PdfViewer";
 
@@ -91,10 +91,27 @@ export default function PdfEditor({
   // Signature state
   const [signatureMode, setSignatureMode] = useState<SignatureMode>("draw");
   const [typedSigText, setTypedSigText] = useState("");
-  const [typedSigFont, setTypedSigFont] = useState("cursive");
+  const [typedSigFont, setTypedSigFont] = useState("'Dancing Script', cursive");
   const [uploadedSigUrl, setUploadedSigUrl] = useState<string | null>(null);
   const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const sigDrawingRef = useRef(false);
+  const sigLastPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Saved signatures
+  const [savedSignatures, setSavedSignatures] = useState<{ id: string; label: string; dataUrl: string; createdAt: string }[]>(() => {
+    if (typeof window !== "undefined") {
+      try { return JSON.parse(localStorage.getItem("pdf-saved-signatures") || "[]"); } catch { return []; }
+    }
+    return [];
+  });
+  const [sigLabel, setSigLabel] = useState("");
+
+  // Drag state for placed signatures
+  const [draggingSigId, setDraggingSigId] = useState<string | null>(null);
+  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Signature ink color
+  const [sigInkColor, setSigInkColor] = useState("#000000");
 
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
@@ -129,8 +146,30 @@ export default function PdfEditor({
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
 
+  // Check if a click hits a placed signature for drag repositioning
+  const findSignatureAt = (x: number, y: number) => {
+    for (let i = annotations.length - 1; i >= 0; i--) {
+      const a = annotations[i];
+      if (a.type === "signature" && a.page === currentPage) {
+        const w = a.width ?? 200; const h = a.height ?? 80;
+        if (x >= a.x && x <= a.x + w && y >= a.y && y <= a.y + h) return a;
+      }
+    }
+    return null;
+  };
+
   const handleOverlayMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const { x, y } = getCanvasCoords(e);
+
+    // Allow drag repositioning of placed signatures when in signature mode
+    if (editMode === "signature") {
+      const hitSig = findSignatureAt(x, y);
+      if (hitSig) {
+        setDraggingSigId(hitSig.id);
+        dragOffsetRef.current = { x: x - hitSig.x, y: y - hitSig.y };
+        return;
+      }
+    }
 
     if (editMode === "text") { setTextPlacement({ x, y }); return; }
     if (editMode === "highlight") {
@@ -159,8 +198,9 @@ export default function PdfEditor({
         canvas.width = 300; canvas.height = 80;
         const ctx = canvas.getContext("2d")!;
         ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 300, 80);
-        ctx.font = `32px ${typedSigFont}`; ctx.fillStyle = "#000000";
-        ctx.fillText(typedSigText, 10, 50);
+        ctx.font = `32px ${typedSigFont}`; ctx.fillStyle = sigInkColor;
+        ctx.textBaseline = "middle";
+        ctx.fillText(typedSigText, 10, 40);
         dataUrl = canvas.toDataURL();
       } else if (signatureMode === "upload" && uploadedSigUrl) {
         dataUrl = uploadedSigUrl;
@@ -186,6 +226,17 @@ export default function PdfEditor({
   };
 
   const handleOverlayMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Handle drag repositioning
+    if (draggingSigId) {
+      const { x, y } = getCanvasCoords(e);
+      const newX = x - dragOffsetRef.current.x;
+      const newY = y - dragOffsetRef.current.y;
+      onAnnotationsChange(annotations.map((a) =>
+        a.id === draggingSigId ? { ...a, x: newX, y: newY } : a
+      ));
+      renderAnnotations(currentPage);
+      return;
+    }
     if (!isDrawing) return;
     const { x, y } = getCanvasCoords(e);
     setCurrentDrawPoints((prev) => [...prev, { x, y }]);
@@ -198,6 +249,11 @@ export default function PdfEditor({
   };
 
   const handleOverlayMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (draggingSigId) {
+      setDraggingSigId(null);
+      renderAnnotations(currentPage);
+      return;
+    }
     if (isDrawing && currentDrawPoints.length > 1) {
       onAnnotationsChange([...annotations, { id: uid(), type: "drawing", page: currentPage, x: 0, y: 0, points: currentDrawPoints, color: drawColor, strokeWidth }]);
     }
@@ -238,11 +294,33 @@ export default function PdfEditor({
       return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
 
-    canvas.onmousedown = (e) => { sigDrawingRef.current = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
-    canvas.onmousemove = (e) => { if (!sigDrawingRef.current) return; const p = getPos(e); ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.lineTo(p.x, p.y); ctx.stroke(); };
-    canvas.onmouseup = () => { sigDrawingRef.current = false; };
-    canvas.onmouseleave = () => { sigDrawingRef.current = false; };
-  }, []);
+    // Smooth drawing with quadratic bezier curves
+    canvas.onmousedown = (e) => {
+      sigDrawingRef.current = true;
+      const p = getPos(e);
+      sigLastPosRef.current = p;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+    };
+    canvas.onmousemove = (e) => {
+      if (!sigDrawingRef.current || !sigLastPosRef.current) return;
+      const p = getPos(e);
+      const last = sigLastPosRef.current;
+      const mid = { x: (last.x + p.x) / 2, y: (last.y + p.y) / 2 };
+      ctx.strokeStyle = sigInkColor;
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.quadraticCurveTo(last.x, last.y, mid.x, mid.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(mid.x, mid.y);
+      sigLastPosRef.current = p;
+    };
+    canvas.onmouseup = () => { sigDrawingRef.current = false; sigLastPosRef.current = null; };
+    canvas.onmouseleave = () => { sigDrawingRef.current = false; sigLastPosRef.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sigInkColor]);
 
   const clearSignature = () => {
     const canvas = signatureCanvasRef.current;
@@ -267,6 +345,55 @@ export default function PdfEditor({
     reader.onload = () => setUploadedSigUrl(reader.result as string);
     reader.readAsDataURL(file);
   };
+
+  // Save current signature to localStorage
+  const saveCurrentSignature = () => {
+    let dataUrl: string | null = null;
+    if (signatureMode === "draw" && signatureCanvasRef.current) {
+      dataUrl = signatureCanvasRef.current.toDataURL();
+    } else if (signatureMode === "type" && typedSigText) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 300; canvas.height = 80;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 300, 80);
+      ctx.font = `32px ${typedSigFont}`; ctx.fillStyle = sigInkColor;
+      ctx.textBaseline = "middle";
+      ctx.fillText(typedSigText, 10, 40);
+      dataUrl = canvas.toDataURL();
+    } else if (signatureMode === "upload" && uploadedSigUrl) {
+      dataUrl = uploadedSigUrl;
+    }
+    if (!dataUrl) return;
+    const newSig = { id: uid(), label: sigLabel || `Signature ${savedSignatures.length + 1}`, dataUrl, createdAt: new Date().toISOString() };
+    const updated = [...savedSignatures, newSig];
+    setSavedSignatures(updated);
+    setSigLabel("");
+    try { localStorage.setItem("pdf-saved-signatures", JSON.stringify(updated)); } catch { /* ignore */ }
+  };
+
+  const deleteSavedSignature = (id: string) => {
+    const updated = savedSignatures.filter((s) => s.id !== id);
+    setSavedSignatures(updated);
+    try { localStorage.setItem("pdf-saved-signatures", JSON.stringify(updated)); } catch { /* ignore */ }
+  };
+
+  const loadSavedSignature = (dataUrl: string) => {
+    setUploadedSigUrl(dataUrl);
+    setSignatureMode("upload");
+  };
+
+  const signatureFonts = [
+    { label: "Dancing Script", value: "'Dancing Script', cursive" },
+    { label: "Great Vibes", value: "'Great Vibes', cursive" },
+    { label: "Pacifico", value: "'Pacifico', cursive" },
+    { label: "Sacramento", value: "'Sacramento', cursive" },
+  ];
+
+  const sigInkColors = [
+    { label: "Black", value: "#000000" },
+    { label: "Blue", value: "#1d4ed8" },
+    { label: "Red", value: "#dc2626" },
+  ];
 
   // Tool button helper
   const toolBtn = (mode: EditMode, icon: React.ReactNode, label: string) => (
@@ -410,7 +537,7 @@ export default function PdfEditor({
         <div style={{ height: 1, backgroundColor: "var(--border)", margin: "4px 0" }} />
         <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>Signatures</h3>
 
-        {toolBtn("signature", <Pencil size={16} />, "Signature")}
+        {toolBtn("signature", <Pencil size={16} />, "E-Signature")}
         {editMode === "signature" && (
           <div className="flex flex-col gap-2 pl-2">
             {/* Mode tabs */}
@@ -424,41 +551,115 @@ export default function PdfEditor({
                 </button>
               ))}
             </div>
+
+            {/* ── DRAW MODE ─── */}
             {signatureMode === "draw" && (
               <>
-                <canvas ref={initSignaturePad} width={200} height={80}
-                  style={{ border: "1px solid var(--border)", borderRadius: 4, backgroundColor: "#fff", cursor: "crosshair" }} />
-                <button style={{ ...btnStyle, fontSize: 11 }} onClick={clearSignature}>Clear</button>
+                <canvas ref={initSignaturePad} width={220} height={90}
+                  style={{ border: "1px solid var(--border)", borderRadius: 6, backgroundColor: "#fff", cursor: "crosshair", width: "100%" }} />
+                <div className="flex gap-1">
+                  <button style={{ ...btnStyle, fontSize: 11, flex: 1, justifyContent: "center" }} onClick={clearSignature}>
+                    <Trash2 size={12} /> Clear
+                  </button>
+                </div>
+                <label style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Ink Color</label>
+                <div className="flex gap-1">
+                  {sigInkColors.map((c) => (
+                    <div key={c.value} title={c.label} onClick={() => setSigInkColor(c.value)}
+                      style={{ width: 22, height: 22, borderRadius: 4, backgroundColor: c.value, cursor: "pointer",
+                        border: sigInkColor === c.value ? "2px solid var(--primary)" : "2px solid var(--border)" }} />
+                  ))}
+                </div>
               </>
             )}
+
+            {/* ── TYPE MODE ─── */}
             {signatureMode === "type" && (
               <>
                 <input type="text" value={typedSigText} onChange={(e) => setTypedSigText(e.target.value)}
-                  placeholder="Type your signature" style={{ ...inputStyle, fontSize: 11 }} />
+                  placeholder="Type your name" style={{ ...inputStyle, fontSize: 11 }} />
+                <label style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Font</label>
                 <select value={typedSigFont} onChange={(e) => setTypedSigFont(e.target.value)} style={{ ...inputStyle, fontSize: 11 }}>
-                  <option value="cursive">Cursive</option>
-                  <option value="serif">Serif</option>
-                  <option value="fantasy">Fantasy</option>
+                  {signatureFonts.map((f) => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
                 </select>
+                <label style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Color</label>
+                <div className="flex gap-1">
+                  {sigInkColors.map((c) => (
+                    <div key={c.value} title={c.label} onClick={() => setSigInkColor(c.value)}
+                      style={{ width: 22, height: 22, borderRadius: 4, backgroundColor: c.value, cursor: "pointer",
+                        border: sigInkColor === c.value ? "2px solid var(--primary)" : "2px solid var(--border)" }} />
+                  ))}
+                </div>
                 {typedSigText && (
-                  <div style={{ padding: 8, backgroundColor: "#fff", borderRadius: 4, border: "1px solid var(--border)", fontFamily: typedSigFont, fontSize: 24, color: "#000" }}>
+                  <div style={{ padding: 8, backgroundColor: "#fff", borderRadius: 6, border: "1px solid var(--border)",
+                    fontFamily: typedSigFont, fontSize: 24, color: sigInkColor, textAlign: "center" }}>
                     {typedSigText}
                   </div>
                 )}
               </>
             )}
+
+            {/* ── UPLOAD MODE ─── */}
             {signatureMode === "upload" && (
               <>
-                <label style={{ ...btnStyle, cursor: "pointer", fontSize: 11, justifyContent: "center" }}>
-                  <Upload size={14} /> Upload Signature
-                  <input type="file" accept="image/*" className="hidden" onChange={handleSigImageUpload} />
+                <label style={{ ...btnStyle, cursor: "pointer", fontSize: 11, justifyContent: "center", width: "100%" }}>
+                  <Upload size={14} /> Upload Image
+                  <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={handleSigImageUpload} />
                 </label>
                 {uploadedSigUrl && (
-                  <img src={uploadedSigUrl} alt="Signature" style={{ maxWidth: "100%", maxHeight: 60, borderRadius: 4 }} />
+                  <>
+                    <img src={uploadedSigUrl} alt="Signature" style={{ maxWidth: "100%", maxHeight: 60, borderRadius: 4, backgroundColor: "#fff", border: "1px solid var(--border)" }} />
+                    <button style={{ ...btnStyle, fontSize: 11, justifyContent: "center" }} onClick={() => setUploadedSigUrl(null)}>
+                      <Trash2 size={12} /> Remove
+                    </button>
+                  </>
                 )}
               </>
             )}
-            <p style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Click on PDF to place signature</p>
+
+            {/* ── Place & Save ─── */}
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 6, marginTop: 2 }}>
+              <p style={{ fontSize: 10, color: "var(--muted-foreground)", marginBottom: 4 }}>
+                <Move size={10} style={{ display: "inline", verticalAlign: "middle" }} /> Click PDF to place. Drag placed signatures to reposition.
+              </p>
+            </div>
+
+            {/* ── Save Signature ─── */}
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 6 }}>
+              <label style={{ fontSize: 10, fontWeight: 600, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: 0.5 }}>Save Signature</label>
+              <div className="flex gap-1 mt-1">
+                <input type="text" value={sigLabel} onChange={(e) => setSigLabel(e.target.value)}
+                  placeholder="Label (optional)" style={{ ...inputStyle, fontSize: 10, flex: 1, padding: "4px 6px" }} />
+                <button style={{ ...btnStyle, fontSize: 10, padding: "4px 8px" }} onClick={saveCurrentSignature} title="Save signature">
+                  <Save size={12} />
+                </button>
+              </div>
+            </div>
+
+            {/* ── Saved Signatures ─── */}
+            {savedSignatures.length > 0 && (
+              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 6 }}>
+                <label style={{ fontSize: 10, fontWeight: 600, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  My Signatures ({savedSignatures.length})
+                </label>
+                <div className="flex flex-col gap-1 mt-1" style={{ maxHeight: 150, overflowY: "auto" }}>
+                  {savedSignatures.map((sig) => (
+                    <div key={sig.id} className="flex items-center gap-1" style={{ border: "1px solid var(--border)", borderRadius: 4, padding: 4, backgroundColor: "var(--card)" }}>
+                      <img src={sig.dataUrl} alt={sig.label} onClick={() => loadSavedSignature(sig.dataUrl)}
+                        style={{ width: 60, height: 24, objectFit: "contain", borderRadius: 2, backgroundColor: "#fff", cursor: "pointer" }} />
+                      <span style={{ fontSize: 9, flex: 1, color: "var(--muted-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {sig.label}
+                      </span>
+                      <button onClick={() => deleteSavedSignature(sig.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "var(--muted-foreground)" }} title="Delete">
+                        <Trash2 size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

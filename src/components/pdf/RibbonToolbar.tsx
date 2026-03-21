@@ -10,6 +10,7 @@ import {
   FileOutput,
   Shield,
   Eye,
+  PenTool,
 } from "lucide-react";
 import type { RibbonTabId } from "./types";
 
@@ -27,6 +28,7 @@ const RIBBON_TABS: { id: RibbonTabId; label: string; icon: React.ElementType }[]
   { id: "organize", label: "Organize", icon: LayoutGrid },
   { id: "convert", label: "Convert", icon: FileOutput },
   { id: "security", label: "Security", icon: Shield },
+  { id: "sign", label: "Sign", icon: PenTool },
   { id: "review", label: "Review", icon: Eye },
 ];
 
