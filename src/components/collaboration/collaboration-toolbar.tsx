@@ -8,9 +8,11 @@ import {
   History,
   Users,
   ChevronDown,
+  FileCheck,
 } from "lucide-react";
 import { useCollaborationStore } from "@/store/collaboration-store";
 import { NotificationBadge } from "./notification-badge";
+import { ReviewStatusBadge } from "./review-workflow-panel";
 
 export function CollaborationToolbar() {
   const {
@@ -27,6 +29,9 @@ export function CollaborationToolbar() {
     openCommentCount,
     togglePresenceDetails,
     showPresenceDetails,
+    toggleReviewPanel,
+    showReviewPanel,
+    reviewRequest,
   } = useCollaborationStore();
 
   const onlineUsers = collaborators.filter((u) => u.isOnline);
@@ -137,6 +142,26 @@ export function CollaborationToolbar() {
         <History size={14} />
         <span className="hidden sm:inline">History</span>
       </button>
+
+      <div className="mx-1 h-5 w-px" style={{ backgroundColor: "var(--border)" }} />
+
+      {/* Review Workflow */}
+      <button
+        onClick={toggleReviewPanel}
+        className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs transition-colors ${
+          showReviewPanel ? "bg-[var(--accent)]" : "hover:bg-[var(--muted)]"
+        }`}
+        style={{
+          color: showReviewPanel ? "var(--accent-foreground)" : "var(--foreground)",
+        }}
+        title="Review Workflow"
+      >
+        <FileCheck size={14} />
+        <span className="hidden sm:inline">Review</span>
+      </button>
+
+      {/* Review Status Badge */}
+      <ReviewStatusBadge />
 
       <div className="flex-1" />
 

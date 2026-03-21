@@ -14,6 +14,9 @@ import {
   Search,
   Check,
   Sparkles,
+  HelpCircle,
+  Keyboard,
+  MessageSquare,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { useThemeStore, themes } from "@/store/theme-store";
@@ -22,6 +25,10 @@ import { useAuthStore } from "@/store/auth-store";
 import { formatDate } from "@/lib/utils";
 import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
 import { UserMenu } from "@/components/auth/user-menu";
+import { useCollaborationStore } from "@/store/collaboration-store";
+import { formatDate } from "@/lib/utils";
+import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
+import { CloudSyncStatus } from "@/components/shared/cloud-sync-status";
 import type { ThemeName } from "@/types";
 
 const themeSwatches: Record<ThemeName, string> = {
@@ -48,6 +55,7 @@ const breadcrumbMap: Record<string, string> = {
   "/help": "Help & Feedback",
   "/settings": "Settings",
   "/doc-control": "Doc Control",
+  "/cloud-storage": "Cloud Storage",
 };
 
 export function Topbar() {
@@ -57,6 +65,8 @@ export function Topbar() {
   const toggleAIChat = useAIChatStore((s) => s.togglePanel);
   const aiChatOpen = useAIChatStore((s) => s.isOpen);
   const { isGuest } = useAuthStore();
+  const openCommentCount = useCollaborationStore((s) => s.openCommentCount);
+  const toggleCollabComments = useCollaborationStore((s) => s.toggleCollabComments);
   const [themeOpen, setThemeOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
@@ -210,7 +220,24 @@ export function Topbar() {
             )}
           </div>
 
+          {/* Comment threads badge */}
+          <button
+            onClick={toggleCollabComments}
+            className="relative flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors hover:opacity-80"
+            title="Comment Threads"
+          >
+            <MessageSquare size={16} />
+            {openCommentCount() > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: "#f59e0b" }}>
+                {openCommentCount()}
+              </span>
+            )}
+          </button>
+
           {/* Notifications */}
+          {/* Cloud sync status */}
+          <CloudSyncStatus />
+
           <button
             onClick={() => setNotifPanelOpen(true)}
             className="relative flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors hover:opacity-80"

@@ -972,6 +972,7 @@ export default function PdfToolsPage() {
       case "organize": setActiveTab("view"); break;
       case "convert": setActiveTab("convert"); break;
       case "security": setActiveTab("view"); break;
+      case "sign": setActiveTab("edit"); break;
       case "review": setActiveTab("compare"); break;
     }
   };
@@ -1092,6 +1093,19 @@ export default function PdfToolsPage() {
               <ShieldCheck size={14} /> {certSignatureApplied ? "Cert Applied" : "Digital Certificate"}
             </button>
             <button style={btnStyle} onClick={() => setActiveTab("edit")}><EyeOff size={14} /> Redact</button>
+          </div>
+        );
+      case "sign":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={btnStyle} onClick={() => setActiveTab("edit")}><Pencil size={14} /> Draw Signature</button>
+            <button style={btnStyle} onClick={() => setActiveTab("edit")}><Type size={14} /> Type Signature</button>
+            <button style={btnStyle} onClick={() => setActiveTab("edit")}><Upload size={14} /> Upload Signature</button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+            <button style={{ ...btnStyle, ...(certSignatureApplied ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowCertModal(true)}>
+              <ShieldCheck size={14} /> {certSignatureApplied ? "Certificate Applied" : "Add Certificate"}
+            </button>
+            <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("signature"); }}><Pencil size={14} /> Signature Field</button>
           </div>
         );
       case "review":

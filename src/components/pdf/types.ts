@@ -1,6 +1,6 @@
 // ─── Shared PDF Types ─────────────────────────────────────────────────────────
 
-export type RibbonTabId = "home" | "edit" | "annotate" | "forms" | "organize" | "convert" | "security" | "review";
+export type RibbonTabId = "home" | "edit" | "annotate" | "forms" | "organize" | "convert" | "security" | "sign" | "review";
 
 export type ConvertDirection =
   | "pdf-to-word" | "pdf-to-excel" | "pdf-to-ppt" | "pdf-to-image"
@@ -68,6 +68,14 @@ export interface CertificateInfo {
   organization: string;
   reason: string;
   date: string;
+}
+
+export interface SavedSignature {
+  id: string;
+  label: string;
+  dataUrl: string;
+  createdAt: string;
+  certificateInfo?: CertificateInfo;
 }
 
 export interface MergeFile {

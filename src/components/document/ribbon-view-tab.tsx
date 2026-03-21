@@ -17,9 +17,10 @@ export interface ViewTabProps {
   onToggleDeveloper?: () => void;
   onShowDocProperties?: () => void;
   onShowKeyboardShortcuts?: () => void;
+  onToggleFileVersions?: () => void;
 }
 
-export function ViewTab({ onToggleVersionControl, onToggleDeveloper, onShowDocProperties, onShowKeyboardShortcuts }: ViewTabProps) {
+export function ViewTab({ onToggleVersionControl, onToggleDeveloper, onShowDocProperties, onShowKeyboardShortcuts, onToggleFileVersions }: ViewTabProps) {
   const {
     zoom, setZoom,
     viewMode, setViewMode,
@@ -135,6 +136,9 @@ export function ViewTab({ onToggleVersionControl, onToggleDeveloper, onShowDocPr
         <div className="flex items-center gap-0.5">
           {onToggleVersionControl && (
             <ToolbarButton icon={<History size={14} />} label="Versions" title="Version Control" onClick={onToggleVersionControl} />
+          )}
+          {onToggleFileVersions && (
+            <ToolbarButton icon={<History size={14} />} label="File History" title="File Version History (IndexedDB)" onClick={onToggleFileVersions} />
           )}
           {onToggleDeveloper && (
             <ToolbarButton icon={<Terminal size={14} />} label="Macros" title="Macros" onClick={onToggleDeveloper} />

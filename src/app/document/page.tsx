@@ -37,6 +37,8 @@ import {
   ShareDialog,
   PresenceIndicators,
   VersionHistoryPanel,
+  InlineCommentLayer,
+  ReviewWorkflowPanel,
 } from "@/components/collaboration";
 import { useCollaborationStore } from "@/store/collaboration-store";
 import { ExportDropdown } from "@/components/shared/export-dropdown";
@@ -45,6 +47,10 @@ import { ImportDialog } from "@/components/shared/import-dialog";
 import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
 import { ExportManager, type ExportFormat } from "@/lib/export-manager";
 import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
+import { TemplateVariableModal } from "@/components/shared/template-variable-modal";
+import { FileVersionHistory } from "@/components/shared/file-version-history";
+import { useAutoSaveVersions } from "@/components/shared/use-auto-save-versions";
+import { useFileVersionStore } from "@/store/file-version-store";
 
 export default function DocumentPage() {
   const {
@@ -62,7 +68,22 @@ export default function DocumentPage() {
   const {
     showCollabComments,
     showVersionHistory: showCollabVersionHistory,
+    showReviewPanel,
   } = useCollaborationStore();
+
+  const { showPanel: showFileVersions, setShowPanel: setShowFileVersions } = useFileVersionStore();
+
+  // Auto-save version hook: creates snapshots every 5 min
+  const getContentForVersions = useCallback(() => {
+    if (typeof window === "undefined") return "";
+    return getEditorContent();
+  }, []);
+
+  const { saveVersion: saveManualVersion } = useAutoSaveVersions({
+    fileId: `doc-${fileName}`,
+    fileType: "document",
+    getContent: getContentForVersions,
+  });
 
   const [showPageSetup, setShowPageSetup] = React.useState(false);
   const [showHeaderFooterEditor, setShowHeaderFooterEditor] = React.useState(false);
@@ -101,6 +122,8 @@ export default function DocumentPage() {
             if (editor) {
               localStorage.setItem("vidyalaya-doc-content", editor.innerHTML);
               useDocumentStore.getState().setLastSaved(new Date().toLocaleTimeString());
+              // Also create a version snapshot on manual save
+              saveManualVersion("Manual save (Ctrl+S)");
             }
             break;
           case "b":
@@ -164,7 +187,25 @@ export default function DocumentPage() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [setShowFindReplace, showKeyboardShortcuts, setShowKeyboardShortcuts]);
+  }, [setShowFindReplace, showKeyboardShortcuts, setShowKeyboardShortcuts, saveManualVersion]);
+
+  // Pick up imported document content from sessionStorage (set by import engine)
+  useEffect(() => {
+    const importedHtml = sessionStorage.getItem("import-document-html");
+    const importedName = sessionStorage.getItem("import-document-name");
+    if (importedHtml) {
+      const editor = document.getElementById("doc-editor");
+      if (editor) {
+        editor.innerHTML = importedHtml;
+        localStorage.setItem("vidyalaya-doc-content", importedHtml);
+      }
+      if (importedName) {
+        setFileName(importedName);
+      }
+      sessionStorage.removeItem("import-document-html");
+      sessionStorage.removeItem("import-document-name");
+    }
+  }, [setFileName]);
 
   const handleExport = useCallback(async (format: ExportFormat) => {
     const content = getEditorContent();
@@ -251,6 +292,7 @@ export default function DocumentPage() {
         onToggleDeveloper={() => setShowDeveloper(!showDeveloper)}
         onShowDocProperties={() => setShowDocProperties(true)}
         onShowKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
+        onToggleFileVersions={() => setShowFileVersions(!showFileVersions)}
       />
 
       {/* Track Changes Panel */}
@@ -276,8 +318,11 @@ export default function DocumentPage() {
         {/* Styles Panel */}
         {showStylesPanel && <StylesPanel />}
 
-        {/* Editor */}
-        <EditorArea />
+        {/* Editor with inline comments */}
+        <div className="relative flex-1 flex flex-col min-w-0">
+          <EditorArea />
+          <InlineCommentLayer />
+        </div>
 
         {/* Find & Replace overlay */}
         <FindReplaceDialog />
@@ -291,6 +336,9 @@ export default function DocumentPage() {
         {/* Collaboration Version History */}
         {showCollabVersionHistory && <VersionHistoryPanel />}
 
+        {/* Review Workflow Panel */}
+        {showReviewPanel && <ReviewWorkflowPanel />}
+
         {/* Version Control */}
         <VersionControlPanel
           visible={showVersionControl}
@@ -298,6 +346,12 @@ export default function DocumentPage() {
           currentContent={typeof window !== "undefined" ? getEditorContent() : ""}
           onRestore={handleVersionRestore}
           documentName={fileName}
+        />
+
+        {/* File Version History (IndexedDB-backed) */}
+        <FileVersionHistory
+          onRestore={handleVersionRestore}
+          getCurrentContent={() => typeof window !== "undefined" ? getEditorContent() : ""}
         />
 
         {/* Word Count Statistics Panel */}
@@ -318,6 +372,7 @@ export default function DocumentPage() {
 
       {/* Modals */}
       <TemplatesModal />
+      <TemplateVariableModal />
       <PrintPreview />
       <PageSetupDialog open={showPageSetup} onClose={() => setShowPageSetup(false)} />
       <HeaderFooterEditor

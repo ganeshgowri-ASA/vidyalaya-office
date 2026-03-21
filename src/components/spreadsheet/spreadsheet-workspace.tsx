@@ -65,6 +65,40 @@ export default function SpreadsheetWorkspace() {
   const [showVlookupHelper, setShowVlookupHelper] = useState(false);
   const [splitView, setSplitView] = useState<"horizontal" | "vertical" | null>(null);
 
+  // Pick up imported spreadsheet data from sessionStorage (set by import engine)
+  useEffect(() => {
+    const importedData = sessionStorage.getItem("import-spreadsheet-data");
+    if (importedData) {
+      try {
+        const parsed = JSON.parse(importedData);
+        if (parsed.sheets && parsed.sheets.length > 0) {
+          const sheet = parsed.sheets[0];
+          // Convert to CSV format for importCSV
+          const rows: string[] = [];
+          for (let r = 1; r <= sheet.maxRow; r++) {
+            const cols: string[] = [];
+            for (let c = 0; c < sheet.maxCol; c++) {
+              const colLetter = String.fromCharCode(65 + (c % 26));
+              const ref = `${colLetter}${r}`;
+              const cell = sheet.cells[ref];
+              const val = cell?.value ?? "";
+              // Quote values containing commas
+              cols.push(val.includes(",") ? `"${val}"` : val);
+            }
+            rows.push(cols.join(","));
+          }
+          if (rows.length > 0) {
+            importCSV(rows.join("\n"));
+          }
+        }
+      } catch {
+        // ignore parse errors
+      }
+      sessionStorage.removeItem("import-spreadsheet-data");
+      sessionStorage.removeItem("import-spreadsheet-name");
+    }
+  }, [importCSV]);
+
   // Export handlers
   const handleExportCSV = useCallback(() => {
     const sheet = getActiveSheet();

@@ -11,7 +11,7 @@ export type ExportFormat =
   | "pptx" | "png"
   | "images" | "text-extract";
 
-export type ImportFormat = "docx" | "txt" | "md" | "xlsx" | "csv" | "pptx" | "pdf";
+export type ImportFormat = "docx" | "txt" | "md" | "xlsx" | "csv" | "tsv" | "pptx" | "pdf";
 
 export type DocumentType = "document" | "spreadsheet" | "presentation" | "pdf";
 
@@ -409,6 +409,7 @@ export const SUPPORTED_IMPORTS: Record<DocumentType, { format: ImportFormat; lab
   spreadsheet: [
     { format: "xlsx", label: "Excel Workbook (.xlsx)", accept: ".xlsx" },
     { format: "csv", label: "CSV (.csv)", accept: ".csv" },
+    { format: "tsv", label: "TSV (.tsv)", accept: ".tsv" },
   ],
   presentation: [
     { format: "pptx", label: "PowerPoint (.pptx)", accept: ".pptx" },

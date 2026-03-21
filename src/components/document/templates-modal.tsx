@@ -1,19 +1,31 @@
 "use client";
 
 import React from "react";
-import { X } from "lucide-react";
+import { X, Variable } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
+import { useTemplateVariablesStore } from "@/store/template-variables-store";
 import { TEMPLATES } from "./templates-data";
 import { setEditorContent } from "./editor-area";
+import { hasVariables } from "@/lib/template-variables";
 
 export function TemplatesModal() {
   const { showTemplates, setShowTemplates } = useDocumentStore();
+  const openVariableModal = useTemplateVariablesStore((s) => s.openModal);
 
   if (!showTemplates) return null;
 
-  const handleSelect = (content: string) => {
-    setEditorContent(content);
-    setShowTemplates(false);
+  const handleSelect = (name: string, content: string) => {
+    if (hasVariables(content)) {
+      // Template has variables — open the variable fill modal
+      openVariableModal(name, content, (processedContent: string) => {
+        setEditorContent(processedContent);
+        setShowTemplates(false);
+      });
+    } else {
+      // No variables — apply directly
+      setEditorContent(content);
+      setShowTemplates(false);
+    }
   };
 
   return (
@@ -43,28 +55,45 @@ export function TemplatesModal() {
 
         {/* Grid */}
         <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3 max-h-[60vh] overflow-y-auto">
-          {TEMPLATES.map((tpl) => (
-            <button
-              key={tpl.id}
-              onClick={() => handleSelect(tpl.content)}
-              className="group rounded-lg border p-4 text-left transition-all hover:shadow-md hover:border-[var(--primary)]"
-              style={{
-                borderColor: "var(--border)",
-                backgroundColor: "var(--background)",
-              }}
-            >
-              <div className="mb-2 text-2xl">{tpl.icon}</div>
-              <h3
-                className="text-sm font-semibold mb-1 group-hover:text-[var(--primary)]"
-                style={{ color: "var(--foreground)" }}
+          {TEMPLATES.map((tpl) => {
+            const templateHasVars = hasVariables(tpl.content);
+            return (
+              <button
+                key={tpl.id}
+                onClick={() => handleSelect(tpl.name, tpl.content)}
+                className="group rounded-lg border p-4 text-left transition-all hover:shadow-md hover:border-[var(--primary)]"
+                style={{
+                  borderColor: "var(--border)",
+                  backgroundColor: "var(--background)",
+                }}
               >
-                {tpl.name}
-              </h3>
-              <p className="text-[11px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-                {tpl.description}
-              </p>
-            </button>
-          ))}
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-2xl">{tpl.icon}</span>
+                  {templateHasVars && (
+                    <span
+                      className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                      style={{
+                        backgroundColor: "var(--primary)",
+                        color: "var(--primary-foreground)",
+                      }}
+                    >
+                      <Variable size={10} />
+                      Variables
+                    </span>
+                  )}
+                </div>
+                <h3
+                  className="text-sm font-semibold mb-1 group-hover:text-[var(--primary)]"
+                  style={{ color: "var(--foreground)" }}
+                >
+                  {tpl.name}
+                </h3>
+                <p className="text-[11px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+                  {tpl.description}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
