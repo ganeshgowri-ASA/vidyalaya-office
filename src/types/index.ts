@@ -75,6 +75,39 @@ export interface AuditEntry {
   details?: string;
 }
 
+export interface FileVersion {
+  id: string;
+  fileId: string;
+  version: number;
+  modifiedBy: string;
+  modifiedAt: string;
+  size?: number;
+  note?: string;
+}
+
+export interface FileAuditEntry {
+  id: string;
+  fileId: string;
+  action: "created" | "modified" | "viewed" | "shared" | "deleted" | "restored" | "moved" | "renamed" | "tagged";
+  performedBy: string;
+  timestamp: string;
+  details?: string;
+}
+
+export interface DuplicateGroup {
+  id: string;
+  files: VFile[];
+  reason: "exact" | "similar-name";
+}
+
+export interface RecentFileActivity {
+  fileId: string;
+  fileName: string;
+  action: string;
+  user: string;
+  time: string;
+}
+
 export interface ReviewItem {
   id: string;
   fileId: string;

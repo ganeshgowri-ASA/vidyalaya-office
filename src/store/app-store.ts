@@ -231,6 +231,9 @@ interface AppState {
   duplicateFile: (fileId: string) => void;
   deleteFile: (fileId: string) => void;
   moveFile: (fileId: string, folderId: string) => void;
+  addTagToFile: (fileId: string, tag: string) => void;
+  removeTagFromFile: (fileId: string, tag: string) => void;
+  copyFile: (fileId: string, targetFolderId: string) => void;
 
   // Folder operations
   createFolder: (name: string, parentId: string) => void;
@@ -326,6 +329,36 @@ export const useAppStore = create<AppState>()((set) => ({
         f.id === fileId ? { ...f, folderId, modified: new Date().toISOString() } : f
       ),
     })),
+  addTagToFile: (fileId, tag) =>
+    set((state) => ({
+      recentFiles: state.recentFiles.map((f) =>
+        f.id === fileId
+          ? { ...f, tags: f.tags.includes(tag) ? f.tags : [...f.tags, tag] }
+          : f
+      ),
+    })),
+  removeTagFromFile: (fileId, tag) =>
+    set((state) => ({
+      recentFiles: state.recentFiles.map((f) =>
+        f.id === fileId ? { ...f, tags: f.tags.filter((t) => t !== tag) } : f
+      ),
+    })),
+  copyFile: (fileId, targetFolderId) =>
+    set((state) => {
+      const original = state.recentFiles.find((f) => f.id === fileId);
+      if (!original) return state;
+      const copied: VFile = {
+        ...original,
+        id: `copy-${++fileCounter}`,
+        name: `${original.name} (Copy)`,
+        folderId: targetFolderId,
+        created: new Date().toISOString(),
+        modified: new Date().toISOString(),
+        version: 1,
+        starred: false,
+      };
+      return { recentFiles: [copied, ...state.recentFiles] };
+    }),
 
   // Folder operations
   createFolder: (name, parentId) =>
