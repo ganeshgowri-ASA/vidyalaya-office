@@ -29,6 +29,7 @@ import {
   CheckSquare,
   Bot,
   Grid2X2,
+  Cloud,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,10 @@ const productivityNav = [
   { label: "Sticky Notes", href: "/sticky-notes", icon: StickyNote },
   { label: "Tasks", href: "/tasks", icon: CheckSquare },
   { label: "Priority Matrix", href: "/priority-matrix", icon: Grid2X2 },
+];
+
+const storageNav = [
+  { label: "Cloud Storage", href: "/cloud-storage", icon: Cloud },
 ];
 
 const manageNav = [
@@ -181,6 +186,8 @@ export function Sidebar() {
           <NavSection label="Productivity" items={productivityNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Manage" items={manageNav} pathname={pathname} sidebarOpen={sidebarOpen} />
+          {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
+          <NavSection label="Storage" items={storageNav} pathname={pathname} sidebarOpen={sidebarOpen} />
         </nav>
 
         {/* Bottom nav */}

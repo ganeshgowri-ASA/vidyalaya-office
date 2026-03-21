@@ -26,6 +26,7 @@ import { useThemeStore, themes } from "@/store/theme-store";
 import { useAIChatStore } from "@/store/ai-chat-store";
 import { formatDate } from "@/lib/utils";
 import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
+import { CloudSyncStatus } from "@/components/shared/cloud-sync-status";
 import type { ThemeName } from "@/types";
 
 const themeSwatches: Record<ThemeName, string> = {
@@ -52,6 +53,7 @@ const breadcrumbMap: Record<string, string> = {
   "/help": "Help & Feedback",
   "/settings": "Settings",
   "/doc-control": "Doc Control",
+  "/cloud-storage": "Cloud Storage",
 };
 
 export function Topbar() {
@@ -215,6 +217,9 @@ export function Topbar() {
           </div>
 
           {/* Notifications */}
+          {/* Cloud sync status */}
+          <CloudSyncStatus />
+
           <button
             onClick={() => setNotifPanelOpen(true)}
             className="relative flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors hover:opacity-80"
