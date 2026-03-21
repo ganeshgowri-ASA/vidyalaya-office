@@ -1,13 +1,17 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useGraphicsStore, createShape, genId, Shape, ShapeBase, SmartGuide, Point, ArrowShape, LineShape, StarShape, TextShape, BlockArrowShape, BracketShape } from '@/store/graphics-store';
+import { useGraphicsStore, createShape, genId, Shape, ShapeBase, SmartGuide, Point, ArrowShape, LineShape, StarShape, TextShape, BlockArrowShape, BracketShape, PageBackground } from '@/store/graphics-store';
 
 const snap = (v: number, grid: number, enabled: boolean) => enabled ? Math.round(v / grid) * grid : v;
 
 export default function GraphicsCanvas() {
   const { shapes, selectedId, selectedIds, tool, zoom, pan, showGrid, showGuides, guides,
     showRulers, gridSize, snapToGrid: snapEnabled, smartGuidesEnabled, aspectRatioLocked,
+    canvasWidth, canvasHeight, pages, activePageId,
     setShapes, setSelectedId, setSelectedIds, setPan, setZoom, setGuides, pushHistory } = useGraphicsStore();
+
+  const activePage = pages.find(p => p.id === activePageId);
+  const pageBg = activePage?.background || { type: 'solid' as const, color: '#0f172a' };
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Point>({ x: 0, y: 0 });
@@ -175,7 +179,8 @@ export default function GraphicsCanvas() {
     const r = svg.getBoundingClientRect();
     const cx = snap((-pan.x + (r.width / 2)) / zoom, gridSize, snapEnabled);
     const cy = snap((-pan.y + (r.height / 2)) / zoom, gridSize, snapEnabled);
-    const s = createShape(tool as Shape['type'], cx, cy);
+    const themeId = useGraphicsStore.getState().activeThemeId;
+    const s = createShape(tool as Shape['type'], cx, cy, themeId);
     pushHistory([...shapes, s]); setSelectedId(s.id); setSelectedIds([s.id]);
   };
 
@@ -203,9 +208,51 @@ export default function GraphicsCanvas() {
         onMouseDown={handleCanvasMouseDown}
         onMouseMove={e => { handleMouseMove(e); handleMouseMovePen(e); }}
         onMouseUp={() => { handleMouseUp(); handleMouseUpPen(); }}>
-        <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#94a3b8" /></marker></defs>
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#94a3b8" /></marker>
+          {pageBg.type === 'gradient' && (
+            <linearGradient id="pageBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={pageBg.color} />
+              <stop offset="100%" stopColor={pageBg.secondaryColor || pageBg.color} />
+            </linearGradient>
+          )}
+          {pageBg.type === 'dots' && (
+            <pattern id="pageBgDots" width={16} height={16} patternUnits="userSpaceOnUse">
+              <rect width={16} height={16} fill={pageBg.color} />
+              <circle cx={8} cy={8} r={1} fill={pageBg.secondaryColor || '#334155'} />
+            </pattern>
+          )}
+          {pageBg.type === 'lines' && (
+            <pattern id="pageBgLines" width={12} height={12} patternUnits="userSpaceOnUse">
+              <rect width={12} height={12} fill={pageBg.color} />
+              <line x1={0} y1={12} x2={12} y2={12} stroke={pageBg.secondaryColor || '#334155'} strokeWidth={0.5} />
+            </pattern>
+          )}
+          {pageBg.type === 'graph' && (
+            <pattern id="pageBgGraph" width={20} height={20} patternUnits="userSpaceOnUse">
+              <rect width={20} height={20} fill={pageBg.color} />
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke={pageBg.secondaryColor || '#1e293b'} strokeWidth={0.5} />
+            </pattern>
+          )}
+        </defs>
         {showGrid && <><pattern id="grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse"><path d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} fill="none" stroke="#1e293b" strokeWidth="0.5" /></pattern><rect width="100%" height="100%" fill="url(#grid)" /></>}
         <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
+          {/* Page background */}
+          <rect
+            x={0} y={0} width={canvasWidth} height={canvasHeight}
+            fill={
+              pageBg.type === 'solid' ? pageBg.color :
+              pageBg.type === 'gradient' ? 'url(#pageBgGrad)' :
+              pageBg.type === 'dots' ? 'url(#pageBgDots)' :
+              pageBg.type === 'lines' ? 'url(#pageBgLines)' :
+              pageBg.type === 'graph' ? 'url(#pageBgGraph)' : pageBg.color
+            }
+            rx={2}
+            stroke="#334155"
+            strokeWidth={1 / zoom}
+            opacity={0.9}
+            pointerEvents="none"
+          />
           {shapes.filter(s => s.visible).map(s => renderShape(s))}
           {isDrawingPen && penPath && penPath.length > 1 && <polyline points={penPath.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#60a5fa" strokeWidth={2} strokeLinecap="round" />}
           {showGuides && guides.map(g => g.orientation === 'horizontal' ? <line key={g.id} x1={-9999} y1={g.position} x2={9999} y2={g.position} stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" opacity={0.7} style={{ cursor: 'ns-resize' }} onMouseDown={e => { e.stopPropagation(); setDraggingGuide(g.id); }} /> : <line key={g.id} x1={g.position} y1={-9999} x2={g.position} y2={9999} stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" opacity={0.7} style={{ cursor: 'ew-resize' }} onMouseDown={e => { e.stopPropagation(); setDraggingGuide(g.id); }} />)}

@@ -1,8 +1,10 @@
 'use client';
 import React, { useState, useCallback, useEffect } from 'react';
-import { useGraphicsStore, createShape, genId, Shape, ShapeBase } from '@/store/graphics-store';
+import { useGraphicsStore, createShape, genId, Shape, ShapeBase, DIAGRAM_THEMES } from '@/store/graphics-store';
 import GraphicsCanvas from './graphics-canvas';
 import { ShapeLibraryPanel, PropertiesPanel } from './graphics-shape-panel';
+import PageTabs from './page-tabs';
+import ThemePicker from './theme-picker';
 
 const TOOLS = [
   { id: 'select', icon: '▷', label: 'Select' }, { id: 'rect', icon: '▭', label: 'Rect' }, { id: 'ellipse', icon: '○', label: 'Ellipse' },
@@ -116,6 +118,8 @@ export default function GraphicsEditor() {
           <button onClick={() => setGuides(g => [...g, { id: `g_${Date.now()}`, orientation: 'vertical', position: 300 }])} className="px-1.5 py-1 rounded hover:bg-[#334155] text-[10px]">+V</button>
         </>}
         <div className="flex-1" />
+        <ThemePicker />
+        <div className="w-px h-5 bg-[#334155] mx-1" />
         <button onClick={() => { setLocalW(canvasWidth); setLocalH(canvasHeight); setShowCanvasResize(true); }} className="px-2 py-1 rounded hover:bg-[#334155] text-xs">⛶ Canvas</button>
         <button onClick={exportSVG} className="px-2 py-1 rounded bg-green-600/20 text-green-400 text-xs hover:bg-green-600/30">SVG ⬇</button>
         <button onClick={exportPNG} className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/30">PNG ⬇</button>
@@ -181,6 +185,9 @@ export default function GraphicsEditor() {
           </div>
         )}
       </div>
+
+      {/* Page Tabs */}
+      <PageTabs />
 
       {/* Canvas Resize Modal */}
       {showCanvasResize && (
