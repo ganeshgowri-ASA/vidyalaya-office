@@ -306,7 +306,7 @@ const journalTemplates: JournalTemplate[] = [
   { id: 'apl', name: 'Applied Physics Letters', category: 'AIP', description: 'AIP Applied Physics Letters concise format', columns: 1, referenceStyle: 'APA 7th', sections: ['Abstract', 'Introduction', 'Methods', 'Results', 'Discussion', 'Conclusion', 'References'], hasAbstract: true, hasKeywords: false, wordLimit: 3500 },
 ];
 
-type RightPanel = 'citations' | 'ai' | 'aichat' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import' | 'submission' | 'authors' | 'coverletter' | 'journals' | 'zotero';
+type RightPanel = 'citations' | 'ai' | 'aichat' | 'export' | 'latex' | 'links' | 'plagiarism' | 'spelling' | 'smartcite' | 'import' | 'submission' | 'authors' | 'coverletter' | 'journals' | 'zotero' | 'skills' | 'captureask';
 
 // AI Chat Assistant types
 export interface AIChatMessage {

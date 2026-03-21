@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import {
   X, Download, Printer, ZoomIn, ZoomOut, FileText,
   ChevronLeft, ChevronRight, Maximize2, Minimize2,
+  Highlighter, MessageSquare, Bookmark, Stamp, Columns,
+  PenTool, Type, StickyNote, Eye, EyeOff,
 } from 'lucide-react';
 
 function formatCitationIEEE(c: Citation, index: number): string {
@@ -400,6 +402,18 @@ export default function PdfPreview() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [htmlContent, setHtmlContent] = useState('');
+  // Enhanced PDF Preview state
+  const [showAnnotationTools, setShowAnnotationTools] = useState(false);
+  const [activeAnnotationTool, setActiveAnnotationTool] = useState<string | null>(null);
+  const [showWatermark, setShowWatermark] = useState(false);
+  const [watermarkText, setWatermarkText] = useState('DRAFT');
+  const [sideBySide, setSideBySide] = useState(false);
+  const [annotations, setAnnotations] = useState<Array<{ id: string; type: string; text: string; page: number; timestamp: string }>>([
+    { id: 'ann-1', type: 'highlight', text: 'Key finding highlighted', page: 1, timestamp: new Date().toISOString() },
+    { id: 'ann-2', type: 'comment', text: 'Consider revising methodology description', page: 1, timestamp: new Date().toISOString() },
+    { id: 'ann-3', type: 'bookmark', text: 'Results section bookmarked', page: 2, timestamp: new Date().toISOString() },
+  ]);
+  const [showAnnotationsList, setShowAnnotationsList] = useState(false);
 
   const config: TemplateFormatConfig = useMemo(() => {
     if (activeFormatConfig) return activeFormatConfig;
@@ -543,6 +557,33 @@ export default function PdfPreview() {
         </button>
 
         <button
+          onClick={() => setShowAnnotationTools(!showAnnotationTools)}
+          className={cn('p-1 rounded transition-opacity ml-1', showAnnotationTools ? 'opacity-100' : 'opacity-60 hover:opacity-100')}
+          style={showAnnotationTools ? { backgroundColor: 'var(--sidebar-accent)' } : undefined}
+          title="Annotation tools"
+        >
+          <PenTool size={13} />
+        </button>
+
+        <button
+          onClick={() => setSideBySide(!sideBySide)}
+          className={cn('p-1 rounded transition-opacity', sideBySide ? 'opacity-100' : 'opacity-60 hover:opacity-100')}
+          style={sideBySide ? { backgroundColor: 'var(--sidebar-accent)' } : undefined}
+          title="Side-by-side view"
+        >
+          <Columns size={13} />
+        </button>
+
+        <button
+          onClick={() => setShowWatermark(!showWatermark)}
+          className={cn('p-1 rounded transition-opacity', showWatermark ? 'opacity-100' : 'opacity-60 hover:opacity-100')}
+          style={showWatermark ? { backgroundColor: 'var(--sidebar-accent)' } : undefined}
+          title={showWatermark ? 'Hide watermark' : 'Show watermark'}
+        >
+          <Stamp size={13} />
+        </button>
+
+        <button
           onClick={() => setIsFullscreen(!isFullscreen)}
           className="p-1 rounded opacity-60 hover:opacity-100 ml-1"
           title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
@@ -559,35 +600,138 @@ export default function PdfPreview() {
         </button>
       </div>
 
-      {/* Preview content */}
-      <div
-        className="flex-1 overflow-auto"
-        style={{ backgroundColor: '#374151' }}
-      >
-        <div
-          className="mx-auto my-4 shadow-2xl"
-          style={{
-            width: `${(8.5 * zoom / 100) * 96}px`,
-            minHeight: `${(11 * zoom / 100) * 96}px`,
-            transform: `scale(1)`,
-            transformOrigin: 'top center',
-          }}
-        >
-          {htmlContent && (
-            <iframe
-              ref={iframeRef}
-              srcDoc={htmlContent}
-              className="w-full border-0"
-              style={{
-                width: '100%',
-                minHeight: `${(11 * zoom / 100) * 96}px`,
-                background: 'white',
-              }}
-              title="PDF Preview"
-              sandbox="allow-same-origin allow-scripts allow-popups"
-            />
-          )}
+      {/* Annotation Tools Bar */}
+      {showAnnotationTools && (
+        <div className="flex items-center gap-1 px-2 py-1 border-b shrink-0" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--sidebar)' }}>
+          {[
+            { id: 'highlight', icon: Highlighter, label: 'Highlight' },
+            { id: 'comment', icon: MessageSquare, label: 'Comment' },
+            { id: 'text', icon: Type, label: 'Text note' },
+            { id: 'sticky', icon: StickyNote, label: 'Sticky note' },
+            { id: 'bookmark', icon: Bookmark, label: 'Bookmark' },
+          ].map(tool => (
+            <button
+              key={tool.id}
+              onClick={() => setActiveAnnotationTool(activeAnnotationTool === tool.id ? null : tool.id)}
+              className={cn('p-1.5 rounded text-[10px] flex items-center gap-1 transition-colors', activeAnnotationTool === tool.id ? 'opacity-100' : 'opacity-50 hover:opacity-80')}
+              style={activeAnnotationTool === tool.id ? { backgroundColor: 'var(--sidebar-accent)' } : undefined}
+              title={tool.label}
+            >
+              <tool.icon size={12} />
+              <span>{tool.label}</span>
+            </button>
+          ))}
+          <div className="flex-1" />
+          <button
+            onClick={() => setShowAnnotationsList(!showAnnotationsList)}
+            className="text-[10px] opacity-50 hover:opacity-80 flex items-center gap-1"
+          >
+            {showAnnotationsList ? <EyeOff size={10} /> : <Eye size={10} />}
+            {annotations.length} annotations
+          </button>
         </div>
+      )}
+
+      {/* Watermark Settings */}
+      {showWatermark && (
+        <div className="flex items-center gap-2 px-2 py-1 border-b shrink-0" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--sidebar)' }}>
+          <Stamp size={11} className="opacity-50" />
+          <span className="text-[10px] opacity-50">Watermark:</span>
+          <input
+            type="text"
+            value={watermarkText}
+            onChange={(e) => setWatermarkText(e.target.value)}
+            className="text-[10px] px-1.5 py-0.5 rounded bg-transparent border outline-none"
+            style={{ borderColor: 'var(--border)', color: 'var(--foreground)', width: 100 }}
+          />
+        </div>
+      )}
+
+      {/* Preview content */}
+      <div className={cn('flex-1 overflow-auto flex', sideBySide ? 'flex-row' : 'flex-col')} style={{ backgroundColor: '#374151' }}>
+        <div className={cn('overflow-auto', sideBySide ? 'flex-1' : 'flex-1')}>
+          <div
+            className="mx-auto my-4 shadow-2xl relative"
+            style={{
+              width: `${(8.5 * zoom / 100) * 96}px`,
+              minHeight: `${(11 * zoom / 100) * 96}px`,
+              transform: `scale(1)`,
+              transformOrigin: 'top center',
+            }}
+          >
+            {htmlContent && (
+              <iframe
+                ref={iframeRef}
+                srcDoc={htmlContent}
+                className="w-full border-0"
+                style={{
+                  width: '100%',
+                  minHeight: `${(11 * zoom / 100) * 96}px`,
+                  background: 'white',
+                }}
+                title="PDF Preview"
+                sandbox="allow-same-origin allow-scripts allow-popups"
+              />
+            )}
+            {/* Watermark Overlay */}
+            {showWatermark && watermarkText && (
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden" style={{ zIndex: 10 }}>
+                <span
+                  className="text-6xl font-bold uppercase select-none"
+                  style={{
+                    color: 'rgba(200, 0, 0, 0.12)',
+                    transform: 'rotate(-35deg)',
+                    letterSpacing: '0.15em',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {watermarkText}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Annotations Side Panel (in side-by-side or when toggled) */}
+        {showAnnotationsList && (
+          <div
+            className={cn('border-l overflow-y-auto', sideBySide ? 'w-64' : 'w-64 absolute right-0 top-0 bottom-0 z-20')}
+            style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+          >
+            <div className="p-2 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+              <span className="text-[11px] font-semibold">Annotations ({annotations.length})</span>
+              <button onClick={() => setShowAnnotationsList(false)} className="p-0.5 opacity-50 hover:opacity-100">
+                <X size={12} />
+              </button>
+            </div>
+            <div className="p-1.5 space-y-1">
+              {annotations.map(ann => (
+                <div
+                  key={ann.id}
+                  className="p-2 rounded border text-[10px]"
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--sidebar)' }}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    {ann.type === 'highlight' && <Highlighter size={10} className="text-yellow-400" />}
+                    {ann.type === 'comment' && <MessageSquare size={10} className="text-blue-400" />}
+                    {ann.type === 'bookmark' && <Bookmark size={10} className="text-green-400" />}
+                    <span className="capitalize font-medium">{ann.type}</span>
+                    <span className="opacity-40 ml-auto">Page {ann.page}</span>
+                  </div>
+                  <p className="opacity-70 leading-relaxed">{ann.text}</p>
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <button className="p-0.5 opacity-30 hover:opacity-70" title="Delete">
+                      <X size={9} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {annotations.length === 0 && (
+                <p className="text-center text-[10px] opacity-40 py-6">No annotations yet</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
@@ -596,7 +740,11 @@ export default function PdfPreview() {
         style={{ borderColor: 'var(--border)' }}
       >
         <span>{config.fontFamily} {config.fontSize}pt &bull; {config.lineSpacing}x spacing</span>
-        <span>Margins: {config.margins.top}&quot; / {config.margins.bottom}&quot; / {config.margins.left}&quot; / {config.margins.right}&quot;</span>
+        <div className="flex items-center gap-2">
+          {showWatermark && <span className="text-yellow-400">WATERMARK: {watermarkText}</span>}
+          {sideBySide && <span className="text-blue-400">SIDE-BY-SIDE</span>}
+          <span>Margins: {config.margins.top}&quot; / {config.margins.bottom}&quot; / {config.margins.left}&quot; / {config.margins.right}&quot;</span>
+        </div>
       </div>
     </div>
   );
