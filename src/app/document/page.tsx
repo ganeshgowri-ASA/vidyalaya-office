@@ -51,6 +51,10 @@ import { TemplateVariableModal } from "@/components/shared/template-variable-mod
 import { FileVersionHistory } from "@/components/shared/file-version-history";
 import { useAutoSaveVersions } from "@/components/shared/use-auto-save-versions";
 import { useFileVersionStore } from "@/store/file-version-store";
+import { PrintLayoutPreview } from "@/components/shared/print-layout-preview";
+import { PrintPageSetupDialog } from "@/components/shared/print-page-setup-dialog";
+import { ExportPdfDialog } from "@/components/shared/export-pdf-dialog";
+import { usePrintLayoutStore } from "@/store/print-layout-store";
 
 export default function DocumentPage() {
   const {
@@ -72,6 +76,15 @@ export default function DocumentPage() {
   } = useCollaborationStore();
 
   const { showPanel: showFileVersions, setShowPanel: setShowFileVersions } = useFileVersionStore();
+
+  const {
+    showPrintLayoutPreview,
+    setShowPrintLayoutPreview,
+    showPageSetupDialog: showPrintPageSetup,
+    setShowPageSetupDialog: setShowPrintPageSetup,
+    showExportPdfDialog,
+    setShowExportPdfDialog,
+  } = usePrintLayoutStore();
 
   // Auto-save version hook: creates snapshots every 5 min
   const getContentForVersions = useCallback(() => {
@@ -440,6 +453,26 @@ export default function DocumentPage() {
         onFileDrop={(files) => {
           if (files[0]) handleImport(files[0]);
         }}
+      />
+
+      {/* Print Layout components */}
+      <PrintLayoutPreview
+        htmlContent={typeof window !== "undefined" ? getEditorContent() : ""}
+        title={fileName}
+        documentType="document"
+        onExportPdf={() => { setShowPrintLayoutPreview(false); setShowExportPdfDialog(true); }}
+        onPageSetup={() => { setShowPrintLayoutPreview(false); setShowPrintPageSetup(true); }}
+      />
+      <PrintPageSetupDialog
+        open={showPrintPageSetup}
+        onClose={() => setShowPrintPageSetup(false)}
+      />
+      <ExportPdfDialog
+        open={showExportPdfDialog}
+        onClose={() => setShowExportPdfDialog(false)}
+        htmlContent={typeof window !== "undefined" ? getEditorContent() : ""}
+        title={fileName}
+        documentType="document"
       />
     </div>
   );

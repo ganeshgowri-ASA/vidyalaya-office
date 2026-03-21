@@ -33,6 +33,11 @@ import { ImportDialog } from "@/components/shared/import-dialog";
 import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
 import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
 import { ExportManager } from "@/lib/export-manager";
+import { PrintLayoutPreview } from "@/components/shared/print-layout-preview";
+import { PrintPageSetupDialog } from "@/components/shared/print-page-setup-dialog";
+import { ExportPdfDialog } from "@/components/shared/export-pdf-dialog";
+import { PrintAreaDialog } from "./print-area-dialog";
+import { usePrintLayoutStore } from "@/store/print-layout-store";
 
 export default function SpreadsheetWorkspace() {
   const getActiveSheet = useSpreadsheetStore((s) => s.getActiveSheet);
@@ -64,6 +69,16 @@ export default function SpreadsheetWorkspace() {
   const [showSheetProtection, setShowSheetProtection] = useState(false);
   const [showVlookupHelper, setShowVlookupHelper] = useState(false);
   const [splitView, setSplitView] = useState<"horizontal" | "vertical" | null>(null);
+  const [showPrintAreaDlg, setShowPrintAreaDlg] = useState(false);
+
+  const {
+    showPrintLayoutPreview,
+    setShowPrintLayoutPreview,
+    showPageSetupDialog: showPrintPageSetup,
+    setShowPageSetupDialog: setShowPrintPageSetup,
+    showExportPdfDialog,
+    setShowExportPdfDialog,
+  } = usePrintLayoutStore();
 
   // Pick up imported spreadsheet data from sessionStorage (set by import engine)
   useEffect(() => {
@@ -357,6 +372,28 @@ export default function SpreadsheetWorkspace() {
         onFileDrop={(files) => {
           if (files[0]) handleImport(files[0]);
         }}
+      />
+
+      {/* Print Layout components */}
+      <PrintAreaDialog open={showPrintAreaDlg} onClose={() => setShowPrintAreaDlg(false)} />
+      <PrintLayoutPreview
+        htmlContent={getSpreadsheetHtml()}
+        title="Spreadsheet"
+        documentType="spreadsheet"
+        onExportPdf={() => { setShowPrintLayoutPreview(false); setShowExportPdfDialog(true); }}
+        onPageSetup={() => { setShowPrintLayoutPreview(false); setShowPrintPageSetup(true); }}
+      />
+      <PrintPageSetupDialog
+        open={showPrintPageSetup}
+        onClose={() => setShowPrintPageSetup(false)}
+        showSheetTab
+      />
+      <ExportPdfDialog
+        open={showExportPdfDialog}
+        onClose={() => setShowExportPdfDialog(false)}
+        htmlContent={getSpreadsheetHtml()}
+        title="Spreadsheet"
+        documentType="spreadsheet"
       />
     </div>
   );
