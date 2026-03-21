@@ -3,6 +3,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useGraphicsStore, createShape, genId, Shape, ShapeBase } from '@/store/graphics-store';
 import GraphicsCanvas from './graphics-canvas';
 import { ShapeLibraryPanel, PropertiesPanel } from './graphics-shape-panel';
+import AutoLayoutPanel from './auto-layout-panel';
 
 const TOOLS = [
   { id: 'select', icon: '▷', label: 'Select' }, { id: 'rect', icon: '▭', label: 'Rect' }, { id: 'ellipse', icon: '○', label: 'Ellipse' },
@@ -20,6 +21,7 @@ export default function GraphicsEditor() {
     setGuides, pushHistory, undo, redo, clipboard, setClipboard } = useGraphicsStore();
 
   const [showCanvasResize, setShowCanvasResize] = useState(false);
+  const [showAutoLayout, setShowAutoLayout] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [activeTab, setActiveTab] = useState<'layers' | 'templates'>('layers');
   const [localW, setLocalW] = useState(canvasWidth);
@@ -127,6 +129,7 @@ export default function GraphicsEditor() {
         <div className="w-px h-5 bg-[#334155] mx-1" />
         <button onClick={() => setShowLayers(!showLayers)} className={btn(showLayers)}>Layers</button>
         <button onClick={() => setShowProperties(!showProperties)} className={btn(showProperties)}>Props</button>
+        <button onClick={() => setShowAutoLayout(!showAutoLayout)} className={btn(showAutoLayout)}>📏 Layout</button>
         <button onClick={() => setShowAI(!showAI)} className={btn(showAI)}>🤖 AI</button>
       </div>
 
@@ -165,6 +168,9 @@ export default function GraphicsEditor() {
 
         {showProperties && <PropertiesPanel />}
 
+        {/* Auto-Layout Panel */}
+        {showAutoLayout && <AutoLayoutPanel onClose={() => setShowAutoLayout(false)} />}
+
         {/* AI Panel */}
         {showAI && (
           <div className="w-60 border-l border-[#334155] bg-[#1e293b] flex flex-col flex-shrink-0">
@@ -172,7 +178,7 @@ export default function GraphicsEditor() {
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {['Create flowchart for user login', 'Design org chart for startup', 'Mind map for project planning', 'Wireframe for mobile app'].map(s => <button key={s} onClick={() => setAiPrompt(s)} className="w-full text-left px-2 py-1.5 rounded text-[11px] bg-[#0f172a] hover:bg-[#334155]">{s}</button>)}
               <button onClick={() => { const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6']; pushHistory(shapes.map(s => ({ ...s, fill: colors[Math.floor(Math.random() * colors.length)] } as Shape))); }} className="w-full px-2 py-1.5 rounded text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30">🎨 Randomize colors</button>
-              <button onClick={() => pushHistory(shapes.map((s, i) => ({ ...s, x: 80 + (i % 4) * 160, y: 80 + Math.floor(i / 4) * 130 } as Shape)))} className="w-full px-2 py-1.5 rounded text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30">📏 Auto-layout</button>
+              <button onClick={() => setShowAutoLayout(true)} className="w-full px-2 py-1.5 rounded text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30">📏 Auto-layout</button>
             </div>
             <div className="p-3 border-t border-[#334155] flex gap-2">
               <input value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder="Describe what to create..." className="flex-1 px-2 py-1.5 rounded bg-[#0f172a] border border-[#334155] text-xs" />
