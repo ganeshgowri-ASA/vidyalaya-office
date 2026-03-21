@@ -98,6 +98,21 @@ export function TaskCard({ task, compact = false }: { task: Task; compact?: bool
             </div>
           )}
 
+          {/* Tags */}
+          {task.tags && task.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {task.tags.slice(0, compact ? 2 : undefined).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full px-1.5 py-0.5 text-[10px] opacity-60"
+                  style={{ backgroundColor: "var(--muted)", color: "var(--foreground)" }}
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* Subtasks progress */}
           {task.subtasks.length > 0 && (
             <div className="mt-2">

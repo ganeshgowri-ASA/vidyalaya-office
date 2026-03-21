@@ -192,7 +192,7 @@ export function TaskFilters() {
               style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
             >
               <option value="">Move to...</option>
-              {(["Backlog", "To Do", "In Progress", "Review", "Done"] as const).map((s) => (
+              {(["Backlog", "To Do", "In Progress", "Review", "Done", "Blocked"] as const).map((s) => (
                 <option key={s} value={s} style={{ backgroundColor: "var(--card)" }}>{s}</option>
               ))}
             </select>

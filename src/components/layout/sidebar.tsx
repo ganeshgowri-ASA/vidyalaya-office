@@ -57,6 +57,7 @@ const communicateNav = [
 
 const productivityNav = [
   { label: "Notes", href: "/notes", icon: StickyNote },
+  { label: "Sticky Notes", href: "/sticky-notes", icon: StickyNote },
   { label: "Tasks", href: "/tasks", icon: CheckSquare },
 ];
 

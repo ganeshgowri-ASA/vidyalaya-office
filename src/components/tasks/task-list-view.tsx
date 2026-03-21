@@ -15,7 +15,7 @@ const LABEL_COLORS: Record<TaskLabel, string> = {
 };
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
-  Backlog: "#6b7280", "To Do": "#06b6d4", "In Progress": "#f59e0b", Review: "#8b5cf6", Done: "#10b981",
+  Backlog: "#6b7280", "To Do": "#06b6d4", "In Progress": "#f59e0b", Review: "#8b5cf6", Done: "#10b981", Blocked: "#ef4444",
 };
 
 export function TaskListView() {
