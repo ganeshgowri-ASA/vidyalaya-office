@@ -457,6 +457,9 @@ export default function PdfToolsPage() {
 
   // ─── Merge handlers ────────────────────────────────────────────────────────
 
+  // ── Merge progress ──
+  const [mergeProgress, setMergeProgress] = useState(0);
+
   const addMergeFiles = async (files: FileList) => {
     const lib = await loadPdfjs();
     const newFiles: MergeFile[] = [];
@@ -470,17 +473,30 @@ export default function PdfToolsPage() {
     setMergeFiles((prev) => [...prev, ...newFiles]);
   };
 
+  const reorderMergeFiles = (fromIndex: number, toIndex: number) => {
+    setMergeFiles((prev) => {
+      const arr = [...prev];
+      const [item] = arr.splice(fromIndex, 1);
+      arr.splice(toIndex, 0, item);
+      return arr;
+    });
+  };
+
   const mergePdfs = async () => {
     if (mergeFiles.length < 2) return;
     setMerging(true);
+    setMergeProgress(0);
     try {
       const merged = await PDFDocument.create();
-      for (const mf of mergeFiles) {
+      for (let i = 0; i < mergeFiles.length; i++) {
+        const mf = mergeFiles[i];
         const src = await PDFDocument.load(mf.data);
         const pages = await merged.copyPages(src, src.getPageIndices());
         pages.forEach((p) => merged.addPage(p));
+        setMergeProgress(Math.round(((i + 1) / mergeFiles.length) * 90));
       }
       const bytes = await merged.save();
+      setMergeProgress(100);
       downloadBlob(new Blob([bytes as BlobPart], { type: "application/pdf" }), "merged.pdf");
     } catch (err) { console.error("Merge failed:", err); }
     finally { setMerging(false); }
@@ -513,16 +529,23 @@ export default function PdfToolsPage() {
     return Array.from(pages).sort((a, b) => a - b);
   };
 
+  // ── Split progress ──
+  const [splitProgress, setSplitProgress] = useState(0);
+
   const extractPages = async () => {
     if (!splitBytes || splitSelected.size === 0) return;
     setSplitting(true);
+    setSplitProgress(0);
     try {
       const src = await PDFDocument.load(splitBytes);
       const dest = await PDFDocument.create();
       const indices = Array.from(splitSelected).sort((a, b) => a - b).map((p) => p - 1);
+      setSplitProgress(30);
       const pages = await dest.copyPages(src, indices);
       pages.forEach((p) => dest.addPage(p));
+      setSplitProgress(70);
       const bytes = await dest.save();
+      setSplitProgress(100);
       downloadBlob(new Blob([bytes as BlobPart], { type: "application/pdf" }), "extracted.pdf");
     } catch (err) { console.error("Split failed:", err); }
     finally { setSplitting(false); }
@@ -531,9 +554,11 @@ export default function PdfToolsPage() {
   const splitEveryNPages = async () => {
     if (!splitBytes) return;
     setSplitting(true);
+    setSplitProgress(0);
     try {
       const src = await PDFDocument.load(splitBytes);
       const total = src.getPageCount();
+      const chunks = Math.ceil(total / splitEveryN);
       for (let start = 0; start < total; start += splitEveryN) {
         const dest = await PDFDocument.create();
         const end = Math.min(start + splitEveryN, total);
@@ -542,6 +567,7 @@ export default function PdfToolsPage() {
         pages.forEach((p) => dest.addPage(p));
         const bytes = await dest.save();
         downloadBlob(new Blob([bytes as BlobPart], { type: "application/pdf" }), `split_${start + 1}-${end}.pdf`);
+        setSplitProgress(Math.round(((start + splitEveryN) / total) * 100));
       }
     } catch (err) { console.error("Split failed:", err); }
     finally { setSplitting(false); }
@@ -1164,7 +1190,9 @@ export default function PdfToolsPage() {
               if (target < 0 || target >= mergeFiles.length) return;
               setMergeFiles((prev) => { const arr = [...prev]; [arr[idx], arr[target]] = [arr[target], arr[idx]]; return arr; });
             }}
+            onReorderFiles={reorderMergeFiles}
             onMerge={mergePdfs} merging={merging}
+            mergeProgress={mergeProgress}
           />
         );
       case "split":
@@ -1181,6 +1209,8 @@ export default function PdfToolsPage() {
             onSelectAll={() => setSplitSelected(new Set(Array.from({ length: splitPages }, (_, i) => i + 1)))}
             onDeselectAll={() => setSplitSelected(new Set())}
             onResetSplit={() => { setSplitDoc(null); setSplitBytes(null); setSplitPages(0); setSplitSelected(new Set()); }}
+            splitPdfData={splitBytes}
+            splitProgress={splitProgress}
           />
         );
       case "convert":
