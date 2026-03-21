@@ -1,6 +1,8 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useGraphicsStore, createShape, genId, Shape, ShapeBase, SmartGuide, Point, ArrowShape, LineShape, StarShape, TextShape, BlockArrowShape, BracketShape } from '@/store/graphics-store';
+import { useCADStore } from '@/store/cad-store';
+import { DimensionOverlay, RulerOverlay, createLinearDimension, createRadiusDimension } from './cad-dimension-tools';
 
 const snap = (v: number, grid: number, enabled: boolean) => enabled ? Math.round(v / grid) * grid : v;
 
@@ -19,6 +21,12 @@ export default function GraphicsCanvas() {
   const [isDrawingPen, setIsDrawingPen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; id: string } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+
+  // CAD store integration
+  const { dimensions, showDimensions, measureTool, setMeasureTool, rulerMeasurement, setRulerMeasurement,
+    addDimension, dimensionUnit, dimensionPrecision } = useCADStore();
+  const [measureStart, setMeasureStart] = useState<Point | null>(null);
+  const [measurePreview, setMeasurePreview] = useState<Point | null>(null);
 
   const selectedShape = shapes.find(s => s.id === selectedId);
 
@@ -168,6 +176,53 @@ export default function GraphicsCanvas() {
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
     setContextMenu(null);
+
+    // CAD measurement tools
+    if (measureTool !== 'none') {
+      const svg = svgRef.current; if (!svg) return;
+      const r = svg.getBoundingClientRect();
+      const mx = (e.clientX - r.left - pan.x) / zoom;
+      const my = (e.clientY - r.top - pan.y) / zoom;
+      const pt = { x: snap(mx, gridSize, snapEnabled), y: snap(my, gridSize, snapEnabled) };
+
+      if (measureTool === 'ruler') {
+        if (!measureStart) {
+          setMeasureStart(pt);
+          setRulerMeasurement(null);
+        } else {
+          const dx = pt.x - measureStart.x, dy = pt.y - measureStart.y;
+          setRulerMeasurement({ start: measureStart, end: pt, distance: Math.sqrt(dx * dx + dy * dy) });
+          setMeasureStart(null);
+          setMeasurePreview(null);
+        }
+        return;
+      }
+
+      if (measureTool === 'linear') {
+        if (!measureStart) {
+          setMeasureStart(pt);
+        } else {
+          addDimension(createLinearDimension(measureStart, pt, dimensionUnit, dimensionPrecision, 'layer_dimensions'));
+          setMeasureStart(null);
+          setMeasurePreview(null);
+        }
+        return;
+      }
+
+      if (measureTool === 'radius') {
+        if (!measureStart) {
+          setMeasureStart(pt);
+        } else {
+          addDimension(createRadiusDimension(measureStart, pt, dimensionUnit, dimensionPrecision, 'layer_dimensions'));
+          setMeasureStart(null);
+          setMeasurePreview(null);
+        }
+        return;
+      }
+
+      return;
+    }
+
     if (tool === 'pen') { const svg = svgRef.current; if (!svg) return; const r = svg.getBoundingClientRect(); const x = (e.clientX - r.left - pan.x) / zoom, y = (e.clientY - r.top - pan.y) / zoom; setIsDrawingPen(true); setPenPath([{ x, y }]); return; }
     if (tool === 'hand') { setIsDragging(true); setDragStart({ x: e.clientX, y: e.clientY }); return; }
     if (tool === 'select') { setSelectedId(null); setSelectedIds([]); return; }
@@ -177,6 +232,15 @@ export default function GraphicsCanvas() {
     const cy = snap((-pan.y + (r.height / 2)) / zoom, gridSize, snapEnabled);
     const s = createShape(tool as Shape['type'], cx, cy);
     pushHistory([...shapes, s]); setSelectedId(s.id); setSelectedIds([s.id]);
+  };
+
+  const handleMouseMoveMeasure = (e: React.MouseEvent) => {
+    if (measureTool === 'none' || !measureStart) return;
+    const svg = svgRef.current; if (!svg) return;
+    const r = svg.getBoundingClientRect();
+    const mx = (e.clientX - r.left - pan.x) / zoom;
+    const my = (e.clientY - r.top - pan.y) / zoom;
+    setMeasurePreview({ x: snap(mx, gridSize, snapEnabled), y: snap(my, gridSize, snapEnabled) });
   };
 
   const handleMouseMovePen = (e: React.MouseEvent) => {
@@ -199,9 +263,9 @@ export default function GraphicsCanvas() {
       {showRulers && <div className="absolute top-0 left-6 right-0 h-6 bg-[#1e293b] border-b border-[#334155] z-10 pointer-events-none overflow-hidden"><svg width="100%" height="24">{Array.from({ length: 50 }, (_, i) => <g key={i} transform={`translate(${i * 40 * zoom + pan.x % (40 * zoom)},0)`}><line x1={0} y1={16} x2={0} y2={24} stroke="#334155" strokeWidth={1} /><text x={4} y={12} fill="#64748b" fontSize={8}>{Math.round(i * 40 - pan.x / zoom)}</text></g>)}</svg></div>}
       {showRulers && <div className="absolute top-6 left-0 bottom-0 w-6 bg-[#1e293b] border-r border-[#334155] z-10 pointer-events-none overflow-hidden"><svg width="24" height="100%">{Array.from({ length: 30 }, (_, i) => <g key={i} transform={`translate(0,${i * 40 * zoom + pan.y % (40 * zoom)})`}><line x1={16} y1={0} x2={24} y2={0} stroke="#334155" strokeWidth={1} /><text x={2} y={10} fill="#64748b" fontSize={8} transform="rotate(-90 8 10)">{Math.round(i * 40 - pan.y / zoom)}</text></g>)}</svg></div>}
       {showRulers && <div className="absolute top-0 left-0 w-6 h-6 bg-[#1e293b] border-r border-b border-[#334155] z-20" />}
-      <svg ref={svgRef} className="w-full h-full" style={{ paddingTop: showRulers ? 24 : 0, paddingLeft: showRulers ? 24 : 0, cursor: tool === 'pen' ? 'crosshair' : tool === 'hand' ? 'grab' : undefined }}
+      <svg ref={svgRef} className="w-full h-full" style={{ paddingTop: showRulers ? 24 : 0, paddingLeft: showRulers ? 24 : 0, cursor: measureTool !== 'none' ? 'crosshair' : tool === 'pen' ? 'crosshair' : tool === 'hand' ? 'grab' : undefined }}
         onMouseDown={handleCanvasMouseDown}
-        onMouseMove={e => { handleMouseMove(e); handleMouseMovePen(e); }}
+        onMouseMove={e => { handleMouseMove(e); handleMouseMovePen(e); handleMouseMoveMeasure(e); }}
         onMouseUp={() => { handleMouseUp(); handleMouseUpPen(); }}>
         <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#94a3b8" /></marker></defs>
         {showGrid && <><pattern id="grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse"><path d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} fill="none" stroke="#1e293b" strokeWidth="0.5" /></pattern><rect width="100%" height="100%" fill="url(#grid)" /></>}
@@ -211,6 +275,19 @@ export default function GraphicsCanvas() {
           {showGuides && guides.map(g => g.orientation === 'horizontal' ? <line key={g.id} x1={-9999} y1={g.position} x2={9999} y2={g.position} stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" opacity={0.7} style={{ cursor: 'ns-resize' }} onMouseDown={e => { e.stopPropagation(); setDraggingGuide(g.id); }} /> : <line key={g.id} x1={g.position} y1={-9999} x2={g.position} y2={9999} stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" opacity={0.7} style={{ cursor: 'ew-resize' }} onMouseDown={e => { e.stopPropagation(); setDraggingGuide(g.id); }} />)}
           {activeSmartGuides.map((g, i) => g.orientation === 'horizontal' ? <line key={i} x1={-9999} y1={g.position} x2={9999} y2={g.position} stroke="#ef4444" strokeWidth={1 / zoom} strokeDasharray={`${4 / zoom} ${2 / zoom}`} opacity={0.9} pointerEvents="none" /> : <line key={i} x1={g.position} y1={-9999} x2={g.position} y2={9999} stroke="#ef4444" strokeWidth={1 / zoom} strokeDasharray={`${4 / zoom} ${2 / zoom}`} opacity={0.9} pointerEvents="none" />)}
           {selectedShape && !selectedShape.locked && renderResizeHandles(selectedShape)}
+          {/* CAD Dimensions overlay */}
+          {showDimensions && <DimensionOverlay dimensions={dimensions} zoom={zoom} />}
+          {/* CAD Ruler measurement */}
+          <RulerOverlay zoom={zoom} />
+          {/* Measure preview line */}
+          {measureStart && measurePreview && (
+            <g>
+              <line x1={measureStart.x} y1={measureStart.y} x2={measurePreview.x} y2={measurePreview.y}
+                stroke={measureTool === 'ruler' ? '#00ff88' : '#f59e0b'} strokeWidth={1.5 / zoom} strokeDasharray={`${6 / zoom} ${3 / zoom}`} />
+              <circle cx={measureStart.x} cy={measureStart.y} r={4 / zoom} fill={measureTool === 'ruler' ? '#00ff88' : '#f59e0b'} />
+              <circle cx={measurePreview.x} cy={measurePreview.y} r={4 / zoom} fill={measureTool === 'ruler' ? '#00ff88' : '#f59e0b'} />
+            </g>
+          )}
         </g>
       </svg>
       {contextMenu && (
@@ -220,6 +297,8 @@ export default function GraphicsCanvas() {
       )}
       <div className="absolute bottom-2 left-8 flex items-center gap-3 text-[10px] text-[#94a3b8] bg-[#1e293b]/90 rounded px-2 py-1">
         <span>Objects: {shapes.length}</span><span>Zoom: {Math.round(zoom * 100)}%</span><span>Tool: {tool}</span>
+        {measureTool !== 'none' && <span className="text-amber-400">Measure: {measureTool}{measureStart ? ' (click end point)' : ' (click start point)'}</span>}
+        {dimensions.length > 0 && <span className="text-amber-400">Dims: {dimensions.length}</span>}
         {selectedShape && <span>Selected: {selectedShape.label || selectedShape.type}</span>}
         {selectedIds.length > 1 && <span>Multi: {selectedIds.length}</span>}
       </div>

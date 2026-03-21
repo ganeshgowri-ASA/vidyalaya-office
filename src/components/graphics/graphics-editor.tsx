@@ -1,8 +1,14 @@
 'use client';
 import React, { useState, useCallback, useEffect } from 'react';
 import { useGraphicsStore, createShape, genId, Shape, ShapeBase } from '@/store/graphics-store';
+import { useCADStore } from '@/store/cad-store';
 import GraphicsCanvas from './graphics-canvas';
 import { ShapeLibraryPanel, PropertiesPanel } from './graphics-shape-panel';
+import CADLayerManager from './cad-layer-manager';
+import { DimensionPanel } from './cad-dimension-tools';
+import CADHistoryTimeline from './cad-history-timeline';
+import CADExportPanel from './cad-export-panel';
+import CADPdfImport from './cad-pdf-import';
 
 const TOOLS = [
   { id: 'select', icon: '▷', label: 'Select' }, { id: 'rect', icon: '▭', label: 'Rect' }, { id: 'ellipse', icon: '○', label: 'Ellipse' },
@@ -14,14 +20,20 @@ const TOOLS = [
   { id: 'pen', icon: '✒', label: 'Pen' }, { id: 'hand', icon: '✋', label: 'Pan' },
 ];
 
+type LeftTab = 'layers' | 'cadLayers' | 'templates' | 'measure';
+type RightTab = 'properties' | 'history';
+
 export default function GraphicsEditor() {
-  const { shapes, selectedId, selectedIds, tool, zoom, showGrid, showRulers, showGuides, snapToGrid, smartGuidesEnabled, showLayers, showProperties, showAI, canvasWidth, canvasHeight, shapes: _s,
+  const { shapes, selectedId, selectedIds, tool, zoom, showGrid, showRulers, showGuides, snapToGrid, smartGuidesEnabled, showLayers, showProperties, showAI, canvasWidth, canvasHeight,
     setTool, setZoom, setPan, setShowGrid, setShowRulers, setShowGuides, setSnapToGrid, setSmartGuidesEnabled, setShowLayers, setShowProperties, setShowAI, setCanvasWidth, setCanvasHeight,
     setGuides, pushHistory, undo, redo, clipboard, setClipboard } = useGraphicsStore();
 
+  const { showExportPanel, setShowExportPanel, showPdfImport, setShowPdfImport, showHistoryTimeline, setShowHistoryTimeline, measureTool, setMeasureTool } = useCADStore();
+
   const [showCanvasResize, setShowCanvasResize] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
-  const [activeTab, setActiveTab] = useState<'layers' | 'templates'>('layers');
+  const [leftTab, setLeftTab] = useState<LeftTab>('cadLayers');
+  const [rightTab, setRightTab] = useState<RightTab>('properties');
   const [localW, setLocalW] = useState(canvasWidth);
   const [localH, setLocalH] = useState(canvasHeight);
 
@@ -65,36 +77,24 @@ export default function GraphicsEditor() {
       if (e.ctrlKey && e.key === 'v') { e.preventDefault(); pasteClipboard(); }
       if (e.ctrlKey && e.key === 'd' && selectedId) { e.preventDefault(); const s = shapes.find(sh => sh.id === selectedId); if (s) pushHistory([...shapes, { ...s, id: genId(), x: s.x + 20, y: s.y + 20 } as Shape]); }
       if (e.ctrlKey && e.key === 'g') { e.preventDefault(); groupSelected(); }
-      if (e.key === 'Escape') { useGraphicsStore.getState().setSelectedId(null); useGraphicsStore.getState().setSelectedIds([]); setTool('select'); }
+      if (e.key === 'Escape') { useGraphicsStore.getState().setSelectedId(null); useGraphicsStore.getState().setSelectedIds([]); setTool('select'); setMeasureTool('none'); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedId, shapes, pushHistory, undo, redo, copySelected, pasteClipboard, groupSelected, setTool]);
-
-  // Export
-  const exportSVG = () => {
-    const el = document.querySelector('svg.graphics-export') as SVGSVGElement;
-    if (!el) return;
-    const blob = new Blob([new XMLSerializer().serializeToString(el)], { type: 'image/svg+xml' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'diagram.svg'; a.click();
-  };
-
-  const exportPNG = () => {
-    const el = document.querySelector('svg') as SVGSVGElement;
-    if (!el) return;
-    const data = new XMLSerializer().serializeToString(el);
-    const canvas = document.createElement('canvas'); canvas.width = canvasWidth; canvas.height = canvasHeight;
-    const ctx = canvas.getContext('2d')!;
-    const img = new Image();
-    img.onload = () => { ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); const a = document.createElement('a'); a.href = canvas.toDataURL(); a.download = 'diagram.png'; a.click(); };
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(data)));
-  };
+  }, [selectedId, shapes, pushHistory, undo, redo, copySelected, pasteClipboard, groupSelected, setTool, setMeasureTool]);
 
   const btn = (active: boolean) => `px-2 py-1.5 rounded text-xs transition-colors ${active ? 'bg-blue-600 text-white' : 'hover:bg-[#334155] text-[#e2e8f0]'}`;
 
+  const leftTabs: { id: LeftTab; label: string }[] = [
+    { id: 'cadLayers', label: 'Layers' },
+    { id: 'layers', label: 'Objects' },
+    { id: 'templates', label: 'Shapes' },
+    { id: 'measure', label: 'Measure' },
+  ];
+
   return (
     <div className="flex flex-col h-full bg-[#0f172a] text-[#e2e8f0]">
-      {/* Toolbar */}
+      {/* Toolbar - Row 1: Drawing tools */}
       <div className="flex items-center gap-1 px-2 py-1 border-b border-[#334155] bg-[#1e293b] flex-wrap min-h-[40px]">
         {TOOLS.map(t => <button key={t.id} onClick={() => setTool(t.id as any)} title={t.label} className={btn(tool === t.id)}>{t.icon}</button>)}
         <div className="w-px h-5 bg-[#334155] mx-1" />
@@ -115,34 +115,61 @@ export default function GraphicsEditor() {
           <button onClick={() => setGuides(g => [...g, { id: `g_${Date.now()}`, orientation: 'horizontal', position: 200 }])} className="px-1.5 py-1 rounded hover:bg-[#334155] text-[10px]">+H</button>
           <button onClick={() => setGuides(g => [...g, { id: `g_${Date.now()}`, orientation: 'vertical', position: 300 }])} className="px-1.5 py-1 rounded hover:bg-[#334155] text-[10px]">+V</button>
         </>}
+      </div>
+
+      {/* Toolbar - Row 2: CAD tools */}
+      <div className="flex items-center gap-1 px-2 py-1 border-b border-[#334155] bg-[#162032] flex-wrap min-h-[32px]">
+        {/* Measure tools */}
+        <span className="text-[9px] font-semibold uppercase text-[#64748b] mr-1">CAD:</span>
+        <button onClick={() => setMeasureTool(measureTool === 'ruler' ? 'none' : 'ruler')} title="Ruler Measure" className={btn(measureTool === 'ruler')}>📏 Ruler</button>
+        <button onClick={() => setMeasureTool(measureTool === 'linear' ? 'none' : 'linear')} title="Linear Dimension" className={btn(measureTool === 'linear')}>↔ Dim</button>
+        <button onClick={() => setMeasureTool(measureTool === 'radius' ? 'none' : 'radius')} title="Radius Dimension" className={btn(measureTool === 'radius')}>⊙ Radius</button>
+        <button onClick={() => setMeasureTool(measureTool === 'angular' ? 'none' : 'angular')} title="Angular Dimension" className={btn(measureTool === 'angular')}>∠ Angle</button>
+        <div className="w-px h-5 bg-[#334155] mx-1" />
+
+        {/* PDF Import */}
+        <button onClick={() => setShowPdfImport(true)} className="px-2 py-1 rounded bg-amber-600/20 text-amber-400 text-xs hover:bg-amber-600/30">📄 PDF Import</button>
+
+        {/* Export */}
+        <button onClick={() => setShowExportPanel(true)} className="px-2 py-1 rounded bg-green-600/20 text-green-400 text-xs hover:bg-green-600/30">⬇ Export</button>
+
         <div className="flex-1" />
+
+        {/* Canvas + Zoom */}
         <button onClick={() => { setLocalW(canvasWidth); setLocalH(canvasHeight); setShowCanvasResize(true); }} className="px-2 py-1 rounded hover:bg-[#334155] text-xs">⛶ Canvas</button>
-        <button onClick={exportSVG} className="px-2 py-1 rounded bg-green-600/20 text-green-400 text-xs hover:bg-green-600/30">SVG ⬇</button>
-        <button onClick={exportPNG} className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/30">PNG ⬇</button>
         <div className="w-px h-5 bg-[#334155] mx-1" />
         <button onClick={() => setZoom(z => Math.max(0.25, z - 0.1))} className="px-2 py-1 rounded hover:bg-[#334155]">−</button>
         <span className="text-xs w-12 text-center">{Math.round(zoom * 100)}%</span>
         <button onClick={() => setZoom(z => Math.min(4, z + 0.1))} className="px-2 py-1 rounded hover:bg-[#334155]">+</button>
         <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} className="px-2 py-1 rounded hover:bg-[#334155] text-xs">Fit</button>
         <div className="w-px h-5 bg-[#334155] mx-1" />
-        <button onClick={() => setShowLayers(!showLayers)} className={btn(showLayers)}>Layers</button>
-        <button onClick={() => setShowProperties(!showProperties)} className={btn(showProperties)}>Props</button>
+
+        {/* Panel toggles */}
+        <button onClick={() => setShowLayers(!showLayers)} className={btn(showLayers)}>Left</button>
+        <button onClick={() => setShowProperties(!showProperties)} className={btn(showProperties)}>Right</button>
+        <button onClick={() => setShowHistoryTimeline(!showHistoryTimeline)} className={btn(showHistoryTimeline)}>History</button>
         <button onClick={() => setShowAI(!showAI)} className={btn(showAI)}>🤖 AI</button>
       </div>
 
       {/* Main */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: Shape library + Layers */}
+        {/* Left Panel */}
         {showLayers && (
-          <div className="flex flex-col w-56 border-r border-[#334155] bg-[#1e293b] overflow-hidden">
+          <div className="flex flex-col w-60 border-r border-[#334155] bg-[#1e293b] overflow-hidden flex-shrink-0">
             <div className="flex border-b border-[#334155]">
-              {(['layers', 'templates'] as const).map(tab => <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-1.5 text-[10px] uppercase font-semibold ${activeTab === tab ? 'bg-[#0f172a] text-blue-400' : 'text-[#94a3b8] hover:bg-[#0f172a]'}`}>{tab}</button>)}
+              {leftTabs.map(tab => (
+                <button key={tab.id} onClick={() => setLeftTab(tab.id)}
+                  className={`flex-1 py-1.5 text-[9px] uppercase font-semibold ${leftTab === tab.id ? 'bg-[#0f172a] text-blue-400' : 'text-[#94a3b8] hover:bg-[#0f172a]'}`}>
+                  {tab.label}
+                </button>
+              ))}
             </div>
-            {activeTab === 'templates' ? (
-              <ShapeLibraryPanel />
-            ) : (
+            {leftTab === 'templates' && <ShapeLibraryPanel />}
+            {leftTab === 'cadLayers' && <CADLayerManager />}
+            {leftTab === 'measure' && <DimensionPanel />}
+            {leftTab === 'layers' && (
               <div className="flex-1 overflow-y-auto p-2">
-                <p className="text-[10px] font-semibold uppercase text-[#94a3b8] mb-2">Layers ({shapes.length})</p>
+                <p className="text-[10px] font-semibold uppercase text-[#94a3b8] mb-2">Objects ({shapes.length})</p>
                 <div className="space-y-1">
                   {[...shapes].reverse().map((s, i) => (
                     <div key={s.id} onClick={() => { useGraphicsStore.getState().setSelectedId(s.id); useGraphicsStore.getState().setSelectedIds([s.id]); }}
@@ -161,9 +188,26 @@ export default function GraphicsEditor() {
           </div>
         )}
 
+        {/* Canvas */}
         <GraphicsCanvas />
 
-        {showProperties && <PropertiesPanel />}
+        {/* Right Panel */}
+        {(showProperties || showHistoryTimeline) && (
+          <div className="flex flex-col w-64 border-l border-[#334155] bg-[#1e293b] overflow-hidden flex-shrink-0">
+            {showProperties && showHistoryTimeline && (
+              <div className="flex border-b border-[#334155]">
+                {([{ id: 'properties' as RightTab, label: 'Properties' }, { id: 'history' as RightTab, label: 'History' }]).map(tab => (
+                  <button key={tab.id} onClick={() => setRightTab(tab.id)}
+                    className={`flex-1 py-1.5 text-[9px] uppercase font-semibold ${rightTab === tab.id ? 'bg-[#0f172a] text-blue-400' : 'text-[#94a3b8] hover:bg-[#0f172a]'}`}>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {(rightTab === 'properties' || !showHistoryTimeline) && showProperties && <PropertiesPanel />}
+            {(rightTab === 'history' || !showProperties) && showHistoryTimeline && <CADHistoryTimeline />}
+          </div>
+        )}
 
         {/* AI Panel */}
         {showAI && (
@@ -181,6 +225,10 @@ export default function GraphicsEditor() {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      {showExportPanel && <CADExportPanel />}
+      {showPdfImport && <CADPdfImport />}
 
       {/* Canvas Resize Modal */}
       {showCanvasResize && (
