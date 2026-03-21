@@ -39,6 +39,22 @@ import { ImportDialog } from "@/components/shared/import-dialog";
 import { ExportManager } from "@/lib/export-manager";
 import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
 import type { DocumentType } from "@/lib/export-manager";
+import { ImportProgressToast } from "@/components/import/import-progress-toast";
+import { CsvColumnMapper } from "@/components/import/csv-column-mapper";
+import { useImportStore } from "@/store/import-store";
+import {
+  detectFileType,
+  detectFileTypeFromContent,
+  validateFile,
+  getEditorRoute,
+  parseDocx,
+  parseXlsx,
+  parsePptx,
+  parseCsv,
+  parseTextFile,
+  getCsvPreview,
+  cellRefToColRow,
+} from "@/lib/import-engine";
 import {
   BarChart,
   Bar,
@@ -259,19 +275,148 @@ export default function DashboardPage() {
   const today = 18; // mock today
   const meetingDays = [3, 7, 12, 18, 21, 25, 28];
 
-  const handleImport = async (file: File, type: DocumentType) => {
-    // For PDF files, navigate to PDF page
-    if (type === "pdf") {
-      router.push("/pdf");
+  const importStore = useImportStore();
+
+  const handleImport = async (file: File, _type: DocumentType) => {
+    // Validate file
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      importStore.failJob(validation.error ?? "Invalid file");
       return;
     }
-    // For other types, navigate to the appropriate editor
-    const routes: Record<string, string> = {
-      document: "/document",
-      spreadsheet: "/spreadsheet",
-      presentation: "/presentation",
+
+    // Detect file type from extension (and content if needed)
+    let fileType = detectFileType(file);
+    if (fileType === "unknown") {
+      fileType = await detectFileTypeFromContent(file);
+    }
+
+    // Start tracking import job
+    importStore.startJob(file.name, file.size, fileType);
+
+    const onProgress = (p: number, msg: string) => {
+      importStore.updateJobProgress(p, msg);
     };
-    router.push(routes[type] || "/document");
+
+    try {
+      importStore.updateJobStatus("parsing");
+
+      switch (fileType) {
+        case "docx": {
+          const result = await parseDocx(file, onProgress);
+          // Store the HTML in sessionStorage for the document editor to pick up
+          sessionStorage.setItem("import-document-html", result.html);
+          sessionStorage.setItem("import-document-name", file.name.replace(/\.docx?$/i, ""));
+          importStore.completeJob();
+          router.push("/document");
+          break;
+        }
+        case "xlsx": {
+          const result = await parseXlsx(file, onProgress);
+          // Store parsed sheet data for the spreadsheet editor
+          sessionStorage.setItem("import-spreadsheet-data", JSON.stringify(result));
+          sessionStorage.setItem("import-spreadsheet-name", file.name.replace(/\.xlsx?$/i, ""));
+          importStore.completeJob();
+          router.push("/spreadsheet");
+          break;
+        }
+        case "pptx": {
+          const result = await parsePptx(file, onProgress);
+          sessionStorage.setItem("import-presentation-data", JSON.stringify(result));
+          sessionStorage.setItem("import-presentation-name", file.name.replace(/\.pptx?$/i, ""));
+          importStore.completeJob();
+          router.push("/presentation");
+          break;
+        }
+        case "csv":
+        case "tsv": {
+          // Parse CSV and show column mapper
+          const result = await parseCsv(file, fileType === "tsv" ? "\t" : undefined, onProgress);
+          const preview = getCsvPreview(result);
+          importStore.updateJobStatus("mapping");
+          importStore.openCsvMapper(
+            { headers: preview.headers, rows: preview.rows, delimiter: result.delimiter, totalRows: result.totalRows },
+            file
+          );
+          // Store full data for use after mapping
+          sessionStorage.setItem("import-csv-full-data", JSON.stringify(result));
+          break;
+        }
+        case "txt":
+        case "md": {
+          const result = await parseTextFile(file, onProgress);
+          sessionStorage.setItem("import-document-html", result.html);
+          sessionStorage.setItem("import-document-name", file.name.replace(/\.(txt|md|markdown)$/i, ""));
+          importStore.completeJob();
+          router.push("/document");
+          break;
+        }
+        case "pdf": {
+          importStore.completeJob();
+          router.push("/pdf");
+          break;
+        }
+        default:
+          importStore.failJob(`Unsupported file type: ${fileType}`);
+      }
+    } catch (err) {
+      importStore.failJob(err instanceof Error ? err.message : "Import failed. The file may be corrupted or in an unsupported format.");
+    }
+  };
+
+  const handleCsvMappingConfirm = (
+    mappings: { sourceColumn: string; targetColumn: number; include: boolean }[],
+    delimiter: string
+  ) => {
+    try {
+      const rawData = sessionStorage.getItem("import-csv-full-data");
+      if (!rawData) throw new Error("CSV data not found");
+      const csvResult = JSON.parse(rawData);
+
+      // Filter columns based on mappings
+      const includedMappings = mappings.filter((m) => m.include);
+      const filteredHeaders = includedMappings.map((m) => m.sourceColumn);
+      const filteredRows = csvResult.rows.map((row: string[]) =>
+        includedMappings.map((m) => {
+          const srcIdx = csvResult.headers.indexOf(m.sourceColumn);
+          return row[srcIdx] ?? "";
+        })
+      );
+
+      // Build spreadsheet data format
+      const sheetData = {
+        sheets: [{
+          name: "Sheet1",
+          cells: {} as Record<string, { value: string }>,
+          maxRow: filteredRows.length + 1,
+          maxCol: filteredHeaders.length,
+        }],
+      };
+
+      // Add headers
+      filteredHeaders.forEach((h: string, ci: number) => {
+        const col = String.fromCharCode(65 + ci);
+        sheetData.sheets[0].cells[`${col}1`] = { value: h };
+      });
+
+      // Add data rows
+      filteredRows.forEach((row: string[], ri: number) => {
+        row.forEach((val: string, ci: number) => {
+          const col = String.fromCharCode(65 + ci);
+          sheetData.sheets[0].cells[`${col}${ri + 2}`] = { value: val };
+        });
+      });
+
+      sessionStorage.setItem("import-spreadsheet-data", JSON.stringify(sheetData));
+      sessionStorage.setItem("import-spreadsheet-name", importStore.csvFile?.name.replace(/\.(csv|tsv)$/i, "") ?? "Imported");
+      sessionStorage.removeItem("import-csv-full-data");
+
+      importStore.closeCsvMapper();
+      importStore.completeJob();
+      router.push("/spreadsheet");
+    } catch (err) {
+      importStore.failJob(err instanceof Error ? err.message : "Failed to process CSV mapping");
+    }
   };
 
   const searchTerm = dashSearch.toLowerCase();
@@ -841,13 +986,25 @@ export default function DashboardPage() {
         onFileDrop={(files) => {
           if (files[0]) {
             const f = files[0];
-            const type: DocumentType = f.name.endsWith(".xlsx") || f.name.endsWith(".csv")
+            const ft = detectFileType(f);
+            const type: DocumentType = (ft === "xlsx" || ft === "csv" || ft === "tsv")
               ? "spreadsheet"
-              : f.name.endsWith(".pptx")
+              : ft === "pptx"
               ? "presentation"
+              : ft === "pdf"
+              ? "pdf"
               : "document";
             handleImport(f, type);
           }
+        }}
+      />
+      <ImportProgressToast />
+      <CsvColumnMapper
+        onConfirm={handleCsvMappingConfirm}
+        onCancel={() => {
+          importStore.closeCsvMapper();
+          importStore.clearJob();
+          sessionStorage.removeItem("import-csv-full-data");
         }}
       />
     </div>

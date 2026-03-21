@@ -189,6 +189,24 @@ export default function DocumentPage() {
     return () => window.removeEventListener("keydown", handler);
   }, [setShowFindReplace, showKeyboardShortcuts, setShowKeyboardShortcuts, saveManualVersion]);
 
+  // Pick up imported document content from sessionStorage (set by import engine)
+  useEffect(() => {
+    const importedHtml = sessionStorage.getItem("import-document-html");
+    const importedName = sessionStorage.getItem("import-document-name");
+    if (importedHtml) {
+      const editor = document.getElementById("doc-editor");
+      if (editor) {
+        editor.innerHTML = importedHtml;
+        localStorage.setItem("vidyalaya-doc-content", importedHtml);
+      }
+      if (importedName) {
+        setFileName(importedName);
+      }
+      sessionStorage.removeItem("import-document-html");
+      sessionStorage.removeItem("import-document-name");
+    }
+  }, [setFileName]);
+
   const handleExport = useCallback(async (format: ExportFormat) => {
     const content = getEditorContent();
     setIsExporting(true);

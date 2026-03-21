@@ -77,6 +77,53 @@ export default function PresentationPage() {
     ExportManager.exportPresentation('pdf', slidesData, presentationTitle);
   }, [getSlidesData, presentationTitle]);
 
+  // Pick up imported presentation data from sessionStorage (set by import engine)
+  useEffect(() => {
+    const importedData = sessionStorage.getItem("import-presentation-data");
+    if (importedData) {
+      try {
+        const parsed = JSON.parse(importedData);
+        if (parsed.slides && parsed.slides.length > 0) {
+          const newSlides = parsed.slides.map((slide: { slideNumber: number; texts: { text: string; isTitle?: boolean }[] }, i: number) => {
+            const titleText = slide.texts.find((t: { isTitle?: boolean }) => t.isTitle)?.text ?? slide.texts[0]?.text ?? `Slide ${i + 1}`;
+            const contentTexts = slide.texts.filter((t: { isTitle?: boolean }) => !t.isTitle).map((t: { text: string }) => t.text);
+            return {
+              id: `imported-${Date.now()}-${i}`,
+              layout: 'content' as const,
+              background: '#ffffff',
+              transition: 'fade' as const,
+              transitionDuration: 500,
+              elements: [
+                {
+                  id: `title-${Date.now()}-${i}`,
+                  type: 'text' as const,
+                  x: 50, y: 30, width: 860, height: 80,
+                  content: titleText,
+                  rotation: 0,
+                  style: { fontSize: 32, fontWeight: 'bold', color: '#000000', fontFamily: 'Arial', textAlign: 'center' },
+                },
+                {
+                  id: `content-${Date.now()}-${i}`,
+                  type: 'text' as const,
+                  x: 50, y: 140, width: 860, height: 350,
+                  content: contentTexts.join('\n'),
+                  rotation: 0,
+                  style: { fontSize: 18, color: '#333333', fontFamily: 'Arial', textAlign: 'left' },
+                },
+              ],
+              notes: '',
+            };
+          });
+          loadTemplate(newSlides);
+        }
+      } catch {
+        // ignore parse errors
+      }
+      sessionStorage.removeItem("import-presentation-data");
+      sessionStorage.removeItem("import-presentation-name");
+    }
+  }, [loadTemplate]);
+
   const handlePresentationImport = useCallback(async (file: File) => {
     const result = await ExportManager.importPresentation(file, setExportProgress);
     const newSlides = result.slides.map((s, i) => ({
