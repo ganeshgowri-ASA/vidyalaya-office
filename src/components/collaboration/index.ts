@@ -4,3 +4,5 @@ export { ShareDialog } from "./share-dialog";
 export { PresenceIndicators, CursorOverlays } from "./presence-indicators";
 export { VersionHistoryPanel } from "./version-history-panel";
 export { NotificationBadge } from "./notification-badge";
+export { InlineCommentLayer } from "./inline-comment-marker";
+export { ReviewWorkflowPanel, ReviewStatusBadge } from "./review-workflow-panel";

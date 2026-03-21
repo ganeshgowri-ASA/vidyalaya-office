@@ -37,6 +37,8 @@ import {
   ShareDialog,
   PresenceIndicators,
   VersionHistoryPanel,
+  InlineCommentLayer,
+  ReviewWorkflowPanel,
 } from "@/components/collaboration";
 import { useCollaborationStore } from "@/store/collaboration-store";
 import { ExportDropdown } from "@/components/shared/export-dropdown";
@@ -62,6 +64,7 @@ export default function DocumentPage() {
   const {
     showCollabComments,
     showVersionHistory: showCollabVersionHistory,
+    showReviewPanel,
   } = useCollaborationStore();
 
   const [showPageSetup, setShowPageSetup] = React.useState(false);
@@ -276,8 +279,11 @@ export default function DocumentPage() {
         {/* Styles Panel */}
         {showStylesPanel && <StylesPanel />}
 
-        {/* Editor */}
-        <EditorArea />
+        {/* Editor with inline comments */}
+        <div className="relative flex-1 flex flex-col min-w-0">
+          <EditorArea />
+          <InlineCommentLayer />
+        </div>
 
         {/* Find & Replace overlay */}
         <FindReplaceDialog />
@@ -290,6 +296,9 @@ export default function DocumentPage() {
 
         {/* Collaboration Version History */}
         {showCollabVersionHistory && <VersionHistoryPanel />}
+
+        {/* Review Workflow Panel */}
+        {showReviewPanel && <ReviewWorkflowPanel />}
 
         {/* Version Control */}
         <VersionControlPanel
