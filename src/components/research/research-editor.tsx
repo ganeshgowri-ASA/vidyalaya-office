@@ -6,7 +6,7 @@ import {
   FlaskConical, Plus, BookOpen, LayoutGrid, ChevronRight,
   Calendar, FileText, CheckCircle2, Clock, Send, Sparkles,
   BookMarked, Sigma, FileCode, Link2, Shield, SpellCheck, Upload,
-  ClipboardCheck, Users, Mail as MailIcon, BookOpenCheck, Wand2,
+  ClipboardCheck, Users, Mail as MailIcon, BookOpenCheck, Wand2, Bot, Camera, Beaker,
 } from 'lucide-react';
 import katex from 'katex';
 
@@ -35,6 +35,9 @@ import ProposedChangesPanel from './proposed-changes-panel';
 import TrackChanges from './track-changes';
 import ZoteroIntegration from './zotero-integration';
 import ProjectWizard from './project-wizard';
+import AIChatAssistant from './ai-chat-assistant';
+import ScientificSkillsPanel from './scientific-skills-panel';
+import CaptureAskPanel from './capture-ask-panel';
 import { useVersionHistoryStore } from '@/store/version-history-store';
 
 function renderKatexSafe(latex: string, displayMode: boolean): string {
@@ -211,7 +214,7 @@ export default function ResearchEditor() {
     showTemplateGallery, showEquationEditor, showFigureManager,
     showDashboard, setShowDashboard, setShowTemplateGallery,
     activeRightPanel, setActiveRightPanel,
-        setShowEquationEditor, setShowCitationManager,
+    setShowEquationEditor, setShowCitationManager,
     citations, equations, figures, pdfPreviewOpen,
     showProjectWizard, setShowProjectWizard,
   } = useResearchStore();
@@ -352,6 +355,9 @@ export default function ResearchEditor() {
               ['citations', 'Refs', BookOpen],
               ['smartcite', 'Cite+', Sparkles],
               ['ai', 'AI', Sparkles],
+              ['aichat', 'Chat', Bot],
+              ['skills', 'Skills', Beaker],
+              ['captureask', 'Cap+Ask', Camera],
               ['plagiarism', 'Plag', Shield],
               ['spelling', 'Spell', SpellCheck],
             ] as const).map(([panel, label, Icon]) => (
@@ -426,6 +432,9 @@ export default function ResearchEditor() {
             {activeRightPanel === 'citations' && <CitationManager />}
             {activeRightPanel === 'smartcite' && <SmartCitationPanel />}
             {activeRightPanel === 'ai' && <ResearchAIPanel />}
+            {activeRightPanel === 'aichat' && <AIChatAssistant />}
+            {activeRightPanel === 'skills' && <ScientificSkillsPanel />}
+            {activeRightPanel === 'captureask' && <CaptureAskPanel />}
             {activeRightPanel === 'export' && <ExportPanel />}
             {activeRightPanel === 'import' && <ImportPanel />}
             {activeRightPanel === 'latex' && <LaTeXSettingsPanel />}
