@@ -33,6 +33,8 @@ import {
   ShapePicker, IconPicker,
   type ShapeDefinition, type IconDefinition,
 } from '@/components/shared/shapes-icons-library';
+import { InsertImageDialog } from '@/components/shared/picture-insert-dialog';
+import { PictureFormattingPanel } from '@/components/shared/picture-formatting';
 import { CHART_CATEGORIES } from '@/components/shared/chart-types';
 import {
   usePresentationStore,
@@ -169,6 +171,8 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
   const [showAdvCharts, setShowAdvCharts] = useState(false);
   const [showAllShapes, setShowAllShapes] = useState(false);
   const [showAlignMenu, setShowAlignMenu] = useState(false);
+  const [showPresentationImageDialog, setShowPresentationImageDialog] = useState(false);
+  const [showPresentationPicturePanel, setShowPresentationPicturePanel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const slide = slides[activeSlideIndex];
@@ -571,9 +575,10 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
             <RibbonDivider />
 
             <RibbonGroup label="Media">
-              <RibbonButton icon={<Image size={18} />} label="Picture" onClick={() => fileInputRef.current?.click()} />
+              <RibbonButton icon={<Image size={18} />} label="Picture" onClick={() => setShowPresentationImageDialog(true)} />
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAddImage} />
               <RibbonButton icon={<Paintbrush2 size={16} />} label="Image Edit" onClick={() => setShowImageEditor(!showImageEditor)} active={showImageEditor} small />
+              <RibbonButton icon={<Palette size={16} />} label="Format" onClick={() => setShowPresentationPicturePanel(!showPresentationPicturePanel)} active={showPresentationPicturePanel} small />
               <RibbonButton icon={<Video size={16} />} label="Video" onClick={() => setShowMediaPanel(true)} small />
               <RibbonButton icon={<Music size={16} />} label="Audio" onClick={() => setShowMediaPanel(true)} small />
             </RibbonGroup>
@@ -1559,7 +1564,49 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
     }
   };
 
+  const handlePresentationImageInsert = (src: string, alt?: string) => {
+    pushUndo();
+    addElement(activeSlideIndex, {
+      type: 'image', x: 200, y: 100, width: 320, height: 220,
+      content: src,
+      style: {},
+    });
+    setShowPresentationImageDialog(false);
+  };
+
   return (
+    <>
+    {showPresentationImageDialog && (
+      <InsertImageDialog
+        onClose={() => setShowPresentationImageDialog(false)}
+        onInsert={handlePresentationImageInsert}
+      />
+    )}
+    {showPresentationPicturePanel && (
+      <div
+        className="fixed right-0 z-40 border-l shadow-xl overflow-y-auto"
+        style={{ width: 240, backgroundColor: 'var(--card)', borderColor: 'var(--border)', top: 48, bottom: 0 }}
+      >
+        <PictureFormattingPanel
+          floating
+          onClose={() => setShowPresentationPicturePanel(false)}
+          onInsertImage={handlePresentationImageInsert}
+          onFormattingChange={(fmt) => {
+            if (!selectedElement || selectedElement.type !== 'image') return;
+            // Use the dedicated imageFilters field and rotation property
+            store.updateImageFilters(activeSlideIndex, selectedElement.id, {
+              brightness: fmt.brightness / 100,
+              contrast: fmt.contrast / 100,
+              saturate: fmt.saturation / 100,
+              blur: fmt.blur,
+            });
+            updateElement(activeSlideIndex, selectedElement.id, {
+              rotation: fmt.rotation,
+            });
+          }}
+        />
+      </div>
+    )}
     <div className="no-print flex flex-col border-b" style={{ borderColor: 'var(--border)', background: 'var(--topbar)', color: 'var(--topbar-foreground)' }}>
       <div className="flex items-center px-2 py-0.5 gap-1 border-b" style={{ borderColor: 'var(--border)' }}>
         <button onClick={undo} disabled={undoStack.length === 0}
@@ -1640,5 +1687,6 @@ export default function RibbonToolbar({ onPageSetup }: { onPageSetup?: () => voi
         {renderTabContent()}
       </div>
     </div>
+    </>
   );
 }
