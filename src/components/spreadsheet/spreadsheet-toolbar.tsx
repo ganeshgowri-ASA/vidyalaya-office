@@ -28,6 +28,8 @@ import { useCallback, useRef, useState } from "react";
 import { colToLetter } from "./formula-engine";
 import { CellBordersPicker } from "./cell-borders-picker";
 import { HistoryPanel } from "@/components/shared/history-panel";
+import { InsertImageDialog } from "@/components/shared/picture-insert-dialog";
+import { PictureFormattingPanel } from "@/components/shared/picture-formatting";
 
 // ─── Small reusable UI primitives ────────────────────────────────
 function ToolBtn({
@@ -279,6 +281,9 @@ export function SpreadsheetToolbar({
   const zoom = useSpreadsheetStore((s) => s.zoom);
   const setZoom = useSpreadsheetStore((s) => s.setZoom);
   const protectedSheet = useSpreadsheetStore((s) => s.protectedSheet);
+
+  const [showSsImageDialog, setShowSsImageDialog] = useState(false);
+  const [showSsPicturePanel, setShowSsPicturePanel] = useState(false);
 
   const csvInputRef = useRef<HTMLInputElement>(null);
 
@@ -703,6 +708,11 @@ export function SpreadsheetToolbar({
             </>
           )}
         </DropdownBtn>
+      </RibbonGroup>
+
+      <RibbonGroup label="Illustrations">
+        <ToolBtn title="Insert Image" onClick={() => setShowSsImageDialog(true)}><Image size={14} /></ToolBtn>
+        <ToolBtn title="Format Image" onClick={() => setShowSsPicturePanel(!showSsPicturePanel)}><Palette size={14} /></ToolBtn>
       </RibbonGroup>
 
       <RibbonGroup label="Sparklines">
@@ -1185,6 +1195,36 @@ export function SpreadsheetToolbar({
   };
 
   return (
+    <>
+    {showSsImageDialog && (
+      <InsertImageDialog
+        onClose={() => setShowSsImageDialog(false)}
+        onInsert={(src, alt) => {
+          // Insert a floating image overlay above the grid (appended to body as simplest approach)
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = alt || '';
+          img.style.cssText = 'position:absolute;top:120px;left:200px;max-width:300px;height:auto;cursor:move;z-index:20;border:2px solid #4472C4;border-radius:4px;';
+          img.draggable = true;
+          const grid = document.getElementById('spreadsheet-grid') || document.querySelector('[data-spreadsheet-grid]');
+          if (grid) {
+            const container = grid.parentElement;
+            if (container) { container.style.position = 'relative'; container.appendChild(img); }
+          } else {
+            document.body.appendChild(img);
+          }
+          setShowSsImageDialog(false);
+        }}
+      />
+    )}
+    {showSsPicturePanel && (
+      <div
+        className="fixed right-0 z-40 border-l shadow-xl overflow-y-auto"
+        style={{ width: 240, backgroundColor: 'var(--card)', borderColor: 'var(--border)', top: 48, bottom: 0 }}
+      >
+        <PictureFormattingPanel floating onClose={() => setShowSsPicturePanel(false)} />
+      </div>
+    )}
     <div style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }} className="border-b">
       {/* Quick access toolbar */}
       <div className="flex items-center gap-0.5 px-2 py-0.5 border-b" style={{ borderColor: "var(--border)" }}>
@@ -1233,5 +1273,6 @@ export function SpreadsheetToolbar({
         {renderTabContent()}
       </div>
     </div>
+    </>
   );
 }

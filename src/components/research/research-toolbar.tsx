@@ -9,9 +9,11 @@ import {
   Sigma, FileImage, Sparkles, Save, Upload, Shield, SpellCheck,
   Columns, BookA, ClipboardCheck, Users, FileText, BookOpenCheck,
   History, MessageSquare, ToggleLeft, ToggleRight,
-  GitPullRequestDraft,
+  GitPullRequestDraft, Palette,
 } from 'lucide-react';
 import { useVersionHistoryStore } from '@/store/version-history-store';
+import { InsertImageDialog } from '@/components/shared/picture-insert-dialog';
+import { PictureFormattingPanel } from '@/components/shared/picture-formatting';
 
 const tabs = ['Home', 'Insert', 'Format', 'Review', 'View'] as const;
 type Tab = typeof tabs[number];
@@ -46,6 +48,8 @@ function Divider() {
 
 export default function ResearchToolbar() {
   const [activeTab, setActiveTab] = useState<Tab>('Home');
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showPicturePanel, setShowPicturePanel] = useState(false);
   const {
     setShowTemplateGallery, setShowCitationManager, setShowEquationEditor,
     setShowFigureManager, setShowExportPanel, setShowAIPanel, showAIPanel,
@@ -68,6 +72,7 @@ export default function ResearchToolbar() {
   };
 
   return (
+  <>
     <div
       className="border-b flex flex-col shrink-0"
       style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
@@ -157,7 +162,8 @@ export default function ResearchToolbar() {
             <ToolbarButton icon={Sigma} label="Equation" onClick={() => setShowEquationEditor(true)} />
             <ToolbarButton icon={FileImage} label="Figure" onClick={() => setShowFigureManager(true)} />
             <ToolbarButton icon={Table} label="Table" onClick={() => setShowFigureManager(true)} />
-            <ToolbarButton icon={Image} label="Image" />
+            <ToolbarButton icon={Image} label="Image" onClick={() => setShowImageDialog(true)} />
+            <ToolbarButton icon={Palette} label="Format Img" onClick={() => setShowPicturePanel(!showPicturePanel)} active={showPicturePanel} />
             <Divider />
             <ToolbarButton icon={Users} label="Authors" onClick={() => setActiveRightPanel('authors')} />
             <ToolbarButton icon={Upload} label="Import" onClick={() => setActiveRightPanel('import')} />
@@ -252,5 +258,37 @@ export default function ResearchToolbar() {
         )}
       </div>
     </div>
+
+    {/* Picture formatting side panel */}
+    {showPicturePanel && (
+      <div
+        className="fixed right-0 top-0 bottom-0 z-40 border-l shadow-xl overflow-y-auto"
+        style={{ width: 240, backgroundColor: 'var(--card)', borderColor: 'var(--border)', top: 48 }}
+      >
+        <PictureFormattingPanel
+          floating
+          onClose={() => setShowPicturePanel(false)}
+          onInsertImage={(src, alt) => {
+            document.execCommand('insertHTML', false,
+              `<img src="${src}" alt="${alt || ''}" style="max-width:100%;height:auto;margin:8px 4px;cursor:pointer;" />`
+            );
+          }}
+        />
+      </div>
+    )}
+
+    {/* Insert image dialog */}
+    {showImageDialog && (
+      <InsertImageDialog
+        onClose={() => setShowImageDialog(false)}
+        onInsert={(src, alt) => {
+          document.execCommand('insertHTML', false,
+            `<img src="${src}" alt="${alt || ''}" style="max-width:100%;height:auto;margin:8px 4px;cursor:pointer;" />`
+          );
+          setShowImageDialog(false);
+        }}
+      />
+    )}
+  </>
   );
 }
