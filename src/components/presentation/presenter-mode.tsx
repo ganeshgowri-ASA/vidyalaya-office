@@ -1,8 +1,60 @@
 'use client';
 
 import React, { useEffect, useCallback, useState, useRef } from 'react';
-import { usePresentationStore, type SlideTransitionType } from '@/store/presentation-store';
+import { usePresentationStore, type SlideTransitionType, type ElementAnimation } from '@/store/presentation-store';
 import { SHAPE_DEFINITIONS } from '@/components/shared/shapes-icons-library';
+
+const PRESENTER_ANIMATION_KEYFRAMES = `
+  @keyframes pa-fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pa-flyin { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes pa-zoom { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
+  @keyframes pa-bounce { 0% { opacity: 0; transform: translateY(-40px); } 50% { opacity: 1; transform: translateY(12px); } 100% { transform: translateY(0); } }
+  @keyframes pa-appear { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pa-splitin { 0% { opacity: 0; clip-path: inset(50% 0 50% 0); } 100% { opacity: 1; clip-path: inset(0 0 0 0); } }
+  @keyframes pa-wheelin { from { opacity: 0; transform: rotate(-720deg) scale(0); } to { opacity: 1; transform: rotate(0deg) scale(1); } }
+  @keyframes pa-floatin { 0% { opacity: 0; transform: translateY(30px); } 60% { opacity: 1; transform: translateY(-8px); } 100% { transform: translateY(0); } }
+  @keyframes pa-riseup { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pa-expandin { from { opacity: 0; transform: scaleX(0); } to { opacity: 1; transform: scaleX(1); } }
+  @keyframes pa-blindsin { 0% { opacity: 0; clip-path: inset(0 0 100% 0); } 100% { opacity: 1; clip-path: inset(0 0 0 0); } }
+  @keyframes pa-boxin { from { opacity: 0; clip-path: inset(50% 50% 50% 50%); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+  @keyframes pa-peekin { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+  @keyframes pa-swivel { from { opacity: 0; transform: perspective(400px) rotateY(-90deg); } to { opacity: 1; transform: perspective(400px) rotateY(0deg); } }
+  @keyframes pa-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+  @keyframes pa-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes pa-wobble { 0%, 100% { transform: translateX(0) rotate(0deg); } 15% { transform: translateX(-8px) rotate(-5deg); } 30% { transform: translateX(6px) rotate(3deg); } 45% { transform: translateX(-4px) rotate(-3deg); } 60% { transform: translateX(2px) rotate(2deg); } 75% { transform: translateX(-1px) rotate(-1deg); } }
+  @keyframes pa-flash { 0%, 50%, 100% { opacity: 1; } 25%, 75% { opacity: 0; } }
+  @keyframes pa-fadeout { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes pa-flyout { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(60px); } }
+  @keyframes pa-shrink { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.3); } }
+`;
+
+const ANIM_NAME_MAP: Record<string, string> = {
+  fadeIn: 'pa-fadein', flyIn: 'pa-flyin', zoom: 'pa-zoom', bounce: 'pa-bounce', appear: 'pa-appear',
+  splitIn: 'pa-splitin', wheelIn: 'pa-wheelin', floatIn: 'pa-floatin', riseUp: 'pa-riseup',
+  expandIn: 'pa-expandin', blindsIn: 'pa-blindsin', boxIn: 'pa-boxin', peekIn: 'pa-peekin', swivel: 'pa-swivel',
+  checkerboardIn: 'pa-fadein', stripesIn: 'pa-peekin',
+  pulse: 'pa-pulse', spin: 'pa-spin', growShrink: 'pa-pulse', colorChange: 'pa-flash',
+  teeter: 'pa-wobble', wobble: 'pa-wobble', flash: 'pa-flash', shimmer: 'pa-flash',
+  wave: 'pa-wobble', jiggle: 'pa-wobble', blink: 'pa-flash', colorPulse: 'pa-flash',
+  boldReveal: 'pa-fadein', complementaryColor: 'pa-flash',
+  disappear: 'pa-fadeout', fadeOut: 'pa-fadeout', flyOut: 'pa-flyout', shrink: 'pa-shrink',
+  splitOut: 'pa-fadeout', wheelOut: 'pa-shrink', floatOut: 'pa-flyout', sinkDown: 'pa-fadeout',
+  collapseOut: 'pa-shrink', blindsOut: 'pa-fadeout', boxOut: 'pa-fadeout',
+  checkerboardOut: 'pa-fadeout', peekOut: 'pa-fadeout', stripesOut: 'pa-fadeout',
+  wipe: 'pa-peekin',
+};
+
+function getElementAnimationStyle(animation: ElementAnimation, slideAnimKey: number): React.CSSProperties {
+  const animName = ANIM_NAME_MAP[animation.type] || 'pa-fadein';
+  return {
+    animationName: animName,
+    animationDuration: `${animation.duration}s`,
+    animationDelay: `${animation.delay}s`,
+    animationFillMode: 'both',
+    animationTimingFunction: 'ease',
+    animationIterationCount: animation.category === 'emphasis' ? 2 : 1,
+  };
+}
 
 export default function PresenterMode() {
   const {
@@ -32,6 +84,7 @@ export default function PresenterMode() {
   const [isWhiteScreen, setIsWhiteScreen] = useState(false);
   const [showZoomView, setShowZoomView] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const [slideAnimKey, setSlideAnimKey] = useState(0);
   const startTimeRef = useRef<number>(Date.now());
   const slideRef = useRef<HTMLDivElement>(null);
   const toolbarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,10 +124,11 @@ export default function PresenterMode() {
     if (prevSlideIndex.current !== activeSlideIndex && presenterMode) {
       let transitionType = slide?.transition || 'none';
       if (transitionType === 'random') {
-        const types: SlideTransitionType[] = ['fade', 'slide', 'zoom', 'wipe', 'split', 'push', 'cover', 'dissolve', 'morph', 'reveal'];
-        transitionType = types[Math.floor(Math.random() * types.length)];
+        const allTypes: SlideTransitionType[] = ['fade', 'slide', 'zoom', 'wipe', 'split', 'push', 'cover', 'dissolve', 'morph', 'reveal', 'flip3d', 'cube3d', 'rotate3d', 'blinds', 'vortex', 'ripple'];
+        transitionType = allTypes[Math.floor(Math.random() * allTypes.length)];
       }
       const duration = slide?.transitionDuration ?? 0.6;
+      const easing = slide?.transitionEasing ?? 'ease-in-out';
 
       if (transitionType !== 'none') {
         setTransitioning(true);
@@ -91,6 +145,23 @@ export default function PresenterMode() {
           case 'reveal': initial.clipPath = 'inset(0 0 100% 0)'; break;
           case 'cut': break;
           case 'uncover': initial.transform = 'translateY(-100%)'; initial.opacity = 1; break;
+          // 3D transitions
+          case 'flip3d': initial.transform = 'perspective(600px) rotateY(180deg)'; initial.opacity = 0; break;
+          case 'cube3d': initial.transform = 'perspective(400px) rotateY(90deg)'; initial.opacity = 0; break;
+          case 'rotate3d': initial.transform = 'perspective(500px) rotate3d(1, 1, 0, 90deg)'; initial.opacity = 0; break;
+          case 'doors3d': initial.transform = 'perspective(600px) rotateY(-90deg)'; initial.transformOrigin = 'left center'; initial.opacity = 0; break;
+          case 'box3d': initial.transform = 'perspective(400px) rotateX(90deg) rotateY(90deg)'; initial.opacity = 0; break;
+          // Special transitions
+          case 'blinds': initial.clipPath = 'inset(0 0 100% 0)'; initial.opacity = 0; break;
+          case 'clock': initial.clipPath = 'polygon(50% 50%, 50% 0%, 50% 0%)'; break;
+          case 'ripple': initial.transform = 'scale(0.5)'; initial.borderRadius = '50%'; initial.opacity = 0; break;
+          case 'honeycomb': initial.clipPath = 'polygon(50% 25%, 75% 37%, 75% 63%, 50% 75%, 25% 63%, 25% 37%)'; initial.opacity = 0; break;
+          case 'glitter': initial.opacity = 0; initial.filter = 'brightness(3)'; break;
+          case 'vortex': initial.transform = 'scale(0) rotate(720deg)'; initial.opacity = 0; break;
+          case 'origami': initial.transform = 'perspective(500px) rotateX(45deg) rotateY(45deg)'; initial.opacity = 0; break;
+          case 'fracture': initial.clipPath = 'polygon(30% 20%, 80% 0, 100% 60%, 50% 100%, 0 70%)'; initial.opacity = 0; break;
+          case 'gallery': initial.transform = 'scale(0.7) translateX(-30%)'; initial.opacity = 0; break;
+          case 'conveyor': initial.transform = 'translateX(-100%) scale(0.8)'; initial.opacity = 0; break;
         }
         setTransitionStyle(initial);
 
@@ -100,9 +171,13 @@ export default function PresenterMode() {
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               const final: React.CSSProperties = {
-                transition: `all ${duration * 1000}ms ease-in-out`,
-                opacity: 1, transform: 'translateX(0) translateY(0) scale(1) rotate(0deg)',
+                transition: `all ${duration * 1000}ms ${easing}`,
+                opacity: 1,
+                transform: 'translateX(0) translateY(0) scale(1) rotate(0deg) rotateX(0deg) rotateY(0deg) rotate3d(0,0,0,0deg)',
                 clipPath: 'inset(0 0 0 0)',
+                borderRadius: '0',
+                filter: 'brightness(1)',
+                transformOrigin: 'center center',
               };
               setTransitionStyle(final);
               setTimeout(() => setTransitioning(false), duration * 1000);
@@ -113,9 +188,10 @@ export default function PresenterMode() {
       setAnnotations([]);
       setIsBlackScreen(false);
       setIsWhiteScreen(false);
+      setSlideAnimKey((k) => k + 1);
     }
     prevSlideIndex.current = activeSlideIndex;
-  }, [activeSlideIndex, presenterMode, slide?.transition, slide?.transitionDuration]);
+  }, [activeSlideIndex, presenterMode, slide?.transition, slide?.transitionDuration, slide?.transitionEasing]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -208,6 +284,17 @@ export default function PresenterMode() {
   }, [isDrawing, currentPath, annotationColor, annotationTool, penSize]);
 
   if (!presenterMode || !slide) return null;
+
+  const renderElementWithAnimation = (el: typeof slide.elements[0]) => {
+    const node = renderElement(el);
+    if (!el.animation) return node;
+    const animStyle = getElementAnimationStyle(el.animation, slideAnimKey);
+    return (
+      <div key={`anim-${el.id}-${slideAnimKey}`} style={animStyle}>
+        {node}
+      </div>
+    );
+  };
 
   const renderElement = (el: typeof slide.elements[0]) => {
     if (el.type === 'image') {
@@ -518,6 +605,7 @@ export default function PresenterMode() {
   if (showPresenterPanel) {
     return (
       <div className="fixed inset-0 z-[9999] flex" style={{ background: '#1a1a2e' }}>
+        <style>{PRESENTER_ANIMATION_KEYFRAMES}</style>
         <div className="flex-1 flex flex-col">
           <div className="flex-1 flex items-center justify-center p-4" style={{ cursor: currentCursor }}
             onMouseMove={handleMouseMove} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
@@ -526,7 +614,7 @@ export default function PresenterMode() {
               background: slide.background, borderRadius: 4, overflow: 'hidden', ...transitionStyle,
             }}>
               <div className="relative w-full h-full" style={{ transform: 'scale(0.83)', transformOrigin: 'top left', width: 960, height: 540 }}>
-                {slide.elements.map(renderElement)}
+                {slide.elements.map(renderElementWithAnimation)}
               </div>
               <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 100 }}>
                 {annotations.map((ann, i) => (
@@ -633,6 +721,7 @@ export default function PresenterMode() {
           if (activeSlideIndex < slides.length - 1) setActiveSlide(activeSlideIndex + 1);
         }
       }}>
+      <style>{PRESENTER_ANIMATION_KEYFRAMES}</style>
       <div ref={slideRef} className="relative" style={{
         width: '100vw', height: '100vh', background: slide.background,
         display: 'flex', alignItems: 'center', justifyContent: 'center', ...transitionStyle,
@@ -645,7 +734,7 @@ export default function PresenterMode() {
           )})`,
           transformOrigin: 'center center',
         }}>
-          {slide.elements.map(renderElement)}
+          {slide.elements.map(renderElementWithAnimation)}
         </div>
       </div>
 
@@ -655,7 +744,7 @@ export default function PresenterMode() {
           style={{ background: slide.background }}>
           <div className="w-full h-full" style={{ transform: `scale(2) translate(-${zoomPos.x / 4}%, -${zoomPos.y / 4}%)`, transformOrigin: 'center center' }}>
             <div className="relative" style={{ width: 960, height: 540, transform: 'scale(0.27)', transformOrigin: 'top left' }}>
-              {slide.elements.map(renderElement)}
+              {slide.elements.map(renderElementWithAnimation)}
             </div>
           </div>
         </div>

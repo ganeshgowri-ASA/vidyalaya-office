@@ -302,6 +302,7 @@ export default function TransitionPanel() {
     setShowTransitionPanel,
     updateSlideTransition,
     updateSlideTransitionDuration,
+    updateSlideTransitionEasing,
     updateSlideTransitionTiming,
     updateSlideTransitionSound,
     applyTransitionToAll,
@@ -310,7 +311,8 @@ export default function TransitionPanel() {
   const [previewKey, setPreviewKey] = useState(0);
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
   const [hoveredType, setHoveredType] = useState<SlideTransitionType | null>(null);
-  const [easing, setEasing] = useState('ease');
+  const slideEasing = slides[activeSlideIndex]?.transitionEasing ?? 'ease';
+  const [easing, setEasing] = useState(slideEasing);
   const [expandedSections, setExpandedSections] = useState({
     transitions: true,
     duration: true,
@@ -320,6 +322,12 @@ export default function TransitionPanel() {
   });
 
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync local easing state when active slide changes
+  useEffect(() => {
+    const e = slides[activeSlideIndex]?.transitionEasing ?? 'ease';
+    setEasing(e);
+  }, [activeSlideIndex, slides]);
 
   useEffect(() => {
     return () => {
@@ -363,7 +371,7 @@ export default function TransitionPanel() {
   };
 
   const handleApplyToAll = () => {
-    applyTransitionToAll(currentTransition, currentDuration);
+    applyTransitionToAll(currentTransition, currentDuration, easing);
   };
 
   const handlePreview = useCallback(() => {
@@ -561,7 +569,7 @@ export default function TransitionPanel() {
                     return (
                       <button
                         key={opt.value}
-                        onClick={() => setEasing(opt.value)}
+                        onClick={() => { setEasing(opt.value); updateSlideTransitionEasing(activeSlideIndex, opt.value); }}
                         className="px-2 py-1.5 rounded text-[11px] transition-all border"
                         style={{
                           borderColor: isSelected ? 'var(--primary)' : 'var(--border)',

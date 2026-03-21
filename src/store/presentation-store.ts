@@ -215,6 +215,7 @@ export interface Slide {
   notes: string;
   transition?: SlideTransitionType;
   transitionDuration?: number;
+  transitionEasing?: string;
   transitionTiming?: SlideTransitionTiming;
   transitionSound?: TransitionSound;
   hidden?: boolean;
@@ -340,7 +341,8 @@ export interface PresentationActions {
   updateElementContent: (slideIndex: number, elementId: string, content: string) => void;
   updateSlideTransition: (index: number, transition: string) => void;
   updateSlideTransitionDuration: (index: number, duration: number) => void;
-  applyTransitionToAll: (transition: string, duration?: number) => void;
+  updateSlideTransitionEasing: (index: number, easing: string) => void;
+  applyTransitionToAll: (transition: string, duration?: number, easing?: string) => void;
   setShowAnimationsPanel: (on: boolean) => void;
   setShowSmartArtModal: (on: boolean) => void;
   setShowSlideMaster: (on: boolean) => void;
@@ -665,13 +667,72 @@ function createLayoutElements(layout: SlideLayout): SlideElement[] {
 // ── Default slides ─────────────────────────────────────────────────────────────
 
 function createDefaultSlides(): Slide[] {
+  const titleElements = createLayoutElements('title');
+  titleElements[0].animation = { type: 'fadeIn', category: 'entrance', duration: 0.8, delay: 0, trigger: 'onClick', order: 1 };
+  titleElements[1].animation = { type: 'flyIn', category: 'entrance', duration: 0.6, delay: 0.3, trigger: 'afterPrevious', order: 2 };
+
+  const contentElements1 = createLayoutElements('content');
+  contentElements1[0].content = 'Project Overview';
+  contentElements1[1].content = 'This presentation demonstrates slide transitions and element animations.\n\n• Fade, slide, zoom, wipe, dissolve, and flip transitions\n• Per-element entrance, emphasis, and exit animations\n• Customizable timing, easing, and sequencing';
+  contentElements1[0].animation = { type: 'zoom', category: 'entrance', duration: 0.5, delay: 0, trigger: 'onClick', order: 1 };
+  contentElements1[1].animation = { type: 'riseUp', category: 'entrance', duration: 0.7, delay: 0.2, trigger: 'afterPrevious', order: 2 };
+
+  const contentElements2 = createLayoutElements('two-column');
+  contentElements2[0].content = 'Key Features';
+  contentElements2[1].content = '• Smooth transitions\n• Element animations\n• Timeline sequencing\n• Easing controls';
+  contentElements2[2].content = '• Presenter mode\n• Auto-advance\n• Apply to all slides\n• Animation preview';
+  contentElements2[0].animation = { type: 'flyIn', category: 'entrance', duration: 0.6, delay: 0, trigger: 'onClick', order: 1 };
+  contentElements2[1].animation = { type: 'expandIn', category: 'entrance', duration: 0.5, delay: 0.2, trigger: 'afterPrevious', order: 2 };
+  contentElements2[2].animation = { type: 'expandIn', category: 'entrance', duration: 0.5, delay: 0.2, trigger: 'afterPrevious', order: 3 };
+
+  const contentElements3 = createLayoutElements('content');
+  contentElements3[0].content = 'Animation Types';
+  contentElements3[1].content = 'Entrance: Fade In, Fly In, Zoom In, Bounce, Rise Up\nEmphasis: Pulse, Spin, Wobble, Flash, Shimmer\nExit: Fade Out, Fly Out, Shrink, Sink Down\nMotion Paths: Lines, Arcs, Circles, Custom';
+  contentElements3[0].animation = { type: 'bounce', category: 'entrance', duration: 0.8, delay: 0, trigger: 'onClick', order: 1 };
+  contentElements3[1].animation = { type: 'floatIn', category: 'entrance', duration: 0.6, delay: 0.3, trigger: 'afterPrevious', order: 2 };
+
+  const contentElements4 = createLayoutElements('content');
+  contentElements4[0].content = 'Presenter Mode';
+  contentElements4[1].content = 'Press F5 to enter fullscreen presenter mode with:\n\n• Smooth slide transitions between slides\n• Element animations playing in sequence\n• Laser pointer, pen annotations, and highlighter\n• Speaker notes and slide navigator';
+  contentElements4[0].animation = { type: 'swivel', category: 'entrance', duration: 0.7, delay: 0, trigger: 'onClick', order: 1 };
+  contentElements4[1].animation = { type: 'fadeIn', category: 'entrance', duration: 0.5, delay: 0.3, trigger: 'afterPrevious', order: 2 };
+
+  const endElements = createLayoutElements('section-header');
+  endElements[0].content = 'Thank You';
+  endElements[1].content = 'Vidyalaya Office - AI-Native Office Suite';
+  endElements[0].animation = { type: 'zoom', category: 'entrance', duration: 1, delay: 0, trigger: 'onClick', order: 1 };
+  endElements[1].animation = { type: 'fadeIn', category: 'entrance', duration: 0.8, delay: 0.5, trigger: 'afterPrevious', order: 2 };
+
   return [
     {
-      id: generateId(),
-      layout: 'title',
-      background: GRADIENT_PRESETS[0],
-      elements: createLayoutElements('title'),
-      notes: '',
+      id: generateId(), layout: 'title', background: GRADIENT_PRESETS[0],
+      elements: titleElements, notes: 'Welcome slide - introduce the topic.',
+      transition: 'fade', transitionDuration: 0.6, transitionEasing: 'ease',
+    },
+    {
+      id: generateId(), layout: 'content', background: GRADIENT_PRESETS[0],
+      elements: contentElements1, notes: 'Overview of the presentation features.',
+      transition: 'slide', transitionDuration: 0.5, transitionEasing: 'ease-in-out',
+    },
+    {
+      id: generateId(), layout: 'two-column', background: GRADIENT_PRESETS[0],
+      elements: contentElements2, notes: 'Two-column layout showcasing key features.',
+      transition: 'zoom', transitionDuration: 0.7, transitionEasing: 'ease-out',
+    },
+    {
+      id: generateId(), layout: 'content', background: GRADIENT_PRESETS[0],
+      elements: contentElements3, notes: 'Describe the different animation categories.',
+      transition: 'wipe', transitionDuration: 0.6, transitionEasing: 'ease',
+    },
+    {
+      id: generateId(), layout: 'content', background: GRADIENT_PRESETS[0],
+      elements: contentElements4, notes: 'Explain how to use presenter mode.',
+      transition: 'dissolve', transitionDuration: 0.8, transitionEasing: 'ease-in-out',
+    },
+    {
+      id: generateId(), layout: 'section-header', background: GRADIENT_PRESETS[0],
+      elements: endElements, notes: 'Closing slide.',
+      transition: 'flip3d', transitionDuration: 0.8, transitionEasing: 'ease',
     },
   ];
 }
@@ -906,12 +967,21 @@ export const usePresentationStore = create<PresentationState & PresentationActio
       return { slides };
     }),
 
-  applyTransitionToAll: (transition, duration) =>
+  updateSlideTransitionEasing: (index, easing) =>
+    set((state) => {
+      const slides = state.slides.map((s, i) =>
+        i === index ? { ...s, transitionEasing: easing } : s,
+      );
+      return { slides };
+    }),
+
+  applyTransitionToAll: (transition, duration, easing) =>
     set((state) => {
       const slides = state.slides.map((s) => ({
         ...s,
         transition: transition as SlideTransitionType,
         ...(duration !== undefined ? { transitionDuration: duration } : {}),
+        ...(easing !== undefined ? { transitionEasing: easing } : {}),
       }));
       return { slides };
     }),
