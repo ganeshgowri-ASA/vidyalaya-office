@@ -10,6 +10,9 @@ import MeetingShareModal from './meeting-share-modal';
 import MeetingExportModal from './meeting-export-modal';
 import WebhookConfigPanel from './webhook-config';
 import SlackIntegration from './slack-integration';
+import MeetingIntelligence from './meeting-intelligence';
+import SmartSearch from './smart-search';
+import CalendarIntegrationPanel from './calendar-integration-panel';
 
 // ==================== TYPES ====================
 interface Meeting {
@@ -406,6 +409,12 @@ export default function MeetingsModule() {
           className="px-2 py-1 rounded text-[10px] bg-purple-600/20 text-purple-400 hover:bg-purple-600/30">🎙️ Transcription</Link>
         <button onClick={() => setShowRooms(!showRooms)}
           className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">🏢 Rooms</button>
+        <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'intelligence' ? null : 'intelligence')}
+          className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'intelligence' ? 'bg-purple-600/20 text-purple-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>🧠 Intelligence</button>
+        <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'smartsearch' ? null : 'smartsearch')}
+          className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'smartsearch' ? 'bg-blue-600/20 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>🔍 Smart Search</button>
+        <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'calendar' ? null : 'calendar')}
+          className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'calendar' ? 'bg-green-600/20 text-green-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>📅 Calendar</button>
         <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'insights' ? null : 'insights')}
           className={`px-2 py-1 rounded text-[10px] ${activeIntegrationPanel === 'insights' ? 'bg-blue-600/20 text-blue-400' : 'bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]'}`}>📊 Insights</button>
         <button onClick={() => setActiveIntegrationPanel(activeIntegrationPanel === 'askfred' ? null : 'askfred')}
@@ -880,6 +889,15 @@ export default function MeetingsModule() {
         {/* ===== INTEGRATION PANELS ===== */}
         {activeIntegrationPanel && !showCallUI && (
           <div className="w-80 border-l border-[var(--border-color,#334155)] overflow-hidden flex flex-col">
+            {activeIntegrationPanel === 'intelligence' && (
+              <MeetingIntelligence onClose={() => setActiveIntegrationPanel(null)} />
+            )}
+            {activeIntegrationPanel === 'smartsearch' && (
+              <SmartSearch onClose={() => setActiveIntegrationPanel(null)} />
+            )}
+            {activeIntegrationPanel === 'calendar' && (
+              <CalendarIntegrationPanel onClose={() => setActiveIntegrationPanel(null)} />
+            )}
             {activeIntegrationPanel === 'insights' && (
               <MeetingInsightsDashboard onClose={() => setActiveIntegrationPanel(null)} />
             )}

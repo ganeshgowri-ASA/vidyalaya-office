@@ -257,7 +257,7 @@ interface MeetingIntegrationsState {
   askFredLoading: boolean;
 
   // Active panel
-  activeIntegrationPanel: 'insights' | 'askfred' | 'webhooks' | 'fireflies' | 'comments' | null;
+  activeIntegrationPanel: 'insights' | 'askfred' | 'webhooks' | 'fireflies' | 'comments' | 'intelligence' | 'smartsearch' | 'calendar' | null;
 
   // Actions - Fireflies
   setFirefliesApiKey: (key: string) => void;
@@ -291,7 +291,7 @@ interface MeetingIntegrationsState {
   clearAskFred: () => void;
 
   // Actions - Panel
-  setActiveIntegrationPanel: (panel: 'insights' | 'askfred' | 'webhooks' | 'fireflies' | 'comments' | null) => void;
+  setActiveIntegrationPanel: (panel: 'insights' | 'askfred' | 'webhooks' | 'fireflies' | 'comments' | 'intelligence' | 'smartsearch' | 'calendar' | null) => void;
 
   // Actions - Export
   exportMeetingNotes: (meetingId: string, format: 'notion' | 'google-docs' | 'markdown' | 'pdf') => Promise<string>;
