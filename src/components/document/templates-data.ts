@@ -4,11 +4,13 @@ export interface DocTemplate {
   icon: string;
   description: string;
   content: string;
+  category?: "business" | "academic" | "engineering" | "legal" | "creative" | "general";
 }
 
 export const TEMPLATES: DocTemplate[] = [
   {
     id: "ieee-paper",
+    category: "academic",
     name: "IEEE Research Paper",
     icon: "🔬",
     description: "IEEE-formatted academic research paper with abstract, methodology, results, and references.",
@@ -91,6 +93,7 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "cv-resume",
+    category: "general",
     name: "CV / Resume",
     icon: "📄",
     description: "Professional resume template with sections for experience, education, skills, and certifications.",
@@ -167,6 +170,7 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "business-report",
+    category: "business",
     name: "Business Report",
     icon: "📊",
     description: "Comprehensive business report with executive summary, financials, SWOT analysis, and recommendations.",
@@ -336,6 +340,7 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "sop",
+    category: "engineering",
     name: "Standard Operating Procedure",
     icon: "📋",
     description: "SOP template with document control, RACI matrix, procedures, and quality control checks.",
@@ -474,6 +479,7 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "meeting-minutes",
+    category: "business",
     name: "Meeting Minutes",
     icon: "🗓️",
     description: "Meeting minutes with attendees, agenda, discussion notes, action items, and approval signatures.",
@@ -588,6 +594,7 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "project-proposal",
+    category: "business",
     name: "Project Proposal",
     icon: "🚀",
     description: "Comprehensive project proposal with objectives, timeline, budget, risk matrix, and stakeholder analysis.",
@@ -750,6 +757,7 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "annual-report",
+    category: "business",
     name: "Annual Report",
     icon: "📈",
     description: "Comprehensive annual report with financial statements, business segments, governance, and auditor report.",
@@ -1012,6 +1020,7 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "legal-contract",
+    category: "legal",
     name: "Legal Contract",
     icon: "⚖️",
     description: "Formal service agreement with articles covering definitions, scope, confidentiality, IP, liability, and dispute resolution.",
@@ -1180,6 +1189,7 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "technical-specification",
+    category: "engineering",
     name: "Technical Specification",
     icon: "⚙️",
     description: "Detailed technical specification document with requirements, API specs, data models, and deployment architecture.",
@@ -1530,6 +1540,7 @@ Response (201 Created):
   },
   {
     id: "training-manual",
+    category: "general",
     name: "Training Manual",
     icon: "🎓",
     description: "Comprehensive employee onboarding training manual for software development teams with modules, exercises, and assessments.",
@@ -1877,6 +1888,7 @@ Response (201 Created):
   },
   {
     id: "springer-journal",
+    category: "academic",
     name: "Springer Journal Paper",
     icon: "📘",
     description: "Springer/Nature journal format with structured abstract, data availability, and author contributions.",
@@ -1961,6 +1973,7 @@ Response (201 Created):
   },
   {
     id: "wiley-journal",
+    category: "academic",
     name: "Wiley Journal Paper",
     icon: "📗",
     description: "Wiley journal format with literature review, mixed-methods methodology, and practical implications.",
@@ -2025,6 +2038,7 @@ Response (201 Created):
   },
   {
     id: "sciencedirect-paper",
+    category: "academic",
     name: "ScienceDirect / Elsevier Paper",
     icon: "📙",
     description: "Elsevier journal format with highlights, graphical abstract placeholder, and CRediT author statement.",
@@ -2088,6 +2102,7 @@ Response (201 Created):
   },
   {
     id: "spie-paper",
+    category: "academic",
     name: "SPIE Conference Paper",
     icon: "🔭",
     description: "SPIE proceedings format with paper number, experimental setup, and optical systems analysis.",
@@ -2142,6 +2157,7 @@ Response (201 Created):
   },
   {
     id: "research-proposal",
+    category: "academic",
     name: "Research Proposal",
     icon: "📝",
     description: "Comprehensive research proposal with budget justification, timeline, methodology, and broader impacts.",
@@ -2235,6 +2251,7 @@ Response (201 Created):
   },
   {
     id: "sales-invoice",
+    category: "business",
     name: "Sales Invoice",
     icon: "🧾",
     description: "Professional multi-page sales invoice with line items, tax breakdown, payment terms, and remittance advice.",
@@ -2310,6 +2327,7 @@ Response (201 Created):
   },
   {
     id: "purchase-order-doc",
+    category: "business",
     name: "Purchase Order Document",
     icon: "📦",
     description: "Detailed purchase order with vendor information, delivery schedule, terms, and approval signatures.",
@@ -2380,6 +2398,7 @@ Response (201 Created):
   },
   {
     id: "hr-onboarding",
+    category: "general",
     name: "HR Onboarding Checklist",
     icon: "👤",
     description: "Comprehensive employee onboarding checklist with pre-arrival, Day 1, 30-60-90 day goals, and IT setup.",
@@ -2454,6 +2473,7 @@ Response (201 Created):
   },
   {
     id: "legal-nda",
+    category: "legal",
     name: "Legal NDA",
     icon: "🔒",
     description: "Non-Disclosure Agreement with definitions, obligations, exclusions, remedies, and signature blocks.",
@@ -2509,6 +2529,7 @@ Response (201 Created):
   },
   {
     id: "accounts-pl",
+    category: "business",
     name: "Profit & Loss Statement",
     icon: "💹",
     description: "Multi-page P&L statement with quarterly breakdown, YoY comparison, financial ratios, and notes.",
@@ -2585,6 +2606,7 @@ Response (201 Created):
   },
   {
     id: "var-business-letter",
+    category: "business",
     name: "Business Letter (Variables)",
     icon: "✉️",
     description: "Professional business letter with auto-fill variables for sender, recipient, company, and date.",
@@ -2616,6 +2638,7 @@ Response (201 Created):
   },
   {
     id: "var-project-proposal",
+    category: "business",
     name: "Project Proposal (Variables)",
     icon: "📝",
     description: "Project proposal template with variables for project details, company info, dates, and team.",
@@ -2666,6 +2689,7 @@ Response (201 Created):
   },
   {
     id: "var-nda-agreement",
+    category: "legal",
     name: "NDA Agreement (Variables)",
     icon: "🔒",
     description: "Non-Disclosure Agreement template with variables for parties, dates, and terms.",
@@ -2695,6 +2719,7 @@ Response (201 Created):
   },
   {
     id: "var-meeting-agenda",
+    category: "business",
     name: "Meeting Agenda (Variables)",
     icon: "📅",
     description: "Meeting agenda template with variables for meeting details, attendees, and action items.",
@@ -2732,6 +2757,7 @@ Response (201 Created):
   },
   {
     id: "var-sop-template",
+    category: "engineering",
     name: "SOP Template (Variables)",
     icon: "📋",
     description: "Standard Operating Procedure with variables for document control, author, dates, and department.",

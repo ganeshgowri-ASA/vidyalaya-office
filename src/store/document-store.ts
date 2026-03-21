@@ -207,6 +207,12 @@ interface DocumentState {
   // Outline Navigation (enhanced)
   showOutlinePanel: boolean;
 
+  // Pro panels
+  showLatexPanel: boolean;
+  showRAGPanel: boolean;
+  showEditorSettings: boolean;
+  showProjectManager: boolean;
+
   setFileName: (name: string) => void;
   setActiveTab: (tab: TabKey) => void;
   toggleAI: () => void;
@@ -334,6 +340,12 @@ interface DocumentState {
 
   // Outline actions
   setShowOutlinePanel: (show: boolean) => void;
+
+  // Pro panel actions
+  setShowLatexPanel: (show: boolean) => void;
+  setShowRAGPanel: (show: boolean) => void;
+  setShowEditorSettings: (show: boolean) => void;
+  setShowProjectManager: (show: boolean) => void;
 }
 
 export const useDocumentStore = create<DocumentState>((set) => ({
@@ -462,6 +474,12 @@ export const useDocumentStore = create<DocumentState>((set) => ({
 
   // Outline
   showOutlinePanel: false,
+
+  // Pro panels
+  showLatexPanel: false,
+  showRAGPanel: false,
+  showEditorSettings: false,
+  showProjectManager: false,
 
   setFileName: (name) => set({ fileName: name }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -607,4 +625,10 @@ export const useDocumentStore = create<DocumentState>((set) => ({
 
   // Outline actions
   setShowOutlinePanel: (show) => set({ showOutlinePanel: show }),
+
+  // Pro panel actions
+  setShowLatexPanel: (show) => set({ showLatexPanel: show }),
+  setShowRAGPanel: (show) => set({ showRAGPanel: show }),
+  setShowEditorSettings: (show) => set({ showEditorSettings: show }),
+  setShowProjectManager: (show) => set({ showProjectManager: show }),
 }));

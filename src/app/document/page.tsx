@@ -21,6 +21,11 @@ import { DocumentPropertiesDialog } from "@/components/document/document-propert
 import { KeyboardShortcutsDialog } from "@/components/document/keyboard-shortcuts-dialog";
 import { useDocumentStore } from "@/store/document-store";
 import { SmartArtInfographicsModal } from "@/components/document/smartart-infographics-modal";
+import { FloatingToolbar } from "@/components/document/floating-toolbar";
+import { LatexMarkdownPanel } from "@/components/document/latex-markdown-panel";
+import { RAGPanel } from "@/components/document/rag-panel";
+import { EditorSettingsPanel } from "@/components/document/editor-settings-panel";
+import { ProjectManager } from "@/components/document/project-manager";
 import { EquationEditor } from "@/components/document/equation-editor";
 import { CitationManagerModal } from "@/components/document/citation-manager";
 import { TableOfContentsPanel } from "@/components/document/table-of-contents";
@@ -63,6 +68,10 @@ export default function DocumentPage() {
     showKeyboardShortcuts, setShowKeyboardShortcuts,
     showTocPanel, showFootnotesPanel, showOutlinePanel,
     showStatisticsPanel, showSpellingPanel, showBookmarksPanel,
+    showLatexPanel, setShowLatexPanel,
+    showRAGPanel, setShowRAGPanel,
+    showEditorSettings, setShowEditorSettings,
+    showProjectManager, setShowProjectManager,
   } = useDocumentStore();
 
   const {
@@ -363,9 +372,18 @@ export default function DocumentPage() {
         {/* Bookmarks & Cross-references Panel */}
         {showBookmarksPanel && <BookmarksCrossRefPanel />}
 
+        {/* LaTeX/Markdown Panel */}
+        <LatexMarkdownPanel visible={showLatexPanel} onClose={() => setShowLatexPanel(false)} />
+
+        {/* RAG Panel */}
+        <RAGPanel visible={showRAGPanel} onClose={() => setShowRAGPanel(false)} />
+
         {/* AI Panel */}
         <AIPanel />
       </div>
+
+      {/* Floating Toolbar */}
+      <FloatingToolbar />
 
       {/* Status bar */}
       <StatusBar />
@@ -416,6 +434,12 @@ export default function DocumentPage() {
       <ColumnsDialog />
       {/* Collaboration modals */}
       <ShareDialog />
+
+      {/* Editor Settings Panel */}
+      <EditorSettingsPanel visible={showEditorSettings} onClose={() => setShowEditorSettings(false)} />
+
+      {/* Project Manager */}
+      <ProjectManager visible={showProjectManager} onClose={() => setShowProjectManager(false)} />
 
       {/* Export/Import modals */}
       <ImportDialog

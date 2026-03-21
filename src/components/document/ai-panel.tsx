@@ -75,6 +75,19 @@ const EXTENDED_ACTIONS: { category: string; actions: { label: string; icon: Reac
   },
 ];
 
+const SLASH_COMMANDS: { command: string; label: string; description: string; prompt: string }[] = [
+  { command: "/improve", label: "Improve Writing", description: "Enhance clarity, flow, and structure", prompt: "Improve the following text. Make it clearer, more concise, and better structured. Return only the improved text in HTML format:" },
+  { command: "/grammar", label: "Fix Grammar", description: "Fix all grammar and spelling errors", prompt: "Fix all grammar, spelling, and punctuation errors in the following text. Return only the corrected text in HTML:" },
+  { command: "/summarize", label: "Summarize", description: "Create a concise summary", prompt: "Provide a concise summary of the following text with key bullet points in HTML:" },
+  { command: "/translate", label: "Translate", description: "Translate to specified language", prompt: "Translate the following text to the specified language. Preserve formatting. Return in HTML:" },
+  { command: "/outline", label: "Create Outline", description: "Generate a structured outline", prompt: "Create a detailed outline from the following text. Use nested headings and bullet points. Return in HTML:" },
+  { command: "/expand", label: "Expand Text", description: "Elaborate and add detail", prompt: "Elaborate and expand the following text with more detail and explanation. Return in HTML:" },
+  { command: "/formal", label: "Make Formal", description: "Rewrite in professional tone", prompt: "Rewrite the following text in a professional, formal tone suitable for business communication. Return in HTML:" },
+  { command: "/simplify", label: "Simplify", description: "Explain in simpler terms", prompt: "Explain the following text in simple terms that anyone can understand. Return in HTML:" },
+  { command: "/table", label: "Generate Table", description: "Create a formatted table", prompt: "Generate a well-formatted HTML table from the data or topic described below. Include headers and at least 5 rows:" },
+  { command: "/cite", label: "Add Citations", description: "Suggest academic references", prompt: "Based on the topics discussed in the following text, suggest 5-10 academic references that could be cited. Format as a bibliography in APA style in HTML:" },
+];
+
 const PROMPT_TEMPLATES = [
   { label: "Proofread this document", prompt: "Proofread the following text. List all errors found and provide the corrected version in HTML:" },
   { label: "Write an introduction for...", prompt: "Write a compelling introduction paragraph for the following topic:" },
@@ -109,6 +122,8 @@ export function AIPanel() {
   const [showExtendedActions, setShowExtendedActions] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [contextMode, setContextMode] = useState<"full" | "selection">("full");
+  const [showSlashCommands, setShowSlashCommands] = useState(false);
+  const [slashFilter, setSlashFilter] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -438,19 +453,73 @@ export function AIPanel() {
         </div>
       )}
 
+      {/* Slash Commands Picker */}
+      {showSlashCommands && (
+        <div className="border-t px-2 py-1 max-h-48 overflow-y-auto" style={{ borderColor: "var(--border)" }}>
+          <div className="text-[9px] font-medium px-1 py-0.5 mb-1" style={{ color: "var(--muted-foreground)" }}>
+            Slash Commands — type / to filter
+          </div>
+          {SLASH_COMMANDS.filter((c) => !slashFilter || c.command.includes(slashFilter) || c.label.toLowerCase().includes(slashFilter)).map((cmd) => (
+            <button
+              key={cmd.command}
+              onClick={() => {
+                const text = getContextText();
+                sendMessage(cmd.prompt + (text.trim() ? "\n\n" + text : ""));
+                setShowSlashCommands(false);
+                setInput("");
+                setSlashFilter("");
+              }}
+              disabled={loading}
+              className="w-full flex items-center gap-2 text-left px-2 py-1.5 rounded hover:bg-[var(--muted)] disabled:opacity-50"
+            >
+              <span className="text-[10px] font-mono font-semibold min-w-[70px]" style={{ color: "var(--primary)" }}>
+                {cmd.command}
+              </span>
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-medium block" style={{ color: "var(--foreground)" }}>{cmd.label}</span>
+                <span className="text-[8px] block truncate" style={{ color: "var(--muted-foreground)" }}>{cmd.description}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Input */}
       <div className="border-t p-2.5" style={{ borderColor: "var(--border)" }}>
         <div className="flex gap-2">
           <textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setInput(val);
+              if (val.startsWith("/")) {
+                setShowSlashCommands(true);
+                setSlashFilter(val.slice(1).toLowerCase());
+              } else {
+                setShowSlashCommands(false);
+                setSlashFilter("");
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                sendMessage(input);
+                // Check if input matches a slash command
+                const matched = SLASH_COMMANDS.find((c) => input.trim() === c.command);
+                if (matched) {
+                  const text = getContextText();
+                  sendMessage(matched.prompt + (text.trim() ? "\n\n" + text : ""));
+                  setShowSlashCommands(false);
+                  setInput("");
+                  setSlashFilter("");
+                } else {
+                  sendMessage(input);
+                }
+              }
+              if (e.key === "Escape") {
+                setShowSlashCommands(false);
               }
             }}
-            placeholder="Ask AI anything... (Shift+Enter for newline)"
+            placeholder="Ask AI anything or type / for commands..."
             className="flex-1 rounded-md border px-3 py-2 text-xs outline-none resize-none"
             style={{
               backgroundColor: "var(--background)",

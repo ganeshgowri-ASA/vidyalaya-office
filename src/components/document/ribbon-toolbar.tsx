@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Sparkles, LayoutTemplate, Terminal, Code,
-  Shield, FileCode, Search, Globe, Key, Link,
-  Lock, UserX, FileScan, Settings2, PlugZap,
+  Sparkles, LayoutTemplate, Terminal, Code, Code2,
+  Shield, FileCode, Search, Globe, Key, Link, Database,
+  Lock, UserX, FileScan, Settings2, PlugZap, FolderOpen,
   Type, FileType, ImageIcon, List, Calendar, CheckSquare,
   AlignLeft, ToggleLeft, ChevronDown, Paintbrush, SlidersHorizontal,
   FileJson, Layers, Map, Play, Mic, ShieldAlert,
-  Undo2, Redo2,
+  Undo2, Redo2, Settings,
 } from "lucide-react";
 import { useDocumentStore } from "@/store/document-store";
 import { HistoryPanel } from "@/components/shared/history-panel";
@@ -40,6 +40,10 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
     toggleAI, showAI,
     setShowTemplates,
     selectedTable, selectedImage, selectedSmartArt,
+    showLatexPanel, setShowLatexPanel,
+    showRAGPanel, setShowRAGPanel,
+    setShowEditorSettings,
+    setShowProjectManager,
   } = useDocumentStore();
 
   // Track undo/redo count via MutationObserver on the editor
@@ -150,6 +154,32 @@ export function RibbonToolbar({ onPageSetup, onHeaderFooterEditor, onToggleVersi
           label="Templates"
           title="Document Templates"
           onClick={() => setShowTemplates(true)}
+        />
+        <ToolbarButton
+          icon={<FolderOpen size={16} />}
+          label="Projects"
+          title="Project Manager"
+          onClick={() => setShowProjectManager(true)}
+        />
+        <ToolbarButton
+          icon={<Code2 size={16} />}
+          label="LaTeX/MD"
+          title="LaTeX & Markdown Error Detection"
+          active={showLatexPanel}
+          onClick={() => setShowLatexPanel(!showLatexPanel)}
+        />
+        <ToolbarButton
+          icon={<Database size={16} />}
+          label="RAG"
+          title="Knowledge Base (RAG)"
+          active={showRAGPanel}
+          onClick={() => setShowRAGPanel(!showRAGPanel)}
+        />
+        <ToolbarButton
+          icon={<Settings size={16} />}
+          label="Settings"
+          title="Editor Settings"
+          onClick={() => setShowEditorSettings(true)}
         />
       </div>
 
