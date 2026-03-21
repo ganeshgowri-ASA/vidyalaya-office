@@ -43,10 +43,10 @@ export default function RootLayout({
               <KeyboardShortcutsModal />
               <AIChatWrapper />
               <OnboardingTour />
+              <ServiceWorkerRegistrar />
+              <PWAInstallPrompt />
             </AIProviders>
           </AuthProvider>
-          <ServiceWorkerRegistrar />
-          <PWAInstallPrompt />
         </ThemeProvider>
       </body>
     </html>

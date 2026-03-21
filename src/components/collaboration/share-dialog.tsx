@@ -11,18 +11,19 @@ import {
   Lock,
   Mail,
   Trash2,
-  ChevronDown,
-  Shield,
   Eye,
   MessageSquare,
   Pencil,
+  LogIn,
 } from "lucide-react";
 import {
   useCollaborationStore,
   type PermissionLevel,
 } from "@/store/collaboration-store";
+import { useAuthStore } from "@/store/auth-store";
 
 export function ShareDialog() {
+  const { isGuest } = useAuthStore();
   const {
     showShareDialog,
     setShowShareDialog,
@@ -33,15 +34,63 @@ export function ShareDialog() {
     createShareLink,
     revokeShareLink,
     currentUser,
-    allUsers,
   } = useCollaborationStore();
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePermission, setInvitePermission] = useState<PermissionLevel>("comment");
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [linkPermission, setLinkPermission] = useState<PermissionLevel>("view");
+  const [isPublic, setIsPublic] = useState(false);
 
   if (!showShareDialog) return null;
+
+  // Guest users see a sign-in prompt
+  if (isGuest) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
+        <div
+          className="w-[420px] rounded-xl border shadow-2xl"
+          style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
+        >
+          <div
+            className="flex items-center justify-between border-b px-5 py-4"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+              Share Document
+            </h2>
+            <button
+              onClick={() => setShowShareDialog(false)}
+              className="rounded-lg p-1.5 hover:bg-[var(--muted)] transition-colors"
+            >
+              <X size={18} style={{ color: "var(--muted-foreground)" }} />
+            </button>
+          </div>
+          <div className="px-5 py-8 text-center">
+            <div
+              className="flex h-14 w-14 items-center justify-center rounded-2xl mx-auto mb-4"
+              style={{ backgroundColor: "var(--muted)" }}
+            >
+              <LogIn size={24} style={{ color: "var(--primary)" }} />
+            </div>
+            <h3 className="text-sm font-semibold mb-2" style={{ color: "var(--foreground)" }}>
+              Sign in to share
+            </h3>
+            <p className="text-xs mb-5" style={{ color: "var(--muted-foreground)" }}>
+              You need to sign in to share documents, manage permissions, and invite collaborators.
+            </p>
+            <button
+              className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium text-white mx-auto"
+              style={{ backgroundColor: "var(--primary)" }}
+            >
+              <LogIn size={16} />
+              Sign in to share
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleCopyLink = (url: string) => {
     navigator.clipboard.writeText(url);
@@ -51,12 +100,6 @@ export function ShareDialog() {
 
   const handleCreateLink = () => {
     createShareLink(linkPermission);
-  };
-
-  const permissionIcons: Record<PermissionLevel, React.ReactNode> = {
-    view: <Eye size={12} />,
-    comment: <MessageSquare size={12} />,
-    edit: <Pencil size={12} />,
   };
 
   const permissionLabels: Record<PermissionLevel, string> = {
@@ -92,6 +135,46 @@ export function ShareDialog() {
             className="rounded-lg p-1.5 hover:bg-[var(--muted)] transition-colors"
           >
             <X size={18} style={{ color: "var(--muted-foreground)" }} />
+          </button>
+        </div>
+
+        {/* Public/Private toggle */}
+        <div
+          className="px-5 py-3 border-b flex items-center justify-between"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div className="flex items-center gap-2.5">
+            {isPublic ? (
+              <Globe size={16} style={{ color: "var(--primary)" }} />
+            ) : (
+              <Lock size={16} style={{ color: "var(--muted-foreground)" }} />
+            )}
+            <div>
+              <div className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
+                {isPublic ? "Public — anyone with the link" : "Private — only invited people"}
+              </div>
+              <div className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>
+                {isPublic
+                  ? "Anyone on the internet with the link can access"
+                  : "Only people you invite will have access"}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsPublic(!isPublic)}
+            className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors"
+            style={{
+              backgroundColor: isPublic ? "var(--primary)" : "var(--muted)",
+            }}
+            role="switch"
+            aria-checked={isPublic}
+          >
+            <span
+              className="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform"
+              style={{
+                transform: isPublic ? "translateX(16px)" : "translateX(0)",
+              }}
+            />
           </button>
         </div>
 
