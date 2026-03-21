@@ -19,6 +19,31 @@ export interface CommentMention {
   name: string;
 }
 
+export interface InlinePosition {
+  paragraphIndex: number;
+  startOffset: number;
+  endOffset: number;
+  selectedText: string;
+}
+
+export type ReviewStatus = "draft" | "pending_review" | "approved" | "rejected" | "changes_requested";
+
+export interface ReviewRequest {
+  id: string;
+  status: ReviewStatus;
+  submittedBy: CollaboratorUser;
+  submittedAt: string;
+  reviewers: ReviewerEntry[];
+  message?: string;
+}
+
+export interface ReviewerEntry {
+  user: CollaboratorUser;
+  status: "pending" | "approved" | "rejected" | "changes_requested";
+  comment?: string;
+  respondedAt?: string;
+}
+
 export interface CollabComment {
   id: string;
   author: CollaboratorUser;
@@ -31,6 +56,7 @@ export interface CollabComment {
   replies: CollabReply[];
   selectedText?: string;
   pageContext?: string;
+  inlinePosition?: InlinePosition;
 }
 
 export interface CollabReply {
@@ -139,6 +165,7 @@ const MOCK_COMMENTS: CollabComment[] = [
       },
     ],
     selectedText: "Introduction section",
+    inlinePosition: { paragraphIndex: 0, startOffset: 0, endOffset: 20, selectedText: "Introduction section" },
   },
   {
     id: "comment-2",
@@ -149,6 +176,7 @@ const MOCK_COMMENTS: CollabComment[] = [
     resolved: false,
     replies: [],
     selectedText: "Charts and Figures",
+    inlinePosition: { paragraphIndex: 2, startOffset: 0, endOffset: 18, selectedText: "Charts and Figures" },
   },
   {
     id: "comment-3",
@@ -160,8 +188,18 @@ const MOCK_COMMENTS: CollabComment[] = [
     resolvedBy: "You",
     resolvedAt: new Date(Date.now() - 43200000).toISOString(),
     replies: [],
+    inlinePosition: { paragraphIndex: 4, startOffset: 10, endOffset: 25, selectedText: "table formatting" },
   },
 ];
+
+const MOCK_REVIEW: ReviewRequest = {
+  id: "review-1",
+  status: "draft",
+  submittedBy: MOCK_USERS[0],
+  submittedAt: "",
+  reviewers: [],
+  message: "",
+};
 
 const MOCK_VERSIONS: VersionHistoryEntry[] = [
   {
@@ -259,6 +297,11 @@ interface CollaborationState {
   collabComments: CollabComment[];
   showCollabComments: boolean;
   commentFilter: "all" | "open" | "resolved";
+  activeInlineCommentId: string | null;
+
+  // Review workflow
+  reviewRequest: ReviewRequest;
+  showReviewPanel: boolean;
 
   // Sharing
   showShareDialog: boolean;
@@ -285,6 +328,16 @@ interface CollaborationState {
   unresolveCollabComment: (id: string) => void;
   deleteCollabComment: (id: string) => void;
   addCollabReply: (commentId: string, reply: CollabReply) => void;
+  setActiveInlineComment: (id: string | null) => void;
+  addInlineComment: (text: string, mentions: CommentMention[], position: InlinePosition) => void;
+
+  // Actions - Review workflow
+  toggleReviewPanel: () => void;
+  submitForReview: (reviewerIds: string[], message: string) => void;
+  approveReview: (comment?: string) => void;
+  rejectReview: (comment?: string) => void;
+  requestChanges: (comment?: string) => void;
+  resetReview: () => void;
 
   // Actions - Sharing
   toggleShareDialog: () => void;
@@ -312,6 +365,7 @@ interface CollaborationState {
   // Computed
   unreadNotificationCount: () => number;
   openCommentCount: () => number;
+  inlineComments: () => CollabComment[];
 }
 
 export const useCollaborationStore = create<CollaborationState>((set, get) => ({
@@ -322,6 +376,10 @@ export const useCollaborationStore = create<CollaborationState>((set, get) => ({
   collabComments: MOCK_COMMENTS,
   showCollabComments: false,
   commentFilter: "all",
+  activeInlineCommentId: null,
+
+  reviewRequest: MOCK_REVIEW,
+  showReviewPanel: false,
 
   showShareDialog: false,
   sharedUsers: MOCK_USERS.filter((u) => u.id !== "user-1").map((u) => ({
@@ -364,6 +422,156 @@ export const useCollaborationStore = create<CollaborationState>((set, get) => ({
         c.id === commentId ? { ...c, replies: [...c.replies, reply] } : c
       ),
     })),
+  setActiveInlineComment: (id) => set({ activeInlineCommentId: id }),
+  addInlineComment: (text, mentions, position) => {
+    const comment: CollabComment = {
+      id: `comment-${Date.now()}`,
+      author: get().currentUser,
+      text,
+      mentions,
+      timestamp: new Date().toISOString(),
+      resolved: false,
+      replies: [],
+      selectedText: position.selectedText,
+      inlinePosition: position,
+    };
+    set((s) => ({
+      collabComments: [comment, ...s.collabComments],
+      notifications: [
+        {
+          id: `notif-${Date.now()}`,
+          type: "comment" as const,
+          message: `${s.currentUser.name} added an inline comment`,
+          from: s.currentUser,
+          timestamp: new Date().toISOString(),
+          read: false,
+          commentId: comment.id,
+        },
+        ...s.notifications,
+      ],
+    }));
+  },
+
+  // Review workflow
+  toggleReviewPanel: () => set((s) => ({ showReviewPanel: !s.showReviewPanel })),
+  submitForReview: (reviewerIds, message) => {
+    const allUsers = get().allUsers;
+    const reviewers: ReviewerEntry[] = reviewerIds
+      .map((id) => allUsers.find((u) => u.id === id))
+      .filter((u): u is CollaboratorUser => !!u)
+      .map((u) => ({ user: u, status: "pending" as const }));
+    const currentUser = get().currentUser;
+    set((s) => ({
+      reviewRequest: {
+        id: `review-${Date.now()}`,
+        status: "pending_review",
+        submittedBy: currentUser,
+        submittedAt: new Date().toISOString(),
+        reviewers,
+        message,
+      },
+      notifications: [
+        {
+          id: `notif-${Date.now()}`,
+          type: "suggestion" as const,
+          message: `${currentUser.name} submitted document for review`,
+          from: currentUser,
+          timestamp: new Date().toISOString(),
+          read: false,
+        },
+        ...s.notifications,
+      ],
+    }));
+  },
+  approveReview: (comment) => {
+    const currentUser = get().currentUser;
+    set((s) => {
+      const updatedReviewers = s.reviewRequest.reviewers.map((r) =>
+        r.user.id === currentUser.id
+          ? { ...r, status: "approved" as const, comment, respondedAt: new Date().toISOString() }
+          : r
+      );
+      const allApproved = updatedReviewers.every((r) => r.status === "approved");
+      return {
+        reviewRequest: {
+          ...s.reviewRequest,
+          reviewers: updatedReviewers,
+          status: allApproved ? "approved" : s.reviewRequest.status,
+        },
+        notifications: [
+          {
+            id: `notif-${Date.now()}`,
+            type: "suggestion" as const,
+            message: `${currentUser.name} approved the document`,
+            from: currentUser,
+            timestamp: new Date().toISOString(),
+            read: false,
+          },
+          ...s.notifications,
+        ],
+      };
+    });
+  },
+  rejectReview: (comment) => {
+    const currentUser = get().currentUser;
+    set((s) => ({
+      reviewRequest: {
+        ...s.reviewRequest,
+        status: "rejected",
+        reviewers: s.reviewRequest.reviewers.map((r) =>
+          r.user.id === currentUser.id
+            ? { ...r, status: "rejected" as const, comment, respondedAt: new Date().toISOString() }
+            : r
+        ),
+      },
+      notifications: [
+        {
+          id: `notif-${Date.now()}`,
+          type: "suggestion" as const,
+          message: `${currentUser.name} rejected the document`,
+          from: currentUser,
+          timestamp: new Date().toISOString(),
+          read: false,
+        },
+        ...s.notifications,
+      ],
+    }));
+  },
+  requestChanges: (comment) => {
+    const currentUser = get().currentUser;
+    set((s) => ({
+      reviewRequest: {
+        ...s.reviewRequest,
+        status: "changes_requested",
+        reviewers: s.reviewRequest.reviewers.map((r) =>
+          r.user.id === currentUser.id
+            ? { ...r, status: "changes_requested" as const, comment, respondedAt: new Date().toISOString() }
+            : r
+        ),
+      },
+      notifications: [
+        {
+          id: `notif-${Date.now()}`,
+          type: "suggestion" as const,
+          message: `${currentUser.name} requested changes`,
+          from: currentUser,
+          timestamp: new Date().toISOString(),
+          read: false,
+        },
+        ...s.notifications,
+      ],
+    }));
+  },
+  resetReview: () => set({
+    reviewRequest: {
+      id: `review-${Date.now()}`,
+      status: "draft",
+      submittedBy: get().currentUser,
+      submittedAt: "",
+      reviewers: [],
+      message: "",
+    },
+  }),
 
   // Sharing
   toggleShareDialog: () => set((s) => ({ showShareDialog: !s.showShareDialog })),
@@ -437,4 +645,5 @@ export const useCollaborationStore = create<CollaborationState>((set, get) => ({
   // Computed
   unreadNotificationCount: () => get().notifications.filter((n) => !n.read).length,
   openCommentCount: () => get().collabComments.filter((c) => !c.resolved).length,
+  inlineComments: () => get().collabComments.filter((c) => !!c.inlinePosition),
 }));
