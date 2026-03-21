@@ -15,8 +15,11 @@ import {
   Eye,
   Grid3X3,
   List,
+  Cloud,
+  CloudOff,
 } from "lucide-react";
 import { useThemeStore, themes } from "@/store/theme-store";
+import { useAuthStore } from "@/store/auth-store";
 import type { ThemeName } from "@/types";
 
 const themeSwatches: Record<ThemeName, string> = {
@@ -29,6 +32,7 @@ const themeSwatches: Record<ThemeName, string> = {
 
 export default function ProfilePage() {
   const { themeName, setTheme } = useThemeStore();
+  const { user, isGuest } = useAuthStore();
   const [displayName, setDisplayName] = useState("Admin User");
   const [email, setEmail] = useState("admin@vidyalaya.edu");
   const [themeMode, setThemeMode] = useState<"light" | "dark" | "system">("dark");
@@ -37,18 +41,27 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    // If authenticated, use Supabase user data
+    if (user) {
+      setDisplayName(user.user_metadata?.full_name || user.email?.split("@")[0] || "User");
+      setEmail(user.email || "");
+    }
+
+    // Load local preferences
     try {
-      const saved = localStorage.getItem("vidyalaya_profile");
-      if (saved) {
-        const data = JSON.parse(saved);
-        if (data.displayName) setDisplayName(data.displayName);
-        if (data.email) setEmail(data.email);
+      const savedProfile = localStorage.getItem("vidyalaya_profile");
+      if (savedProfile) {
+        const data = JSON.parse(savedProfile);
+        if (isGuest) {
+          if (data.displayName) setDisplayName(data.displayName);
+          if (data.email) setEmail(data.email);
+        }
         if (data.themeMode) setThemeMode(data.themeMode);
         if (data.defaultView) setDefaultView(data.defaultView);
         if (typeof data.emailNotifications === "boolean") setEmailNotifications(data.emailNotifications);
       }
     } catch {}
-  }, []);
+  }, [user, isGuest]);
 
   const handleSave = () => {
     const profileData = { displayName, email, themeMode, defaultView, emailNotifications };
@@ -63,6 +76,31 @@ export default function ProfilePage() {
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>Profile</h1>
         <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>Manage your account and preferences</p>
+      </div>
+
+      {/* Account status banner */}
+      <div
+        className="flex items-center gap-3 rounded-lg border px-4 py-3"
+        style={{
+          backgroundColor: isGuest ? "rgba(234, 179, 8, 0.08)" : "rgba(22, 163, 74, 0.08)",
+          borderColor: isGuest ? "rgba(234, 179, 8, 0.2)" : "rgba(22, 163, 74, 0.2)",
+        }}
+      >
+        {isGuest ? (
+          <>
+            <CloudOff size={16} style={{ color: "#eab308" }} />
+            <span className="text-sm" style={{ color: "#eab308" }}>
+              Guest mode — data is saved locally only. Sign in for cloud sync.
+            </span>
+          </>
+        ) : (
+          <>
+            <Cloud size={16} style={{ color: "#16a34a" }} />
+            <span className="text-sm" style={{ color: "#16a34a" }}>
+              Authenticated — cloud sync is active.
+            </span>
+          </>
+        )}
       </div>
 
       {/* Avatar & Name */}
@@ -91,9 +129,15 @@ export default function ProfilePage() {
               <input
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
+                disabled={!isGuest && !!user}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none disabled:opacity-60"
                 style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
               />
+              {!isGuest && (
+                <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>
+                  Managed by your Supabase account
+                </p>
+              )}
             </div>
             <div>
               <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
@@ -102,7 +146,8 @@ export default function ProfilePage() {
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none"
+                disabled={!isGuest && !!user}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none disabled:opacity-60"
                 style={{ backgroundColor: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
               />
             </div>
@@ -110,7 +155,13 @@ export default function ProfilePage() {
         </div>
         <div className="mt-4 flex items-center gap-2 text-xs" style={{ color: "var(--muted-foreground)" }}>
           <Shield size={12} />
-          <span>Role: <strong>Admin</strong></span>
+          <span>Role: <strong>{isGuest ? "Guest" : "Member"}</strong></span>
+          {user?.id && (
+            <>
+              <span className="mx-1">|</span>
+              <span>ID: {user.id.slice(0, 8)}...</span>
+            </>
+          )}
         </div>
       </section>
 
@@ -121,7 +172,6 @@ export default function ProfilePage() {
           Theme
         </h2>
 
-        {/* Light/Dark/System toggle */}
         <div className="mb-4">
           <p className="text-xs mb-2" style={{ color: "var(--muted-foreground)" }}>Appearance</p>
           <div className="flex gap-2">
@@ -147,7 +197,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Color theme */}
         <div>
           <p className="text-xs mb-2" style={{ color: "var(--muted-foreground)" }}>Color Theme</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -177,7 +226,6 @@ export default function ProfilePage() {
           Preferences
         </h2>
 
-        {/* Default view */}
         <div className="mb-4">
           <p className="text-xs mb-2" style={{ color: "var(--muted-foreground)" }}>Default File View</p>
           <div className="flex gap-2">
@@ -206,7 +254,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Email notifications */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell size={14} style={{ color: "var(--muted-foreground)" }} />

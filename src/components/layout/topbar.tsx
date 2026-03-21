@@ -8,24 +8,20 @@ import {
   Download,
   ChevronDown,
   ChevronRight,
-  User,
   Bell,
-  CheckCheck,
   Clock,
   FileText,
-  LogOut,
-  Settings,
   Search,
   Check,
   Sparkles,
-  HelpCircle,
-  Keyboard,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { useThemeStore, themes } from "@/store/theme-store";
 import { useAIChatStore } from "@/store/ai-chat-store";
+import { useAuthStore } from "@/store/auth-store";
 import { formatDate } from "@/lib/utils";
 import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
+import { UserMenu } from "@/components/auth/user-menu";
 import type { ThemeName } from "@/types";
 
 const themeSwatches: Record<ThemeName, string> = {
@@ -60,15 +56,15 @@ export function Topbar() {
   const { themeName, setTheme } = useThemeStore();
   const toggleAIChat = useAIChatStore((s) => s.togglePanel);
   const aiChatOpen = useAIChatStore((s) => s.isOpen);
+  const { isGuest } = useAuthStore();
   const [themeOpen, setThemeOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const themeRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
+  // profileRef removed - now using UserMenu component
   const recentRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -78,7 +74,7 @@ export function Topbar() {
     function handleClickOutside(e: MouseEvent) {
       if (themeRef.current && !themeRef.current.contains(e.target as Node)) setThemeOpen(false);
       if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false);
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
+      // profile menu click-outside handled by UserMenu component
       if (recentRef.current && !recentRef.current.contains(e.target as Node)) setRecentOpen(false);
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
     }
@@ -123,7 +119,7 @@ export function Topbar() {
           <div className="hidden items-center gap-1 text-xs lg:flex" style={{ color: "var(--muted-foreground)" }}>
             <span className="mx-2 opacity-30">|</span>
             <Check size={12} style={{ color: "#16a34a" }} />
-            <span>All changes saved</span>
+            <span>{isGuest ? "Saved locally" : "Cloud synced"}</span>
           </div>
         </div>
 
@@ -271,44 +267,7 @@ export function Topbar() {
           </div>
 
           {/* User profile menu */}
-          <div ref={profileRef} className="relative">
-            <button onClick={() => setProfileOpen(!profileOpen)} className="flex h-8 w-8 items-center justify-center rounded-full transition-colors" style={{ backgroundColor: "var(--secondary)", color: "var(--secondary-foreground)" }}>
-              <User size={16} />
-            </button>
-            {profileOpen && (
-              <div className="absolute right-0 top-full mt-1 w-56 rounded-lg border shadow-lg" style={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}>
-                <div className="border-b px-4 py-3" style={{ borderColor: "var(--border)" }}>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold" style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}>
-                      AM
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: "var(--card-foreground)" }}>Admin User</p>
-                      <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>admin@vidyalaya.edu</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-1">
-                  <Link href="/profile" className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:opacity-80" style={{ color: "var(--card-foreground)" }} onClick={() => setProfileOpen(false)}>
-                    <User size={14} /> Profile
-                  </Link>
-                  <Link href="/settings" className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:opacity-80" style={{ color: "var(--card-foreground)" }} onClick={() => setProfileOpen(false)}>
-                    <Settings size={14} /> Settings
-                  </Link>
-                  <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:opacity-80" style={{ color: "var(--card-foreground)" }} onClick={() => { setProfileOpen(false); setShowKeyboardShortcuts(true); }}>
-                    <Keyboard size={14} /> Keyboard Shortcuts
-                  </button>
-                  <Link href="/help" className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:opacity-80" style={{ color: "var(--card-foreground)" }} onClick={() => setProfileOpen(false)}>
-                    <HelpCircle size={14} /> Help & Feedback
-                  </Link>
-                  <div className="my-1 border-t" style={{ borderColor: "var(--border)" }} />
-                  <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:opacity-80" style={{ color: "#dc2626" }} onClick={() => setProfileOpen(false)}>
-                    <LogOut size={14} /> Log Out
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <UserMenu />
         </div>
       </header>
 
