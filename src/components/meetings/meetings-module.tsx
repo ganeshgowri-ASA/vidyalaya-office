@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import Link from 'next/link';
 
 // ==================== TYPES ====================
 interface Meeting {
@@ -385,6 +386,8 @@ export default function MeetingsModule() {
             </button>
           ))}
         </div>
+        <Link href="/meetings/transcription"
+          className="px-2 py-1 rounded text-[10px] bg-purple-600/20 text-purple-400 hover:bg-purple-600/30">🎙️ Transcription</Link>
         <button onClick={() => setShowRooms(!showRooms)}
           className="px-2 py-1 rounded text-[10px] bg-[var(--bg-tertiary,#0f172a)] hover:bg-[var(--bg-hover,#334155)]">🏢 Rooms</button>
         <button onClick={() => setShowSchedule(true)}
