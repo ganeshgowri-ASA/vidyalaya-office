@@ -25,6 +25,7 @@ import {
   Video,
   CalendarDays,
   FlaskConical,
+  BookOpen,
   StickyNote,
   CheckSquare,
   Bot,
@@ -45,6 +46,7 @@ const mainNav = [
 const editorNav = [
   { label: "Document", href: "/document", icon: FileText },
   { label: "Research", href: "/research", icon: FlaskConical },
+  { label: "JnanaYantra", href: "/jnana-yantra", icon: BookOpen },
   { label: "Spreadsheet", href: "/spreadsheet", icon: Table2 },
   { label: "Presentation", href: "/presentation", icon: Presentation },
   { label: "Graphics", href: "/graphics", icon: Workflow },
