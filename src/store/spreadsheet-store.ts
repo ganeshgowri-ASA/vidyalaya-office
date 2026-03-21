@@ -69,6 +69,46 @@ export interface DataValidationRule {
   inputMessage?: string;
   errorTitle?: string;
   errorMessage?: string;
+  errorStyle?: "reject" | "warning";
+}
+
+export interface ValidationError {
+  cellKey: string;
+  title: string;
+  message: string;
+  style: "reject" | "warning";
+}
+
+export function validateCellValue(value: string, rule: DataValidationRule): boolean {
+  if (!value && value !== "0") return true; // empty is valid
+  switch (rule.type) {
+    case "list": {
+      const items = (rule.listItems || "").split(",").map((s) => s.trim());
+      return items.some((item) => item.toLowerCase() === value.toLowerCase());
+    }
+    case "number": {
+      const num = parseFloat(value);
+      if (isNaN(num)) return false;
+      if (rule.numberMin && num < parseFloat(rule.numberMin)) return false;
+      if (rule.numberMax && num > parseFloat(rule.numberMax)) return false;
+      return true;
+    }
+    case "date": {
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return false;
+      if (rule.dateMin && d < new Date(rule.dateMin)) return false;
+      if (rule.dateMax && d > new Date(rule.dateMax)) return false;
+      return true;
+    }
+    case "textLength": {
+      const len = value.length;
+      if (rule.textMinLength && len < parseInt(rule.textMinLength)) return false;
+      if (rule.textMaxLength && len > parseInt(rule.textMaxLength)) return false;
+      return true;
+    }
+    case "custom":
+      return true; // custom formula validation not implemented at runtime
+  }
 }
 
 export interface Sheet {
@@ -113,6 +153,7 @@ export interface SpreadsheetState {
   comments: Record<string, CellComment>;
   protectedSheet: boolean;
   printArea: string | null;
+  validationErrors: Record<string, ValidationError>;
 
   // Actions
   setActiveCell: (col: number, row: number) => void;
@@ -205,6 +246,8 @@ export interface SpreadsheetState {
   // Data validation
   setDataValidation: (cellKey: string, rule: DataValidationRule | undefined) => void;
   getDataValidation: (cellKey: string) => DataValidationRule | undefined;
+  clearValidationError: (cellKey: string) => void;
+  getValidationErrors: () => Record<string, ValidationError>;
 
   // Import
   importCSV: (csvContent: string) => void;
@@ -323,6 +366,7 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
     comments: {},
     protectedSheet: false,
     printArea: null,
+    validationErrors: {},
 
     getActiveSheet: () => {
       const state = get();
@@ -347,6 +391,42 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
       const state = get();
       if (!state.editingCell) return;
       const { col, row } = state.editingCell;
+      const key = cellKey(col, row);
+      const sheet = state.getActiveSheet();
+      const rule = sheet.dataValidations?.[key];
+
+      if (rule && state.editValue) {
+        const isValid = validateCellValue(state.editValue, rule);
+        if (!isValid) {
+          const errorStyle = rule.errorStyle || "reject";
+          const error: ValidationError = {
+            cellKey: key,
+            title: rule.errorTitle || "Invalid Input",
+            message: rule.errorMessage || "The value entered does not meet the validation criteria.",
+            style: errorStyle,
+          };
+          if (errorStyle === "reject") {
+            // Reject: revert to previous value, show error
+            set({
+              editingCell: null,
+              editValue: "",
+              editMode: "Ready",
+              validationErrors: { ...state.validationErrors, [key]: error },
+            });
+            return;
+          }
+          // Warning: allow but show warning
+          set({
+            validationErrors: { ...state.validationErrors, [key]: error },
+          });
+        } else {
+          // Clear any previous error
+          const errors = { ...state.validationErrors };
+          delete errors[key];
+          set({ validationErrors: errors });
+        }
+      }
+
       get().pushUndo();
       get().setCellValue(col, row, state.editValue);
       set({ editingCell: null, editValue: "", editMode: "Ready" });
@@ -968,6 +1048,16 @@ export const useSpreadsheetStore = create<SpreadsheetState>((set, get) => {
 
     getDataValidation: (key) => {
       return get().getActiveSheet().dataValidations?.[key];
+    },
+
+    clearValidationError: (key) => {
+      const errors = { ...get().validationErrors };
+      delete errors[key];
+      set({ validationErrors: errors });
+    },
+
+    getValidationErrors: () => {
+      return get().validationErrors;
     },
 
     // Import CSV

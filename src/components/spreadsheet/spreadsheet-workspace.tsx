@@ -117,11 +117,22 @@ export default function SpreadsheetWorkspace() {
     return html;
   }, [getActiveSheet, getCellDisplay]);
 
+  const getDataValidation = useSpreadsheetStore((s) => s.getDataValidation);
+
   // Data validation apply
+  const activeCellKey = activeCell ? `${colToLetter(activeCell.col)}${activeCell.row + 1}` : "";
+  const existingValidationRule = activeCellKey ? getDataValidation(activeCellKey) : undefined;
+
   const handleValidationApply = useCallback((rule: DataValidationRule) => {
     if (!activeCell) return;
     const key = `${colToLetter(activeCell.col)}${activeCell.row + 1}`;
     setDataValidation(key, rule);
+  }, [activeCell, setDataValidation]);
+
+  const handleValidationRemove = useCallback(() => {
+    if (!activeCell) return;
+    const key = `${colToLetter(activeCell.col)}${activeCell.row + 1}`;
+    setDataValidation(key, undefined);
   }, [activeCell, setDataValidation]);
 
   // Clipboard paste handler for CSV/TSV auto-detection
@@ -279,6 +290,9 @@ export default function SpreadsheetWorkspace() {
         open={showValidation}
         onClose={() => setShowValidation(false)}
         onApply={handleValidationApply}
+        onRemove={handleValidationRemove}
+        existingRule={existingValidationRule}
+        cellKey={activeCellKey}
       />
       <SortFilterPanel open={showSortFilter} onClose={() => setShowSortFilter(false)} />
       <GoalSeekModal open={showGoalSeek} onClose={() => setShowGoalSeek(false)} />

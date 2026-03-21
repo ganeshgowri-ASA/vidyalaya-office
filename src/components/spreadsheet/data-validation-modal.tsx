@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Trash2, AlertTriangle, ShieldX } from "lucide-react";
 import type { DataValidationRule } from "@/store/spreadsheet-store";
 
 type ValidationType = DataValidationRule["type"];
@@ -10,10 +10,16 @@ export function DataValidationModal({
   open,
   onClose,
   onApply,
+  onRemove,
+  existingRule,
+  cellKey,
 }: {
   open: boolean;
   onClose: () => void;
   onApply: (rule: DataValidationRule) => void;
+  onRemove?: () => void;
+  existingRule?: DataValidationRule;
+  cellKey?: string;
 }) {
   const [rule, setRule] = useState<DataValidationRule>({
     type: "list",
@@ -29,7 +35,31 @@ export function DataValidationModal({
     inputMessage: "",
     errorTitle: "Invalid Input",
     errorMessage: "The value entered does not meet the validation criteria.",
+    errorStyle: "reject",
   });
+
+  useEffect(() => {
+    if (open && existingRule) {
+      setRule({ ...existingRule, errorStyle: existingRule.errorStyle || "reject" });
+    } else if (open) {
+      setRule({
+        type: "list",
+        listItems: "",
+        numberMin: "",
+        numberMax: "",
+        dateMin: "",
+        dateMax: "",
+        textMinLength: "",
+        textMaxLength: "",
+        customFormula: "",
+        inputTitle: "",
+        inputMessage: "",
+        errorTitle: "Invalid Input",
+        errorMessage: "The value entered does not meet the validation criteria.",
+        errorStyle: "reject",
+      });
+    }
+  }, [open, existingRule]);
 
   if (!open) return null;
 
@@ -40,7 +70,7 @@ export function DataValidationModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div
-        className="w-[480px] max-h-[80vh] rounded-lg border shadow-xl overflow-hidden flex flex-col"
+        className="w-[500px] max-h-[85vh] rounded-lg border shadow-xl overflow-hidden flex flex-col"
         style={{
           backgroundColor: "var(--card)",
           borderColor: "var(--border)",
@@ -52,7 +82,9 @@ export function DataValidationModal({
           className="flex items-center justify-between px-4 py-3 border-b"
           style={{ borderColor: "var(--border)" }}
         >
-          <h2 className="text-sm font-semibold">Data Validation</h2>
+          <h2 className="text-sm font-semibold">
+            Data Validation {cellKey ? `— ${cellKey}` : ""}
+          </h2>
           <button onClick={onClose} className="hover:opacity-70">
             <X size={16} />
           </button>
@@ -239,6 +271,42 @@ export function DataValidationModal({
             </div>
           )}
 
+          {/* Error style (warning/reject) */}
+          <div
+            className="border-t pt-3"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <div className="text-xs font-semibold mb-2" style={{ color: "var(--muted-foreground)" }}>
+              On Invalid Data
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded border text-xs font-medium"
+                style={{
+                  borderColor: rule.errorStyle === "reject" ? "var(--primary)" : "var(--border)",
+                  backgroundColor: rule.errorStyle === "reject" ? "rgba(239,68,68,0.1)" : "var(--background)",
+                  color: rule.errorStyle === "reject" ? "#ef4444" : "var(--foreground)",
+                }}
+                onClick={() => updateRule({ errorStyle: "reject" })}
+              >
+                <ShieldX size={14} />
+                Reject Input
+              </button>
+              <button
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded border text-xs font-medium"
+                style={{
+                  borderColor: rule.errorStyle === "warning" ? "var(--primary)" : "var(--border)",
+                  backgroundColor: rule.errorStyle === "warning" ? "rgba(245,158,11,0.1)" : "var(--background)",
+                  color: rule.errorStyle === "warning" ? "#f59e0b" : "var(--foreground)",
+                }}
+                onClick={() => updateRule({ errorStyle: "warning" })}
+              >
+                <AlertTriangle size={14} />
+                Show Warning
+              </button>
+            </div>
+          </div>
+
           {/* Error message customization */}
           <div
             className="border-t pt-3"
@@ -282,37 +350,104 @@ export function DataValidationModal({
               </div>
             </div>
           </div>
+
+          {/* Input message */}
+          <div
+            className="border-t pt-3"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <div className="text-xs font-semibold mb-2" style={{ color: "var(--muted-foreground)" }}>
+              Input Message (shown when cell is selected)
+            </div>
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: "var(--muted-foreground)" }}>
+                  Title
+                </label>
+                <input
+                  type="text"
+                  className="w-full text-sm rounded px-2 py-1.5 border outline-none"
+                  style={{
+                    backgroundColor: "var(--background)",
+                    borderColor: "var(--border)",
+                    color: "var(--foreground)",
+                  }}
+                  placeholder="Hint title"
+                  value={rule.inputTitle || ""}
+                  onChange={(e) => updateRule({ inputTitle: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: "var(--muted-foreground)" }}>
+                  Message
+                </label>
+                <textarea
+                  className="w-full text-sm rounded px-2 py-1.5 border outline-none resize-none"
+                  style={{
+                    backgroundColor: "var(--background)",
+                    borderColor: "var(--border)",
+                    color: "var(--foreground)",
+                  }}
+                  rows={2}
+                  placeholder="Instructions for data entry"
+                  value={rule.inputMessage || ""}
+                  onChange={(e) => updateRule({ inputMessage: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
         <div
-          className="flex justify-end gap-2 px-4 py-3 border-t"
+          className="flex items-center justify-between px-4 py-3 border-t"
           style={{ borderColor: "var(--border)" }}
         >
-          <button
-            className="px-3 py-1.5 text-xs rounded border hover:opacity-80"
-            style={{
-              borderColor: "var(--border)",
-              backgroundColor: "var(--background)",
-              color: "var(--foreground)",
-            }}
-            onClick={onClose}
-          >
-            Cancel
-          </button>
-          <button
-            className="px-3 py-1.5 text-xs rounded hover:opacity-90"
-            style={{
-              backgroundColor: "var(--primary)",
-              color: "var(--primary-foreground)",
-            }}
-            onClick={() => {
-              onApply(rule);
-              onClose();
-            }}
-          >
-            Apply
-          </button>
+          <div>
+            {existingRule && onRemove && (
+              <button
+                className="flex items-center gap-1 px-3 py-1.5 text-xs rounded border hover:opacity-80"
+                style={{
+                  borderColor: "#ef4444",
+                  backgroundColor: "rgba(239,68,68,0.1)",
+                  color: "#ef4444",
+                }}
+                onClick={() => {
+                  onRemove();
+                  onClose();
+                }}
+              >
+                <Trash2 size={12} />
+                Remove
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              className="px-3 py-1.5 text-xs rounded border hover:opacity-80"
+              style={{
+                borderColor: "var(--border)",
+                backgroundColor: "var(--background)",
+                color: "var(--foreground)",
+              }}
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-3 py-1.5 text-xs rounded hover:opacity-90"
+              style={{
+                backgroundColor: "var(--primary)",
+                color: "var(--primary-foreground)",
+              }}
+              onClick={() => {
+                onApply(rule);
+                onClose();
+              }}
+            >
+              Apply
+            </button>
+          </div>
         </div>
       </div>
     </div>
