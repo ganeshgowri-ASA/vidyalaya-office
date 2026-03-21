@@ -2583,4 +2583,189 @@ Response (201 Created):
 <td style="width:33%;text-align:center;"><p style="font-size:10px;color:#666;">Approved by:<br/><strong>Dr. Robert Harrison, CEO</strong><br/>Date: February 25, 2026</p></td>
 </tr></table>`,
   },
+  {
+    id: "var-business-letter",
+    name: "Business Letter (Variables)",
+    icon: "✉️",
+    description: "Professional business letter with auto-fill variables for sender, recipient, company, and date.",
+    content: `<div style="text-align:right;margin-bottom:30px;">
+<p style="margin:0;"><strong>{{company_name}}</strong></p>
+<p style="margin:0;color:#666;">{{address}}</p>
+<p style="margin:0;color:#666;">{{phone}}</p>
+<p style="margin:0;color:#666;">{{author_email}}</p>
+<p style="margin-top:12px;">{{date}}</p>
+</div>
+<div style="margin-bottom:20px;">
+<p style="margin:0;"><strong>{{recipient_name}}</strong></p>
+<p style="margin:0;">{{recipient_company}}</p>
+<p style="margin:0;color:#666;">{{recipient_email}}</p>
+</div>
+<p>Dear {{recipient_name}},</p>
+<p>Re: <strong>{{subject}}</strong></p>
+<p>I am writing to you on behalf of {{company_name}} regarding {{subject}}. We appreciate your continued partnership and look forward to exploring new opportunities together.</p>
+<p>As discussed during our recent meeting, we would like to propose the following key points for your consideration:</p>
+<ul>
+<li>Point one regarding the collaboration between {{company_name}} and {{recipient_company}}</li>
+<li>Timeline and deliverables for the upcoming quarter</li>
+<li>Budget allocation and resource planning</li>
+</ul>
+<p>We believe this partnership will bring significant value to both organizations. Please do not hesitate to reach out if you have any questions or require additional information.</p>
+<p>We look forward to hearing from you at your earliest convenience.</p>
+<p style="margin-top:30px;">Sincerely,</p>
+<p style="margin-top:20px;"><strong>{{author_name}}</strong><br/>{{author_title}}<br/>{{department}}<br/>{{company_name}}</p>`,
+  },
+  {
+    id: "var-project-proposal",
+    name: "Project Proposal (Variables)",
+    icon: "📝",
+    description: "Project proposal template with variables for project details, company info, dates, and team.",
+    content: `<div style="text-align:center;padding:40px 0;border-bottom:3px solid #1565C0;">
+<p style="color:#999;font-size:11px;text-transform:uppercase;letter-spacing:3px;">Project Proposal</p>
+<h1 style="font-size:32px;margin-bottom:8px;color:#1a1a1a;">{{project_name}}</h1>
+<p style="color:#666;font-size:14px;">Prepared for {{recipient_company}}</p>
+<p style="color:#888;margin-top:16px;">{{company_name}} | {{date}}</p>
+<p style="color:#aaa;font-size:11px;">Version {{version}} | Author: {{author_name}}</p>
+</div>
+<h2 style="color:#1565C0;margin-top:30px;">1. Executive Summary</h2>
+<p>This proposal outlines the scope, timeline, and budget for <strong>{{project_name}}</strong> as prepared by the {{department}} team at {{company_name}}. The project aims to deliver measurable value to {{recipient_company}} through innovative solutions and proven methodologies.</p>
+<h2 style="color:#1565C0;">2. Project Objectives</h2>
+<ul>
+<li>Define and implement the core deliverables for {{project_name}}</li>
+<li>Establish clear milestones and success criteria</li>
+<li>Ensure alignment between {{company_name}} and {{recipient_company}} stakeholders</li>
+<li>Deliver the project by the target deadline of {{deadline}}</li>
+</ul>
+<h2 style="color:#1565C0;">3. Scope of Work</h2>
+<p>The {{department}} team will be responsible for the following deliverables:</p>
+<ol>
+<li>Discovery and requirements gathering phase</li>
+<li>Solution design and architecture</li>
+<li>Implementation and development</li>
+<li>Testing and quality assurance</li>
+<li>Deployment and knowledge transfer</li>
+</ol>
+<h2 style="color:#1565C0;">4. Timeline</h2>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+<thead><tr style="background:#1565C0;color:white;"><th style="border:1px solid #ddd;padding:8px;">Phase</th><th style="border:1px solid #ddd;padding:8px;">Duration</th><th style="border:1px solid #ddd;padding:8px;">Target Date</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:8px;">Discovery</td><td style="border:1px solid #ddd;padding:8px;">2 weeks</td><td style="border:1px solid #ddd;padding:8px;">{{date}}</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Design</td><td style="border:1px solid #ddd;padding:8px;">3 weeks</td><td style="border:1px solid #ddd;padding:8px;">TBD</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Development</td><td style="border:1px solid #ddd;padding:8px;">6 weeks</td><td style="border:1px solid #ddd;padding:8px;">TBD</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">Testing & QA</td><td style="border:1px solid #ddd;padding:8px;">2 weeks</td><td style="border:1px solid #ddd;padding:8px;">TBD</td></tr>
+<tr style="font-weight:bold;"><td style="border:1px solid #ddd;padding:8px;">Delivery</td><td style="border:1px solid #ddd;padding:8px;">—</td><td style="border:1px solid #ddd;padding:8px;">{{deadline}}</td></tr>
+</tbody>
+</table>
+<h2 style="color:#1565C0;">5. Team</h2>
+<p><strong>Project Lead:</strong> {{author_name}}, {{author_title}} — {{author_email}}</p>
+<p><strong>Department:</strong> {{department}}, {{company_name}}</p>
+<h2 style="color:#1565C0;">6. Approval</h2>
+<table style="width:100%;margin-top:16px;">
+<tr><td style="width:50%;padding:8px;"><p><strong>Prepared By:</strong></p><p>{{author_name}}<br/>{{author_title}}, {{company_name}}<br/>Date: {{date}}</p></td>
+<td style="width:50%;padding:8px;"><p><strong>Approved By:</strong></p><p>{{approved_by}}<br/>{{recipient_company}}<br/>Date: _____________</p></td></tr>
+</table>`,
+  },
+  {
+    id: "var-nda-agreement",
+    name: "NDA Agreement (Variables)",
+    icon: "🔒",
+    description: "Non-Disclosure Agreement template with variables for parties, dates, and terms.",
+    content: `<h1 style="text-align:center;font-size:24px;margin-bottom:8px;">NON-DISCLOSURE AGREEMENT</h1>
+<p style="text-align:center;color:#666;">Effective Date: {{effective_date}}</p>
+<hr style="margin:20px 0;"/>
+<p>This Non-Disclosure Agreement ("Agreement") is entered into as of {{effective_date}} ("Effective Date") by and between:</p>
+<p style="margin-left:20px;"><strong>Disclosing Party:</strong> {{company_name}}, with principal offices at {{address}} ("Disclosing Party")</p>
+<p style="margin-left:20px;"><strong>Receiving Party:</strong> {{recipient_company}}, represented by {{recipient_name}} ("Receiving Party")</p>
+<h2 style="color:#1565C0;font-size:16px;">1. Definition of Confidential Information</h2>
+<p>"Confidential Information" means any and all non-public information disclosed by {{company_name}} to {{recipient_company}}, whether orally, in writing, electronically, or otherwise, including but not limited to trade secrets, business plans, financial data, technical specifications, customer lists, marketing strategies, and proprietary software.</p>
+<h2 style="color:#1565C0;font-size:16px;">2. Obligations of Receiving Party</h2>
+<p>{{recipient_company}} agrees to: (a) hold Confidential Information in strict confidence; (b) not disclose Confidential Information to any third party without prior written consent; (c) use Confidential Information solely for the purpose of evaluating {{project_name}}; (d) protect Confidential Information using the same degree of care used to protect its own confidential information.</p>
+<h2 style="color:#1565C0;font-size:16px;">3. Term</h2>
+<p>This Agreement shall remain in effect from {{effective_date}} until {{review_date}}, unless terminated earlier by either party with 30 days written notice.</p>
+<h2 style="color:#1565C0;font-size:16px;">4. Return of Information</h2>
+<p>Upon termination or upon request by {{company_name}}, {{recipient_company}} shall promptly return or destroy all Confidential Information and any copies thereof.</p>
+<h2 style="color:#1565C0;font-size:16px;">5. Governing Law</h2>
+<p>This Agreement shall be governed by and construed in accordance with applicable laws.</p>
+<h2 style="color:#1565C0;font-size:16px;">6. Signatures</h2>
+<table style="width:100%;margin-top:20px;">
+<tr>
+<td style="width:50%;padding:16px;"><p><strong>For {{company_name}}:</strong></p><br/><p>______________________________</p><p>{{author_name}}<br/>{{author_title}}<br/>Date: {{effective_date}}</p></td>
+<td style="width:50%;padding:16px;"><p><strong>For {{recipient_company}}:</strong></p><br/><p>______________________________</p><p>{{recipient_name}}<br/>Date: _____________</p></td>
+</tr>
+</table>`,
+  },
+  {
+    id: "var-meeting-agenda",
+    name: "Meeting Agenda (Variables)",
+    icon: "📅",
+    description: "Meeting agenda template with variables for meeting details, attendees, and action items.",
+    content: `<div style="border-bottom:3px solid #1565C0;padding-bottom:16px;margin-bottom:20px;">
+<h1 style="font-size:24px;margin-bottom:4px;">Meeting Agenda</h1>
+<h2 style="font-weight:normal;color:#555;font-size:16px;">{{subject}}</h2>
+</div>
+<table style="width:100%;margin-bottom:20px;">
+<tr><td style="padding:4px 8px;width:120px;color:#666;"><strong>Date:</strong></td><td style="padding:4px 8px;">{{date}}</td></tr>
+<tr><td style="padding:4px 8px;color:#666;"><strong>Organizer:</strong></td><td style="padding:4px 8px;">{{author_name}} ({{author_email}})</td></tr>
+<tr><td style="padding:4px 8px;color:#666;"><strong>Department:</strong></td><td style="padding:4px 8px;">{{department}}, {{company_name}}</td></tr>
+<tr><td style="padding:4px 8px;color:#666;"><strong>Project:</strong></td><td style="padding:4px 8px;">{{project_name}}</td></tr>
+</table>
+<h2 style="color:#1565C0;border-bottom:2px solid #1565C0;padding-bottom:4px;">Agenda Items</h2>
+<table style="width:100%;border-collapse:collapse;margin:12px 0;">
+<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;text-align:left;width:50px;">#</th><th style="border:1px solid #ddd;padding:8px;text-align:left;">Topic</th><th style="border:1px solid #ddd;padding:8px;text-align:left;width:100px;">Duration</th><th style="border:1px solid #ddd;padding:8px;text-align:left;width:150px;">Owner</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:8px;">1</td><td style="border:1px solid #ddd;padding:8px;">Welcome & Roll Call</td><td style="border:1px solid #ddd;padding:8px;">5 min</td><td style="border:1px solid #ddd;padding:8px;">{{author_name}}</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">2</td><td style="border:1px solid #ddd;padding:8px;">Review of Previous Action Items</td><td style="border:1px solid #ddd;padding:8px;">10 min</td><td style="border:1px solid #ddd;padding:8px;">{{author_name}}</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">3</td><td style="border:1px solid #ddd;padding:8px;">{{project_name}} Status Update</td><td style="border:1px solid #ddd;padding:8px;">15 min</td><td style="border:1px solid #ddd;padding:8px;">TBD</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">4</td><td style="border:1px solid #ddd;padding:8px;">Open Discussion</td><td style="border:1px solid #ddd;padding:8px;">15 min</td><td style="border:1px solid #ddd;padding:8px;">All</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">5</td><td style="border:1px solid #ddd;padding:8px;">Next Steps & Action Items</td><td style="border:1px solid #ddd;padding:8px;">10 min</td><td style="border:1px solid #ddd;padding:8px;">{{author_name}}</td></tr>
+</tbody>
+</table>
+<h2 style="color:#1565C0;border-bottom:2px solid #1565C0;padding-bottom:4px;">Notes</h2>
+<p style="color:#999;font-style:italic;">[Meeting notes will be recorded here during the meeting]</p>
+<h2 style="color:#1565C0;border-bottom:2px solid #1565C0;padding-bottom:4px;">Action Items</h2>
+<table style="width:100%;border-collapse:collapse;margin:12px 0;">
+<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:8px;text-align:left;">Action</th><th style="border:1px solid #ddd;padding:8px;text-align:left;width:150px;">Owner</th><th style="border:1px solid #ddd;padding:8px;text-align:left;width:120px;">Due Date</th><th style="border:1px solid #ddd;padding:8px;text-align:left;width:80px;">Status</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd;padding:8px;">&nbsp;</td><td style="border:1px solid #ddd;padding:8px;">&nbsp;</td><td style="border:1px solid #ddd;padding:8px;">&nbsp;</td><td style="border:1px solid #ddd;padding:8px;">&nbsp;</td></tr>
+<tr><td style="border:1px solid #ddd;padding:8px;">&nbsp;</td><td style="border:1px solid #ddd;padding:8px;">&nbsp;</td><td style="border:1px solid #ddd;padding:8px;">&nbsp;</td><td style="border:1px solid #ddd;padding:8px;">&nbsp;</td></tr>
+</tbody>
+</table>`,
+  },
+  {
+    id: "var-sop-template",
+    name: "SOP Template (Variables)",
+    icon: "📋",
+    description: "Standard Operating Procedure with variables for document control, author, dates, and department.",
+    content: `<div style="border:3px solid #1565C0;padding:24px;margin-bottom:20px;">
+<h1 style="text-align:center;color:#1565C0;margin-bottom:4px;font-size:26px;">Standard Operating Procedure</h1>
+<h2 style="text-align:center;font-weight:normal;color:#555;font-size:18px;">{{title}}</h2>
+<table style="width:100%;margin-top:20px;border-collapse:collapse;">
+<tr><td style="padding:6px;border:1px solid #ddd;width:25%;background:#f5f5f5;"><strong>Document ID:</strong></td><td style="padding:6px;border:1px solid #ddd;width:25%;">{{sop_number}}</td><td style="padding:6px;border:1px solid #ddd;width:25%;background:#f5f5f5;"><strong>Effective Date:</strong></td><td style="padding:6px;border:1px solid #ddd;width:25%;">{{effective_date}}</td></tr>
+<tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Version:</strong></td><td style="padding:6px;border:1px solid #ddd;">{{version}}</td><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Review Date:</strong></td><td style="padding:6px;border:1px solid #ddd;">{{review_date}}</td></tr>
+<tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Author:</strong></td><td style="padding:6px;border:1px solid #ddd;">{{author_name}}</td><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Approved By:</strong></td><td style="padding:6px;border:1px solid #ddd;">{{approved_by}}</td></tr>
+<tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Department:</strong></td><td style="padding:6px;border:1px solid #ddd;">{{department}}</td><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;"><strong>Company:</strong></td><td style="padding:6px;border:1px solid #ddd;">{{company_name}}</td></tr>
+</table>
+</div>
+<h2 style="color:#1565C0;border-bottom:2px solid #1565C0;padding-bottom:4px;">1. Purpose</h2>
+<p>This Standard Operating Procedure defines the standardized process for {{title}} within {{company_name}}. The purpose is to ensure consistency, reliability, and compliance across all operations in the {{department}} department.</p>
+<h2 style="color:#1565C0;border-bottom:2px solid #1565C0;padding-bottom:4px;">2. Scope</h2>
+<p>This procedure applies to all team members within the {{department}} department at {{company_name}}. Any deviation from this procedure must be approved by {{approved_by}}.</p>
+<h2 style="color:#1565C0;border-bottom:2px solid #1565C0;padding-bottom:4px;">3. Prerequisites</h2>
+<ul>
+<li>Prerequisite 1: [Define here]</li>
+<li>Prerequisite 2: [Define here]</li>
+<li>Prerequisite 3: [Define here]</li>
+</ul>
+<h2 style="color:#1565C0;border-bottom:2px solid #1565C0;padding-bottom:4px;">4. Procedure</h2>
+<h3>Step 1: Preparation</h3>
+<ol><li>[Detail preparation steps]</li></ol>
+<h3>Step 2: Execution</h3>
+<ol><li>[Detail execution steps]</li></ol>
+<h3>Step 3: Verification</h3>
+<ol><li>[Detail verification steps]</li></ol>
+<h2 style="color:#1565C0;border-bottom:2px solid #1565C0;padding-bottom:4px;">5. Document History</h2>
+<table style="width:100%;border-collapse:collapse;">
+<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd;padding:6px;">Version</th><th style="border:1px solid #ddd;padding:6px;">Date</th><th style="border:1px solid #ddd;padding:6px;">Author</th><th style="border:1px solid #ddd;padding:6px;">Changes</th></tr></thead>
+<tbody><tr><td style="border:1px solid #ddd;padding:6px;">{{version}}</td><td style="border:1px solid #ddd;padding:6px;">{{effective_date}}</td><td style="border:1px solid #ddd;padding:6px;">{{author_name}}</td><td style="border:1px solid #ddd;padding:6px;">Initial release</td></tr></tbody>
+</table>`,
+  },
 ];

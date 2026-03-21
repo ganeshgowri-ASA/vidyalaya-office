@@ -45,6 +45,7 @@ import { ImportDialog } from "@/components/shared/import-dialog";
 import { PrintPreviewModal } from "@/components/shared/print-preview-modal";
 import { ExportManager, type ExportFormat } from "@/lib/export-manager";
 import { GlobalDropzoneOverlay } from "@/components/shared/dropzone-overlay";
+import { TemplateVariableModal } from "@/components/shared/template-variable-modal";
 
 export default function DocumentPage() {
   const {
@@ -318,6 +319,7 @@ export default function DocumentPage() {
 
       {/* Modals */}
       <TemplatesModal />
+      <TemplateVariableModal />
       <PrintPreview />
       <PageSetupDialog open={showPageSetup} onClose={() => setShowPageSetup(false)} />
       <HeaderFooterEditor
