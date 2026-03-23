@@ -495,6 +495,69 @@ const TEMPLATES: TemplateDefinition[] = [
       ], 'Make it easy to connect.'),
     ],
   },
+  /* ── Sales Proposal (6 slides) ─────────────────────────────────── */
+  {
+    name: 'Sales Proposal',
+    description: '6 slides: Cover, Client Needs, Solution, Pricing, Case Study, Next Steps',
+    category: ['Sales', 'Business'],
+    slides: [
+      makeSlide(g(0), [
+        textEl(80, 120, 800, 80, 'Sales Proposal', 48, { bold: true }),
+        textEl(80, 230, 800, 50, '[Client Name] · [Date]', 26),
+        textEl(80, 300, 800, 40, 'Prepared by [Your Company]', 18, { color: '#c0c0ff' }),
+      ], 'Professional cover with client name.'),
+      makeSlide(g(1), [
+        textEl(60, 30, 840, 60, 'Understanding Your Needs', 36, { bold: true }),
+        textEl(60, 110, 840, 380, 'Key Challenges Identified:\n\n• [Challenge 1] — Impact on operations and revenue\n• [Challenge 2] — Current workarounds are costly\n• [Challenge 3] — Competitive pressure requires action\n\nDesired Outcomes:\n• [Outcome 1] — [measurable target]\n• [Outcome 2] — [measurable target]\n• [Outcome 3] — [measurable target]', 20),
+      ], 'Show you understand the client.'),
+      makeSlide(g(2), [
+        textEl(60, 30, 840, 60, 'Our Proposed Solution', 36, { bold: true }),
+        textEl(60, 110, 840, 380, 'Solution Components:\n\n1. [Component 1] — [brief description]\n   Addresses: [Challenge 1]\n\n2. [Component 2] — [brief description]\n   Addresses: [Challenge 2]\n\n3. [Component 3] — [brief description]\n   Addresses: [Challenge 3]\n\nImplementation Timeline: [X] weeks', 20),
+      ], 'Map solution to client needs.'),
+      makeSlide(g(3), [
+        textEl(60, 30, 840, 60, 'Investment & Pricing', 36, { bold: true }),
+        textEl(60, 110, 840, 380, 'Package Options:\n\n🔹 Starter — $[X]/month\n   [Feature list]\n\n🔹 Professional — $[X]/month (Recommended)\n   [Feature list]\n\n🔹 Enterprise — Custom pricing\n   [Feature list]\n\nROI Estimate: [X]% return within [timeframe]', 20),
+      ], 'Transparent pricing builds trust.'),
+      makeSlide(g(4), [
+        textEl(60, 30, 840, 60, 'Case Study', 36, { bold: true }),
+        textEl(60, 110, 840, 380, '[Client Name] — [Industry]\n\nChallenge:\n[Brief description of their situation]\n\nSolution:\n[What was implemented]\n\nResults:\n• [X]% increase in [metric]\n• $[X] saved annually\n• [X]% improvement in [metric]\n\n\"[Testimonial quote]\" — [Name], [Title]', 20),
+      ], 'Social proof with real results.'),
+      makeSlide(g(5), [
+        textEl(80, 120, 800, 80, 'Next Steps', 48, { bold: true }),
+        textEl(80, 230, 800, 180, '1. Schedule a technical deep-dive\n2. Pilot program kick-off\n3. Contract review and signing\n4. Implementation begins\n\nContact: [email] · [phone]\nReady to get started today.', 22, { color: '#e0e0e0' }),
+      ], 'Clear call to action.'),
+    ],
+  },
+
+  /* ── Project Status Report (5 slides) ────────────────────────────── */
+  {
+    name: 'Project Status Report',
+    description: '5 slides: Cover, Summary, Timeline, Risks, Next Milestones',
+    category: ['Business'],
+    slides: [
+      makeSlide(g(2), [
+        textEl(80, 120, 800, 80, 'Project Status Report', 48, { bold: true }),
+        textEl(80, 230, 800, 50, '[Project Name] · Week [X]', 26),
+        textEl(80, 300, 800, 40, 'Status: On Track', 20, { color: '#86efac' }),
+      ], 'Cover with project status indicator.'),
+      makeSlide(g(3), [
+        textEl(60, 30, 840, 60, 'Executive Summary', 36, { bold: true }),
+        textEl(60, 110, 840, 380, 'Overall Status: [Green / Yellow / Red]\nBudget: [X]% spent of $[total]\nTimeline: [On track / [X] days behind]\n\nKey Accomplishments This Week:\n• [Accomplishment 1]\n• [Accomplishment 2]\n• [Accomplishment 3]\n\nBlockers:\n• [Blocker 1] — Owner: [Name]\n• [Blocker 2] — Owner: [Name]', 20),
+      ], 'High-level overview for stakeholders.'),
+      makeSlide(g(4), [
+        textEl(60, 30, 840, 60, 'Project Timeline', 36, { bold: true }),
+        textEl(60, 110, 840, 380, 'Phase 1: Discovery (Weeks 1-2) ✅ Complete\nPhase 2: Design (Weeks 3-5) ✅ Complete\nPhase 3: Development (Weeks 6-12) 🔄 In Progress\nPhase 4: Testing (Weeks 13-15) ⏳ Upcoming\nPhase 5: Launch (Week 16) ⏳ Upcoming\n\nCurrent: Week [X] of 16\nCompletion: [X]%', 20),
+      ], 'Visual timeline with status indicators.'),
+      makeSlide(g(5), [
+        textEl(60, 30, 840, 60, 'Risks & Issues', 36, { bold: true }),
+        textEl(60, 110, 840, 380, 'Active Risks:\n🔴 [High Risk] — [description] — Mitigation: [action]\n🟡 [Medium Risk] — [description] — Mitigation: [action]\n🟢 [Low Risk] — [description] — Mitigation: [action]\n\nOpen Issues:\n• [Issue 1] — Assigned: [Name] — Due: [date]\n• [Issue 2] — Assigned: [Name] — Due: [date]\n\nResolved This Week: [X] issues closed', 20),
+      ], 'Proactive risk communication.'),
+      makeSlide(g(6), [
+        textEl(60, 30, 840, 60, 'Next Milestones', 36, { bold: true }),
+        textEl(60, 110, 840, 380, 'Upcoming Deliverables:\n\n📌 [Milestone 1] — Due: [date]\n   Owner: [Name]\n\n📌 [Milestone 2] — Due: [date]\n   Owner: [Name]\n\n📌 [Milestone 3] — Due: [date]\n   Owner: [Name]\n\nDecisions Needed:\n• [Decision 1] — By [date]\n• [Decision 2] — By [date]', 20),
+      ], 'Forward-looking plan with owners.'),
+    ],
+  },
 ];
 
 export default function TemplateModal() {
