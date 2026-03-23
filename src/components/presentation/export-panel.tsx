@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { X, FileText, Image, File, Download } from 'lucide-react';
+import { X, FileText, Image, File, Download, Globe } from 'lucide-react';
 import { usePresentationStore, type Slide, type SlideElement } from '@/store/presentation-store';
 
-type ExportFormat = 'pdf' | 'png' | 'pptx-json' | 'json';
+type ExportFormat = 'pdf' | 'png' | 'pptx-json' | 'json' | 'html';
 
 interface ExportOption {
   format: ExportFormat;
@@ -31,6 +31,12 @@ const EXPORT_OPTIONS: ExportOption[] = [
     label: 'Export as PPTX (JSON)',
     description: 'Serializes slides to a JSON structure and downloads as .pptx.json',
     icon: <File size={20} />,
+  },
+  {
+    format: 'html',
+    label: 'Export as HTML Slideshow',
+    description: 'Self-contained HTML file with keyboard navigation and transitions',
+    icon: <Globe size={20} />,
   },
   {
     format: 'json',
@@ -163,6 +169,131 @@ function roundRect(
   ctx.closePath();
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function generateHtmlSlideshow(slides: Slide[]): string {
+  const slidesHtml = slides
+    .filter((s) => !s.hidden)
+    .map((slide, idx) => {
+      const elementsHtml = slide.elements
+        .map((el) => {
+          const style = [
+            `position:absolute`,
+            `left:${(el.x / CANVAS_WIDTH) * 100}%`,
+            `top:${(el.y / CANVAS_HEIGHT) * 100}%`,
+            `width:${(el.width / CANVAS_WIDTH) * 100}%`,
+            `height:${(el.height / CANVAS_HEIGHT) * 100}%`,
+            el.style.color ? `color:${el.style.color}` : '',
+            el.style.fontSize ? `font-size:${el.style.fontSize}px` : '',
+            el.style.fontWeight ? `font-weight:${el.style.fontWeight}` : '',
+            el.style.fontFamily ? `font-family:${el.style.fontFamily}` : '',
+            el.style.textAlign ? `text-align:${el.style.textAlign}` : '',
+            el.style.backgroundColor ? `background-color:${el.style.backgroundColor}` : '',
+            el.style.borderColor ? `border:${el.style.borderWidth || 1}px ${el.style.borderStyle || 'solid'} ${el.style.borderColor}` : '',
+            el.style.opacity !== undefined ? `opacity:${el.style.opacity}` : '',
+            el.rotation ? `transform:rotate(${el.rotation}deg)` : '',
+            `overflow:hidden`,
+          ]
+            .filter(Boolean)
+            .join(';');
+
+          if (el.type === 'text') {
+            return `<div style="${style}">${el.content}</div>`;
+          }
+          if (el.type === 'shape') {
+            const bgColor = el.style.backgroundColor || el.style.color || '#4f46e5';
+            return `<div style="${style};background:${bgColor};border-radius:${el.style.borderRadius || '0'}px"></div>`;
+          }
+          if (el.type === 'image' && el.content) {
+            return `<img src="${escapeHtml(el.content)}" style="${style};object-fit:contain" alt="" />`;
+          }
+          return '';
+        })
+        .join('\n        ');
+
+      const transition = slide.transition || 'fade';
+      return `    <div class="slide" data-transition="${transition}" data-index="${idx}" style="background:${slide.background || '#1e1e2e'}">\n        ${elementsHtml}\n    </div>`;
+    })
+    .join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Presentation</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:Arial,Helvetica,sans-serif}
+.slide{position:absolute;inset:0;display:none;width:100vw;height:100vh}
+.slide.active{display:block}
+.slide.fade-in{animation:fadeIn .5s ease forwards}
+.slide.fade-out{animation:fadeOut .5s ease forwards}
+.slide.slide-in-right{animation:slideInR .5s ease forwards}
+.slide.slide-out-left{animation:slideOutL .5s ease forwards}
+.slide.zoom-in{animation:zoomIn .5s ease forwards}
+.slide.zoom-out{animation:zoomOut .5s ease forwards}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+@keyframes slideInR{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes slideOutL{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@keyframes zoomIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes zoomOut{from{transform:scale(1);opacity:1}to{transform:scale(0);opacity:0}}
+#controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:12px;z-index:100;opacity:0;transition:opacity .3s}
+#controls:hover{opacity:1}
+body:hover #controls{opacity:.7}
+#controls button{background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:14px;backdrop-filter:blur(8px)}
+#controls button:hover{background:rgba(255,255,255,.3)}
+#counter{position:fixed;bottom:20px;right:20px;color:rgba(255,255,255,.4);font-size:13px;z-index:100}
+</style>
+</head>
+<body>
+${slidesHtml}
+<div id="controls">
+  <button onclick="prev()">&#9664; Prev</button>
+  <button onclick="next()">Next &#9654;</button>
+</div>
+<div id="counter"></div>
+<script>
+var current=0,total=document.querySelectorAll('.slide').length;
+function show(i,dir){
+  var ss=document.querySelectorAll('.slide');
+  if(i<0||i>=total)return;
+  var prev=ss[current],next=ss[i];
+  var t=next.dataset.transition||'fade';
+  var outCls='fade-out',inCls='fade-in';
+  if(t==='slide'||t==='push'||t==='wipe'){outCls='slide-out-left';inCls='slide-in-right'}
+  else if(t==='zoom'){outCls='zoom-out';inCls='zoom-in'}
+  prev.className='slide '+outCls;
+  next.className='slide active '+inCls;
+  setTimeout(function(){prev.className='slide';prev.style.display='none'},600);
+  current=i;
+  document.getElementById('counter').textContent=(current+1)+' / '+total;
+}
+function next(){show(current+1,1)}
+function prev(){show(current-1,-1)}
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='Enter')next();
+  else if(e.key==='ArrowLeft'||e.key==='Backspace')prev();
+  else if(e.key==='Home')show(0,1);
+  else if(e.key==='End')show(total-1,1);
+  else if(e.key==='Escape')document.exitFullscreen&&document.exitFullscreen();
+  else if(e.key==='f'||e.key==='F5'){e.preventDefault();document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}
+});
+// init
+var ss=document.querySelectorAll('.slide');
+if(ss.length>0){ss[0].classList.add('active');document.getElementById('counter').textContent='1 / '+total}
+</script>
+</body>
+</html>`;
+}
+
 export default function ExportPanel() {
   const { slides, showExportPanel, setShowExportPanel } = usePresentationStore();
   const [exporting, setExporting] = useState(false);
@@ -251,6 +382,16 @@ export default function ExportPanel() {
             const json = JSON.stringify(pptxData, null, 2);
             const blob = new Blob([json], { type: 'application/json' });
             triggerDownload(blob, 'presentation.pptx.json');
+            setProgress(100);
+            break;
+          }
+
+          case 'html': {
+            setProgress(30);
+            const htmlContent = generateHtmlSlideshow(slides);
+            setProgress(80);
+            const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+            triggerDownload(htmlBlob, 'presentation.html');
             setProgress(100);
             break;
           }
