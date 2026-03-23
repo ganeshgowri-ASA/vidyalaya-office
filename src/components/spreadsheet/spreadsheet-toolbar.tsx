@@ -207,7 +207,7 @@ const RIBBON_TABS = ["Home", "Insert", "Page Layout", "Formulas", "Data", "Revie
 export function SpreadsheetToolbar({
   onExportCSV, onPrint, onOpenPivot, onOpenValidation, onOpenSortFilter,
   onOpenCondFormatDialog, onPageSetup, onOpenGoalSeek, onOpenStatistics,
-  onExportExcel, onImportCSV,
+  onExportExcel, onExportPDF, onImportCSV,
   onOpenFindReplace, onOpenNamedRanges, onOpenComments, onOpenFreezePanes,
   onOpenCellFormatting,
   onOpenFinancialAnalysis,
@@ -225,7 +225,7 @@ export function SpreadsheetToolbar({
   onOpenPivot?: () => void; onOpenValidation?: () => void;
   onOpenSortFilter?: () => void; onOpenCondFormatDialog?: () => void;
   onPageSetup?: () => void; onOpenGoalSeek?: () => void;
-  onOpenStatistics?: () => void; onExportExcel?: () => void;
+  onOpenStatistics?: () => void; onExportExcel?: () => void; onExportPDF?: () => void;
   onImportCSV?: () => void;
   onOpenFindReplace?: () => void; onOpenNamedRanges?: () => void;
   onOpenComments?: () => void; onOpenFreezePanes?: () => void;
@@ -1241,6 +1241,7 @@ export function SpreadsheetToolbar({
         <ToolBtn title="Import" onClick={() => onImport?.()} small><Upload size={13} /></ToolBtn>
         <ToolBtn title="Export CSV" onClick={onExportCSV} small><Download size={13} /></ToolBtn>
         <ToolBtn title="Export Excel" onClick={() => onExportExcel?.()} small><FileSpreadsheet size={13} /></ToolBtn>
+        <ToolBtn title="Export PDF" onClick={() => onExportPDF?.()} small><FileText size={13} /></ToolBtn>
         <ToolBtn title="Print" onClick={onPrint} small><Printer size={13} /></ToolBtn>
         {onPrintPreview && (
           <ToolBtn title="Print Preview" onClick={onPrintPreview} small><Eye size={13} /></ToolBtn>
