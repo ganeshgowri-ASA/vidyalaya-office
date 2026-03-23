@@ -26,6 +26,11 @@ import { BatchPanel } from "@/components/pdf";
 import { StampPanel } from "@/components/pdf";
 import { RedactionPanel } from "@/components/pdf";
 import { CommentPanel } from "@/components/pdf";
+import AnnotationToolbar from "@/components/pdf/AnnotationToolbar";
+import type { AnnotationTool } from "@/components/pdf/AnnotationToolbar";
+import DigitalSignatureModal from "@/components/pdf/DigitalSignatureModal";
+import AdvancedFormBuilder from "@/components/pdf/AdvancedFormBuilder";
+import type { FormFieldDef } from "@/components/pdf/AdvancedFormBuilder";
 import ViewModePanel from "@/components/pdf/ViewModePanel";
 import type { ViewMode } from "@/components/pdf/ViewModePanel";
 import MetadataRemovalPanel from "@/components/pdf/MetadataRemovalPanel";
@@ -252,6 +257,22 @@ export default function PdfToolsPage() {
 
   // ── Comment Panel ──
   const [showCommentPanel, setShowCommentPanel] = useState(false);
+
+  // ── Annotation Toolbar ──
+  const [showAnnotationToolbar, setShowAnnotationToolbar] = useState(false);
+  const [annotationTool, setAnnotationTool] = useState<AnnotationTool>("select");
+  const [annotationColor, setAnnotationColor] = useState("#facc15");
+  const [annotationStrokeWidth, setAnnotationStrokeWidth] = useState(2);
+  const [annotationOpacity, setAnnotationOpacity] = useState(100);
+  const [annotationFontSize, setAnnotationFontSize] = useState(16);
+
+  // ── Digital Signature Modal ──
+  const [showDigitalSignatureModal, setShowDigitalSignatureModal] = useState(false);
+
+  // ── Advanced Form Builder ──
+  const [showAdvancedFormBuilder, setShowAdvancedFormBuilder] = useState(false);
+  const [advancedFormFields, setAdvancedFormFields] = useState<FormFieldDef[]>([]);
+  const [selectedAdvancedFieldId, setSelectedAdvancedFieldId] = useState<string | null>(null);
 
   // ── View Mode ──
   const [viewMode, setViewMode] = useState<ViewMode>("single");
@@ -1085,13 +1106,15 @@ export default function PdfToolsPage() {
       case "annotate":
         return (
           <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={{ ...btnStyle, ...(showAnnotationToolbar ? { backgroundColor: "var(--primary)", color: "var(--primary-foreground)" } : {}) }} onClick={() => setShowAnnotationToolbar(!showAnnotationToolbar)}><Pencil size={14} /> Annotation Tools</button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
             <button style={btnStyle} onClick={() => setActiveTab("edit")}><Highlighter size={14} /> Highlight</button>
             <button style={btnStyle} onClick={() => setActiveTab("edit")}><Underline size={14} /> Underline</button>
             <button style={btnStyle} onClick={() => setActiveTab("edit")}><Strikethrough size={14} /> Strikethrough</button>
             <button style={btnStyle} onClick={() => setActiveTab("edit")}><StickyNote size={14} /> Sticky Note</button>
             <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
             <button style={btnStyle} onClick={() => setActiveTab("edit")}><Stamp size={14} /> Stamps</button>
-            <button style={btnStyle} onClick={() => setActiveTab("edit")}><Pencil size={14} /> Signature</button>
+            <button style={btnStyle} onClick={() => setShowDigitalSignatureModal(true)}><PenTool size={14} /> Digital Signature</button>
             <button style={btnStyle} onClick={() => setActiveTab("edit")}><EyeOff size={14} /> Redact</button>
             <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
             <button style={btnStyle} onClick={flattenAnnotations} disabled={annotations.length === 0}><Layers size={14} /> Flatten</button>
@@ -1106,6 +1129,7 @@ export default function PdfToolsPage() {
         return (
           <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
             <button style={btnPrimaryStyle} onClick={() => setShowTemplatesModal(true)}><LayoutTemplate size={14} /> Templates</button>
+            <button style={{ ...btnStyle, ...(showAdvancedFormBuilder ? { backgroundColor: "var(--primary)", color: "var(--primary-foreground)" } : {}) }} onClick={() => setShowAdvancedFormBuilder(!showAdvancedFormBuilder)}><Wrench size={14} /> Advanced Builder</button>
             <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
             <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("text-input"); }}><FormInput size={14} /> Text Field</button>
             <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("checkbox"); }}><CheckSquare size={14} /> Checkbox</button>
@@ -1551,7 +1575,59 @@ export default function PdfToolsPage() {
             />
           </div>
         )}
+        {showAnnotationToolbar && ribbonTab === "annotate" && (
+          <div style={{ flexShrink: 0, overflowY: "auto", borderRight: "1px solid var(--border)" }}>
+            <AnnotationToolbar
+              currentTool={annotationTool}
+              onToolChange={setAnnotationTool}
+              annotationColor={annotationColor}
+              onColorChange={setAnnotationColor}
+              strokeWidth={annotationStrokeWidth}
+              onStrokeWidthChange={setAnnotationStrokeWidth}
+              opacity={annotationOpacity}
+              onOpacityChange={setAnnotationOpacity}
+              fontSize={annotationFontSize}
+              onFontSizeChange={setAnnotationFontSize}
+            />
+          </div>
+        )}
+        {showAdvancedFormBuilder && ribbonTab === "forms" && (
+          <div style={{ flexShrink: 0, overflowY: "auto" }}>
+            <AdvancedFormBuilder
+              fields={advancedFormFields}
+              onFieldsChange={setAdvancedFormFields}
+              selectedFieldId={selectedAdvancedFieldId}
+              onSelectField={setSelectedAdvancedFieldId}
+              currentPage={currentPage}
+              totalPages={totalPages}
+            />
+          </div>
+        )}
         <div className="flex-1 flex flex-col overflow-hidden">{renderActiveTab()}</div>
+        {showDigitalSignatureModal && (
+          <DigitalSignatureModal
+            open={showDigitalSignatureModal}
+            onClose={() => setShowDigitalSignatureModal(false)}
+            onSignatureApply={(dataUrl, _cert, placement) => {
+              setAnnotations((prev) => [
+                ...prev,
+                {
+                  id: uid(),
+                  type: "signature" as const,
+                  page: placement.page,
+                  x: placement.x,
+                  y: placement.y,
+                  width: placement.width,
+                  height: placement.height,
+                  signatureDataUrl: dataUrl,
+                },
+              ]);
+              setShowDigitalSignatureModal(false);
+            }}
+            totalPages={totalPages}
+            currentPage={currentPage}
+          />
+        )}
         {showCommentPanel && (
           <CommentPanel
             annotations={annotations}
