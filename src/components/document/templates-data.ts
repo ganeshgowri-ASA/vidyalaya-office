@@ -1,16 +1,38 @@
+export type TemplateCategory =
+  | "Business Essentials"
+  | "Academic"
+  | "Legal"
+  | "Financial"
+  | "Technical"
+  | "Professional"
+  | "All";
+
 export interface DocTemplate {
   id: string;
   name: string;
   icon: string;
   description: string;
   content: string;
+  category: TemplateCategory;
+  featured?: boolean;
 }
+
+export const TEMPLATE_CATEGORIES: { key: TemplateCategory; label: string; icon: string }[] = [
+  { key: "All", label: "All Templates", icon: "📁" },
+  { key: "Business Essentials", label: "Business Essentials", icon: "💼" },
+  { key: "Academic", label: "Academic", icon: "🎓" },
+  { key: "Legal", label: "Legal", icon: "⚖️" },
+  { key: "Financial", label: "Financial", icon: "💰" },
+  { key: "Technical", label: "Technical", icon: "⚙️" },
+  { key: "Professional", label: "Professional", icon: "👔" },
+];
 
 export const TEMPLATES: DocTemplate[] = [
   {
     id: "ieee-paper",
     name: "IEEE Research Paper",
     icon: "🔬",
+    category: "Academic",
     description: "IEEE-formatted academic research paper with abstract, methodology, results, and references.",
     content: `<h1 style="text-align:center;font-size:24px;font-family:Times New Roman,serif;">A Novel Approach to Distributed Machine Learning<br/>Using Federated Edge Computing</h1>
 <p style="text-align:center;font-size:12px;"><em>James A. Richardson<sup>1</sup>, Maria L. Chen<sup>2</sup>, Robert K. Patel<sup>1</sup>, and Sarah M. O'Brien<sup>3</sup></em></p>
@@ -91,8 +113,10 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "cv-resume",
-    name: "CV / Resume",
+    name: "Professional Resume / CV",
     icon: "📄",
+    category: "Business Essentials",
+    featured: true,
     description: "Professional resume template with sections for experience, education, skills, and certifications.",
     content: `<h1 style="text-align:center;font-size:28px;margin-bottom:4px;color:#1a1a1a;">John Alexander Doe</h1>
 <p style="text-align:center;color:#555;margin-top:0;font-size:13px;">Senior Software Engineer | Full-Stack Developer</p>
@@ -169,6 +193,8 @@ export const TEMPLATES: DocTemplate[] = [
     id: "business-report",
     name: "Business Report",
     icon: "📊",
+    category: "Business Essentials",
+    featured: true,
     description: "Comprehensive business report with executive summary, financials, SWOT analysis, and recommendations.",
     content: `<div style="text-align:center;padding:60px 0;border-bottom:4px double #1565C0;">
 <p style="color:#999;font-size:12px;text-transform:uppercase;letter-spacing:4px;">Confidential</p>
@@ -336,8 +362,10 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "sop",
-    name: "Standard Operating Procedure",
+    name: "Standard Operating Procedure (SOP)",
     icon: "📋",
+    category: "Business Essentials",
+    featured: true,
     description: "SOP template with document control, RACI matrix, procedures, and quality control checks.",
     content: `<div style="border:3px solid #1565C0;padding:24px;margin-bottom:20px;">
 <h1 style="text-align:center;color:#1565C0;margin-bottom:4px;font-size:26px;">Standard Operating Procedure</h1>
@@ -474,8 +502,10 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "meeting-minutes",
-    name: "Meeting Minutes",
+    name: "Meeting Minutes (MoM)",
     icon: "🗓️",
+    category: "Business Essentials",
+    featured: true,
     description: "Meeting minutes with attendees, agenda, discussion notes, action items, and approval signatures.",
     content: `<div style="background:#f8f9fa;padding:20px;border-left:4px solid #1565C0;margin-bottom:20px;">
 <h1 style="color:#1565C0;margin-bottom:4px;font-size:24px;">Meeting Minutes</h1>
@@ -590,6 +620,8 @@ export const TEMPLATES: DocTemplate[] = [
     id: "project-proposal",
     name: "Project Proposal",
     icon: "🚀",
+    category: "Business Essentials",
+    featured: true,
     description: "Comprehensive project proposal with objectives, timeline, budget, risk matrix, and stakeholder analysis.",
     content: `<div style="text-align:center;padding:60px 0;border-bottom:4px double #1565C0;">
 <p style="color:#aaa;font-size:11px;text-transform:uppercase;letter-spacing:4px;">Confidential — For Internal Use Only</p>
@@ -752,6 +784,7 @@ export const TEMPLATES: DocTemplate[] = [
     id: "annual-report",
     name: "Annual Report",
     icon: "📈",
+    category: "Financial",
     description: "Comprehensive annual report with financial statements, business segments, governance, and auditor report.",
     content: `<div style="text-align:center;padding:60px 20px;border:4px double #1a237e;margin-bottom:30px;">
 <p style="font-size:14px;color:#1a237e;letter-spacing:4px;margin-bottom:20px;">ACME TECHNOLOGIES INC.</p>
@@ -1012,6 +1045,7 @@ export const TEMPLATES: DocTemplate[] = [
   },
   {
     id: "legal-contract",
+    category: "Legal",
     name: "Legal Contract",
     icon: "⚖️",
     description: "Formal service agreement with articles covering definitions, scope, confidentiality, IP, liability, and dispute resolution.",
@@ -1182,6 +1216,7 @@ export const TEMPLATES: DocTemplate[] = [
     id: "technical-specification",
     name: "Technical Specification",
     icon: "⚙️",
+    category: "Technical",
     description: "Detailed technical specification document with requirements, API specs, data models, and deployment architecture.",
     content: `<div style="border:2px solid #00695c;padding:20px;margin-bottom:30px;">
 <h1 style="text-align:center;color:#00695c;font-size:26px;margin-bottom:5px;">Customer Support Platform</h1>
@@ -1532,6 +1567,7 @@ Response (201 Created):
     id: "training-manual",
     name: "Training Manual",
     icon: "🎓",
+    category: "Professional",
     description: "Comprehensive employee onboarding training manual for software development teams with modules, exercises, and assessments.",
     content: `<div style="text-align:center;padding:60px 20px;border:3px solid #2e7d32;margin-bottom:30px;">
 <div style="width:100px;height:100px;background:#2e7d32;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;">
@@ -1879,6 +1915,7 @@ Response (201 Created):
     id: "springer-journal",
     name: "Springer Journal Paper",
     icon: "📘",
+    category: "Academic",
     description: "Springer/Nature journal format with structured abstract, data availability, and author contributions.",
     content: `<h1 style="text-align:center;font-size:24px;font-family:Times New Roman,serif;color:#0070C0;">Machine Learning-Based Prediction of Protein Folding Dynamics<br/>Using Graph Neural Networks and Molecular Simulations</h1>
 <p style="text-align:center;font-size:12px;margin-top:8px;">Alexander M. Thompson<sup>1</sup> &middot; Wei Chen<sup>2</sup> &middot; Maria Rodriguez-Santos<sup>1,3</sup> &middot; Kenji Yamamoto<sup>2</sup></p>
@@ -1963,6 +2000,7 @@ Response (201 Created):
     id: "wiley-journal",
     name: "Wiley Journal Paper",
     icon: "📗",
+    category: "Academic",
     description: "Wiley journal format with literature review, mixed-methods methodology, and practical implications.",
     content: `<h1 style="text-align:center;font-size:22px;font-family:Georgia,serif;color:#006D6F;">Impact of Digital Transformation on Organizational Performance:<br/>A Mixed-Methods Study Across Manufacturing Enterprises</h1>
 <p style="text-align:center;font-size:12px;margin-top:8px;"><strong>Sarah J. Mitchell</strong><sup>1</sup> | <strong>David R. Okonkwo</strong><sup>2</sup> | <strong>Elena Petrov</strong><sup>1</sup> | <strong>Carlos A. Mendoza</strong><sup>3</sup></p>
@@ -2027,6 +2065,7 @@ Response (201 Created):
     id: "sciencedirect-paper",
     name: "ScienceDirect / Elsevier Paper",
     icon: "📙",
+    category: "Academic",
     description: "Elsevier journal format with highlights, graphical abstract placeholder, and CRediT author statement.",
     content: `<h1 style="text-align:center;font-size:22px;font-family:Times New Roman,serif;">Sustainable Nanomaterials for Next-Generation Energy Storage Systems:<br/>A Comprehensive Review of MXene-Based Supercapacitor Electrodes</h1>
 <p style="text-align:center;font-size:12px;margin-top:8px;">Priya Sharma<sup>a</sup>, Liang Zhang<sup>b</sup>, Fatima Al-Rashid<sup>c</sup>, Giovanni Rossi<sup>a,d</sup></p>
@@ -2090,6 +2129,7 @@ Response (201 Created):
     id: "spie-paper",
     name: "SPIE Conference Paper",
     icon: "🔭",
+    category: "Academic",
     description: "SPIE proceedings format with paper number, experimental setup, and optical systems analysis.",
     content: `<p style="text-align:center;font-size:10px;color:#B71C1C;">Proc. SPIE 13245, Adaptive Optics Systems IX, 132450A (2026); doi: 10.1117/12.2676XXX</p>
 <h1 style="text-align:center;font-size:20px;font-family:Times New Roman,serif;">Advanced Adaptive Optics Systems for Extremely Large Telescopes:<br/>Real-Time Wavefront Sensing Using Deep Learning Architectures</h1>
@@ -2144,6 +2184,7 @@ Response (201 Created):
     id: "research-proposal",
     name: "Research Proposal",
     icon: "📝",
+    category: "Academic",
     description: "Comprehensive research proposal with budget justification, timeline, methodology, and broader impacts.",
     content: `<div style="text-align:center;padding:60px 0;border:3px solid #2E7D32;">
 <p style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:4px;">Research Proposal</p>
@@ -2235,8 +2276,10 @@ Response (201 Created):
   },
   {
     id: "sales-invoice",
-    name: "Sales Invoice",
+    name: "Invoice Template",
     icon: "🧾",
+    category: "Business Essentials",
+    featured: true,
     description: "Professional multi-page sales invoice with line items, tax breakdown, payment terms, and remittance advice.",
     content: `<div style="border-bottom:4px solid #1565C0;padding-bottom:16px;margin-bottom:16px;">
 <table style="width:100%;"><tr>
@@ -2312,6 +2355,7 @@ Response (201 Created):
     id: "purchase-order-doc",
     name: "Purchase Order Document",
     icon: "📦",
+    category: "Financial",
     description: "Detailed purchase order with vendor information, delivery schedule, terms, and approval signatures.",
     content: `<div style="border:3px solid #1a237e;padding:20px;margin-bottom:20px;">
 <h1 style="text-align:center;color:#1a237e;margin:0;font-size:28px;">PURCHASE ORDER</h1>
@@ -2382,6 +2426,7 @@ Response (201 Created):
     id: "hr-onboarding",
     name: "HR Onboarding Checklist",
     icon: "👤",
+    category: "Professional",
     description: "Comprehensive employee onboarding checklist with pre-arrival, Day 1, 30-60-90 day goals, and IT setup.",
     content: `<div style="background:#2e7d32;color:white;padding:24px;text-align:center;margin-bottom:20px;">
 <h1 style="margin:0;font-size:26px;">New Employee Onboarding Checklist</h1>
@@ -2454,8 +2499,10 @@ Response (201 Created):
   },
   {
     id: "legal-nda",
-    name: "Legal NDA",
+    name: "Non-Disclosure Agreement (NDA)",
     icon: "🔒",
+    category: "Business Essentials",
+    featured: true,
     description: "Non-Disclosure Agreement with definitions, obligations, exclusions, remedies, and signature blocks.",
     content: `<h1 style="text-align:center;font-size:24px;color:#333;">NON-DISCLOSURE AGREEMENT</h1>
 <p style="text-align:center;font-size:13px;color:#666;">(Mutual Confidentiality Agreement)</p>
@@ -2511,6 +2558,7 @@ Response (201 Created):
     id: "accounts-pl",
     name: "Profit & Loss Statement",
     icon: "💹",
+    category: "Financial",
     description: "Multi-page P&L statement with quarterly breakdown, YoY comparison, financial ratios, and notes.",
     content: `<div style="text-align:center;border-bottom:4px solid #1565C0;padding-bottom:16px;margin-bottom:20px;">
 <h1 style="color:#1565C0;margin:0;font-size:26px;">PROFIT & LOSS STATEMENT</h1>
@@ -2585,8 +2633,10 @@ Response (201 Created):
   },
   {
     id: "var-business-letter",
-    name: "Business Letter (Variables)",
+    name: "Business Letter",
     icon: "✉️",
+    category: "Business Essentials",
+    featured: true,
     description: "Professional business letter with auto-fill variables for sender, recipient, company, and date.",
     content: `<div style="text-align:right;margin-bottom:30px;">
 <p style="margin:0;"><strong>{{company_name}}</strong></p>
@@ -2618,6 +2668,7 @@ Response (201 Created):
     id: "var-project-proposal",
     name: "Project Proposal (Variables)",
     icon: "📝",
+    category: "Business Essentials",
     description: "Project proposal template with variables for project details, company info, dates, and team.",
     content: `<div style="text-align:center;padding:40px 0;border-bottom:3px solid #1565C0;">
 <p style="color:#999;font-size:11px;text-transform:uppercase;letter-spacing:3px;">Project Proposal</p>
@@ -2668,6 +2719,7 @@ Response (201 Created):
     id: "var-nda-agreement",
     name: "NDA Agreement (Variables)",
     icon: "🔒",
+    category: "Legal",
     description: "Non-Disclosure Agreement template with variables for parties, dates, and terms.",
     content: `<h1 style="text-align:center;font-size:24px;margin-bottom:8px;">NON-DISCLOSURE AGREEMENT</h1>
 <p style="text-align:center;color:#666;">Effective Date: {{effective_date}}</p>
@@ -2697,6 +2749,7 @@ Response (201 Created):
     id: "var-meeting-agenda",
     name: "Meeting Agenda (Variables)",
     icon: "📅",
+    category: "Business Essentials",
     description: "Meeting agenda template with variables for meeting details, attendees, and action items.",
     content: `<div style="border-bottom:3px solid #1565C0;padding-bottom:16px;margin-bottom:20px;">
 <h1 style="font-size:24px;margin-bottom:4px;">Meeting Agenda</h1>
@@ -2734,6 +2787,7 @@ Response (201 Created):
     id: "var-sop-template",
     name: "SOP Template (Variables)",
     icon: "📋",
+    category: "Business Essentials",
     description: "Standard Operating Procedure with variables for document control, author, dates, and department.",
     content: `<div style="border:3px solid #1565C0;padding:24px;margin-bottom:20px;">
 <h1 style="text-align:center;color:#1565C0;margin-bottom:4px;font-size:26px;">Standard Operating Procedure</h1>
