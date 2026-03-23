@@ -9,7 +9,7 @@ import {
   ShieldCheck, BookOpen, Columns2, Circle, ChevronDown, Search, Printer,
   FilePlus2, Underline, Strikethrough, StickyNote, RectangleHorizontal,
   Layers, Info, FileCheck, Lock, AlignCenter, Presentation, CheckSquare,
-  Square, Fullscreen, LayoutGrid, Eye, Wrench, Award,
+  Square, Fullscreen, LayoutGrid, Eye, Wrench, Award, MessageSquare,
 } from "lucide-react";
 import { PDFDocument, degrees, PageSizes } from "pdf-lib";
 import { RibbonToolbar } from "@/components/pdf";
@@ -23,6 +23,11 @@ import { OrganizePagesPanel } from "@/components/pdf";
 import { BatchPanel } from "@/components/pdf";
 import { StampPanel } from "@/components/pdf";
 import { RedactionPanel } from "@/components/pdf";
+import { CommentPanel } from "@/components/pdf";
+import ViewModePanel from "@/components/pdf/ViewModePanel";
+import type { ViewMode } from "@/components/pdf/ViewModePanel";
+import MetadataRemovalPanel from "@/components/pdf/MetadataRemovalPanel";
+import SignatureDateField from "@/components/pdf/SignatureDateField";
 import type {
   RibbonTabId, HeaderFooterConfig, PrintOptions, ExportOptions,
   SecurityConfig, DocumentProperties, SearchResult,
@@ -241,6 +246,15 @@ export default function PdfToolsPage() {
   const [unifiedExportProgress, setUnifiedExportProgress] = useState({ percent: 0, message: "" });
   const [showUnifiedImport, setShowUnifiedImport] = useState(false);
   const [showUnifiedPrintPreview, setShowUnifiedPrintPreview] = useState(false);
+
+  // ── Comment Panel ──
+  const [showCommentPanel, setShowCommentPanel] = useState(false);
+
+  // ── View Mode ──
+  const [viewMode, setViewMode] = useState<ViewMode>("single");
+
+  // ── Metadata Removal ──
+  const [showMetadataRemoval, setShowMetadataRemoval] = useState(false);
 
   // ── AI Panel ──
   const [showAiPanel, setShowAiPanel] = useState(false);
@@ -799,6 +813,46 @@ export default function PdfToolsPage() {
     setShowExport(false);
   };
 
+  const handleRemoveMetadata = async (fields: string[]) => {
+    if (!pdfBytes) return;
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      for (const field of fields) {
+        switch (field) {
+          case "title": doc.setTitle(""); break;
+          case "author": doc.setAuthor(""); break;
+          case "subject": doc.setSubject(""); break;
+          case "keywords": doc.setKeywords([]); break;
+          case "creator": doc.setCreator(""); break;
+          case "producer": doc.setProducer(""); break;
+        }
+      }
+      const bytes = await doc.save();
+      await loadPdf(bytes.buffer as ArrayBuffer, pdfName);
+      setDocumentProperties((prev) => {
+        const updated = { ...prev };
+        for (const field of fields) {
+          if (field in updated) (updated as Record<string, unknown>)[field] = "";
+        }
+        return updated;
+      });
+    } catch (err) { console.error("Remove metadata failed:", err); }
+  };
+
+  const handlePlaceSignatureDate = (dateText: string, _format: string, x: number, y: number) => {
+    const ann: Annotation = {
+      id: uid(),
+      type: "text",
+      page: currentPage,
+      x,
+      y,
+      text: dateText,
+      fontSize: 12,
+      color: "#000000",
+    };
+    setAnnotations((prev) => [...prev, ann]);
+  };
+
   const applySecurity = () => { setSecurityApplied(true); setShowSecurity(false); };
   const applyCertSignature = () => { if (!certificateInfo.name || !certificateInfo.email) return; setCertSignatureApplied(true); setShowCertModal(false); };
 
@@ -998,6 +1052,9 @@ export default function PdfToolsPage() {
                 <button style={btnStyle} onClick={() => setShowSearch(!showSearch)}><Search size={14} /> Find</button>
                 <button style={btnStyle} onClick={() => setShowProperties(!showProperties)}><Info size={14} /> Properties</button>
                 <button style={{ ...btnStyle, ...(showBookmarks ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowBookmarks(!showBookmarks)}><BookOpen size={14} /> Bookmarks</button>
+                <button style={{ ...btnStyle, ...(showCommentPanel ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowCommentPanel(!showCommentPanel)}><MessageSquare size={14} /> Comments</button>
+                <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+                <ViewModePanel viewMode={viewMode} onViewModeChange={setViewMode} isFullscreen={false} onToggleFullscreen={() => {}} />
               </>
             )}
           </div>
@@ -1037,6 +1094,8 @@ export default function PdfToolsPage() {
             <button style={btnStyle} onClick={flattenAnnotations} disabled={annotations.length === 0}><Layers size={14} /> Flatten</button>
             <button style={{ ...btnStyle, color: annotations.filter(a => a.type === "redaction").length === 0 ? "var(--muted-foreground)" : "#dc2626" }} onClick={handleApplyRedactions} disabled={annotations.filter(a => a.type === "redaction").length === 0}><EyeOff size={14} /> Apply Redactions</button>
             <button style={btnStyle} onClick={() => setAnnotations((prev) => prev.slice(0, -1))} disabled={annotations.length === 0}><Undo2 size={14} /> Undo</button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
+            <button style={{ ...btnStyle, ...(showCommentPanel ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowCommentPanel(!showCommentPanel)}><MessageSquare size={14} /> Comments ({annotations.length})</button>
             <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>{annotations.length} annotation{annotations.length !== 1 ? "s" : ""}</span>
           </div>
         );
@@ -1093,6 +1152,7 @@ export default function PdfToolsPage() {
               <ShieldCheck size={14} /> {certSignatureApplied ? "Cert Applied" : "Digital Certificate"}
             </button>
             <button style={btnStyle} onClick={() => setActiveTab("edit")}><EyeOff size={14} /> Redact</button>
+            <button style={{ ...btnStyle, ...(showMetadataRemoval ? { backgroundColor: "var(--accent)" } : {}) }} onClick={() => setShowMetadataRemoval(!showMetadataRemoval)}><Trash2 size={14} /> Remove Metadata</button>
           </div>
         );
       case "sign":
@@ -1106,6 +1166,7 @@ export default function PdfToolsPage() {
               <ShieldCheck size={14} /> {certSignatureApplied ? "Certificate Applied" : "Add Certificate"}
             </button>
             <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("signature"); }}><Pencil size={14} /> Signature Field</button>
+            <button style={btnStyle} onClick={() => { setActiveTab("edit"); }}><Award size={14} /> Date Field</button>
           </div>
         );
       case "review":
@@ -1486,6 +1547,31 @@ export default function PdfToolsPage() {
           </div>
         )}
         <div className="flex-1 flex flex-col overflow-hidden">{renderActiveTab()}</div>
+        {showCommentPanel && (
+          <CommentPanel
+            annotations={annotations}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onNavigate={setCurrentPage}
+            onRemoveAnnotation={(id) => setAnnotations((prev) => prev.filter((a) => a.id !== id))}
+            onClose={() => setShowCommentPanel(false)}
+          />
+        )}
+        {showMetadataRemoval && pdfDoc && (
+          <div style={{ width: 300, flexShrink: 0, borderLeft: "1px solid var(--border)", overflowY: "auto", backgroundColor: "var(--card)" }}>
+            <MetadataRemovalPanel
+              documentProperties={documentProperties}
+              pdfLoaded={!!pdfDoc}
+              onRemoveMetadata={handleRemoveMetadata}
+            />
+            <div style={{ borderTop: "1px solid var(--border)", padding: 16 }}>
+              <SignatureDateField
+                onPlaceDate={handlePlaceSignatureDate}
+                currentPage={currentPage}
+              />
+            </div>
+          </div>
+        )}
         {showAiPanel && (
           <div className="w-72 border-l flex flex-col" style={{ borderColor: "var(--border)", backgroundColor: "var(--card)" }}>
             <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: "var(--border)" }}>

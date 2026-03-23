@@ -234,6 +234,68 @@ export function SpreadsheetGrid() {
     [conditionalFormats, getCellDisplay]
   );
 
+  // Get icon set info for a cell
+  const getIconSetInfo = useCallback(
+    (col: number, row: number): { icon: string; color: string } | null => {
+      const display = getCellDisplay(col, row);
+      const numVal = parseFloat(display);
+      if (isNaN(numVal) || !display) return null;
+      for (const rule of conditionalFormats) {
+        if (rule.type !== "iconSet") continue;
+        const rangeMatch = rule.range.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+        if (!rangeMatch) continue;
+        const rStartCol = rangeMatch[1].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 65, 0);
+        const rStartRow = parseInt(rangeMatch[2]) - 1;
+        const rEndCol = rangeMatch[3].split("").reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 65, 0);
+        const rEndRow = parseInt(rangeMatch[4]) - 1;
+        if (col < rStartCol || col > rEndCol || row < rStartRow || row > rEndRow) continue;
+        // Collect all values in range
+        const vals: number[] = [];
+        for (let r2 = rStartRow; r2 <= rEndRow; r2++) {
+          for (let c2 = rStartCol; c2 <= rEndCol; c2++) {
+            const v = parseFloat(getCellDisplay(c2, r2));
+            if (!isNaN(v)) vals.push(v);
+          }
+        }
+        if (vals.length === 0) return null;
+        const minV = Math.min(...vals);
+        const maxV = Math.max(...vals);
+        const range = maxV - minV;
+        if (range === 0) return null;
+        const pct = (numVal - minV) / range;
+        const iconType = rule.iconSetType || "arrows";
+        // 3-tier icons
+        if (pct >= 0.67) {
+          switch (iconType) {
+            case "arrows": return { icon: "▲", color: "#22c55e" };
+            case "traffic": return { icon: "●", color: "#22c55e" };
+            case "flags": return { icon: "⚑", color: "#22c55e" };
+            case "stars": return { icon: "★", color: "#eab308" };
+            case "rating": return { icon: "●●●", color: "#22c55e" };
+          }
+        } else if (pct >= 0.33) {
+          switch (iconType) {
+            case "arrows": return { icon: "▶", color: "#eab308" };
+            case "traffic": return { icon: "●", color: "#eab308" };
+            case "flags": return { icon: "⚑", color: "#eab308" };
+            case "stars": return { icon: "★", color: "#9ca3af" };
+            case "rating": return { icon: "●●○", color: "#eab308" };
+          }
+        } else {
+          switch (iconType) {
+            case "arrows": return { icon: "▼", color: "#ef4444" };
+            case "traffic": return { icon: "●", color: "#ef4444" };
+            case "flags": return { icon: "⚑", color: "#ef4444" };
+            case "stars": return { icon: "☆", color: "#9ca3af" };
+            case "rating": return { icon: "●○○", color: "#ef4444" };
+          }
+        }
+      }
+      return null;
+    },
+    [conditionalFormats, getCellDisplay]
+  );
+
   const getColWidth = useCallback(
     (col: number) => sheet.colWidths[col] || DEFAULT_COL_WIDTH,
     [sheet.colWidths]
@@ -782,6 +844,7 @@ export function SpreadsheetGrid() {
                   const isFrozenBorderBottom = frozenRows > 0 && r === frozenRows - 1;
                   const condStyle = getConditionalStyle(c, r);
                   const dataBar = getDataBarInfo(c, r);
+                  const iconSet = getIconSetInfo(c, r);
                   const effectiveBg = selected && !active
                     ? "rgba(59,130,246,0.25)"
                     : condStyle?.bgColor || cellStyle.bgColor || "var(--background)";
@@ -935,7 +998,87 @@ export function SpreadsheetGrid() {
                               }}
                             />
                           )}
-                          <span className="relative z-[1]">{getCellDisplay(c, r)}</span>
+                          {/* Icon set indicator */}
+                          {iconSet && (
+                            <span
+                              className="relative z-[1] mr-1 text-[10px] leading-none"
+                              style={{ color: iconSet.color }}
+                            >
+                              {iconSet.icon}
+                            </span>
+                          )}
+                          {/* Sparkline or text content */}
+                          {(() => {
+                            const displayVal = getCellDisplay(c, r);
+                            if (typeof displayVal === "string" && displayVal.startsWith("\x00SPARKLINE\x00")) {
+                              const parts = displayVal.split("\x00SPARKLINE\x00")[1]?.split("\x00") || [];
+                              const chartType = parts[0] || "line";
+                              const data = (parts[1] || "").split(",").map(Number).filter((n) => !isNaN(n));
+                              if (data.length === 0) return <span className="relative z-[1]">-</span>;
+                              const w = getColWidth(c) - 8;
+                              const h = getRowHeight(r) - 4;
+                              const minV = Math.min(...data);
+                              const maxV = Math.max(...data);
+                              const range = maxV - minV || 1;
+                              if (chartType === "bar") {
+                                const barW = Math.max(1, w / data.length - 1);
+                                return (
+                                  <svg width={w} height={h} className="relative z-[1]">
+                                    {data.map((v, i) => {
+                                      const barH = ((v - minV) / range) * (h - 2) + 2;
+                                      return (
+                                        <rect
+                                          key={i}
+                                          x={i * (barW + 1)}
+                                          y={h - barH}
+                                          width={barW}
+                                          height={barH}
+                                          fill={v >= 0 ? "#3b82f6" : "#ef4444"}
+                                          rx={0.5}
+                                        />
+                                      );
+                                    })}
+                                  </svg>
+                                );
+                              } else if (chartType === "winloss") {
+                                const barW = Math.max(1, w / data.length - 1);
+                                return (
+                                  <svg width={w} height={h} className="relative z-[1]">
+                                    {data.map((v, i) => (
+                                      <rect
+                                        key={i}
+                                        x={i * (barW + 1)}
+                                        y={v >= 0 ? 1 : h / 2}
+                                        width={barW}
+                                        height={h / 2 - 1}
+                                        fill={v >= 0 ? "#22c55e" : "#ef4444"}
+                                        rx={0.5}
+                                      />
+                                    ))}
+                                    <line x1={0} y1={h / 2} x2={w} y2={h / 2} stroke="var(--border)" strokeWidth={0.5} />
+                                  </svg>
+                                );
+                              } else {
+                                // Line sparkline
+                                const points = data.map((v, i) => {
+                                  const x = (i / Math.max(data.length - 1, 1)) * w;
+                                  const y = h - 2 - ((v - minV) / range) * (h - 4);
+                                  return `${x},${y}`;
+                                }).join(" ");
+                                return (
+                                  <svg width={w} height={h} className="relative z-[1]">
+                                    <polyline points={points} fill="none" stroke="#3b82f6" strokeWidth={1.5} />
+                                    {data.length > 0 && (() => {
+                                      const lastX = w;
+                                      const lastY = h - 2 - ((data[data.length - 1] - minV) / range) * (h - 4);
+                                      return <circle cx={lastX} cy={lastY} r={2} fill="#3b82f6" />;
+                                    })()}
+                                  </svg>
+                                );
+                              }
+                            }
+                            return <span className="relative z-[1]">{displayVal}</span>;
+                          })()}
                         </div>
                       )}
 
