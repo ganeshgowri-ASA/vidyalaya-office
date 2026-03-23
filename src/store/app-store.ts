@@ -211,6 +211,7 @@ interface AppState {
   notifications: Notification[];
   activities: ActivityItem[];
   showKeyboardShortcuts: boolean;
+  showCommandPalette: boolean;
   searchQuery: string;
   onboardingComplete: boolean;
   dashboardView: "grid" | "list";
@@ -223,6 +224,7 @@ interface AppState {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   setShowKeyboardShortcuts: (show: boolean) => void;
+  setShowCommandPalette: (show: boolean) => void;
   setSearchQuery: (query: string) => void;
   setDashboardView: (view: "grid" | "list") => void;
 
@@ -261,6 +263,7 @@ export const useAppStore = create<AppState>()((set) => ({
   notifications: sampleNotifications,
   activities: sampleActivities,
   showKeyboardShortcuts: false,
+  showCommandPalette: false,
   searchQuery: "",
   onboardingComplete: false,
   dashboardView: "grid",
@@ -289,6 +292,7 @@ export const useAppStore = create<AppState>()((set) => ({
       notifications: state.notifications.map((n) => ({ ...n, read: true })),
     })),
   setShowKeyboardShortcuts: (show) => set({ showKeyboardShortcuts: show }),
+  setShowCommandPalette: (show) => set({ showCommandPalette: show }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setDashboardView: (view) => set({ dashboardView: view }),
 
