@@ -31,6 +31,7 @@ import {
   Grid2X2,
   Cloud,
   Share2,
+  Globe,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,10 @@ const communicateNav = [
   { label: "Meetings", href: "/meetings", icon: Video },
   { label: "Meeting Bot", href: "/meetings/bot", icon: Bot },
   { label: "Calendar", href: "/calendar", icon: CalendarDays },
+];
+
+const collaborateNav = [
+  { label: "SharePoint", href: "/sharepoint", icon: Globe },
 ];
 
 const productivityNav = [
@@ -184,6 +189,8 @@ export function Sidebar() {
           <NavSection label="Editors" items={editorNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Communicate" items={communicateNav} pathname={pathname} sidebarOpen={sidebarOpen} />
+          {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
+          <NavSection label="Collaborate" items={collaborateNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Productivity" items={productivityNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
