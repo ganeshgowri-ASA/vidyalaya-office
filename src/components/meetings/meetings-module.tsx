@@ -13,6 +13,7 @@ import SlackIntegration from './slack-integration';
 import MeetingIntelligence from './meeting-intelligence';
 import SmartSearch from './smart-search';
 import CalendarIntegrationPanel from './calendar-integration-panel';
+import MeetingWhiteboard from './meeting-whiteboard';
 
 // ==================== TYPES ====================
 interface Meeting {
@@ -271,6 +272,7 @@ export default function MeetingsModule() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showSlackModal, setShowSlackModal] = useState(false);
+  const [showWhiteboard, setShowWhiteboard] = useState(false);
 
   const selectedTranscript = firefliesTranscripts.find(t => t.id === selectedTranscriptId) || firefliesTranscripts[0] || null;
 
@@ -664,6 +666,24 @@ export default function MeetingsModule() {
               <textarea placeholder="Add meeting notes..." rows={4}
                 className="w-full bg-[var(--bg-tertiary,#0f172a)] border border-[var(--border-color,#334155)] rounded px-3 py-2 text-xs resize-none outline-none"
                 defaultValue={selectedMeeting.notes} />
+            </div>
+
+            {/* Whiteboard */}
+            <div className="mb-4 p-3 rounded-lg bg-[var(--bg-secondary,#111827)] border border-[var(--border-color,#334155)]">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-semibold text-[var(--text-secondary,#94a3b8)]">🖊️ Whiteboard</p>
+                <button
+                  onClick={() => setShowWhiteboard(!showWhiteboard)}
+                  className="px-2 py-1 rounded text-[10px] bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 transition-colors"
+                >
+                  {showWhiteboard ? 'Close Whiteboard' : 'Open Whiteboard'}
+                </button>
+              </div>
+              {showWhiteboard && (
+                <div className="h-[400px] mt-2">
+                  <MeetingWhiteboard meetingId={selectedMeeting.id} />
+                </div>
+              )}
             </div>
 
             {/* AI Actions */}

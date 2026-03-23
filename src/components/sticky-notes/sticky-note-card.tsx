@@ -6,6 +6,7 @@ import {
   useStickyNotesStore,
   STICKY_COLORS,
   PRIORITY_CONFIG,
+  formatTimestamp,
   type StickyNote,
 } from "@/store/sticky-notes-store";
 import { useTasksStore } from "@/store/tasks-store";
@@ -144,28 +145,37 @@ export function StickyNoteCard({ note, onDragStart }: Props) {
       </div>
 
       {/* Footer */}
-      <div className="px-3 pb-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-1 flex-wrap">
-          {note.tags.slice(0, 2).map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-medium"
-              style={{ backgroundColor: colors.border + "33", color: colors.text }}
-            >
-              <Tag size={7} />{tag}
-            </span>
-          ))}
+      <div className="px-3 pb-2.5 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1 flex-wrap">
+            {note.tags.slice(0, 2).map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+                style={{ backgroundColor: colors.border + "33", color: colors.text }}
+              >
+                <Tag size={7} />{tag}
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center gap-1">
+            {note.dueDate && (
+              <span
+                className={cn("text-[9px] flex items-center gap-0.5")}
+                style={{ color: isOverdue ? "#ef4444" : colors.text, opacity: isOverdue ? 1 : 0.6 }}
+              >
+                {isOverdue && <AlertCircle size={9} />}
+                <Calendar size={9} />
+                {new Date(note.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          {note.dueDate && (
-            <span
-              className={cn("text-[9px] flex items-center gap-0.5")}
-              style={{ color: isOverdue ? "#ef4444" : colors.text, opacity: isOverdue ? 1 : 0.6 }}
-            >
-              {isOverdue && <AlertCircle size={9} />}
-              <Calendar size={9} />
-              {new Date(note.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-            </span>
+        {/* Timestamps */}
+        <div className="flex items-center justify-between" style={{ color: colors.text, opacity: 0.5 }}>
+          <span className="text-[8px]">{formatTimestamp(note.createdAt)}</span>
+          {note.updatedAt !== note.createdAt && (
+            <span className="text-[8px] italic">Edited {formatTimestamp(note.updatedAt)}</span>
           )}
         </div>
       </div>

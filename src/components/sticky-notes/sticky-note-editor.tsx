@@ -6,6 +6,7 @@ import {
   useStickyNotesStore,
   STICKY_COLORS,
   PRIORITY_CONFIG,
+  formatTimestamp,
   type StickyColor,
   type StickyPriority,
 } from "@/store/sticky-notes-store";
@@ -227,6 +228,17 @@ export function StickyNoteEditor() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Timestamps */}
+        <div
+          className="flex items-center justify-between px-4 py-2 border-t"
+          style={{ borderColor: colors.border + "44", color: colors.text, opacity: 0.6 }}
+        >
+          <span className="text-[10px]">Created {formatTimestamp(note.createdAt)}</span>
+          {note.updatedAt !== note.createdAt && (
+            <span className="text-[10px] italic">Edited {formatTimestamp(note.updatedAt)}</span>
+          )}
         </div>
 
         {/* Actions */}
