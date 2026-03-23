@@ -5,22 +5,25 @@ import type { NextRequest } from "next/server";
 const protectedRoutes = ["/profile", "/settings"];
 
 // Routes that are always public
-const publicRoutes = ["/auth/login", "/auth/register"];
+const publicRoutes = ["/auth/login", "/auth/register", "/auth/signin"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Check for Supabase auth tokens in cookies
-  // Supabase stores auth in cookies with the sb-*-auth-token pattern
+  // Check for auth cookies (Supabase or NextAuth)
   const hasAuthCookie = request.cookies.getAll().some(
-    (cookie) => cookie.name.includes("auth-token") || cookie.name.includes("sb-")
+    (cookie) =>
+      cookie.name.includes("auth-token") ||
+      cookie.name.includes("sb-") ||
+      cookie.name === "next-auth.session-token" ||
+      cookie.name === "__Secure-next-auth.session-token"
   );
 
-  // If accessing a protected route without auth, redirect to login
+  // If accessing a protected route without auth, redirect to sign-in
   if (protectedRoutes.some((route) => pathname.startsWith(route)) && !hasAuthCookie) {
-    const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
+    const signInUrl = new URL("/auth/signin", request.url);
+    signInUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
   // If authenticated and trying to access auth pages, redirect to home
