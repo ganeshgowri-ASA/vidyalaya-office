@@ -2,18 +2,18 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { User, Settings, LogOut, HelpCircle, Keyboard, Cloud, CloudOff } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { useAuthStore } from "@/store/auth-store";
 import { useAppStore } from "@/store/app-store";
 
 export function UserMenu() {
-  const router = useRouter();
-  const { user, isGuest } = useAuthStore();
+  const { data: session, status } = useSession();
   const { setShowKeyboardShortcuts } = useAppStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const isGuest = status !== "authenticated";
+  const user = session?.user;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -25,12 +25,12 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     setOpen(false);
-    await supabase.auth.signOut();
-    router.push("/auth/login");
+    await signOut({ callbackUrl: "/" });
   };
 
-  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Guest";
+  const displayName = user?.name || user?.email?.split("@")[0] || "Guest";
   const displayEmail = user?.email || "guest@local";
+  const avatarUrl = user?.image;
   const initials = isGuest
     ? "G"
     : displayName
@@ -44,13 +44,20 @@ export function UserMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors overflow-hidden"
         style={{
           backgroundColor: isGuest ? "var(--secondary)" : "var(--primary)",
           color: isGuest ? "var(--secondary-foreground)" : "var(--primary-foreground)",
         }}
       >
-        {isGuest ? <User size={16} /> : initials}
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+        ) : isGuest ? (
+          <User size={16} />
+        ) : (
+          initials
+        )}
       </button>
 
       {open && (
@@ -61,13 +68,20 @@ export function UserMenu() {
           <div className="border-b px-4 py-3" style={{ borderColor: "var(--border)" }}>
             <div className="flex items-center gap-3">
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold overflow-hidden"
                 style={{
                   backgroundColor: isGuest ? "var(--secondary)" : "var(--primary)",
                   color: isGuest ? "var(--secondary-foreground)" : "var(--primary-foreground)",
                 }}
               >
-                {isGuest ? <User size={18} /> : initials}
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                ) : isGuest ? (
+                  <User size={18} />
+                ) : (
+                  initials
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium" style={{ color: "var(--card-foreground)" }}>
@@ -134,7 +148,7 @@ export function UserMenu() {
 
             {isGuest ? (
               <Link
-                href="/auth/login"
+                href="/auth/signin"
                 className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:opacity-80"
                 style={{ color: "var(--primary)" }}
                 onClick={() => setOpen(false)}

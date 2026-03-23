@@ -85,13 +85,14 @@ function GuestPrompt() {
       <p className="text-sm mb-6 max-w-md text-center" style={{ color: "var(--muted-foreground)" }}>
         You need to sign in to access documents shared with you and manage sharing permissions.
       </p>
-      <button
+      <a
+        href="/auth/signin?callbackUrl=/shared"
         className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium text-white"
         style={{ backgroundColor: "var(--primary)" }}
       >
         <LogIn size={16} />
         Sign in to share
-      </button>
+      </a>
     </div>
   );
 }

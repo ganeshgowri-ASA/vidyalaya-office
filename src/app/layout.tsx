@@ -7,6 +7,7 @@ import { AIChatWrapper } from "@/components/ai-chat/ai-chat-wrapper";
 import { AIProviders } from "@/providers/ai-providers";
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { SessionProvider } from "@/components/auth/session-provider";
 import { AppShell } from "@/components/layout/app-shell";
 import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import { PWAInstallPrompt } from "@/components/pwa/pwa-install-prompt";
@@ -37,6 +38,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <ThemeProvider>
+          <SessionProvider>
           <AuthProvider>
             <AIProviders>
               <AppShell>{children}</AppShell>
@@ -47,6 +49,7 @@ export default function RootLayout({
               <PWAInstallPrompt />
             </AIProviders>
           </AuthProvider>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>
