@@ -22,4 +22,8 @@ export { default as OrganizePagesPanel } from "./OrganizePagesPanel";
 export { default as StampPanel } from "./StampPanel";
 export { default as BatchPanel } from "./BatchPanel";
 export { default as ComparePdfPanel } from "./ComparePdfPanel";
+export { default as CommentPanel } from "./CommentPanel";
+export { default as ViewModePanel } from "./ViewModePanel";
+export { default as MetadataRemovalPanel } from "./MetadataRemovalPanel";
+export { default as SignatureDateField } from "./SignatureDateField";
 export * from "./types";
