@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSpreadsheetStore, type DataValidationRule } from "@/store/spreadsheet-store";
 import { colToLetter } from "./formula-engine";
-import { exportToCSV, printSheet, exportToExcelXML } from "./export-utils";
+import { exportToCSV, printSheet, exportToExcelXML, exportToPDF } from "./export-utils";
 import { SpreadsheetToolbar } from "./spreadsheet-toolbar";
 import { FormulaBar } from "./formula-bar";
 import { SpreadsheetGrid } from "./spreadsheet-grid";
@@ -113,6 +113,11 @@ export default function SpreadsheetWorkspace() {
   const handlePrint = useCallback(() => {
     const sheet = getActiveSheet();
     printSheet(sheet, getCellDisplay);
+  }, [getActiveSheet, getCellDisplay]);
+
+  const handleExportPDF = useCallback(async () => {
+    const sheet = getActiveSheet();
+    await exportToPDF(sheet, getCellDisplay, { showGridlines: true });
   }, [getActiveSheet, getCellDisplay]);
 
   const handleImport = useCallback(async (file: File) => {
@@ -247,6 +252,7 @@ export default function SpreadsheetWorkspace() {
         onExportCSV={handleExportCSV}
         onPrint={handlePrint}
         onExportExcel={handleExportExcel}
+        onExportPDF={handleExportPDF}
         onOpenPivot={() => setShowPivot(true)}
         onOpenCondFormatDialog={() => setShowCondFormat(true)}
         onOpenValidation={() => setShowValidation(true)}

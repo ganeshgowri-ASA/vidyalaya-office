@@ -22,6 +22,11 @@ export function PivotTableModal({
   const selectionStart = useSpreadsheetStore((s) => s.selectionStart);
   const selectionEnd = useSpreadsheetStore((s) => s.selectionEnd);
   const getCellDisplay = useSpreadsheetStore((s) => s.getCellDisplay);
+  const addSheet = useSpreadsheetStore((s) => s.addSheet);
+  const setCellValue = useSpreadsheetStore((s) => s.setCellValue);
+  const setCellStyle = useSpreadsheetStore((s) => s.setCellStyle);
+  const setActiveSheet = useSpreadsheetStore((s) => s.setActiveSheet);
+  const sheets = useSpreadsheetStore((s) => s.sheets);
 
   const [rowFields, setRowFields] = useState<PivotField[]>([]);
   const [colFields, setColFields] = useState<PivotField[]>([]);
@@ -351,10 +356,43 @@ export function PivotTableModal({
             style={{
               backgroundColor: "var(--primary)",
               color: "var(--primary-foreground)",
+              opacity: pivotPreview && pivotPreview.length > 0 ? 1 : 0.5,
             }}
-            onClick={onClose}
+            disabled={!pivotPreview || pivotPreview.length === 0}
+            onClick={() => {
+              if (!pivotPreview || pivotPreview.length === 0) return;
+              // Create a new sheet for pivot results
+              addSheet();
+              // The new sheet is the last one added and is now active
+              const newSheetId = useSpreadsheetStore.getState().activeSheetId;
+
+              // Write header row
+              const rowLabel = rowFields.map((f) => f.name).join(" / ");
+              const valLabel = `${aggregation}(${valueFields.map((f) => f.name).join(", ")})`;
+              setCellValue(0, 0, rowLabel);
+              setCellValue(1, 0, valLabel);
+              setCellStyle(0, 0, { bold: true, bgColor: "#374151" });
+              setCellStyle(1, 0, { bold: true, bgColor: "#374151" });
+
+              // Write data rows
+              pivotPreview.forEach((row, i) => {
+                setCellValue(0, i + 1, row.label);
+                setCellValue(1, i + 1, String(parseFloat(row.value.toFixed(2))));
+              });
+
+              // Grand total
+              const total = pivotPreview.reduce((sum, r) => sum + r.value, 0);
+              setCellValue(0, pivotPreview.length + 1, "Grand Total");
+              setCellValue(1, pivotPreview.length + 1, String(parseFloat(total.toFixed(2))));
+              setCellStyle(0, pivotPreview.length + 1, { bold: true, bgColor: "#374151" });
+              setCellStyle(1, pivotPreview.length + 1, { bold: true, bgColor: "#374151" });
+
+              // Rename the new sheet
+              useSpreadsheetStore.getState().renameSheet(newSheetId, "PivotTable");
+              onClose();
+            }}
           >
-            Apply
+            Generate Pivot Table
           </button>
         </div>
       </div>
