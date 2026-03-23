@@ -66,6 +66,29 @@ interface StickyNotesState {
 const now = () => new Date().toISOString();
 const daysFromNow = (n: number) =>
   new Date(Date.now() + n * 86400000).toISOString().split("T")[0];
+const hoursAgo = (h: number) => new Date(Date.now() - h * 3600000).toISOString();
+const minsAgo = (m: number) => new Date(Date.now() - m * 60000).toISOString();
+
+/** Format a timestamp for display. Recent = relative ("2 min ago"), older = absolute ("Mar 25, 2:34 PM"). */
+export function formatTimestamp(iso: string): string {
+  const date = new Date(iso);
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMs / 3600000);
+
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin} min ago`;
+  if (diffHr < 24) return `${diffHr} hour${diffHr > 1 ? "s" : ""} ago`;
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  }) + ", " + date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
 
 const SAMPLE_NOTES: StickyNote[] = [
   {
@@ -78,8 +101,8 @@ const SAMPLE_NOTES: StickyNote[] = [
     reminderAt: null,
     pinnedTo: { type: "document", id: "doc1", label: "Sprint 14 Board" },
     position: { x: 60, y: 80 },
-    createdAt: now(),
-    updatedAt: now(),
+    createdAt: hoursAgo(26),
+    updatedAt: minsAgo(15),
     tags: ["sprint", "demo"],
   },
   {
@@ -92,8 +115,8 @@ const SAMPLE_NOTES: StickyNote[] = [
     reminderAt: null,
     pinnedTo: null,
     position: { x: 360, y: 80 },
-    createdAt: now(),
-    updatedAt: now(),
+    createdAt: minsAgo(45),
+    updatedAt: minsAgo(3),
     tags: ["bug", "auth"],
   },
   {
@@ -106,8 +129,8 @@ const SAMPLE_NOTES: StickyNote[] = [
     reminderAt: null,
     pinnedTo: { type: "meeting", id: "mtg1", label: "Team Weekly" },
     position: { x: 660, y: 80 },
-    createdAt: now(),
-    updatedAt: now(),
+    createdAt: hoursAgo(4),
+    updatedAt: hoursAgo(2),
     tags: ["team", "social"],
   },
   {
@@ -120,8 +143,8 @@ const SAMPLE_NOTES: StickyNote[] = [
     reminderAt: null,
     pinnedTo: null,
     position: { x: 60, y: 340 },
-    createdAt: now(),
-    updatedAt: now(),
+    createdAt: hoursAgo(72),
+    updatedAt: hoursAgo(48),
     tags: ["backend", "security"],
   },
   {
@@ -134,8 +157,8 @@ const SAMPLE_NOTES: StickyNote[] = [
     reminderAt: null,
     pinnedTo: null,
     position: { x: 360, y: 340 },
-    createdAt: now(),
-    updatedAt: now(),
+    createdAt: hoursAgo(120),
+    updatedAt: hoursAgo(96),
     tags: ["design", "frontend"],
   },
   {
@@ -148,8 +171,8 @@ const SAMPLE_NOTES: StickyNote[] = [
     reminderAt: null,
     pinnedTo: { type: "document", id: "doc2", label: "Q2 Budget Sheet" },
     position: { x: 660, y: 340 },
-    createdAt: now(),
-    updatedAt: now(),
+    createdAt: hoursAgo(8),
+    updatedAt: hoursAgo(1),
     tags: ["finance", "q2"],
   },
 ];
