@@ -27,4 +27,7 @@ export { default as ViewModePanel } from "./ViewModePanel";
 export { default as MetadataRemovalPanel } from "./MetadataRemovalPanel";
 export { default as SignatureDateField } from "./SignatureDateField";
 export { default as PdfTemplatesModal } from "./PdfTemplatesModal";
+export { default as AnnotationToolbar } from "./AnnotationToolbar";
+export { default as DigitalSignatureModal } from "./DigitalSignatureModal";
+export { default as AdvancedFormBuilder } from "./AdvancedFormBuilder";
 export * from "./types";
