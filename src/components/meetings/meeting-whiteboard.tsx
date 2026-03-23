@@ -376,6 +376,82 @@ export default function MeetingWhiteboard({ meetingId }: MeetingWhiteboardProps)
     }
   };
 
+  // ---- Export SVG ----
+  const handleExportSVG = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    const svgParts: string[] = [];
+    svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`);
+    svgParts.push(`<rect width="${w}" height="${h}" fill="#0f172a"/>`);
+    svgParts.push(`<g transform="translate(${pan.x},${pan.y}) scale(${zoom})">`);
+
+    for (const el of elements) {
+      const stroke = el.color;
+      const sw = el.strokeWidth;
+
+      switch (el.type) {
+        case 'path':
+          if (el.points && el.points.length > 1) {
+            const d = `M ${el.points.map((p) => `${p.x} ${p.y}`).join(' L ')}`;
+            svgParts.push(`<path d="${d}" stroke="${stroke}" stroke-width="${sw}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+          }
+          break;
+        case 'rectangle':
+          svgParts.push(`<rect x="${el.x}" y="${el.y}" width="${el.width || 0}" height="${el.height || 0}" stroke="${stroke}" stroke-width="${sw}" fill="none"/>`);
+          break;
+        case 'circle': {
+          const rx = Math.abs((el.width || 0) / 2);
+          const ry = Math.abs((el.height || 0) / 2);
+          const cx = el.x + (el.width || 0) / 2;
+          const cy = el.y + (el.height || 0) / 2;
+          svgParts.push(`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" stroke="${stroke}" stroke-width="${sw}" fill="none"/>`);
+          break;
+        }
+        case 'line':
+          svgParts.push(`<line x1="${el.x}" y1="${el.y}" x2="${el.x + (el.width || 0)}" y2="${el.y + (el.height || 0)}" stroke="${stroke}" stroke-width="${sw}"/>`);
+          break;
+        case 'arrow': {
+          const ex = el.x + (el.width || 0);
+          const ey = el.y + (el.height || 0);
+          const angle = Math.atan2(ey - el.y, ex - el.x);
+          const headLen = 12;
+          svgParts.push(`<line x1="${el.x}" y1="${el.y}" x2="${ex}" y2="${ey}" stroke="${stroke}" stroke-width="${sw}"/>`);
+          svgParts.push(`<line x1="${ex}" y1="${ey}" x2="${ex - headLen * Math.cos(angle - Math.PI / 6)}" y2="${ey - headLen * Math.sin(angle - Math.PI / 6)}" stroke="${stroke}" stroke-width="${sw}"/>`);
+          svgParts.push(`<line x1="${ex}" y1="${ey}" x2="${ex - headLen * Math.cos(angle + Math.PI / 6)}" y2="${ey - headLen * Math.sin(angle + Math.PI / 6)}" stroke="${stroke}" stroke-width="${sw}"/>`);
+          break;
+        }
+        case 'text': {
+          const fontSize = Math.max(14, sw * 4);
+          const escaped = (el.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          svgParts.push(`<text x="${el.x}" y="${el.y}" fill="${stroke}" font-size="${fontSize}" font-family="sans-serif">${escaped}</text>`);
+          break;
+        }
+        case 'sticky': {
+          const stickyW = el.width || 140;
+          const stickyH = el.height || 100;
+          svgParts.push(`<rect x="${el.x}" y="${el.y}" width="${stickyW}" height="${stickyH}" fill="${el.stickyColor || '#fef08a'}"/>`);
+          const lines = (el.text || 'Note').split('\n');
+          lines.forEach((line, i) => {
+            const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            svgParts.push(`<text x="${el.x + 8}" y="${el.y + 20 + i * 16}" fill="#1a1a1a" font-size="12" font-family="sans-serif">${escaped}</text>`);
+          });
+          break;
+        }
+      }
+    }
+
+    svgParts.push('</g></svg>');
+    const svgBlob = new Blob([svgParts.join('\n')], { type: 'image/svg+xml;charset=utf-8' });
+    const link = document.createElement('a');
+    link.download = `whiteboard-${meetingId}.svg`;
+    link.href = URL.createObjectURL(svgBlob);
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
   // ---- Export ----
   const handleExport = (format: 'png' | 'pdf') => {
     const canvas = canvasRef.current;
@@ -630,6 +706,13 @@ export default function MeetingWhiteboard({ meetingId }: MeetingWhiteboardProps)
           title="Export PDF"
         >
           <Download size={13} /> PDF
+        </button>
+        <button
+          onClick={handleExportSVG}
+          className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-gray-300 hover:bg-[#334155] transition-colors"
+          title="Export SVG"
+        >
+          <Download size={13} /> SVG
         </button>
         <button
           onClick={handleClear}
