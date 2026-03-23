@@ -3,6 +3,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useGraphicsStore, createShape, genId, Shape, ShapeBase } from '@/store/graphics-store';
 import GraphicsCanvas from './graphics-canvas';
 import { ShapeLibraryPanel, PropertiesPanel } from './graphics-shape-panel';
+import DiagramTemplateGallery from './diagram-templates';
 
 const TOOLS = [
   { id: 'select', icon: '▷', label: 'Select' }, { id: 'rect', icon: '▭', label: 'Rect' }, { id: 'ellipse', icon: '○', label: 'Ellipse' },
@@ -21,7 +22,7 @@ export default function GraphicsEditor() {
 
   const [showCanvasResize, setShowCanvasResize] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
-  const [activeTab, setActiveTab] = useState<'layers' | 'templates'>('layers');
+  const [activeTab, setActiveTab] = useState<'layers' | 'shapes' | 'templates'>('layers');
   const [localW, setLocalW] = useState(canvasWidth);
   const [localH, setLocalH] = useState(canvasHeight);
 
@@ -136,9 +137,11 @@ export default function GraphicsEditor() {
         {showLayers && (
           <div className="flex flex-col w-56 border-r border-[#334155] bg-[#1e293b] overflow-hidden">
             <div className="flex border-b border-[#334155]">
-              {(['layers', 'templates'] as const).map(tab => <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-1.5 text-[10px] uppercase font-semibold ${activeTab === tab ? 'bg-[#0f172a] text-blue-400' : 'text-[#94a3b8] hover:bg-[#0f172a]'}`}>{tab}</button>)}
+              {(['layers', 'shapes', 'templates'] as const).map(tab => <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-1.5 text-[10px] uppercase font-semibold ${activeTab === tab ? 'bg-[#0f172a] text-blue-400' : 'text-[#94a3b8] hover:bg-[#0f172a]'}`}>{tab}</button>)}
             </div>
             {activeTab === 'templates' ? (
+              <DiagramTemplateGallery />
+            ) : activeTab === 'shapes' ? (
               <ShapeLibraryPanel />
             ) : (
               <div className="flex-1 overflow-y-auto p-2">
