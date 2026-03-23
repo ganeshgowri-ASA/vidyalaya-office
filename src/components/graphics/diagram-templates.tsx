@@ -27,6 +27,10 @@ const TEMPLATE_CATEGORIES = [
   { id: 'qctools', label: '7QC Tools', icon: '🔧' },
   { id: 'infographic', label: 'Infographic', icon: '📈' },
   { id: 'lean', label: 'Lean', icon: '🔄' },
+  { id: 'projectmgmt', label: 'Project Mgmt', icon: '📅' },
+  { id: 'analytics', label: 'Analytics', icon: '📊' },
+  { id: 'strategy', label: 'Strategy', icon: '♟' },
+  { id: 'agile', label: 'Agile', icon: '🏃' },
 ];
 
 const TEMPLATES: DiagramTemplate[] = [
@@ -997,6 +1001,777 @@ const TEMPLATES: DiagramTemplate[] = [
       { type: 'line', x: 250, y: 460, width: 40, height: 2, fill: '#f59e0b', stroke: '#f59e0b', label: '' },
       { type: 'text', x: 300, y: 453, width: 100, height: 15, fill: 'transparent', stroke: 'transparent', label: 'Waste movement' },
       { type: 'text', x: 470, y: 453, width: 160, height: 15, fill: 'transparent', stroke: 'transparent', label: 'Total distance: 847m/day' },
+    ],
+  },
+  // ===== PROJECT MANAGEMENT - GANTT CHART =====
+  {
+    id: 'gantt-chart',
+    name: 'Gantt Chart',
+    category: 'projectmgmt',
+    description: 'Project timeline with task bars, milestones, dependencies, critical path',
+    icon: '📅',
+    shapes: [
+      // Title
+      { type: 'banner', x: 200, y: 10, width: 400, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Project Alpha - Gantt Chart' },
+      // Date headers
+      { type: 'rect', x: 220, y: 60, width: 120, height: 30, fill: '#1e3a5f', stroke: '#2563eb', label: 'Week 1' },
+      { type: 'rect', x: 340, y: 60, width: 120, height: 30, fill: '#1e3a5f', stroke: '#2563eb', label: 'Week 2' },
+      { type: 'rect', x: 460, y: 60, width: 120, height: 30, fill: '#1e3a5f', stroke: '#2563eb', label: 'Week 3' },
+      { type: 'rect', x: 580, y: 60, width: 120, height: 30, fill: '#1e3a5f', stroke: '#2563eb', label: 'Week 4' },
+      { type: 'rect', x: 700, y: 60, width: 120, height: 30, fill: '#1e3a5f', stroke: '#2563eb', label: 'Week 5' },
+      // Task labels (left column)
+      { type: 'rect', x: 20, y: 60, width: 190, height: 30, fill: '#334155', stroke: '#475569', label: 'Task Name' },
+      { type: 'rect', x: 20, y: 100, width: 190, height: 35, fill: '#0f172a', stroke: '#334155', label: 'Requirements' },
+      { type: 'rect', x: 20, y: 145, width: 190, height: 35, fill: '#0f172a', stroke: '#334155', label: 'UI Design' },
+      { type: 'rect', x: 20, y: 190, width: 190, height: 35, fill: '#0f172a', stroke: '#334155', label: 'Backend Dev' },
+      { type: 'rect', x: 20, y: 235, width: 190, height: 35, fill: '#0f172a', stroke: '#334155', label: 'Frontend Dev' },
+      { type: 'rect', x: 20, y: 280, width: 190, height: 35, fill: '#0f172a', stroke: '#334155', label: 'Integration' },
+      { type: 'rect', x: 20, y: 325, width: 190, height: 35, fill: '#0f172a', stroke: '#334155', label: 'Testing' },
+      { type: 'rect', x: 20, y: 370, width: 190, height: 35, fill: '#0f172a', stroke: '#334155', label: 'Deployment' },
+      // Task bars
+      { type: 'rect', x: 220, y: 105, width: 180, height: 24, fill: '#2563eb', stroke: '#1d4ed8', label: '100%  Alice' },
+      { type: 'rect', x: 310, y: 150, width: 150, height: 24, fill: '#8b5cf6', stroke: '#7c3aed', label: '80%  Bob' },
+      { type: 'rect', x: 400, y: 195, width: 240, height: 24, fill: '#ef4444', stroke: '#dc2626', label: '60%  Carol' },
+      { type: 'rect', x: 460, y: 240, width: 200, height: 24, fill: '#ef4444', stroke: '#dc2626', label: '45%  Dave' },
+      { type: 'rect', x: 620, y: 285, width: 120, height: 24, fill: '#ef4444', stroke: '#dc2626', label: '10%  Eve' },
+      { type: 'rect', x: 700, y: 330, width: 100, height: 24, fill: '#f59e0b', stroke: '#d97706', label: '0%  QA Team' },
+      { type: 'rect', x: 780, y: 375, width: 40, height: 24, fill: '#22c55e', stroke: '#15803d', label: 'Ops' },
+      // Progress fill overlay (partial bars)
+      { type: 'rect', x: 220, y: 105, width: 180, height: 24, fill: '#3b82f6', stroke: '#2563eb', label: '' },
+      { type: 'rect', x: 310, y: 150, width: 120, height: 24, fill: '#a78bfa', stroke: '#8b5cf6', label: '' },
+      { type: 'rect', x: 400, y: 195, width: 144, height: 24, fill: '#f87171', stroke: '#ef4444', label: '' },
+      // Milestones (diamonds)
+      { type: 'diamond', x: 390, y: 100, width: 24, height: 24, fill: '#22c55e', stroke: '#15803d', label: 'M1' },
+      { type: 'diamond', x: 650, y: 190, width: 24, height: 24, fill: '#f59e0b', stroke: '#d97706', label: 'M2' },
+      { type: 'diamond', x: 810, y: 370, width: 24, height: 24, fill: '#22c55e', stroke: '#15803d', label: 'GO' },
+      // Dependency arrows
+      { type: 'arrow', x: 400, y: 117, width: 60, height: 10, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 460, y: 162, width: 0, height: 33, fill: '#64748b', stroke: '#64748b', label: '' },
+      // Critical path label
+      { type: 'text', x: 400, y: 415, width: 200, height: 18, fill: 'transparent', stroke: 'transparent', label: 'Red = Critical Path' },
+      // Legend
+      { type: 'rect', x: 620, y: 410, width: 16, height: 16, fill: '#22c55e', stroke: '#15803d', label: '' },
+      { type: 'text', x: 640, y: 410, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Milestone' },
+      { type: 'rect', x: 720, y: 410, width: 16, height: 16, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'text', x: 740, y: 410, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Critical' },
+    ],
+  },
+  // ===== PROJECT MANAGEMENT - PROJECT PROGRESS TRACKER =====
+  {
+    id: 'project-progress-tracker',
+    name: 'Project Progress Tracker',
+    category: 'projectmgmt',
+    description: 'Dashboard with progress donut, phase cards, risk indicators, budget chart',
+    icon: '📊',
+    shapes: [
+      // Title
+      { type: 'banner', x: 180, y: 10, width: 440, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Project Progress Dashboard' },
+      // Overall progress donut (represented as concentric circles)
+      { type: 'ellipse', x: 40, y: 70, width: 150, height: 150, fill: '#0f172a', stroke: '#334155', label: '' },
+      { type: 'ellipse', x: 55, y: 85, width: 120, height: 120, fill: '#22c55e', stroke: '#16a34a', label: '' },
+      { type: 'ellipse', x: 70, y: 100, width: 90, height: 90, fill: '#0f172a', stroke: '#0f172a', label: '68%\nComplete' },
+      { type: 'text', x: 60, y: 230, width: 110, height: 18, fill: 'transparent', stroke: 'transparent', label: 'Overall Progress' },
+      // Phase status cards
+      { type: 'rect', x: 220, y: 70, width: 140, height: 55, fill: '#14532d', stroke: '#22c55e', label: 'Planning\nComplete 100%' },
+      { type: 'rect', x: 370, y: 70, width: 140, height: 55, fill: '#14532d', stroke: '#22c55e', label: 'Design\nComplete 100%' },
+      { type: 'rect', x: 520, y: 70, width: 140, height: 55, fill: '#422006', stroke: '#f59e0b', label: 'Development\nIn Progress 65%' },
+      { type: 'rect', x: 670, y: 70, width: 140, height: 55, fill: '#1e293b', stroke: '#475569', label: 'Testing\nPending 0%' },
+      { type: 'rect', x: 445, y: 135, width: 140, height: 55, fill: '#1e293b', stroke: '#475569', label: 'Launch\nPending 0%' },
+      // Milestone timeline
+      { type: 'text', x: 220, y: 210, width: 200, height: 18, fill: 'transparent', stroke: 'transparent', label: 'Milestone Timeline' },
+      { type: 'line', x: 220, y: 240, width: 590, height: 2, fill: '#475569', stroke: '#475569', label: '' },
+      { type: 'diamond', x: 250, y: 232, width: 18, height: 18, fill: '#22c55e', stroke: '#16a34a', label: '' },
+      { type: 'text', x: 235, y: 255, width: 60, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Kickoff' },
+      { type: 'diamond', x: 400, y: 232, width: 18, height: 18, fill: '#22c55e', stroke: '#16a34a', label: '' },
+      { type: 'text', x: 380, y: 255, width: 70, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Design OK' },
+      { type: 'diamond', x: 560, y: 232, width: 18, height: 18, fill: '#f59e0b', stroke: '#d97706', label: '' },
+      { type: 'text', x: 540, y: 255, width: 60, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Beta' },
+      { type: 'diamond', x: 720, y: 232, width: 18, height: 18, fill: '#64748b', stroke: '#475569', label: '' },
+      { type: 'text', x: 700, y: 255, width: 60, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Launch' },
+      // Risk indicators
+      { type: 'text', x: 40, y: 290, width: 150, height: 18, fill: 'transparent', stroke: 'transparent', label: 'Risk Indicators' },
+      { type: 'rect', x: 40, y: 315, width: 120, height: 40, fill: '#14532d', stroke: '#22c55e', label: 'Scope: LOW' },
+      { type: 'rect', x: 170, y: 315, width: 120, height: 40, fill: '#422006', stroke: '#f59e0b', label: 'Schedule: MED' },
+      { type: 'rect', x: 300, y: 315, width: 120, height: 40, fill: '#450a0a', stroke: '#ef4444', label: 'Budget: HIGH' },
+      // Budget vs Actual bars
+      { type: 'text', x: 470, y: 290, width: 200, height: 18, fill: 'transparent', stroke: 'transparent', label: 'Budget vs Actual ($K)' },
+      { type: 'rect', x: 470, y: 315, width: 160, height: 20, fill: '#2563eb', stroke: '#1d4ed8', label: 'Budget: $240K' },
+      { type: 'rect', x: 470, y: 340, width: 190, height: 20, fill: '#ef4444', stroke: '#dc2626', label: 'Actual: $285K' },
+      { type: 'text', x: 670, y: 340, width: 80, height: 18, fill: 'transparent', stroke: 'transparent', label: '+$45K over' },
+    ],
+  },
+  // ===== PROJECT MANAGEMENT - PROJECT ROADMAP =====
+  {
+    id: 'project-roadmap',
+    name: 'Project Roadmap',
+    category: 'projectmgmt',
+    description: 'Quarterly roadmap with swim lanes, milestones, phase gates',
+    icon: '🗺',
+    shapes: [
+      // Title
+      { type: 'banner', x: 200, y: 10, width: 400, height: 40, fill: '#1e293b', stroke: '#334155', label: '2026 Product Roadmap' },
+      // Quarter headers
+      { type: 'rect', x: 160, y: 60, width: 180, height: 30, fill: '#1e3a5f', stroke: '#2563eb', label: 'Q1 Jan-Mar' },
+      { type: 'rect', x: 350, y: 60, width: 180, height: 30, fill: '#1e3a5f', stroke: '#2563eb', label: 'Q2 Apr-Jun' },
+      { type: 'rect', x: 540, y: 60, width: 180, height: 30, fill: '#1e3a5f', stroke: '#2563eb', label: 'Q3 Jul-Sep' },
+      { type: 'rect', x: 730, y: 60, width: 180, height: 30, fill: '#1e3a5f', stroke: '#2563eb', label: 'Q4 Oct-Dec' },
+      // Swim lane labels
+      { type: 'rect', x: 10, y: 100, width: 140, height: 70, fill: '#312e81', stroke: '#4338ca', label: 'Engineering' },
+      { type: 'rect', x: 10, y: 180, width: 140, height: 70, fill: '#1e3a5f', stroke: '#2563eb', label: 'Design' },
+      { type: 'rect', x: 10, y: 260, width: 140, height: 70, fill: '#14532d', stroke: '#22c55e', label: 'Marketing' },
+      { type: 'rect', x: 10, y: 340, width: 140, height: 70, fill: '#422006', stroke: '#f59e0b', label: 'Operations' },
+      // Swim lane backgrounds
+      { type: 'rect', x: 160, y: 100, width: 750, height: 70, fill: '#0f172a', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 160, y: 180, width: 750, height: 70, fill: '#0a0f1a', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 160, y: 260, width: 750, height: 70, fill: '#0f172a', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 160, y: 340, width: 750, height: 70, fill: '#0a0f1a', stroke: '#1e293b', label: '' },
+      // Engineering items
+      { type: 'rect', x: 170, y: 110, width: 160, height: 24, fill: '#7c3aed', stroke: '#6d28d9', label: 'API v2 Build' },
+      { type: 'rect', x: 360, y: 110, width: 200, height: 24, fill: '#ef4444', stroke: '#dc2626', label: 'Core Platform Refactor' },
+      { type: 'rect', x: 600, y: 110, width: 140, height: 24, fill: '#7c3aed', stroke: '#6d28d9', label: 'Scale Infra' },
+      { type: 'rect', x: 760, y: 110, width: 140, height: 24, fill: '#8b5cf6', stroke: '#7c3aed', label: 'AI Features' },
+      // Design items
+      { type: 'rect', x: 170, y: 190, width: 120, height: 24, fill: '#0891b2', stroke: '#0e7490', label: 'Design System' },
+      { type: 'rect', x: 380, y: 190, width: 150, height: 24, fill: '#0891b2', stroke: '#0e7490', label: 'UX Redesign' },
+      { type: 'rect', x: 620, y: 190, width: 120, height: 24, fill: '#06b6d4', stroke: '#0891b2', label: 'Mobile UI' },
+      // Marketing items
+      { type: 'rect', x: 200, y: 270, width: 130, height: 24, fill: '#22c55e', stroke: '#16a34a', label: 'Brand Refresh' },
+      { type: 'rect', x: 450, y: 270, width: 100, height: 24, fill: '#22c55e', stroke: '#16a34a', label: 'Campaign' },
+      { type: 'rect', x: 700, y: 270, width: 160, height: 24, fill: '#16a34a', stroke: '#15803d', label: 'Product Launch' },
+      // Operations items
+      { type: 'rect', x: 170, y: 350, width: 180, height: 24, fill: '#f59e0b', stroke: '#d97706', label: 'Process Automation' },
+      { type: 'rect', x: 540, y: 350, width: 160, height: 24, fill: '#f59e0b', stroke: '#d97706', label: 'SOC2 Compliance' },
+      // Phase gate diamonds
+      { type: 'diamond', x: 340, y: 425, width: 24, height: 24, fill: '#22c55e', stroke: '#16a34a', label: '' },
+      { type: 'text', x: 320, y: 455, width: 80, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Gate 1' },
+      { type: 'diamond', x: 530, y: 425, width: 24, height: 24, fill: '#f59e0b', stroke: '#d97706', label: '' },
+      { type: 'text', x: 510, y: 455, width: 80, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Gate 2' },
+      { type: 'diamond', x: 720, y: 425, width: 24, height: 24, fill: '#64748b', stroke: '#475569', label: '' },
+      { type: 'text', x: 700, y: 455, width: 80, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Gate 3' },
+      // Phase gate line
+      { type: 'line', x: 160, y: 437, width: 750, height: 2, fill: '#334155', stroke: '#334155', label: '' },
+    ],
+  },
+  // ===== ANALYTICS - CORRELATION MATRIX =====
+  {
+    id: 'correlation-matrix',
+    name: 'Correlation Matrix',
+    category: 'analytics',
+    description: 'NxN grid with color-coded correlations and coefficient values',
+    icon: '🔗',
+    shapes: [
+      // Title
+      { type: 'banner', x: 200, y: 10, width: 400, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Variable Correlation Matrix' },
+      // Column headers
+      { type: 'rect', x: 160, y: 60, width: 110, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Revenue' },
+      { type: 'rect', x: 280, y: 60, width: 110, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Marketing' },
+      { type: 'rect', x: 400, y: 60, width: 110, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Cust Sat' },
+      { type: 'rect', x: 520, y: 60, width: 110, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Retention' },
+      { type: 'rect', x: 640, y: 60, width: 110, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Churn' },
+      // Row headers
+      { type: 'rect', x: 40, y: 105, width: 110, height: 50, fill: '#1e3a5f', stroke: '#2563eb', label: 'Revenue' },
+      { type: 'rect', x: 40, y: 165, width: 110, height: 50, fill: '#1e3a5f', stroke: '#2563eb', label: 'Marketing' },
+      { type: 'rect', x: 40, y: 225, width: 110, height: 50, fill: '#1e3a5f', stroke: '#2563eb', label: 'Cust Sat' },
+      { type: 'rect', x: 40, y: 285, width: 110, height: 50, fill: '#1e3a5f', stroke: '#2563eb', label: 'Retention' },
+      { type: 'rect', x: 40, y: 345, width: 110, height: 50, fill: '#1e3a5f', stroke: '#2563eb', label: 'Churn' },
+      // Diagonal (1.00 - self-correlation)
+      { type: 'rect', x: 160, y: 105, width: 110, height: 50, fill: '#1e40af', stroke: '#2563eb', label: '1.00' },
+      { type: 'rect', x: 280, y: 165, width: 110, height: 50, fill: '#1e40af', stroke: '#2563eb', label: '1.00' },
+      { type: 'rect', x: 400, y: 225, width: 110, height: 50, fill: '#1e40af', stroke: '#2563eb', label: '1.00' },
+      { type: 'rect', x: 520, y: 285, width: 110, height: 50, fill: '#1e40af', stroke: '#2563eb', label: '1.00' },
+      { type: 'rect', x: 640, y: 345, width: 110, height: 50, fill: '#1e40af', stroke: '#2563eb', label: '1.00' },
+      // Positive correlations (green shades)
+      { type: 'rect', x: 280, y: 105, width: 110, height: 50, fill: '#14532d', stroke: '#22c55e', label: '0.82' },
+      { type: 'rect', x: 400, y: 105, width: 110, height: 50, fill: '#166534', stroke: '#22c55e', label: '0.71' },
+      { type: 'rect', x: 520, y: 105, width: 110, height: 50, fill: '#14532d', stroke: '#22c55e', label: '0.89' },
+      { type: 'rect', x: 160, y: 165, width: 110, height: 50, fill: '#14532d', stroke: '#22c55e', label: '0.82' },
+      { type: 'rect', x: 400, y: 165, width: 110, height: 50, fill: '#365314', stroke: '#84cc16', label: '0.45' },
+      { type: 'rect', x: 160, y: 225, width: 110, height: 50, fill: '#166534', stroke: '#22c55e', label: '0.71' },
+      { type: 'rect', x: 520, y: 225, width: 110, height: 50, fill: '#14532d', stroke: '#22c55e', label: '0.78' },
+      { type: 'rect', x: 160, y: 285, width: 110, height: 50, fill: '#14532d', stroke: '#22c55e', label: '0.89' },
+      { type: 'rect', x: 400, y: 285, width: 110, height: 50, fill: '#14532d', stroke: '#22c55e', label: '0.78' },
+      // Negative correlations (red shades)
+      { type: 'rect', x: 640, y: 105, width: 110, height: 50, fill: '#450a0a', stroke: '#ef4444', label: '-0.76' },
+      { type: 'rect', x: 640, y: 165, width: 110, height: 50, fill: '#7f1d1d', stroke: '#f87171', label: '-0.38' },
+      { type: 'rect', x: 640, y: 225, width: 110, height: 50, fill: '#450a0a', stroke: '#ef4444', label: '-0.85' },
+      { type: 'rect', x: 640, y: 285, width: 110, height: 50, fill: '#450a0a', stroke: '#ef4444', label: '-0.91' },
+      { type: 'rect', x: 520, y: 165, width: 110, height: 50, fill: '#365314', stroke: '#84cc16', label: '0.52' },
+      { type: 'rect', x: 280, y: 225, width: 110, height: 50, fill: '#365314', stroke: '#84cc16', label: '0.45' },
+      { type: 'rect', x: 280, y: 285, width: 110, height: 50, fill: '#365314', stroke: '#84cc16', label: '0.52' },
+      { type: 'rect', x: 160, y: 345, width: 110, height: 50, fill: '#450a0a', stroke: '#ef4444', label: '-0.76' },
+      { type: 'rect', x: 280, y: 345, width: 110, height: 50, fill: '#7f1d1d', stroke: '#f87171', label: '-0.38' },
+      { type: 'rect', x: 400, y: 345, width: 110, height: 50, fill: '#450a0a', stroke: '#ef4444', label: '-0.85' },
+      { type: 'rect', x: 520, y: 345, width: 110, height: 50, fill: '#450a0a', stroke: '#ef4444', label: '-0.91' },
+      // Legend
+      { type: 'rect', x: 160, y: 410, width: 60, height: 20, fill: '#14532d', stroke: '#22c55e', label: '' },
+      { type: 'text', x: 225, y: 412, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Strong +' },
+      { type: 'rect', x: 320, y: 410, width: 60, height: 20, fill: '#365314', stroke: '#84cc16', label: '' },
+      { type: 'text', x: 385, y: 412, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Moderate +' },
+      { type: 'rect', x: 480, y: 410, width: 60, height: 20, fill: '#7f1d1d', stroke: '#f87171', label: '' },
+      { type: 'text', x: 545, y: 412, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Moderate -' },
+      { type: 'rect', x: 640, y: 410, width: 60, height: 20, fill: '#450a0a', stroke: '#ef4444', label: '' },
+      { type: 'text', x: 705, y: 412, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Strong -' },
+    ],
+  },
+  // ===== ANALYTICS - SUPPLIER-DEMAND MATCHING MATRIX =====
+  {
+    id: 'supplier-demand-matrix',
+    name: 'Supplier-Demand Matrix',
+    category: 'analytics',
+    description: 'Supplier vs demand matching with traffic light status and capacity',
+    icon: '🔄',
+    shapes: [
+      { type: 'banner', x: 180, y: 10, width: 440, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Supplier-Demand Matching Matrix' },
+      // Column headers (demand)
+      { type: 'rect', x: 160, y: 60, width: 130, height: 35, fill: '#312e81', stroke: '#4338ca', label: 'Product A\n500 units' },
+      { type: 'rect', x: 300, y: 60, width: 130, height: 35, fill: '#312e81', stroke: '#4338ca', label: 'Product B\n300 units' },
+      { type: 'rect', x: 440, y: 60, width: 130, height: 35, fill: '#312e81', stroke: '#4338ca', label: 'Product C\n700 units' },
+      { type: 'rect', x: 580, y: 60, width: 130, height: 35, fill: '#312e81', stroke: '#4338ca', label: 'Product D\n200 units' },
+      { type: 'rect', x: 720, y: 60, width: 80, height: 35, fill: '#1e293b', stroke: '#475569', label: 'Total\nCapacity' },
+      // Row headers (suppliers)
+      { type: 'rect', x: 20, y: 105, width: 130, height: 50, fill: '#1e3a5f', stroke: '#2563eb', label: 'Supplier 1\nCap: 600' },
+      { type: 'rect', x: 20, y: 165, width: 130, height: 50, fill: '#1e3a5f', stroke: '#2563eb', label: 'Supplier 2\nCap: 450' },
+      { type: 'rect', x: 20, y: 225, width: 130, height: 50, fill: '#1e3a5f', stroke: '#2563eb', label: 'Supplier 3\nCap: 800' },
+      { type: 'rect', x: 20, y: 285, width: 130, height: 50, fill: '#1e3a5f', stroke: '#2563eb', label: 'Supplier 4\nCap: 350' },
+      // Totals row
+      { type: 'rect', x: 20, y: 345, width: 130, height: 40, fill: '#1e293b', stroke: '#475569', label: 'Total Alloc' },
+      // Matrix cells - traffic light (green=matched, yellow=partial, red=gap)
+      { type: 'rect', x: 160, y: 105, width: 130, height: 50, fill: '#14532d', stroke: '#22c55e', label: '400 units\nMatched' },
+      { type: 'rect', x: 300, y: 105, width: 130, height: 50, fill: '#422006', stroke: '#f59e0b', label: '200 units\nPartial' },
+      { type: 'rect', x: 440, y: 105, width: 130, height: 50, fill: '#1e293b', stroke: '#475569', label: '—' },
+      { type: 'rect', x: 580, y: 105, width: 130, height: 50, fill: '#1e293b', stroke: '#475569', label: '—' },
+      { type: 'rect', x: 720, y: 105, width: 80, height: 50, fill: '#0f172a', stroke: '#334155', label: '600' },
+      { type: 'rect', x: 160, y: 165, width: 130, height: 50, fill: '#1e293b', stroke: '#475569', label: '—' },
+      { type: 'rect', x: 300, y: 165, width: 130, height: 50, fill: '#14532d', stroke: '#22c55e', label: '100 units\nMatched' },
+      { type: 'rect', x: 440, y: 165, width: 130, height: 50, fill: '#422006', stroke: '#f59e0b', label: '350 units\nPartial' },
+      { type: 'rect', x: 580, y: 165, width: 130, height: 50, fill: '#1e293b', stroke: '#475569', label: '—' },
+      { type: 'rect', x: 720, y: 165, width: 80, height: 50, fill: '#0f172a', stroke: '#334155', label: '450' },
+      { type: 'rect', x: 160, y: 225, width: 130, height: 50, fill: '#14532d', stroke: '#22c55e', label: '100 units\nMatched' },
+      { type: 'rect', x: 300, y: 225, width: 130, height: 50, fill: '#1e293b', stroke: '#475569', label: '—' },
+      { type: 'rect', x: 440, y: 225, width: 130, height: 50, fill: '#14532d', stroke: '#22c55e', label: '350 units\nMatched' },
+      { type: 'rect', x: 580, y: 225, width: 130, height: 50, fill: '#14532d', stroke: '#22c55e', label: '200 units\nMatched' },
+      { type: 'rect', x: 720, y: 225, width: 80, height: 50, fill: '#0f172a', stroke: '#334155', label: '800' },
+      { type: 'rect', x: 160, y: 285, width: 130, height: 50, fill: '#1e293b', stroke: '#475569', label: '—' },
+      { type: 'rect', x: 300, y: 285, width: 130, height: 50, fill: '#1e293b', stroke: '#475569', label: '—' },
+      { type: 'rect', x: 440, y: 285, width: 130, height: 50, fill: '#450a0a', stroke: '#ef4444', label: '0 units\nGap!' },
+      { type: 'rect', x: 580, y: 285, width: 130, height: 50, fill: '#1e293b', stroke: '#475569', label: '—' },
+      { type: 'rect', x: 720, y: 285, width: 80, height: 50, fill: '#0f172a', stroke: '#334155', label: '350' },
+      // Totals row
+      { type: 'rect', x: 160, y: 345, width: 130, height: 40, fill: '#0f172a', stroke: '#22c55e', label: '500 / 500' },
+      { type: 'rect', x: 300, y: 345, width: 130, height: 40, fill: '#0f172a', stroke: '#22c55e', label: '300 / 300' },
+      { type: 'rect', x: 440, y: 345, width: 130, height: 40, fill: '#0f172a', stroke: '#22c55e', label: '700 / 700' },
+      { type: 'rect', x: 580, y: 345, width: 130, height: 40, fill: '#0f172a', stroke: '#22c55e', label: '200 / 200' },
+    ],
+  },
+  // ===== ANALYTICS - HEAT MAP =====
+  {
+    id: 'heat-map',
+    name: 'Heat Map',
+    category: 'analytics',
+    description: 'Data visualization grid with gradient coloring and annotations',
+    icon: '🌡',
+    shapes: [
+      { type: 'banner', x: 200, y: 10, width: 360, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Website Traffic Heat Map' },
+      // Column headers (hours)
+      { type: 'text', x: 130, y: 55, width: 40, height: 16, fill: 'transparent', stroke: 'transparent', label: '6AM' },
+      { type: 'text', x: 200, y: 55, width: 40, height: 16, fill: 'transparent', stroke: 'transparent', label: '9AM' },
+      { type: 'text', x: 270, y: 55, width: 40, height: 16, fill: 'transparent', stroke: 'transparent', label: '12PM' },
+      { type: 'text', x: 340, y: 55, width: 40, height: 16, fill: 'transparent', stroke: 'transparent', label: '3PM' },
+      { type: 'text', x: 410, y: 55, width: 40, height: 16, fill: 'transparent', stroke: 'transparent', label: '6PM' },
+      { type: 'text', x: 480, y: 55, width: 40, height: 16, fill: 'transparent', stroke: 'transparent', label: '9PM' },
+      { type: 'text', x: 550, y: 55, width: 40, height: 16, fill: 'transparent', stroke: 'transparent', label: '12AM' },
+      // Row headers (days)
+      { type: 'text', x: 40, y: 80, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Mon' },
+      { type: 'text', x: 40, y: 130, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Tue' },
+      { type: 'text', x: 40, y: 180, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Wed' },
+      { type: 'text', x: 40, y: 230, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Thu' },
+      { type: 'text', x: 40, y: 280, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Fri' },
+      { type: 'text', x: 40, y: 330, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Sat' },
+      { type: 'text', x: 40, y: 380, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Sun' },
+      // Mon row - low morning, high midday, medium evening
+      { type: 'rect', x: 120, y: 75, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '120' },
+      { type: 'rect', x: 190, y: 75, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '340' },
+      { type: 'rect', x: 260, y: 75, width: 60, height: 40, fill: '#4d7c0f', stroke: '#1e293b', label: '890' },
+      { type: 'rect', x: 330, y: 75, width: 60, height: 40, fill: '#65a30d', stroke: '#1e293b', label: '1.2K' },
+      { type: 'rect', x: 400, y: 75, width: 60, height: 40, fill: '#84cc16', stroke: '#1e293b', label: '1.5K' },
+      { type: 'rect', x: 470, y: 75, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '450' },
+      { type: 'rect', x: 540, y: 75, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '80' },
+      // Tue row
+      { type: 'rect', x: 120, y: 125, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '150' },
+      { type: 'rect', x: 190, y: 125, width: 60, height: 40, fill: '#4d7c0f', stroke: '#1e293b', label: '560' },
+      { type: 'rect', x: 260, y: 125, width: 60, height: 40, fill: '#65a30d', stroke: '#1e293b', label: '1.1K' },
+      { type: 'rect', x: 330, y: 125, width: 60, height: 40, fill: '#84cc16', stroke: '#1e293b', label: '1.4K' },
+      { type: 'rect', x: 400, y: 125, width: 60, height: 40, fill: '#a3e635', stroke: '#1e293b', label: '1.8K' },
+      { type: 'rect', x: 470, y: 125, width: 60, height: 40, fill: '#4d7c0f', stroke: '#1e293b', label: '620' },
+      { type: 'rect', x: 540, y: 125, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '95' },
+      // Wed row (peak day)
+      { type: 'rect', x: 120, y: 175, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '200' },
+      { type: 'rect', x: 190, y: 175, width: 60, height: 40, fill: '#65a30d', stroke: '#1e293b', label: '780' },
+      { type: 'rect', x: 260, y: 175, width: 60, height: 40, fill: '#a3e635', stroke: '#1e293b', label: '2.1K' },
+      { type: 'rect', x: 330, y: 175, width: 60, height: 40, fill: '#d9f99d', stroke: '#1e293b', label: '2.5K' },
+      { type: 'rect', x: 400, y: 175, width: 60, height: 40, fill: '#a3e635', stroke: '#1e293b', label: '1.9K' },
+      { type: 'rect', x: 470, y: 175, width: 60, height: 40, fill: '#4d7c0f', stroke: '#1e293b', label: '700' },
+      { type: 'rect', x: 540, y: 175, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '110' },
+      // Thu row
+      { type: 'rect', x: 120, y: 225, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '130' },
+      { type: 'rect', x: 190, y: 225, width: 60, height: 40, fill: '#4d7c0f', stroke: '#1e293b', label: '520' },
+      { type: 'rect', x: 260, y: 225, width: 60, height: 40, fill: '#65a30d', stroke: '#1e293b', label: '1.0K' },
+      { type: 'rect', x: 330, y: 225, width: 60, height: 40, fill: '#84cc16', stroke: '#1e293b', label: '1.3K' },
+      { type: 'rect', x: 400, y: 225, width: 60, height: 40, fill: '#84cc16', stroke: '#1e293b', label: '1.6K' },
+      { type: 'rect', x: 470, y: 225, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '480' },
+      { type: 'rect', x: 540, y: 225, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '75' },
+      // Fri row
+      { type: 'rect', x: 120, y: 275, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '100' },
+      { type: 'rect', x: 190, y: 275, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '400' },
+      { type: 'rect', x: 260, y: 275, width: 60, height: 40, fill: '#4d7c0f', stroke: '#1e293b', label: '750' },
+      { type: 'rect', x: 330, y: 275, width: 60, height: 40, fill: '#65a30d', stroke: '#1e293b', label: '1.0K' },
+      { type: 'rect', x: 400, y: 275, width: 60, height: 40, fill: '#65a30d', stroke: '#1e293b', label: '1.1K' },
+      { type: 'rect', x: 470, y: 275, width: 60, height: 40, fill: '#4d7c0f', stroke: '#1e293b', label: '580' },
+      { type: 'rect', x: 540, y: 275, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '130' },
+      // Sat row (low)
+      { type: 'rect', x: 120, y: 325, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '60' },
+      { type: 'rect', x: 190, y: 325, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '180' },
+      { type: 'rect', x: 260, y: 325, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '320' },
+      { type: 'rect', x: 330, y: 325, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '290' },
+      { type: 'rect', x: 400, y: 325, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '350' },
+      { type: 'rect', x: 470, y: 325, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '410' },
+      { type: 'rect', x: 540, y: 325, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '160' },
+      // Sun row (low)
+      { type: 'rect', x: 120, y: 375, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '45' },
+      { type: 'rect', x: 190, y: 375, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '150' },
+      { type: 'rect', x: 260, y: 375, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '220' },
+      { type: 'rect', x: 330, y: 375, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '260' },
+      { type: 'rect', x: 400, y: 375, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '310' },
+      { type: 'rect', x: 470, y: 375, width: 60, height: 40, fill: '#365314', stroke: '#1e293b', label: '380' },
+      { type: 'rect', x: 540, y: 375, width: 60, height: 40, fill: '#1a2e05', stroke: '#1e293b', label: '140' },
+      // Legend gradient
+      { type: 'text', x: 120, y: 430, width: 50, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Low' },
+      { type: 'rect', x: 170, y: 428, width: 50, height: 18, fill: '#1a2e05', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 220, y: 428, width: 50, height: 18, fill: '#365314', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 270, y: 428, width: 50, height: 18, fill: '#4d7c0f', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 320, y: 428, width: 50, height: 18, fill: '#65a30d', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 370, y: 428, width: 50, height: 18, fill: '#84cc16', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 420, y: 428, width: 50, height: 18, fill: '#a3e635', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 470, y: 428, width: 50, height: 18, fill: '#d9f99d', stroke: '#1e293b', label: '' },
+      { type: 'text', x: 530, y: 430, width: 50, height: 14, fill: 'transparent', stroke: 'transparent', label: 'High' },
+    ],
+  },
+  // ===== STRATEGY - ICEBERG MODEL =====
+  {
+    id: 'iceberg-model',
+    name: 'Iceberg Model',
+    category: 'strategy',
+    description: 'Events above waterline, patterns/structures/mental models below',
+    icon: '🧊',
+    shapes: [
+      { type: 'banner', x: 220, y: 10, width: 360, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Iceberg Model - Systems Thinking' },
+      // Sky background
+      { type: 'rect', x: 100, y: 60, width: 600, height: 80, fill: '#0c4a6e', stroke: '#0284c7', label: '' },
+      // Tip of iceberg (above water)
+      { type: 'triangle', x: 300, y: 65, width: 200, height: 70, fill: '#e0f2fe', stroke: '#7dd3fc', label: '' },
+      { type: 'text', x: 340, y: 85, width: 120, height: 20, fill: 'transparent', stroke: 'transparent', label: 'EVENTS' },
+      { type: 'text', x: 310, y: 105, width: 180, height: 14, fill: 'transparent', stroke: 'transparent', label: 'What happened?' },
+      // Waterline
+      { type: 'line', x: 100, y: 140, width: 600, height: 3, fill: '#38bdf8', stroke: '#38bdf8', label: '' },
+      { type: 'text', x: 620, y: 128, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Waterline' },
+      // Below water - gradient layers
+      // Layer 1: Patterns/Trends
+      { type: 'rect', x: 180, y: 150, width: 440, height: 80, fill: '#0c4a6e', stroke: '#0369a1', label: '' },
+      { type: 'rect', x: 200, y: 158, width: 400, height: 62, fill: '#0e7490', stroke: '#06b6d4', label: 'PATTERNS / TRENDS\nWhat has been happening over time?\nRecurring events, trends, data patterns' },
+      // Layer 2: Underlying Structures
+      { type: 'rect', x: 160, y: 240, width: 480, height: 80, fill: '#164e63', stroke: '#155e75', label: '' },
+      { type: 'rect', x: 180, y: 248, width: 440, height: 62, fill: '#1e3a5f', stroke: '#2563eb', label: 'UNDERLYING STRUCTURES\nWhat is causing the patterns?\nPolicies, power dynamics, incentives' },
+      // Layer 3: Mental Models
+      { type: 'rect', x: 140, y: 330, width: 520, height: 80, fill: '#1e293b', stroke: '#334155', label: '' },
+      { type: 'rect', x: 160, y: 338, width: 480, height: 62, fill: '#312e81', stroke: '#4338ca', label: 'MENTAL MODELS\nWhat assumptions/beliefs shape the system?\nValues, beliefs, worldviews, paradigms' },
+      // Depth arrows
+      { type: 'arrow', x: 120, y: 160, width: 10, height: 240, fill: '#38bdf8', stroke: '#38bdf8', label: '' },
+      { type: 'text', x: 60, y: 260, width: 50, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Depth' },
+      // Leverage labels
+      { type: 'text', x: 640, y: 170, width: 100, height: 14, fill: 'transparent', stroke: 'transparent', label: 'React' },
+      { type: 'text', x: 640, y: 260, width: 100, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Anticipate' },
+      { type: 'text', x: 640, y: 350, width: 100, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Design' },
+      { type: 'text', x: 640, y: 370, width: 100, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Transform' },
+    ],
+  },
+  // ===== STRATEGY - CUSTOMER VOICE (VOC) LISTENING =====
+  {
+    id: 'voc-listening',
+    name: 'Customer Voice (VOC)',
+    category: 'strategy',
+    description: 'Central customer with feedback channels, sentiment, and insights',
+    icon: '🎤',
+    shapes: [
+      { type: 'banner', x: 200, y: 10, width: 400, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Voice of Customer (VOC) Listening' },
+      // Central customer icon
+      { type: 'ellipse', x: 320, y: 180, width: 120, height: 120, fill: '#7c3aed', stroke: '#6d28d9', label: 'CUSTOMER\nVoice' },
+      // Feedback channels radiating outward
+      { type: 'rect', x: 80, y: 70, width: 140, height: 55, fill: '#14532d', stroke: '#22c55e', label: 'Surveys\nNPS: 72' },
+      { type: 'rect', x: 560, y: 70, width: 140, height: 55, fill: '#422006', stroke: '#f59e0b', label: 'Social Media\nSentiment: Mixed' },
+      { type: 'rect', x: 40, y: 210, width: 140, height: 55, fill: '#450a0a', stroke: '#ef4444', label: 'Complaints\n156 open tickets' },
+      { type: 'rect', x: 600, y: 210, width: 140, height: 55, fill: '#14532d', stroke: '#22c55e', label: 'Interviews\n24 completed' },
+      { type: 'rect', x: 80, y: 350, width: 140, height: 55, fill: '#1e3a5f', stroke: '#2563eb', label: 'Support Calls\nCSAT: 4.2/5' },
+      { type: 'rect', x: 560, y: 350, width: 140, height: 55, fill: '#312e81', stroke: '#8b5cf6', label: 'Reviews\n4.1 stars avg' },
+      // Connecting lines
+      { type: 'arrow', x: 220, y: 97, width: 100, height: 10, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 440, y: 97, width: 120, height: 10, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 180, y: 237, width: 140, height: 10, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 440, y: 237, width: 160, height: 10, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 220, y: 377, width: 100, height: 10, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 440, y: 377, width: 120, height: 10, fill: '#64748b', stroke: '#64748b', label: '' },
+      // Priority matrix (bottom)
+      { type: 'text', x: 180, y: 440, width: 200, height: 18, fill: 'transparent', stroke: 'transparent', label: 'Priority Matrix' },
+      { type: 'rect', x: 180, y: 465, width: 140, height: 40, fill: '#450a0a', stroke: '#ef4444', label: 'P1: Response Time' },
+      { type: 'rect', x: 330, y: 465, width: 140, height: 40, fill: '#422006', stroke: '#f59e0b', label: 'P2: UI Refresh' },
+      { type: 'rect', x: 480, y: 465, width: 140, height: 40, fill: '#14532d', stroke: '#22c55e', label: 'P3: New Features' },
+      // Actionable insights panel
+      { type: 'rect', x: 180, y: 520, width: 440, height: 50, fill: '#1e293b', stroke: '#2563eb', label: 'Key Insight: 68% of complaints relate to response time.\nAction: Implement AI chatbot + hire 5 support agents' },
+    ],
+  },
+  // ===== STRATEGY - CONTINUAL IMPROVEMENT WHIRLPOOL =====
+  {
+    id: 'improvement-whirlpool',
+    name: 'Improvement Whirlpool',
+    category: 'strategy',
+    description: 'PDCA spiral with concentric maturity rings showing continuous flow',
+    icon: '🌀',
+    shapes: [
+      { type: 'banner', x: 180, y: 10, width: 440, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Continual Improvement Whirlpool' },
+      // Outermost ring - Level 1 (Initial)
+      { type: 'ellipse', x: 160, y: 70, width: 480, height: 400, fill: '#0f172a', stroke: '#334155', label: '' },
+      { type: 'text', x: 160, y: 80, width: 120, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Level 1: Initial' },
+      // Ring 2 - Managed
+      { type: 'ellipse', x: 210, y: 110, width: 380, height: 320, fill: '#1e293b', stroke: '#475569', label: '' },
+      { type: 'text', x: 215, y: 120, width: 120, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Level 2: Managed' },
+      // Ring 3 - Defined
+      { type: 'ellipse', x: 260, y: 150, width: 280, height: 240, fill: '#1e3a5f', stroke: '#2563eb', label: '' },
+      { type: 'text', x: 265, y: 160, width: 120, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Level 3: Defined' },
+      // Ring 4 - Optimized (center)
+      { type: 'ellipse', x: 320, y: 200, width: 160, height: 140, fill: '#312e81', stroke: '#7c3aed', label: '' },
+      { type: 'text', x: 340, y: 250, width: 120, height: 20, fill: 'transparent', stroke: 'transparent', label: 'Level 4:\nOptimized' },
+      // PDCA cycle labels on outer ring
+      { type: 'rect', x: 530, y: 120, width: 100, height: 45, fill: '#2563eb', stroke: '#1d4ed8', label: 'PLAN\nCycle 1' },
+      { type: 'rect', x: 600, y: 240, width: 100, height: 45, fill: '#22c55e', stroke: '#16a34a', label: 'DO\nCycle 1' },
+      { type: 'rect', x: 530, y: 370, width: 100, height: 45, fill: '#f59e0b', stroke: '#d97706', label: 'CHECK\nCycle 1' },
+      { type: 'rect', x: 100, y: 370, width: 100, height: 45, fill: '#ef4444', stroke: '#dc2626', label: 'ACT\nCycle 1' },
+      // PDCA cycle 2 (inner)
+      { type: 'rect', x: 460, y: 160, width: 80, height: 35, fill: '#3b82f6', stroke: '#2563eb', label: 'PLAN 2' },
+      { type: 'rect', x: 500, y: 260, width: 80, height: 35, fill: '#4ade80', stroke: '#22c55e', label: 'DO 2' },
+      { type: 'rect', x: 460, y: 340, width: 80, height: 35, fill: '#fbbf24', stroke: '#f59e0b', label: 'CHECK 2' },
+      { type: 'rect', x: 175, y: 340, width: 80, height: 35, fill: '#f87171', stroke: '#ef4444', label: 'ACT 2' },
+      // Flow arrows (clockwise spiral)
+      { type: 'arrow', x: 580, y: 165, width: 20, height: 75, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 580, y: 285, width: 10, height: 85, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 200, y: 395, width: 330, height: 10, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 150, y: 165, width: 10, height: 205, fill: '#64748b', stroke: '#64748b', label: '' },
+      // Center star (excellence)
+      { type: 'star', x: 370, y: 240, width: 60, height: 55, fill: '#fbbf24', stroke: '#f59e0b', label: '' },
+      // Bottom legend
+      { type: 'text', x: 200, y: 490, width: 400, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Each cycle tightens toward operational excellence' },
+    ],
+  },
+  // ===== STRATEGY - KANO MODEL =====
+  {
+    id: 'kano-model',
+    name: 'Kano Model',
+    category: 'strategy',
+    description: 'Customer satisfaction vs feature implementation with Delighter/Performance/Must-Be curves',
+    icon: '📈',
+    shapes: [
+      { type: 'banner', x: 220, y: 10, width: 360, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Kano Model Analysis' },
+      // Y-axis (Satisfaction)
+      { type: 'line', x: 350, y: 70, width: 2, height: 380, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'text', x: 280, y: 70, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Satisfied' },
+      { type: 'text', x: 270, y: 435, width: 70, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Dissatisfied' },
+      { type: 'arrow', x: 350, y: 70, width: 10, height: 5, fill: '#64748b', stroke: '#64748b', label: '' },
+      // X-axis (Implementation)
+      { type: 'line', x: 100, y: 260, width: 600, height: 2, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'text', x: 100, y: 268, width: 100, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Not Implemented' },
+      { type: 'text', x: 600, y: 268, width: 100, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Fully Done' },
+      // Delighters/Exciters curve (top-right, exponential)
+      { type: 'ellipse', x: 380, y: 105, width: 30, height: 30, fill: '#7c3aed', stroke: '#6d28d9', label: '' },
+      { type: 'ellipse', x: 430, y: 120, width: 30, height: 30, fill: '#7c3aed', stroke: '#6d28d9', label: '' },
+      { type: 'ellipse', x: 480, y: 140, width: 30, height: 30, fill: '#7c3aed', stroke: '#6d28d9', label: '' },
+      { type: 'ellipse', x: 530, y: 170, width: 30, height: 30, fill: '#7c3aed', stroke: '#6d28d9', label: '' },
+      { type: 'ellipse', x: 570, y: 210, width: 30, height: 30, fill: '#7c3aed', stroke: '#6d28d9', label: '' },
+      { type: 'ellipse', x: 600, y: 240, width: 30, height: 30, fill: '#7c3aed', stroke: '#6d28d9', label: '' },
+      { type: 'text', x: 550, y: 90, width: 120, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Delighters' },
+      { type: 'rect', x: 530, y: 108, width: 100, height: 28, fill: '#312e81', stroke: '#7c3aed', label: 'WOW features' },
+      // Performance/Linear curve (diagonal)
+      { type: 'ellipse', x: 180, y: 370, width: 25, height: 25, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 250, y: 330, width: 25, height: 25, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 340, y: 260, width: 25, height: 25, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 430, y: 190, width: 25, height: 25, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 520, y: 140, width: 25, height: 25, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 600, y: 100, width: 25, height: 25, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'text', x: 620, y: 160, width: 100, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Performance' },
+      // Must-Be/Basic curve (bottom, logarithmic)
+      { type: 'ellipse', x: 160, y: 400, width: 25, height: 25, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'ellipse', x: 230, y: 370, width: 25, height: 25, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'ellipse', x: 310, y: 320, width: 25, height: 25, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'ellipse', x: 400, y: 290, width: 25, height: 25, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'ellipse', x: 500, y: 270, width: 25, height: 25, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'ellipse', x: 600, y: 260, width: 25, height: 25, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'text', x: 620, y: 290, width: 100, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Must-Be' },
+      { type: 'rect', x: 620, y: 308, width: 100, height: 28, fill: '#450a0a', stroke: '#ef4444', label: 'Expected basics' },
+      // Indifferent line (horizontal near center)
+      { type: 'line', x: 200, y: 255, width: 400, height: 2, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'text', x: 620, y: 248, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Indifferent' },
+    ],
+  },
+  // ===== STRATEGY - STAKEHOLDER MAP =====
+  {
+    id: 'stakeholder-map',
+    name: 'Stakeholder Map',
+    category: 'strategy',
+    description: 'Power/Interest matrix with 4 quadrants and positioned stakeholders',
+    icon: '👥',
+    shapes: [
+      { type: 'banner', x: 200, y: 10, width: 400, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Stakeholder Map - Power vs Interest' },
+      // Axes
+      { type: 'line', x: 140, y: 60, width: 2, height: 400, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'line', x: 140, y: 460, width: 560, height: 2, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'text', x: 60, y: 60, width: 70, height: 16, fill: 'transparent', stroke: 'transparent', label: 'High Power' },
+      { type: 'text', x: 60, y: 450, width: 70, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Low Power' },
+      { type: 'text', x: 150, y: 470, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'Low Interest' },
+      { type: 'text', x: 610, y: 470, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'High Interest' },
+      // Midlines
+      { type: 'line', x: 140, y: 260, width: 560, height: 1, fill: '#334155', stroke: '#334155', label: '' },
+      { type: 'line', x: 420, y: 60, width: 1, height: 400, fill: '#334155', stroke: '#334155', label: '' },
+      // Quadrant labels
+      { type: 'rect', x: 150, y: 70, width: 260, height: 35, fill: '#422006', stroke: '#f59e0b', label: 'Keep Satisfied' },
+      { type: 'rect', x: 430, y: 70, width: 260, height: 35, fill: '#450a0a', stroke: '#ef4444', label: 'Manage Closely' },
+      { type: 'rect', x: 150, y: 270, width: 260, height: 35, fill: '#1e293b', stroke: '#475569', label: 'Monitor' },
+      { type: 'rect', x: 430, y: 270, width: 260, height: 35, fill: '#14532d', stroke: '#22c55e', label: 'Keep Informed' },
+      // Stakeholders in "Manage Closely" (high power, high interest)
+      { type: 'ellipse', x: 470, y: 130, width: 100, height: 45, fill: '#ef4444', stroke: '#dc2626', label: 'CEO' },
+      { type: 'ellipse', x: 600, y: 150, width: 100, height: 45, fill: '#ef4444', stroke: '#dc2626', label: 'Board' },
+      { type: 'ellipse', x: 530, y: 190, width: 100, height: 45, fill: '#f87171', stroke: '#ef4444', label: 'Key Client' },
+      // Stakeholders in "Keep Satisfied" (high power, low interest)
+      { type: 'ellipse', x: 200, y: 140, width: 100, height: 45, fill: '#f59e0b', stroke: '#d97706', label: 'Regulator' },
+      { type: 'ellipse', x: 320, y: 170, width: 100, height: 45, fill: '#fbbf24', stroke: '#f59e0b', label: 'Legal' },
+      // Stakeholders in "Keep Informed" (low power, high interest)
+      { type: 'ellipse', x: 480, y: 330, width: 100, height: 45, fill: '#22c55e', stroke: '#16a34a', label: 'Dev Team' },
+      { type: 'ellipse', x: 620, y: 360, width: 100, height: 45, fill: '#4ade80', stroke: '#22c55e', label: 'Users' },
+      { type: 'ellipse', x: 520, y: 400, width: 100, height: 45, fill: '#22c55e', stroke: '#16a34a', label: 'Partners' },
+      // Stakeholders in "Monitor" (low power, low interest)
+      { type: 'ellipse', x: 200, y: 340, width: 100, height: 45, fill: '#64748b', stroke: '#475569', label: 'Media' },
+      { type: 'ellipse', x: 310, y: 390, width: 100, height: 45, fill: '#64748b', stroke: '#475569', label: 'Community' },
+    ],
+  },
+  // ===== STRATEGY - PORTER'S VALUE CHAIN =====
+  {
+    id: 'porters-value-chain',
+    name: "Porter's Value Chain",
+    category: 'strategy',
+    description: 'Primary and support activities in arrow-shaped diagram',
+    icon: '⛓',
+    shapes: [
+      { type: 'banner', x: 180, y: 10, width: 440, height: 40, fill: '#1e293b', stroke: '#334155', label: "Porter's Value Chain Analysis" },
+      // Support activities (top rows)
+      { type: 'rect', x: 40, y: 65, width: 620, height: 50, fill: '#312e81', stroke: '#4338ca', label: 'Firm Infrastructure: General mgmt, planning, finance, legal, quality mgmt' },
+      { type: 'rect', x: 40, y: 125, width: 620, height: 50, fill: '#1e3a5f', stroke: '#2563eb', label: 'Human Resource Management: Recruiting, training, development, compensation' },
+      { type: 'rect', x: 40, y: 185, width: 620, height: 50, fill: '#164e63', stroke: '#0891b2', label: 'Technology Development: R&D, process automation, design, IT systems' },
+      { type: 'rect', x: 40, y: 245, width: 620, height: 50, fill: '#14532d', stroke: '#22c55e', label: 'Procurement: Purchasing, supplier management, vendor relations' },
+      // Support label
+      { type: 'text', x: 670, y: 65, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'SUPPORT' },
+      { type: 'text', x: 670, y: 85, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'ACTIVITIES' },
+      // Primary activities (bottom row - arrow shaped)
+      { type: 'rect', x: 40, y: 310, width: 130, height: 100, fill: '#0891b2', stroke: '#06b6d4', label: 'Inbound\nLogistics\n\nReceiving\nWarehousing\nInventory' },
+      { type: 'rect', x: 180, y: 310, width: 130, height: 100, fill: '#2563eb', stroke: '#3b82f6', label: 'Operations\n\nManufacturing\nPackaging\nAssembly\nTesting' },
+      { type: 'rect', x: 320, y: 310, width: 130, height: 100, fill: '#7c3aed', stroke: '#8b5cf6', label: 'Outbound\nLogistics\n\nDistribution\nDelivery\nScheduling' },
+      { type: 'rect', x: 460, y: 310, width: 130, height: 100, fill: '#dc2626', stroke: '#ef4444', label: 'Marketing\n& Sales\n\nAdvertising\nPromotion\nPricing' },
+      { type: 'rect', x: 600, y: 310, width: 130, height: 100, fill: '#d97706', stroke: '#f59e0b', label: 'Service\n\nInstallation\nRepair\nTraining\nSupport' },
+      // Arrow tip (margin)
+      { type: 'blockArrow', x: 740, y: 65, width: 80, height: 345, fill: '#22c55e', stroke: '#16a34a', label: '' },
+      { type: 'text', x: 750, y: 210, width: 60, height: 40, fill: 'transparent', stroke: 'transparent', label: 'M\nA\nR\nG\nI\nN' },
+      // Primary label
+      { type: 'text', x: 300, y: 420, width: 200, height: 16, fill: 'transparent', stroke: 'transparent', label: 'PRIMARY ACTIVITIES' },
+      // Flow arrows between primary
+      { type: 'arrow', x: 170, y: 360, width: 10, height: 5, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 310, y: 360, width: 10, height: 5, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 450, y: 360, width: 10, height: 5, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'arrow', x: 590, y: 360, width: 10, height: 5, fill: '#64748b', stroke: '#64748b', label: '' },
+    ],
+  },
+  // ===== AGILE - SPRINT BOARD =====
+  {
+    id: 'sprint-board',
+    name: 'Sprint Board',
+    category: 'agile',
+    description: 'Kanban columns with story cards, points, assignees, priorities',
+    icon: '🏃',
+    shapes: [
+      { type: 'banner', x: 180, y: 10, width: 440, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Sprint 14 Board - Team Alpha' },
+      // Column headers
+      { type: 'rect', x: 20, y: 60, width: 150, height: 35, fill: '#475569', stroke: '#64748b', label: 'Backlog (5)' },
+      { type: 'rect', x: 180, y: 60, width: 150, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'To Do (3)' },
+      { type: 'rect', x: 340, y: 60, width: 150, height: 35, fill: '#422006', stroke: '#f59e0b', label: 'In Progress (2)' },
+      { type: 'rect', x: 500, y: 60, width: 150, height: 35, fill: '#312e81', stroke: '#8b5cf6', label: 'Review (2)' },
+      { type: 'rect', x: 660, y: 60, width: 150, height: 35, fill: '#14532d', stroke: '#22c55e', label: 'Done (4)' },
+      // Column backgrounds
+      { type: 'rect', x: 20, y: 100, width: 150, height: 380, fill: '#0f172a', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 180, y: 100, width: 150, height: 380, fill: '#0f172a', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 340, y: 100, width: 150, height: 380, fill: '#0f172a', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 500, y: 100, width: 150, height: 380, fill: '#0f172a', stroke: '#1e293b', label: '' },
+      { type: 'rect', x: 660, y: 100, width: 150, height: 380, fill: '#0f172a', stroke: '#1e293b', label: '' },
+      // Backlog cards
+      { type: 'rect', x: 28, y: 108, width: 134, height: 65, fill: '#1e293b', stroke: '#475569', label: 'API pagination\n3 pts - Low\nUnassigned' },
+      { type: 'rect', x: 28, y: 183, width: 134, height: 65, fill: '#1e293b', stroke: '#475569', label: 'Error logging\n2 pts - Med\nUnassigned' },
+      { type: 'rect', x: 28, y: 258, width: 134, height: 65, fill: '#1e293b', stroke: '#475569', label: 'Cache layer\n5 pts - Low\nUnassigned' },
+      // To Do cards
+      { type: 'rect', x: 188, y: 108, width: 134, height: 65, fill: '#1e293b', stroke: '#2563eb', label: 'Auth flow\n5 pts - High\nAlice' },
+      { type: 'ellipse', x: 296, y: 155, width: 22, height: 22, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'rect', x: 188, y: 183, width: 134, height: 65, fill: '#1e293b', stroke: '#2563eb', label: 'DB migration\n3 pts - Med\nBob' },
+      { type: 'rect', x: 188, y: 258, width: 134, height: 65, fill: '#1e293b', stroke: '#2563eb', label: 'Search index\n8 pts - High\nCarol' },
+      { type: 'ellipse', x: 296, y: 305, width: 22, height: 22, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      // In Progress cards
+      { type: 'rect', x: 348, y: 108, width: 134, height: 65, fill: '#1e293b', stroke: '#f59e0b', label: 'Dashboard UI\n5 pts - High\nDave' },
+      { type: 'ellipse', x: 456, y: 155, width: 22, height: 22, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'rect', x: 348, y: 183, width: 134, height: 65, fill: '#1e293b', stroke: '#f59e0b', label: 'Email service\n3 pts - Med\nEve' },
+      // Review cards
+      { type: 'rect', x: 508, y: 108, width: 134, height: 65, fill: '#1e293b', stroke: '#8b5cf6', label: 'User profile\n3 pts - Med\nAlice' },
+      { type: 'rect', x: 508, y: 183, width: 134, height: 65, fill: '#1e293b', stroke: '#8b5cf6', label: 'Unit tests\n2 pts - Low\nBob' },
+      // Done cards
+      { type: 'rect', x: 668, y: 108, width: 134, height: 65, fill: '#1e293b', stroke: '#22c55e', label: 'Login page\n3 pts\nDave' },
+      { type: 'rect', x: 668, y: 183, width: 134, height: 65, fill: '#1e293b', stroke: '#22c55e', label: 'CI pipeline\n5 pts\nCarol' },
+      { type: 'rect', x: 668, y: 258, width: 134, height: 65, fill: '#1e293b', stroke: '#22c55e', label: 'Signup form\n2 pts\nEve' },
+      { type: 'rect', x: 668, y: 333, width: 134, height: 65, fill: '#1e293b', stroke: '#22c55e', label: 'API docs\n1 pt\nAlice' },
+      // Sprint stats bar
+      { type: 'rect', x: 20, y: 490, width: 790, height: 30, fill: '#1e293b', stroke: '#334155', label: 'Sprint 14  |  Velocity: 35 pts  |  Committed: 40 pts  |  Done: 11 pts  |  5 days remaining' },
+    ],
+  },
+  // ===== AGILE - BURNDOWN CHART =====
+  {
+    id: 'burndown-chart',
+    name: 'Burndown Chart',
+    category: 'agile',
+    description: 'Sprint timeline with ideal and actual progress lines, scope changes',
+    icon: '📉',
+    shapes: [
+      { type: 'banner', x: 200, y: 10, width: 400, height: 40, fill: '#1e293b', stroke: '#334155', label: 'Sprint 14 Burndown Chart' },
+      // Y-axis
+      { type: 'line', x: 100, y: 70, width: 2, height: 340, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'text', x: 30, y: 65, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: '40 pts' },
+      { type: 'text', x: 30, y: 135, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: '30 pts' },
+      { type: 'text', x: 30, y: 205, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: '20 pts' },
+      { type: 'text', x: 30, y: 275, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: '10 pts' },
+      { type: 'text', x: 30, y: 345, width: 60, height: 16, fill: 'transparent', stroke: 'transparent', label: '0 pts' },
+      // Grid lines
+      { type: 'line', x: 100, y: 75, width: 600, height: 1, fill: '#1e293b', stroke: '#1e293b', label: '' },
+      { type: 'line', x: 100, y: 145, width: 600, height: 1, fill: '#1e293b', stroke: '#1e293b', label: '' },
+      { type: 'line', x: 100, y: 215, width: 600, height: 1, fill: '#1e293b', stroke: '#1e293b', label: '' },
+      { type: 'line', x: 100, y: 285, width: 600, height: 1, fill: '#1e293b', stroke: '#1e293b', label: '' },
+      // X-axis
+      { type: 'line', x: 100, y: 355, width: 600, height: 2, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'text', x: 100, y: 365, width: 40, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Day 1' },
+      { type: 'text', x: 160, y: 365, width: 40, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Day 2' },
+      { type: 'text', x: 220, y: 365, width: 40, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Day 3' },
+      { type: 'text', x: 280, y: 365, width: 40, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Day 4' },
+      { type: 'text', x: 340, y: 365, width: 40, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Day 5' },
+      { type: 'text', x: 400, y: 365, width: 40, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Day 6' },
+      { type: 'text', x: 460, y: 365, width: 40, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Day 7' },
+      { type: 'text', x: 520, y: 365, width: 40, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Day 8' },
+      { type: 'text', x: 580, y: 365, width: 40, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Day 9' },
+      { type: 'text', x: 640, y: 365, width: 40, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Day 10' },
+      // Ideal line (diagonal from 40pts to 0) - dashed represented as dots
+      { type: 'ellipse', x: 100, y: 72, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'ellipse', x: 160, y: 100, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'ellipse', x: 220, y: 128, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'ellipse', x: 280, y: 156, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'ellipse', x: 340, y: 184, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'ellipse', x: 400, y: 212, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'ellipse', x: 460, y: 240, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'ellipse', x: 520, y: 268, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'ellipse', x: 580, y: 296, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'ellipse', x: 640, y: 324, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'ellipse', x: 700, y: 352, width: 8, height: 8, fill: '#64748b', stroke: '#64748b', label: '' },
+      // Actual line (blue, behind schedule)
+      { type: 'ellipse', x: 100, y: 72, width: 12, height: 12, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 160, y: 85, width: 12, height: 12, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 220, y: 105, width: 12, height: 12, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 280, y: 140, width: 12, height: 12, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 340, y: 155, width: 12, height: 12, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 400, y: 180, width: 12, height: 12, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'ellipse', x: 460, y: 200, width: 12, height: 12, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      // Connecting lines for actual
+      { type: 'line', x: 106, y: 78, width: 54, height: 2, fill: '#2563eb', stroke: '#2563eb', label: '' },
+      { type: 'line', x: 166, y: 91, width: 54, height: 2, fill: '#2563eb', stroke: '#2563eb', label: '' },
+      { type: 'line', x: 226, y: 111, width: 54, height: 2, fill: '#2563eb', stroke: '#2563eb', label: '' },
+      { type: 'line', x: 286, y: 146, width: 54, height: 2, fill: '#2563eb', stroke: '#2563eb', label: '' },
+      { type: 'line', x: 346, y: 161, width: 54, height: 2, fill: '#2563eb', stroke: '#2563eb', label: '' },
+      { type: 'line', x: 406, y: 186, width: 54, height: 2, fill: '#2563eb', stroke: '#2563eb', label: '' },
+      // Scope change indicator
+      { type: 'star', x: 270, y: 118, width: 20, height: 20, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'text', x: 240, y: 98, width: 100, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Scope +5pts' },
+      // Legend
+      { type: 'line', x: 120, y: 400, width: 40, height: 2, fill: '#64748b', stroke: '#64748b', label: '' },
+      { type: 'text', x: 165, y: 395, width: 60, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Ideal' },
+      { type: 'line', x: 240, y: 400, width: 40, height: 2, fill: '#2563eb', stroke: '#2563eb', label: '' },
+      { type: 'text', x: 285, y: 395, width: 60, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Actual' },
+      { type: 'star', x: 370, y: 394, width: 14, height: 14, fill: '#ef4444', stroke: '#dc2626', label: '' },
+      { type: 'text', x: 390, y: 395, width: 80, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Scope Change' },
+    ],
+  },
+  // ===== AGILE - USER STORY MAP =====
+  {
+    id: 'user-story-map',
+    name: 'User Story Map',
+    category: 'agile',
+    description: 'Backbone activities, walking skeleton, releases as swim lanes',
+    icon: '🗺',
+    shapes: [
+      { type: 'banner', x: 180, y: 10, width: 440, height: 40, fill: '#1e293b', stroke: '#334155', label: 'User Story Map - E-Commerce App' },
+      // Backbone (user activities across top)
+      { type: 'text', x: 20, y: 55, width: 80, height: 16, fill: 'transparent', stroke: 'transparent', label: 'BACKBONE' },
+      { type: 'rect', x: 20, y: 75, width: 150, height: 45, fill: '#7c3aed', stroke: '#6d28d9', label: 'Browse Products' },
+      { type: 'rect', x: 180, y: 75, width: 150, height: 45, fill: '#7c3aed', stroke: '#6d28d9', label: 'Search & Filter' },
+      { type: 'rect', x: 340, y: 75, width: 150, height: 45, fill: '#7c3aed', stroke: '#6d28d9', label: 'Add to Cart' },
+      { type: 'rect', x: 500, y: 75, width: 150, height: 45, fill: '#7c3aed', stroke: '#6d28d9', label: 'Checkout' },
+      { type: 'rect', x: 660, y: 75, width: 150, height: 45, fill: '#7c3aed', stroke: '#6d28d9', label: 'Post-Purchase' },
+      // Walking skeleton line
+      { type: 'line', x: 20, y: 130, width: 790, height: 2, fill: '#f59e0b', stroke: '#f59e0b', label: '' },
+      { type: 'text', x: 20, y: 133, width: 120, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Walking Skeleton' },
+      // Release 1 swim lane
+      { type: 'rect', x: 0, y: 150, width: 16, height: 90, fill: '#22c55e', stroke: '#16a34a', label: '' },
+      { type: 'text', x: 0, y: 185, width: 16, height: 16, fill: 'transparent', stroke: 'transparent', label: 'R1' },
+      { type: 'rect', x: 20, y: 155, width: 150, height: 35, fill: '#14532d', stroke: '#22c55e', label: 'Product list page' },
+      { type: 'rect', x: 20, y: 195, width: 150, height: 35, fill: '#14532d', stroke: '#22c55e', label: 'Product detail' },
+      { type: 'rect', x: 180, y: 155, width: 150, height: 35, fill: '#14532d', stroke: '#22c55e', label: 'Basic text search' },
+      { type: 'rect', x: 340, y: 155, width: 150, height: 35, fill: '#14532d', stroke: '#22c55e', label: 'Add item to cart' },
+      { type: 'rect', x: 340, y: 195, width: 150, height: 35, fill: '#14532d', stroke: '#22c55e', label: 'View cart' },
+      { type: 'rect', x: 500, y: 155, width: 150, height: 35, fill: '#14532d', stroke: '#22c55e', label: 'Basic checkout' },
+      { type: 'rect', x: 660, y: 155, width: 150, height: 35, fill: '#14532d', stroke: '#22c55e', label: 'Order confirmation' },
+      // Release 2 swim lane
+      { type: 'line', x: 20, y: 245, width: 790, height: 1, fill: '#334155', stroke: '#334155', label: '' },
+      { type: 'rect', x: 0, y: 250, width: 16, height: 90, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'text', x: 0, y: 285, width: 16, height: 16, fill: 'transparent', stroke: 'transparent', label: 'R2' },
+      { type: 'rect', x: 20, y: 255, width: 150, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Category pages' },
+      { type: 'rect', x: 20, y: 295, width: 150, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Image gallery' },
+      { type: 'rect', x: 180, y: 255, width: 150, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Faceted filters' },
+      { type: 'rect', x: 180, y: 295, width: 150, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Sort options' },
+      { type: 'rect', x: 340, y: 255, width: 150, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Update quantity' },
+      { type: 'rect', x: 500, y: 255, width: 150, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Payment gateway' },
+      { type: 'rect', x: 500, y: 295, width: 150, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Address lookup' },
+      { type: 'rect', x: 660, y: 255, width: 150, height: 35, fill: '#1e3a5f', stroke: '#2563eb', label: 'Order tracking' },
+      // Release 3 swim lane
+      { type: 'line', x: 20, y: 345, width: 790, height: 1, fill: '#334155', stroke: '#334155', label: '' },
+      { type: 'rect', x: 0, y: 350, width: 16, height: 90, fill: '#f59e0b', stroke: '#d97706', label: '' },
+      { type: 'text', x: 0, y: 385, width: 16, height: 16, fill: 'transparent', stroke: 'transparent', label: 'R3' },
+      { type: 'rect', x: 20, y: 355, width: 150, height: 35, fill: '#422006', stroke: '#f59e0b', label: 'Recommendations' },
+      { type: 'rect', x: 20, y: 395, width: 150, height: 35, fill: '#422006', stroke: '#f59e0b', label: 'Recently viewed' },
+      { type: 'rect', x: 180, y: 355, width: 150, height: 35, fill: '#422006', stroke: '#f59e0b', label: 'AI search suggest' },
+      { type: 'rect', x: 340, y: 355, width: 150, height: 35, fill: '#422006', stroke: '#f59e0b', label: 'Save for later' },
+      { type: 'rect', x: 500, y: 355, width: 150, height: 35, fill: '#422006', stroke: '#f59e0b', label: 'Apple/Google Pay' },
+      { type: 'rect', x: 660, y: 355, width: 150, height: 35, fill: '#422006', stroke: '#f59e0b', label: 'Review & rating' },
+      { type: 'rect', x: 660, y: 395, width: 150, height: 35, fill: '#422006', stroke: '#f59e0b', label: 'Return request' },
+      // Priority legend
+      { type: 'rect', x: 200, y: 450, width: 16, height: 16, fill: '#22c55e', stroke: '#16a34a', label: '' },
+      { type: 'text', x: 220, y: 450, width: 60, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Release 1' },
+      { type: 'rect', x: 300, y: 450, width: 16, height: 16, fill: '#2563eb', stroke: '#1d4ed8', label: '' },
+      { type: 'text', x: 320, y: 450, width: 60, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Release 2' },
+      { type: 'rect', x: 400, y: 450, width: 16, height: 16, fill: '#f59e0b', stroke: '#d97706', label: '' },
+      { type: 'text', x: 420, y: 450, width: 60, height: 14, fill: 'transparent', stroke: 'transparent', label: 'Release 3' },
     ],
   },
 ];
