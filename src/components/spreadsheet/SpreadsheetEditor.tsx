@@ -7,23 +7,7 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell as RechartsCell,
-} from "recharts";
+// recharts imports moved to chart-renderer.tsx
 import {
   Bold,
   Italic,
@@ -47,7 +31,8 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import type { Cell, CellStyle, Sheet, ChartConfig } from "./types";
+import type { Cell, CellStyle, Sheet, ChartConfig, SpreadsheetChartType } from "./types";
+import { createDefaultChartConfig, getDefaultChartCustomization } from "./types";
 import { evaluateFormula, colLetterToIndex, indexToColLetter } from "./formula-engine";
 import { TEMPLATES } from "./templates";
 import { ExportDropdown } from "@/components/shared/export-dropdown";
@@ -62,8 +47,12 @@ import {
   Lock, Play, Square, Calculator,
   Columns, Rows,
   FileCode, ClipboardPaste, Copy as CopyIcon,
-  Circle,
+  Circle, Settings,
 } from "lucide-react";
+import ChartWizard from "./chart-wizard";
+import ChartRenderer from "./chart-renderer";
+import type { ChartData } from "./chart-renderer";
+import { exportChartAsPng, exportChartAsSvg } from "./chart-export-utils";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const DEFAULT_ROWS = 50;
@@ -72,8 +61,6 @@ const DEFAULT_COL_WIDTH = 100;
 const DEFAULT_ROW_HEIGHT = 24;
 const HEADER_WIDTH = 48;
 const HEADER_HEIGHT = 24;
-
-const PIE_COLORS = ["#3b82f6","#ef4444","#10b981","#f59e0b","#8b5cf6","#ec4899","#06b6d4","#84cc16"];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function cellRef(col: number, row: number): string {
@@ -135,10 +122,9 @@ export default function SpreadsheetEditor() {
   const [aiInput, setAiInput] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [showChartModal, setShowChartModal] = useState(false);
-  const [newChartType, setNewChartType] = useState<ChartConfig["type"]>("bar");
-  const [newChartTitle, setNewChartTitle] = useState("");
-  const [newChartRange, setNewChartRange] = useState("");
+  const [showChartWizard, setShowChartWizard] = useState(false);
+  const [editingChartId, setEditingChartId] = useState<string | null>(null);
+  const [chartWizardRange, setChartWizardRange] = useState("");
   const [showCondFmt, setShowCondFmt] = useState(false);
   const [condFmtCondition, setCondFmtCondition] = useState<"gt"|"lt"|"eq"|"gte"|"lte">("gt");
   const [condFmtValue, setCondFmtValue] = useState("0");
@@ -558,52 +544,71 @@ export default function SpreadsheetEditor() {
   };
 
   // ─── Chart ─────────────────────────────────────────────────────────────
-  const insertChart = () => {
-    if (!newChartRange.trim()) return;
-    const id = generateId();
-    setCharts((prev) => [
-      ...prev,
-      {
-        id,
-        type: newChartType,
-        title: newChartTitle || "Chart",
-        dataRange: newChartRange.toUpperCase(),
-        position: { x: 100, y: 100, width: 480, height: 300 },
-      },
-    ]);
-    setShowChartModal(false);
-    setNewChartTitle("");
-    setNewChartRange("");
-  };
-
   const getChartData = useCallback(
-    (range: string) => {
+    (range: string): ChartData[] => {
       const m = range.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/);
       if (!m) return [];
       const c1 = colLetterToIndex(m[1]);
       const r1 = parseInt(m[2]);
       const c2 = colLetterToIndex(m[3]);
       const r2 = parseInt(m[4]);
-      const data: { name: string; value: number; [k: string]: string | number }[] = [];
-      const cols = c2 - c1 + 1;
-      for (let r = r1; r <= r2; r++) {
-        const row: { name: string; value: number; [k: string]: string | number } = {
+      // Row r1 is treated as headers (for data keys), data rows start at r1+1
+      const headerRow = r1;
+      const data: ChartData[] = [];
+      for (let r = headerRow + 1; r <= r2; r++) {
+        const row: ChartData = {
           name: String(getCellDisplay(cellRef(c1, r - 1))),
           value: 0,
         };
         for (let c = c1 + 1; c <= c2; c++) {
-          const label = indexToColLetter(c);
+          const header = getCellDisplay(cellRef(c, headerRow - 1)) || indexToColLetter(c);
           const val = parseFloat(getCellDisplay(cellRef(c, r - 1))) || 0;
-          row[label] = val;
+          row[header] = val;
           if (c === c1 + 1) row.value = val;
         }
-        if (cols === 1) row.value = parseFloat(String(row.name)) || 0;
         data.push(row);
       }
       return data;
     },
     [getCellDisplay]
   );
+
+  const getChartDataKeys = useCallback(
+    (range: string): string[] => {
+      const m = range.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/);
+      if (!m) return [];
+      const c1 = colLetterToIndex(m[1]);
+      const r1 = parseInt(m[2]);
+      const c2 = colLetterToIndex(m[3]);
+      const keys: string[] = [];
+      for (let c = c1 + 1; c <= c2; c++) {
+        keys.push(getCellDisplay(cellRef(c, r1 - 1)) || indexToColLetter(c));
+      }
+      return keys;
+    },
+    [getCellDisplay]
+  );
+
+  const handleChartInsert = useCallback((config: ChartConfig) => {
+    if (editingChartId) {
+      setCharts(prev => prev.map(c => c.id === editingChartId ? { ...config, id: editingChartId } : c));
+      setEditingChartId(null);
+    } else {
+      const id = generateId();
+      setCharts(prev => [...prev, { ...config, id }]);
+    }
+    setShowChartWizard(false);
+  }, [editingChartId]);
+
+  const openChartWizard = useCallback((editId?: string) => {
+    if (editId) {
+      setEditingChartId(editId);
+    } else {
+      setEditingChartId(null);
+      setChartWizardRange(selStart && selEnd ? `${selStart}:${selEnd}` : selectedCell);
+    }
+    setShowChartWizard(true);
+  }, [selStart, selEnd, selectedCell]);
 
   const moveChart = useCallback(
     (id: string, dx: number, dy: number) => {
@@ -1529,7 +1534,7 @@ export default function SpreadsheetEditor() {
 
         {/* ── INSERT TAB ───────────────────────────────────────────── */}
         {activeTab === "insert" && <>
-          <button style={toolbarBtnStyle()} onClick={() => { setNewChartRange(selStart && selEnd ? `${selStart}:${selEnd}` : selectedCell); setShowChartModal(true); }} title="Insert Chart">
+          <button style={toolbarBtnStyle()} onClick={() => openChartWizard()} title="Insert Chart">
             <BarChart2 size={14} /> Chart
           </button>
           <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
@@ -1879,12 +1884,13 @@ export default function SpreadsheetEditor() {
 
           {/* Chart overlays */}
           {charts.map((ch) => (
-            <ChartOverlay
+            <EnhancedChartOverlay
               key={ch.id}
               chart={ch}
               data={getChartData(ch.dataRange)}
               onDragStart={startChartDrag}
               onDelete={() => setCharts((prev) => prev.filter((c) => c.id !== ch.id))}
+              onEdit={() => openChartWizard(ch.id)}
             />
           ))}
         </div>
@@ -2164,57 +2170,16 @@ export default function SpreadsheetEditor() {
         </Modal>
       )}
 
-      {/* Chart Modal */}
-      {showChartModal && (
-        <Modal title="Insert Chart" onClose={() => setShowChartModal(false)}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div>
-              <label style={{ fontSize: 12, display: "block", marginBottom: 4 }}>Chart Type</label>
-              <div style={{ display: "flex", gap: 8 }}>
-                {(["bar", "line", "pie", "area"] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setNewChartType(t)}
-                    style={{
-                      padding: "6px 16px",
-                      borderRadius: 6,
-                      border: "1px solid",
-                      borderColor: newChartType === t ? "var(--primary)" : "var(--border)",
-                      background: newChartType === t ? "var(--primary)" : "transparent",
-                      color: newChartType === t ? "var(--primary-foreground)" : "var(--foreground)",
-                      cursor: "pointer",
-                      textTransform: "capitalize",
-                    }}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label style={{ fontSize: 12, display: "block", marginBottom: 4 }}>Chart Title</label>
-              <input value={newChartTitle} onChange={(e) => setNewChartTitle(e.target.value)} placeholder="My Chart" style={{ ...inputStyle, width: "100%", padding: "6px 10px" }} />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, display: "block", marginBottom: 4 }}>Data Range (e.g. A1:B10)</label>
-              <input value={newChartRange} onChange={(e) => setNewChartRange(e.target.value.toUpperCase())} placeholder="A1:B10" style={{ ...inputStyle, width: "100%", padding: "6px 10px" }} />
-            </div>
-            <button
-              onClick={insertChart}
-              style={{
-                padding: "8px 20px",
-                borderRadius: 6,
-                background: "var(--primary)",
-                color: "var(--primary-foreground)",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: 600,
-              }}
-            >
-              Insert Chart
-            </button>
-          </div>
-        </Modal>
+      {/* Chart Wizard */}
+      {showChartWizard && (
+        <ChartWizard
+          initialRange={editingChartId ? (charts.find(c => c.id === editingChartId)?.dataRange || chartWizardRange) : chartWizardRange}
+          getData={getChartData}
+          getDataKeys={getChartDataKeys}
+          onInsert={handleChartInsert}
+          onClose={() => { setShowChartWizard(false); setEditingChartId(null); }}
+          editChart={editingChartId ? charts.find(c => c.id === editingChartId) || null : null}
+        />
       )}
 
       {/* Conditional Formatting Modal */}
@@ -2936,28 +2901,22 @@ function Modal({
   );
 }
 
-// ─── ChartOverlay ────────────────────────────────────────────────────────────
-interface ChartData {
-  name: string;
-  value: number;
-  [k: string]: string | number;
-}
-
-function ChartOverlay({
+// ─── EnhancedChartOverlay ─────────────────────────────────────────────────────
+function EnhancedChartOverlay({
   chart,
   data,
   onDragStart,
   onDelete,
+  onEdit,
 }: {
   chart: ChartConfig;
   data: ChartData[];
   onDragStart: (id: string, e: React.MouseEvent) => void;
   onDelete: () => void;
+  onEdit: () => void;
 }) {
-  const { position, type, title } = chart;
-  const dataKeys = data.length > 0
-    ? Object.keys(data[0]).filter((k) => k !== "name" && typeof data[0][k] === "number")
-    : ["value"];
+  const { position, title } = chart;
+  const chartRef = React.useRef<HTMLDivElement>(null);
 
   return (
     <div
@@ -2969,7 +2928,7 @@ function ChartOverlay({
         height: position.height,
         background: "var(--card)",
         border: "2px solid var(--border)",
-        borderRadius: 8,
+        borderRadius: chart.customization?.borderRadius ?? 8,
         boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
         zIndex: 50,
         display: "flex",
@@ -2986,67 +2945,39 @@ function ChartOverlay({
           borderBottom: "1px solid var(--border)",
           cursor: "move",
           background: "var(--background)",
-          borderRadius: "6px 6px 0 0",
+          borderRadius: `${(chart.customization?.borderRadius ?? 8) - 2}px ${(chart.customization?.borderRadius ?? 8) - 2}px 0 0`,
         }}
         onMouseDown={(e) => onDragStart(chart.id, e)}
       >
-        <span style={{ fontSize: 12, fontWeight: 600 }}>{title}</span>
-        <button
-          onClick={onDelete}
-          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)" }}
-        >
-          <X size={14} />
-        </button>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--foreground)" }}>{title}</span>
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <button
+            onClick={() => { if (chartRef.current) exportChartAsPng(chartRef.current, `${title}.png`); }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)", padding: 2 }}
+            title="Export PNG"
+          >
+            <Download size={12} />
+          </button>
+          <button
+            onClick={onEdit}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)", padding: 2 }}
+            title="Edit Chart"
+          >
+            <Settings size={12} />
+          </button>
+          <button
+            onClick={onDelete}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)", padding: 2 }}
+            title="Delete Chart"
+          >
+            <X size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Chart body */}
-      <div style={{ flex: 1, padding: "8px 4px" }}>
-        <ResponsiveContainer width="100%" height="100%">
-          {type === "bar" ? (
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Legend />
-              {dataKeys.map((k, i) => (
-                <Bar key={k} dataKey={k} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-              ))}
-            </BarChart>
-          ) : type === "line" ? (
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Legend />
-              {dataKeys.map((k, i) => (
-                <Line key={k} type="monotone" dataKey={k} stroke={PIE_COLORS[i % PIE_COLORS.length]} strokeWidth={2} />
-              ))}
-            </LineChart>
-          ) : type === "area" ? (
-            <AreaChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Legend />
-              {dataKeys.map((k, i) => (
-                <Area key={k} type="monotone" dataKey={k} stroke={PIE_COLORS[i % PIE_COLORS.length]} fill={PIE_COLORS[i % PIE_COLORS.length]} fillOpacity={0.3} />
-              ))}
-            </AreaChart>
-          ) : (
-            <PieChart>
-              <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                {data.map((_, i) => (
-                  <RechartsCell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          )}
-        </ResponsiveContainer>
+      <div ref={chartRef} style={{ flex: 1, padding: "4px" }}>
+        <ChartRenderer config={chart} data={data} />
       </div>
     </div>
   );
