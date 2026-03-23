@@ -31,6 +31,8 @@ import {
   Grid2X2,
   Cloud,
   Share2,
+  Globe,
+  Building2,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -68,6 +70,11 @@ const productivityNav = [
 
 const storageNav = [
   { label: "Cloud Storage", href: "/cloud-storage", icon: Cloud },
+];
+
+const intranetNav = [
+  { label: "Pages", href: "/pages", icon: Globe },
+  { label: "Team Portal", href: "/pages?filter=team", icon: Building2 },
 ];
 
 const manageNav = [
@@ -190,6 +197,8 @@ export function Sidebar() {
           <NavSection label="Manage" items={manageNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Storage" items={storageNav} pathname={pathname} sidebarOpen={sidebarOpen} />
+          {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
+          <NavSection label="Intranet" items={intranetNav} pathname={pathname} sidebarOpen={sidebarOpen} />
         </nav>
 
         {/* Bottom nav */}
