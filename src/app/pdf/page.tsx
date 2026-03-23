@@ -10,9 +10,11 @@ import {
   FilePlus2, Underline, Strikethrough, StickyNote, RectangleHorizontal,
   Layers, Info, FileCheck, Lock, AlignCenter, Presentation, CheckSquare,
   Square, Fullscreen, LayoutGrid, Eye, Wrench, Award, MessageSquare,
+  LayoutTemplate,
 } from "lucide-react";
 import { PDFDocument, degrees, PageSizes } from "pdf-lib";
 import { RibbonToolbar } from "@/components/pdf";
+import PdfTemplatesModal from "@/components/pdf/PdfTemplatesModal";
 import { SearchPanel } from "@/components/pdf";
 import { PropertiesPanel } from "@/components/pdf";
 import { HeaderFooterModal } from "@/components/pdf";
@@ -147,6 +149,7 @@ export default function PdfToolsPage() {
   // ── Form state ──
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
 
   // ── Page management state ──
   const [pageRotations, setPageRotations] = useState<Record<number, number>>({});
@@ -1102,6 +1105,8 @@ export default function PdfToolsPage() {
       case "forms":
         return (
           <div className="flex items-center gap-2 px-3 py-1.5 flex-wrap" style={{ backgroundColor: "var(--background)", borderBottom: "1px solid var(--border)" }}>
+            <button style={btnPrimaryStyle} onClick={() => setShowTemplatesModal(true)}><LayoutTemplate size={14} /> Templates</button>
+            <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
             <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("text-input"); }}><FormInput size={14} /> Text Field</button>
             <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("checkbox"); }}><CheckSquare size={14} /> Checkbox</button>
             <button style={btnStyle} onClick={() => { setActiveTab("forms"); addFormField("radio"); }}><Circle size={14} /> Radio</button>
@@ -1629,6 +1634,16 @@ export default function PdfToolsPage() {
       </div>
 
       {/* Modals */}
+      <PdfTemplatesModal
+        open={showTemplatesModal}
+        onClose={() => setShowTemplatesModal(false)}
+        onApplyTemplate={(fields) => {
+          setFormFields(fields);
+          setFieldValues({});
+          setActiveTab("forms");
+          setRibbonTab("forms");
+        }}
+      />
       {renderWatermarkModal()}
       {renderCertModal()}
       {showHeaderFooter && <HeaderFooterModal config={headerFooterConfig} onConfigChange={setHeaderFooterConfig} onApply={applyHeaderFooter} onClose={() => setShowHeaderFooter(false)} />}

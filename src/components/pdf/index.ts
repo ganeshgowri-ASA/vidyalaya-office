@@ -26,4 +26,5 @@ export { default as CommentPanel } from "./CommentPanel";
 export { default as ViewModePanel } from "./ViewModePanel";
 export { default as MetadataRemovalPanel } from "./MetadataRemovalPanel";
 export { default as SignatureDateField } from "./SignatureDateField";
+export { default as PdfTemplatesModal } from "./PdfTemplatesModal";
 export * from "./types";
