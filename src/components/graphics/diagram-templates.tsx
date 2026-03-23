@@ -27,10 +27,10 @@ const TEMPLATE_CATEGORIES = [
   { id: 'qctools', label: '7QC Tools', icon: '🔧' },
   { id: 'infographic', label: 'Infographic', icon: '📈' },
   { id: 'lean', label: 'Lean', icon: '🔄' },
-  { id: 'projectmgmt', label: 'Project Mgmt', icon: '📅' },
+  { id: 'projectmgmt', label: 'Project Mgmt', icon: '📋' },
   { id: 'analytics', label: 'Analytics', icon: '📊' },
-  { id: 'strategy', label: 'Strategy', icon: '♟' },
-  { id: 'agile', label: 'Agile', icon: '🏃' },
+  { id: 'strategy', label: 'Strategy', icon: '🎯' },
+  { id: 'agile', label: 'Agile', icon: '🔄' },
 ];
 
 const TEMPLATES: DiagramTemplate[] = [
