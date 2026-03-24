@@ -7,9 +7,10 @@ import {
   CheckCircle2, XCircle, RefreshCw, Clock, ChevronRight,
   Send, Sparkles, TestTube, GraduationCap, Plug, Settings,
   Eye, FileText, Layers,
+  Upload, FileUp, FileImage, BarChart, Square,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAIBuilderStore, AIModel } from '@/store/ai-builder-store';
+import { useAIBuilderStore, AIModel, ExtractedField, TestResult, BatchJob } from '@/store/ai-builder-store';
 
 const modelIcons: Record<string, React.ElementType> = {
   fileSearch: FileSearch,
@@ -35,8 +36,214 @@ const categoryLabels: Record<string, string> = {
   prediction: 'Prediction',
 };
 
+const fieldColors = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1',
+];
+
+function getConfidenceColor(confidence: number): string {
+  if (confidence >= 90) return '#10b981';
+  if (confidence >= 75) return '#f59e0b';
+  return '#ef4444';
+}
+
+function ExtractedFieldsDisplay({ fields, color }: { fields: ExtractedField[]; color: string }) {
+  return (
+    <div className="space-y-2 mt-3">
+      <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Extracted Fields</p>
+      {fields.map((field, i) => {
+        const confColor = getConfidenceColor(field.confidence);
+        return (
+          <div key={i} className="rounded p-2.5" style={{ backgroundColor: 'var(--background)' }}>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>{field.label}:</span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{field.value}</span>
+              </div>
+              <span className="text-xs font-medium px-1.5 py-0.5 rounded" style={{ backgroundColor: confColor + '20', color: confColor }}>
+                {field.confidence}%
+              </span>
+            </div>
+            <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: 'var(--border)' }}>
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${field.confidence}%`, backgroundColor: confColor }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DocumentPreviewPanel({ fields, fileName }: { fields: ExtractedField[]; fileName?: string }) {
+  const fieldsWithBoxes = fields.filter((f) => f.boundingBox);
+  if (fieldsWithBoxes.length === 0) return null;
+
+  return (
+    <div className="mt-4 rounded-lg border p-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+      <div className="flex items-center gap-2 mb-3">
+        <FileImage size={16} style={{ color: 'var(--sidebar-accent)' }} />
+        <h4 className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>Document Preview</h4>
+        {fileName && (
+          <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--background)', color: 'var(--muted-foreground)' }}>
+            {fileName}
+          </span>
+        )}
+      </div>
+
+      {/* SVG document canvas */}
+      <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
+        <svg
+          viewBox="0 0 100 120"
+          className="w-full"
+          style={{ backgroundColor: '#1a1a2e', maxHeight: '320px' }}
+        >
+          {/* Document page background */}
+          <rect x="5" y="5" width="90" height="110" rx="1" fill="#2a2a3e" stroke="#444" strokeWidth="0.3" />
+
+          {/* Simulated text lines */}
+          {[12, 16, 20, 35, 39, 43, 47, 65, 69].map((y, i) => (
+            <rect key={`line-${i}`} x="12" y={y} width={40 + (i % 3) * 15} height="1.5" rx="0.5" fill="#3a3a4e" />
+          ))}
+
+          {/* Bounding boxes */}
+          {fieldsWithBoxes.map((field, i) => {
+            const bb = field.boundingBox!;
+            const boxColor = fieldColors[i % fieldColors.length];
+            return (
+              <g key={`box-${i}`}>
+                <rect
+                  x={bb.x}
+                  y={bb.y + 5}
+                  width={bb.width}
+                  height={bb.height}
+                  fill={boxColor}
+                  fillOpacity={0.15}
+                  stroke={boxColor}
+                  strokeWidth="0.4"
+                  rx="0.5"
+                />
+                <text
+                  x={bb.x + 1}
+                  y={bb.y + 4}
+                  fill={boxColor}
+                  fontSize="2.5"
+                  fontWeight="bold"
+                >
+                  {field.label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-3 flex flex-wrap gap-3">
+        {fieldsWithBoxes.map((field, i) => {
+          const boxColor = fieldColors[i % fieldColors.length];
+          return (
+            <div key={`legend-${i}`} className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: boxColor }} />
+              <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{field.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BatchProcessingSection({ modelId, color }: { modelId: string; color: string }) {
+  const { batchJobs, startBatchJob } = useAIBuilderStore();
+  const modelBatchJobs = batchJobs.filter((j) => j.modelId === modelId);
+
+  const handleStartBatch = () => {
+    startBatchJob(modelId, [
+      'quarterly_report_q1.pdf',
+      'vendor_invoice_march.pdf',
+      'employee_onboarding_form.pdf',
+      'purchase_order_2026.pdf',
+      'contract_amendment.pdf',
+    ]);
+  };
+
+  return (
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <BarChart size={16} style={{ color }} />
+          <h3 className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>Batch Processing</h3>
+        </div>
+        <button
+          onClick={handleStartBatch}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium"
+          style={{ backgroundColor: color, color: 'white' }}
+        >
+          <Play size={12} /> Start Batch
+        </button>
+      </div>
+
+      {modelBatchJobs.length === 0 && (
+        <div className="rounded-lg border p-6 text-center" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+          <BarChart size={32} className="mx-auto mb-2" style={{ color: 'var(--muted-foreground)', opacity: 0.3 }} />
+          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>No batch jobs yet. Click &quot;Start Batch&quot; to process multiple files.</p>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {modelBatchJobs.map((job) => (
+          <div key={job.id} className="rounded-lg border p-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-xs px-2 py-0.5 rounded-full font-medium"
+                  style={{
+                    backgroundColor: job.status === 'completed' ? '#10b98120' : '#3b82f620',
+                    color: job.status === 'completed' ? '#10b981' : '#3b82f6',
+                  }}
+                >
+                  {job.status === 'completed' ? 'Completed' : 'Running'}
+                </span>
+              </div>
+              <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                {new Date(job.startedAt).toLocaleString()}
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {job.files.map((file, i) => (
+                <div key={i} className="flex items-center justify-between rounded px-3 py-1.5" style={{ backgroundColor: 'var(--background)' }}>
+                  <div className="flex items-center gap-2">
+                    {file.status === 'completed' && <CheckCircle2 size={14} style={{ color: '#10b981' }} />}
+                    {file.status === 'failed' && <XCircle size={14} style={{ color: '#ef4444' }} />}
+                    {file.status === 'processing' && <RefreshCw size={14} className="animate-spin" style={{ color: '#3b82f6' }} />}
+                    {file.status === 'pending' && <Clock size={14} style={{ color: '#6b7280' }} />}
+                    <span className="text-xs" style={{ color: 'var(--foreground)' }}>{file.name}</span>
+                  </div>
+                  {file.confidence != null && (
+                    <span className="text-xs font-medium" style={{ color: getConfidenceColor(file.confidence) }}>
+                      {file.confidence}%
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ModelDetail() {
-  const { models, selectedModelId, setSelectedModelId, setActiveView, testResults, testInput, setTestInput, runTest, trainingRuns, startTraining } = useAIBuilderStore();
+  const {
+    models, selectedModelId, setSelectedModelId, setActiveView,
+    testResults, testInput, setTestInput, runTest, runFileTest,
+    trainingRuns, startTraining,
+    uploadedFileName, setUploadedFileName, showDocumentPreview, setShowDocumentPreview,
+  } = useAIBuilderStore();
   const model = models.find((m) => m.id === selectedModelId);
 
   if (!model) return null;
@@ -47,6 +254,17 @@ function ModelDetail() {
   const modelTrainingRuns = trainingRuns.filter((r) => r.modelId === model.id);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'test' | 'training' | 'integrate'>('overview');
+
+  const handleFileDrop = () => {
+    const mockFile = 'sample_invoice.pdf';
+    setUploadedFileName(mockFile);
+  };
+
+  const handleRunOCRTest = () => {
+    if (uploadedFileName) {
+      runFileTest(model.id, uploadedFileName);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--background)' }}>
@@ -145,7 +363,9 @@ function ModelDetail() {
         {activeTab === 'test' && (
           <div className="max-w-3xl">
             <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--foreground)' }}>Test Model</h3>
-            <div className="rounded-lg border p-4 mb-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+
+            {/* Text input */}
+            <div className="rounded-lg border p-4 mb-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
               <textarea
                 className="w-full px-3 py-2 rounded border text-sm resize-none mb-3"
                 rows={4}
@@ -163,6 +383,55 @@ function ModelDetail() {
               </button>
             </div>
 
+            {/* File upload zone */}
+            <div className="rounded-lg border p-4 mb-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+              <p className="text-xs font-medium mb-3" style={{ color: 'var(--muted-foreground)' }}>File / Image Upload</p>
+
+              {!uploadedFileName ? (
+                <div
+                  onClick={handleFileDrop}
+                  className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors hover:border-opacity-80"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  <Upload size={32} className="mx-auto mb-3" style={{ color: 'var(--muted-foreground)', opacity: 0.5 }} />
+                  <p className="text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>Drop files here or click to browse</p>
+                  <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Supports PDF, JPG, PNG, TIFF documents</p>
+                </div>
+              ) : (
+                <div>
+                  {/* File preview */}
+                  <div className="flex items-center gap-3 rounded-lg p-3 mb-3" style={{ backgroundColor: 'var(--background)' }}>
+                    <div className="w-16 h-20 rounded border flex items-center justify-center" style={{ backgroundColor: '#1a1a2e', borderColor: 'var(--border)' }}>
+                      <FileText size={24} style={{ color: 'var(--muted-foreground)', opacity: 0.6 }} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <FileUp size={14} style={{ color }} />
+                        <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{uploadedFileName}</span>
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>Ready for OCR processing</p>
+                    </div>
+                    <button
+                      onClick={() => setUploadedFileName(null)}
+                      className="p-1 rounded hover:opacity-80"
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      <XCircle size={16} />
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={handleRunOCRTest}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium"
+                    style={{ backgroundColor: '#f59e0b', color: 'white' }}
+                  >
+                    <ScanSearch size={14} /> Run OCR Test
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Test results */}
             {modelTestResults.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--foreground)' }}>Results</h3>
@@ -170,19 +439,40 @@ function ModelDetail() {
                   {modelTestResults.map((result) => (
                     <div key={result.id} className="rounded-lg border p-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
                       <div className="flex items-start justify-between mb-2">
-                        <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Input</p>
+                        <div className="flex items-center gap-2">
+                          {result.inputType === 'file' ? (
+                            <FileImage size={14} style={{ color: 'var(--muted-foreground)' }} />
+                          ) : null}
+                          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                            {result.inputType === 'file' ? `File: ${result.fileName}` : 'Input'}
+                          </p>
+                        </div>
                         <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: color + '20', color }}>{result.confidence}% confidence</span>
                       </div>
-                      <p className="text-sm mb-3" style={{ color: 'var(--foreground)' }}>{result.input}</p>
+                      <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>{result.input}</p>
+
                       <div className="rounded p-3" style={{ backgroundColor: 'var(--background)' }}>
                         <p className="text-xs mb-1" style={{ color: 'var(--muted-foreground)' }}>Output</p>
                         <p className="text-sm font-medium" style={{ color }}>{result.output}</p>
                       </div>
+
+                      {/* Extracted fields display */}
+                      {result.extractedFields && result.extractedFields.length > 0 && (
+                        <ExtractedFieldsDisplay fields={result.extractedFields} color={color} />
+                      )}
+
+                      {/* Document preview for file-based results */}
+                      {result.inputType === 'file' && result.extractedFields && result.extractedFields.some((f) => f.boundingBox) && (
+                        <DocumentPreviewPanel fields={result.extractedFields} fileName={result.fileName} />
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
             )}
+
+            {/* Batch processing section */}
+            <BatchProcessingSection modelId={model.id} color={color} />
           </div>
         )}
 

@@ -48,17 +48,24 @@ interface PowerPagesState {
   editorSite: PowerSite | null;
   activePageId: string | null;
   selectedWebPartId: string | null;
+  editingWebPartId: string | null;
   searchQuery: string;
+  showPageSettings: boolean;
+  pageSettingsTab: 'seo' | 'permissions' | 'css';
 
   setActiveView: (view: PowerPagesState['activeView']) => void;
   setSelectedSiteId: (id: string | null) => void;
   setEditorSite: (site: PowerSite | null) => void;
   setActivePageId: (id: string | null) => void;
   setSelectedWebPartId: (id: string | null) => void;
+  setEditingWebPartId: (id: string | null) => void;
   setSearchQuery: (query: string) => void;
+  setShowPageSettings: (show: boolean) => void;
+  setPageSettingsTab: (tab: 'seo' | 'permissions' | 'css') => void;
   addWebPart: (pageId: string, part: WebPart) => void;
   removeWebPart: (pageId: string, partId: string) => void;
   updateWebPart: (pageId: string, partId: string, updates: Partial<WebPart>) => void;
+  insertWebPartAfter: (pageId: string, afterPartId: string, part: WebPart) => void;
   addPage: (page: SitePage) => void;
   deletePage: (pageId: string) => void;
   togglePagePublished: (pageId: string) => void;
@@ -196,10 +203,16 @@ export const usePowerPagesStore = create<PowerPagesState>((set) => ({
   editorSite: null,
   activePageId: null,
   selectedWebPartId: null,
+  editingWebPartId: null,
   searchQuery: '',
+  showPageSettings: false,
+  pageSettingsTab: 'seo',
 
   setActiveView: (view) => set({ activeView: view }),
   setSelectedSiteId: (id) => set({ selectedSiteId: id }),
+  setEditingWebPartId: (id) => set({ editingWebPartId: id }),
+  setShowPageSettings: (show) => set({ showPageSettings: show }),
+  setPageSettingsTab: (tab) => set({ pageSettingsTab: tab }),
   setEditorSite: (site) =>
     set({
       editorSite: site,
@@ -249,6 +262,23 @@ export const usePowerPagesStore = create<PowerPagesState>((set) => ({
               ? { ...pg, webParts: pg.webParts.map((wp) => (wp.id === partId ? { ...wp, ...updates } : wp)) }
               : pg
           ),
+        },
+      };
+    }),
+
+  insertWebPartAfter: (pageId, afterPartId, part) =>
+    set((s) => {
+      if (!s.editorSite) return s;
+      return {
+        editorSite: {
+          ...s.editorSite,
+          pages: s.editorSite.pages.map((pg) => {
+            if (pg.id !== pageId) return pg;
+            const idx = pg.webParts.findIndex((wp) => wp.id === afterPartId);
+            const newParts = [...pg.webParts];
+            newParts.splice(idx + 1, 0, part);
+            return { ...pg, webParts: newParts.map((wp, i) => ({ ...wp, order: i })) };
+          }),
         },
       };
     }),
