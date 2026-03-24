@@ -32,6 +32,9 @@ import {
   Cloud,
   Share2,
   Globe,
+  Zap,
+  AppWindow,
+  Brain,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -58,6 +61,13 @@ const communicateNav = [
   { label: "Meetings", href: "/meetings", icon: Video },
   { label: "Meeting Bot", href: "/meetings/bot", icon: Bot },
   { label: "Calendar", href: "/calendar", icon: CalendarDays },
+];
+
+const automateNav = [
+  { label: "Power Automate", href: "/power-automate", icon: Zap },
+  { label: "Power Apps", href: "/power-apps", icon: AppWindow },
+  { label: "Power Pages", href: "/power-pages", icon: Globe },
+  { label: "AI Builder", href: "/ai-builder", icon: Brain },
 ];
 
 const collaborateNav = [
@@ -189,6 +199,8 @@ export function Sidebar() {
           <NavSection label="Editors" items={editorNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Communicate" items={communicateNav} pathname={pathname} sidebarOpen={sidebarOpen} />
+          {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
+          <NavSection label="Automate" items={automateNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Collaborate" items={collaborateNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
