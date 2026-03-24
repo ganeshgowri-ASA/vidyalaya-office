@@ -152,7 +152,7 @@ const sampleApps: PowerApp[] = [
         ],
       },
     ],
-    dataSource: 'Dataverse',
+    dataSource: 'PostgreSQL (Railway)',
     lastModified: '2026-03-19T16:00:00Z',
     createdBy: 'Mike Johnson',
     users: 30,
@@ -211,7 +211,7 @@ const sampleApps: PowerApp[] = [
 const sampleDataSources: DataSource[] = [
   { id: 'ds1', name: 'SharePoint', type: 'SharePoint List', icon: 'globe', connected: true, tables: ['Expenses', 'Surveys', 'Documents'] },
   { id: 'ds2', name: 'SQL Server', type: 'SQL Database', icon: 'database', connected: true, tables: ['Employees', 'LeaveRequests', 'Tickets'] },
-  { id: 'ds3', name: 'Dataverse', type: 'Dataverse', icon: 'layers', connected: true, tables: ['Assets', 'Contacts', 'Accounts'] },
+  { id: 'ds3', name: 'Railway PostgreSQL', type: 'PostgreSQL', icon: 'layers', connected: true, tables: ['Assets', 'Contacts', 'Accounts'] },
   { id: 'ds4', name: 'Excel Online', type: 'Excel', icon: 'table', connected: false },
   { id: 'ds5', name: 'Google Sheets', type: 'Google Sheets', icon: 'sheet', connected: false },
   { id: 'ds6', name: 'REST API', type: 'Custom API', icon: 'code', connected: false },
