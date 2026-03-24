@@ -7,6 +7,7 @@ import {
   ChevronRight, LayoutGrid, History, Plug, FileText, Mail, Globe,
   HardDrive, Table, MessageSquare, Database, Code, Cloud, RefreshCw,
   ClipboardCheck, UserPlus, X, ChevronDown, Settings, Eye,
+  BarChart3, FunctionSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePowerAutomateStore, Flow, FlowNode } from '@/store/power-automate-store';
@@ -25,11 +26,178 @@ const connectorIcons: Record<string, React.ElementType> = {
   messageSquare: MessageSquare, code: Code, database: Database, cloud: Cloud,
 };
 
+/* ------------------------------------------------------------------ */
+/*  Expression Editor Modal                                           */
+/* ------------------------------------------------------------------ */
+function ExpressionEditorModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [expr, setExpr] = useState('');
+
+  if (!open) return null;
+
+  const snippets = [
+    { label: 'triggerOutputs()', value: "triggerOutputs()?['body']" },
+    { label: 'utcNow()', value: 'utcNow()' },
+    { label: 'concat()', value: "concat('Hello', ' ', 'World')" },
+    { label: 'if()', value: "if(equals(1,1), 'yes', 'no')" },
+    { label: 'length()', value: "length(variables('myArray'))" },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+      <div className="w-[540px] rounded-lg border shadow-2xl" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2">
+            <FunctionSquare size={16} style={{ color: 'var(--sidebar-accent)' }} />
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>Expression Editor</h3>
+          </div>
+          <button onClick={onClose} className="p-1 rounded hover:opacity-80" style={{ color: 'var(--muted-foreground)' }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-4 space-y-3">
+          <div>
+            <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted-foreground)' }}>Expression</label>
+            <textarea
+              className="w-full rounded border px-3 py-2 text-sm font-mono resize-none focus:outline-none"
+              rows={5}
+              placeholder="e.g. concat('Hello ', triggerOutputs()?['body/name'])"
+              value={expr}
+              onChange={(e) => setExpr(e.target.value)}
+              style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--muted-foreground)' }}>Quick Insert</label>
+            <div className="flex flex-wrap gap-1.5">
+              {snippets.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() => setExpr((prev) => prev + s.value)}
+                  className="px-2 py-1 rounded text-xs border hover:opacity-80"
+                  style={{ borderColor: 'var(--border)', color: 'var(--foreground)', backgroundColor: 'var(--background)' }}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t" style={{ borderColor: 'var(--border)' }}>
+          <button onClick={onClose} className="px-3 py-1.5 rounded text-sm border" style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}>
+            Cancel
+          </button>
+          <button onClick={onClose} className="px-3 py-1.5 rounded text-sm" style={{ backgroundColor: 'var(--sidebar-accent)', color: 'var(--primary-foreground)' }}>
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Analytics View                                                    */
+/* ------------------------------------------------------------------ */
+function AnalyticsView() {
+  const { flowRuns, flows } = usePowerAutomateStore();
+
+  // Aggregate success / fail counts per flow
+  const statsMap = new Map<string, { name: string; succeeded: number; failed: number }>();
+  flowRuns.forEach((r) => {
+    if (!statsMap.has(r.flowId)) statsMap.set(r.flowId, { name: r.flowName, succeeded: 0, failed: 0 });
+    const entry = statsMap.get(r.flowId)!;
+    if (r.status === 'succeeded') entry.succeeded++;
+    else if (r.status === 'failed') entry.failed++;
+  });
+  const stats = Array.from(statsMap.values());
+  const maxCount = Math.max(...stats.map((s) => s.succeeded + s.failed), 1);
+
+  // Overall totals
+  const totalSucceeded = flowRuns.filter((r) => r.status === 'succeeded').length;
+  const totalFailed = flowRuns.filter((r) => r.status === 'failed').length;
+  const totalRunning = flowRuns.filter((r) => r.status === 'running').length;
+  const totalCancelled = flowRuns.filter((r) => r.status === 'cancelled').length;
+
+  return (
+    <div>
+      <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--foreground)' }}>Flow Analytics</h2>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: 'Succeeded', count: totalSucceeded, color: '#10b981' },
+          { label: 'Failed', count: totalFailed, color: '#ef4444' },
+          { label: 'Running', count: totalRunning, color: '#3b82f6' },
+          { label: 'Cancelled', count: totalCancelled, color: '#6b7280' },
+        ].map((c) => (
+          <div key={c.label} className="rounded-lg border p-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <p className="text-xs mb-1" style={{ color: 'var(--muted-foreground)' }}>{c.label}</p>
+            <p className="text-2xl font-bold" style={{ color: c.color }}>{c.count}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Bar chart */}
+      <div className="rounded-lg border p-5" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+        <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--foreground)' }}>Runs by Flow</h3>
+        <div className="space-y-4">
+          {stats.map((s) => (
+            <div key={s.name}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs truncate max-w-[260px]" style={{ color: 'var(--foreground)' }}>{s.name}</span>
+                <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{s.succeeded + s.failed} runs</span>
+              </div>
+              <div className="flex h-5 rounded overflow-hidden" style={{ backgroundColor: 'var(--background)' }}>
+                {s.succeeded > 0 && (
+                  <div
+                    className="h-full flex items-center justify-center text-[10px] font-medium"
+                    style={{ width: `${(s.succeeded / maxCount) * 100}%`, backgroundColor: '#10b981', color: 'white', minWidth: s.succeeded > 0 ? 20 : 0 }}
+                  >
+                    {s.succeeded}
+                  </div>
+                )}
+                {s.failed > 0 && (
+                  <div
+                    className="h-full flex items-center justify-center text-[10px] font-medium"
+                    style={{ width: `${(s.failed / maxCount) * 100}%`, backgroundColor: '#ef4444', color: 'white', minWidth: s.failed > 0 ? 20 : 0 }}
+                  >
+                    {s.failed}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-4 mt-4">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#10b981' }} />
+            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Succeeded</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ef4444' }} />
+            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Failed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Flow Designer                                                     */
+/* ------------------------------------------------------------------ */
 function FlowDesigner() {
   const { designerFlow, selectedNodeId, setSelectedNodeId, setDesignerFlow, updateNodePosition, removeNodeFromDesigner, addNodeToDesigner } = usePowerAutomateStore();
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [exprModalOpen, setExprModalOpen] = useState(false);
 
   if (!designerFlow) return null;
 
@@ -72,6 +240,8 @@ function FlowDesigner() {
 
   return (
     <div className="flex flex-1 overflow-hidden">
+      <ExpressionEditorModal open={exprModalOpen} onClose={() => setExprModalOpen(false)} />
+
       {/* Canvas */}
       <div
         className="flex-1 relative overflow-auto"
@@ -93,6 +263,13 @@ function FlowDesigner() {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setExprModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm border"
+              style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+            >
+              <FunctionSquare size={14} /> Expression
+            </button>
             <button className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm" style={{ backgroundColor: 'var(--sidebar-accent)', color: 'var(--primary-foreground)' }}>
               <Play size={14} /> Test Flow
             </button>
@@ -266,6 +443,9 @@ function FlowDesigner() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Flow Card                                                         */
+/* ------------------------------------------------------------------ */
 function FlowCard({ flow }: { flow: Flow }) {
   const { setDesignerFlow, toggleFlowStatus } = usePowerAutomateStore();
   const statusColors: Record<string, string> = {
@@ -319,6 +499,9 @@ function FlowCard({ flow }: { flow: Flow }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Main Export                                                        */
+/* ------------------------------------------------------------------ */
 export function PowerAutomateClient() {
   const {
     flows, templates, flowRuns, connectors,
@@ -367,10 +550,11 @@ export function PowerAutomateClient() {
           { key: 'templates' as const, label: 'Templates', icon: FileText },
           { key: 'runs' as const, label: 'Run History', icon: History },
           { key: 'connectors' as const, label: 'Connectors', icon: Plug },
+          { key: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
         ].map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveView(tab.key)}
+            onClick={() => setActiveView(tab.key as typeof activeView)}
             className={cn('flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors')}
             style={{
               borderColor: activeView === tab.key ? 'var(--sidebar-accent)' : 'transparent',
@@ -515,6 +699,8 @@ export function PowerAutomateClient() {
             </div>
           </div>
         )}
+
+        {(activeView as string) === 'analytics' && <AnalyticsView />}
       </div>
     </div>
   );
