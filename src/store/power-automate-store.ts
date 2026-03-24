@@ -25,6 +25,7 @@ export interface Flow {
   name: string;
   description: string;
   status: 'active' | 'inactive' | 'draft';
+  flowType: 'cloud' | 'desktop';
   trigger: string;
   lastRun?: string;
   runCount: number;
@@ -73,6 +74,8 @@ interface PowerAutomateState {
   detailFlow: Flow | null;
   detailTab: 'designer' | 'settings';
   selectedNodeId: string | null;
+  flowTypeFilter: 'all' | 'cloud' | 'desktop';
+  flowDetailId: string | null;
   searchQuery: string;
   flowTypeFilter: 'cloud' | 'desktop';
   templateCategory: string;
@@ -89,6 +92,9 @@ interface PowerAutomateState {
   setDetailFlow: (flow: Flow | null) => void;
   setDetailTab: (tab: 'designer' | 'settings') => void;
   setSelectedNodeId: (id: string | null) => void;
+  setFlowTypeFilter: (filter: PowerAutomateState['flowTypeFilter']) => void;
+  setFlowDetailId: (id: string | null) => void;
+  toggleConnector: (id: string) => void;
   setSearchQuery: (query: string) => void;
   setFlowTypeFilter: (filter: 'cloud' | 'desktop') => void;
   setTemplateCategory: (category: string) => void;
@@ -112,6 +118,7 @@ const sampleFlows: Flow[] = [
     name: 'Document Approval Workflow',
     description: 'Routes documents for approval when uploaded to SharePoint',
     status: 'active',
+    flowType: 'cloud',
     trigger: 'When a file is created in SharePoint',
     lastRun: '2026-03-24T09:30:00Z',
     runCount: 142,
@@ -134,6 +141,7 @@ const sampleFlows: Flow[] = [
     name: 'Email Notification on Form Submit',
     description: 'Sends email notifications when a form is submitted',
     status: 'active',
+    flowType: 'cloud',
     trigger: 'When a form response is submitted',
     lastRun: '2026-03-24T08:15:00Z',
     runCount: 89,
@@ -150,6 +158,7 @@ const sampleFlows: Flow[] = [
     name: 'Daily Data Sync',
     description: 'Syncs data from Excel to database every day at 6 AM',
     status: 'active',
+    flowType: 'desktop',
     trigger: 'Scheduled - Daily at 6:00 AM',
     lastRun: '2026-03-24T06:00:00Z',
     runCount: 67,
@@ -172,6 +181,7 @@ const sampleFlows: Flow[] = [
     name: 'Task Assignment on Issue Create',
     description: 'Auto-assigns tasks when new issues are created',
     status: 'inactive',
+    flowType: 'desktop',
     trigger: 'When an issue is created',
     lastRun: '2026-03-10T16:45:00Z',
     runCount: 34,
@@ -194,6 +204,7 @@ const sampleFlows: Flow[] = [
     name: 'Scheduled Report Generator',
     description: 'Generates and emails weekly reports every Monday',
     status: 'draft',
+    flowType: 'cloud',
     trigger: 'Scheduled - Weekly on Monday',
     runCount: 0,
     nodes: [
@@ -264,6 +275,8 @@ export const usePowerAutomateStore = create<PowerAutomateState>((set, get) => ({
   detailFlow: null,
   detailTab: 'designer',
   selectedNodeId: null,
+  flowTypeFilter: 'all',
+  flowDetailId: null,
   searchQuery: '',
   flowTypeFilter: 'cloud',
   templateCategory: 'All',
@@ -283,6 +296,9 @@ export const usePowerAutomateStore = create<PowerAutomateState>((set, get) => ({
   setDetailFlow: (flow) => set({ detailFlow: flow, activeView: flow ? 'detail' : 'my-flows', detailTab: 'designer' }),
   setDetailTab: (tab) => set({ detailTab: tab }),
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
+  setFlowTypeFilter: (filter) => set({ flowTypeFilter: filter }),
+  setFlowDetailId: (id) => set({ flowDetailId: id }),
+  toggleConnector: (id) => set((s) => ({ connectors: s.connectors.map((c) => c.id === id ? { ...c, connected: !c.connected } : c) })),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setFlowTypeFilter: (filter) => set({ flowTypeFilter: filter }),
   setTemplateCategory: (category) => set({ templateCategory: category }),
@@ -352,6 +368,7 @@ export const usePowerAutomateStore = create<PowerAutomateState>((set, get) => ({
       name: `${template.name} (Copy)`,
       description: template.description,
       status: 'draft',
+      flowType: 'cloud',
       trigger: 'Not configured',
       runCount: 0,
       nodes: template.nodes,

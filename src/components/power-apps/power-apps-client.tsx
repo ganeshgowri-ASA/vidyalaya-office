@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   AppWindow, Plus, Search, MoreVertical, Users, Calendar, Database,
   ChevronRight, Eye, Edit3, Trash2, X, Type, Hash, ChevronDown, Upload,
@@ -186,142 +186,152 @@ function DataTableRenderer() {
   );
 }
 
-function CalendarPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [open, setOpen] = useState(false);
+function CalendarPopup({ value, onChange, onClose }: { value: string; onChange: (v: string) => void; onClose: () => void }) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(value ? new Date(value).getFullYear() : today.getFullYear());
   const [viewMonth, setViewMonth] = useState(value ? new Date(value).getMonth() : today.getMonth());
 
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-  const prevMonth = () => { if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); } else setViewMonth(viewMonth - 1); };
-  const nextMonth = () => { if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); } else setViewMonth(viewMonth + 1); };
-
-  const selectDay = (day: number) => {
+  const handleSelect = (day: number) => {
     const m = String(viewMonth + 1).padStart(2, '0');
     const d = String(day).padStart(2, '0');
     onChange(`${viewYear}-${m}-${d}`);
-    setOpen(false);
+    onClose();
   };
 
-  const selectedStr = value;
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); }
+    else setViewMonth(viewMonth - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); }
+    else setViewMonth(viewMonth + 1);
+  };
+
+  const selectedDay = value ? new Date(value).getDate() : -1;
+  const selectedMonth = value ? new Date(value).getMonth() : -1;
+  const selectedYear = value ? new Date(value).getFullYear() : -1;
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm text-left"
-        style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', color: value ? 'var(--foreground)' : 'var(--muted-foreground)' }}
-      >
-        <span>{value || 'Select date...'}</span>
-        <Calendar size={14} style={{ color: 'var(--muted-foreground)' }} />
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-1 w-64 rounded-lg border shadow-xl p-3" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-          <div className="flex items-center justify-between mb-2">
-            <button type="button" onClick={prevMonth} className="p-1 rounded hover:opacity-80" style={{ color: 'var(--foreground)' }}><ChevronLeft size={14} /></button>
-            <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{monthNames[viewMonth]} {viewYear}</span>
-            <button type="button" onClick={nextMonth} className="p-1 rounded hover:opacity-80" style={{ color: 'var(--foreground)' }}><ChevronRight size={14} /></button>
-          </div>
-          <div className="grid grid-cols-7 gap-0.5 mb-1">
-            {dayNames.map((d) => <div key={d} className="text-center text-[10px] font-medium py-1" style={{ color: 'var(--muted-foreground)' }}>{d}</div>)}
-          </div>
-          <div className="grid grid-cols-7 gap-0.5">
-            {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
-            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-              const m = String(viewMonth + 1).padStart(2, '0');
-              const d = String(day).padStart(2, '0');
-              const dateStr = `${viewYear}-${m}-${d}`;
-              const isSelected = dateStr === selectedStr;
-              const isToday = day === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => selectDay(day)}
-                  className="w-full aspect-square flex items-center justify-center rounded text-xs transition-colors"
-                  style={{
-                    backgroundColor: isSelected ? 'var(--sidebar-accent)' : 'transparent',
-                    color: isSelected ? 'var(--primary-foreground)' : 'var(--foreground)',
-                    fontWeight: isToday ? 700 : 400,
-                    outline: isToday && !isSelected ? '1px solid var(--sidebar-accent)' : 'none',
-                  }}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
-          <button type="button" onClick={() => { onChange(''); setOpen(false); }} className="w-full mt-2 text-xs py-1 rounded" style={{ color: 'var(--muted-foreground)' }}>Clear</button>
-        </div>
-      )}
+    <div className="absolute z-50 mt-1 rounded-lg border shadow-xl p-3" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', width: 260 }}>
+      <div className="flex items-center justify-between mb-2">
+        <button onClick={prevMonth} className="p-1 rounded hover:opacity-80" style={{ color: 'var(--foreground)' }}>
+          <ChevronLeft size={14} />
+        </button>
+        <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{monthNames[viewMonth]} {viewYear}</span>
+        <button onClick={nextMonth} className="p-1 rounded hover:opacity-80" style={{ color: 'var(--foreground)' }}>
+          <ChevronRight size={14} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 mb-1">
+        {dayNames.map((d) => (
+          <div key={d} className="text-center text-[10px] font-medium py-1" style={{ color: 'var(--muted-foreground)' }}>{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-0.5">
+        {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+          <div key={`empty-${i}`} />
+        ))}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const isSelected = day === selectedDay && viewMonth === selectedMonth && viewYear === selectedYear;
+          const isToday = day === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
+          return (
+            <button
+              key={day}
+              onClick={() => handleSelect(day)}
+              className="text-xs py-1.5 rounded hover:opacity-80 transition-colors"
+              style={{
+                backgroundColor: isSelected ? 'var(--sidebar-accent)' : isToday ? 'var(--sidebar-accent)' + '20' : 'transparent',
+                color: isSelected ? 'var(--primary-foreground)' : 'var(--foreground)',
+                fontWeight: isToday ? 600 : 400,
+              }}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-2 pt-2 border-t flex justify-between" style={{ borderColor: 'var(--border)' }}>
+        <button onClick={() => { const t = today; handleSelect(t.getDate()); setViewMonth(t.getMonth()); setViewYear(t.getFullYear()); }} className="text-xs" style={{ color: 'var(--sidebar-accent)' }}>Today</button>
+        <button onClick={() => { onChange(''); onClose(); }} className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Clear</button>
+      </div>
     </div>
   );
 }
 
-function FileUploadField() {
-  const [files, setFiles] = useState<{ name: string; size: string }[]>([]);
-  const [dragging, setDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+function FileDropZone() {
+  const [files, setFiles] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const simulateUpload = (name: string) => {
-    setUploading(true);
-    setTimeout(() => {
-      const size = `${(Math.random() * 5 + 0.1).toFixed(1)} MB`;
-      setFiles((prev) => [...prev, { name, size }]);
-      setUploading(false);
-    }, 1000);
+    setFiles((prev) => [...prev, name]);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setDragging(false);
-    const droppedFiles = e.dataTransfer.files;
-    if (droppedFiles.length > 0) simulateUpload(droppedFiles[0].name);
+    setIsDragging(false);
+    // Simulate file drop
+    const items = e.dataTransfer.files;
+    if (items.length > 0) {
+      for (let i = 0; i < items.length; i++) {
+        simulateUpload(items[i].name);
+      }
+    } else {
+      simulateUpload(`File_${Date.now().toString(36)}.pdf`);
+    }
+  }, []);
+
+  const handleClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files;
-    if (selected && selected.length > 0) simulateUpload(selected[0].name);
+    const inputFiles = e.target.files;
+    if (inputFiles) {
+      for (let i = 0; i < inputFiles.length; i++) {
+        simulateUpload(inputFiles[i].name);
+      }
+    }
+  };
+
+  const removeFile = (idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
   return (
     <div>
       <div
-        className={cn('w-full px-3 py-5 rounded-lg border-2 border-dashed text-center cursor-pointer transition-colors')}
-        style={{ borderColor: dragging ? 'var(--sidebar-accent)' : 'var(--border)', backgroundColor: dragging ? 'var(--sidebar-accent)' + '10' : 'transparent', color: 'var(--muted-foreground)' }}
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
+        className="w-full px-3 py-4 rounded-lg border border-dashed text-center cursor-pointer transition-colors"
+        style={{
+          borderColor: isDragging ? 'var(--sidebar-accent)' : 'var(--border)',
+          backgroundColor: isDragging ? 'var(--sidebar-accent)' + '08' : 'transparent',
+          color: 'var(--muted-foreground)',
+        }}
+        onClick={handleClick}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
       >
-        <input ref={inputRef} type="file" className="hidden" onChange={handleFileSelect} />
-        {uploading ? (
-          <div className="flex flex-col items-center">
-            <RefreshCw size={18} className="animate-spin mb-1" />
-            <p className="text-xs">Uploading...</p>
-          </div>
-        ) : (
-          <>
-            <Upload size={18} className="mx-auto mb-1" />
-            <p className="text-xs font-medium">Drop files here or click to browse</p>
-            <p className="text-[10px] mt-0.5">PDF, DOCX, JPG, PNG up to 10 MB</p>
-          </>
-        )}
+        <Upload size={16} className="mx-auto mb-1" />
+        <p className="text-xs">{isDragging ? 'Drop files here...' : 'Click to upload or drag & drop'}</p>
+        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} />
       </div>
       {files.length > 0 && (
-        <div className="mt-2 space-y-1.5">
-          {files.map((f, i) => (
-            <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded border text-xs" style={{ borderColor: 'var(--border)' }}>
-              <File size={13} style={{ color: 'var(--sidebar-accent)' }} />
-              <span className="flex-1 truncate" style={{ color: 'var(--foreground)' }}>{f.name}</span>
-              <span style={{ color: 'var(--muted-foreground)' }}>{f.size}</span>
-              <button onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))} className="p-0.5 rounded hover:opacity-80" style={{ color: '#ef4444' }}><X size={12} /></button>
+        <div className="mt-2 space-y-1">
+          {files.map((name, idx) => (
+            <div key={idx} className="flex items-center gap-2 px-2 py-1.5 rounded border text-xs" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>
+              <FileText size={12} style={{ color: 'var(--sidebar-accent)' }} />
+              <span className="flex-1 truncate" style={{ color: 'var(--foreground)' }}>{name}</span>
+              <span className="text-[10px]" style={{ color: '#10b981' }}>Uploaded</span>
+              <button onClick={() => removeFile(idx)} className="p-0.5 rounded hover:opacity-80" style={{ color: 'var(--muted-foreground)' }}>
+                <X size={10} />
+              </button>
             </div>
           ))}
         </div>
@@ -332,16 +342,43 @@ function FileUploadField() {
 
 function FieldRenderer({ field, preview }: { field: AppField; preview?: boolean }) {
   const [value, setValue] = useState(field.value ?? '');
+  const [showCalendar, setShowCalendar] = useState(false);
   const [checked, setChecked] = useState(false);
+  const calRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (calRef.current && !calRef.current.contains(e.target as Node)) {
+        setShowCalendar(false);
+      }
+    };
+    if (showCalendar) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showCalendar]);
+
+  const formatDate = (v: string) => {
+    if (!v) return '';
+    const d = new Date(v);
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
 
   return (
     <div className={cn('mb-3', field.width === 'half' ? 'w-[calc(50%-0.375rem)]' : 'w-full')}>
       <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted-foreground)' }}>
         {field.label} {field.required && <span style={{ color: '#ef4444' }}>*</span>}
       </label>
-      {field.type === 'text' || field.type === 'email' || field.type === 'number' ? (
+      {field.type === 'text' || field.type === 'email' ? (
         <input
-          type={field.type === 'email' ? 'email' : field.type === 'number' ? 'number' : 'text'}
+          type={field.type === 'email' ? 'email' : 'text'}
+          className="w-full px-3 py-2 rounded-lg border text-sm"
+          style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
+          placeholder={field.placeholder}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+        />
+      ) : field.type === 'number' ? (
+        <input
+          type="number"
           className="w-full px-3 py-2 rounded-lg border text-sm"
           style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
           placeholder={field.placeholder}
@@ -370,18 +407,37 @@ function FieldRenderer({ field, preview }: { field: AppField; preview?: boolean 
           ))}
         </select>
       ) : field.type === 'date' ? (
-        <CalendarPicker value={value} onChange={setValue} />
-      ) : field.type === 'file' ? (
-        <FileUploadField />
-      ) : field.type === 'checkbox' ? (
-        <label className="flex items-center gap-2.5 mt-1 cursor-pointer">
+        <div className="relative" ref={calRef}>
           <div
-            className="w-5 h-5 rounded border flex items-center justify-center transition-colors"
-            style={{ backgroundColor: checked ? 'var(--sidebar-accent)' : 'var(--background)', borderColor: checked ? 'var(--sidebar-accent)' : 'var(--border)' }}
-            onClick={() => setChecked(!checked)}
+            className="w-full px-3 py-2 rounded-lg border text-sm flex items-center justify-between cursor-pointer"
+            style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', color: value ? 'var(--foreground)' : 'var(--muted-foreground)' }}
+            onClick={() => setShowCalendar(!showCalendar)}
           >
-            {checked && <Check size={13} color="white" />}
+            <span>{value ? formatDate(value) : 'Select date...'}</span>
+            <Calendar size={14} style={{ color: 'var(--muted-foreground)' }} />
           </div>
+          {showCalendar && (
+            <CalendarPopup
+              value={value}
+              onChange={(v) => setValue(v)}
+              onClose={() => setShowCalendar(false)}
+            />
+          )}
+        </div>
+      ) : field.type === 'file' ? (
+        <FileDropZone />
+      ) : field.type === 'checkbox' ? (
+        <div className="flex items-center gap-2 mt-1">
+          <button
+            onClick={() => setChecked(!checked)}
+            className="w-4 h-4 rounded border flex items-center justify-center"
+            style={{
+              borderColor: checked ? 'var(--sidebar-accent)' : 'var(--border)',
+              backgroundColor: checked ? 'var(--sidebar-accent)' : 'transparent',
+            }}
+          >
+            {checked && <CheckSquare size={12} color="white" />}
+          </button>
           <span className="text-sm" style={{ color: 'var(--foreground)' }}>{field.placeholder ?? 'Enabled'}</span>
         </label>
       ) : field.type === 'dataTable' ? (
@@ -500,36 +556,7 @@ function DataSourcesPanel() {
   );
 }
 
-function DeviceFrame({ device, children }: { device: 'desktop' | 'phone' | 'tablet'; children: React.ReactNode }) {
-  if (device === 'desktop') {
-    return (
-      <div
-        className="relative rounded-lg border-[6px] shadow-2xl"
-        style={{
-          borderColor: 'var(--border)',
-          backgroundColor: 'var(--border)',
-          width: 1024,
-          minHeight: 640,
-        }}
-      >
-        {/* URL bar */}
-        <div className="flex items-center gap-2 px-3 py-1.5" style={{ backgroundColor: 'var(--border)' }}>
-          <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
-          </div>
-          <div className="flex-1 text-center">
-            <div className="inline-block px-4 py-0.5 rounded text-[10px]" style={{ backgroundColor: 'var(--background)', color: 'var(--muted-foreground)' }}>app.vidyalaya.com</div>
-          </div>
-        </div>
-        <div className="overflow-y-auto" style={{ backgroundColor: 'var(--card)', minHeight: 600 }}>
-          {children}
-        </div>
-      </div>
-    );
-  }
-
+function DeviceFrame({ device, children }: { device: 'phone' | 'tablet' | 'desktop'; children: React.ReactNode }) {
   if (device === 'phone') {
     return (
       <div
@@ -567,22 +594,56 @@ function DeviceFrame({ device, children }: { device: 'desktop' | 'phone' | 'tabl
   }
 
   // Tablet
+  if (device === 'tablet') {
+    return (
+      <div
+        className="relative rounded-[1.5rem] border-[10px] shadow-2xl"
+        style={{
+          borderColor: 'var(--border)',
+          backgroundColor: 'var(--border)',
+          width: 768,
+          minHeight: 560,
+        }}
+      >
+        {/* Screen */}
+        <div
+          className="rounded-[0.75rem] overflow-y-auto"
+          style={{ backgroundColor: 'var(--card)', minHeight: 540 }}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop
   return (
     <div
-      className="relative rounded-[1.5rem] border-[10px] shadow-2xl"
+      className="relative rounded-xl border-[3px] shadow-2xl"
       style={{
         borderColor: 'var(--border)',
         backgroundColor: 'var(--border)',
-        width: 768,
-        minHeight: 560,
+        width: 960,
+        minHeight: 600,
       }}
     >
+      {/* Monitor top bezel */}
+      <div className="flex items-center gap-1.5 px-3 py-1.5" style={{ backgroundColor: 'var(--border)' }}>
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#ef4444' }} />
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#10b981' }} />
+        <span className="flex-1 text-center text-[10px]" style={{ color: 'var(--muted-foreground)' }}>Desktop Preview</span>
+      </div>
       {/* Screen */}
-      <div
-        className="rounded-[0.75rem] overflow-y-auto"
-        style={{ backgroundColor: 'var(--card)', minHeight: 540 }}
-      >
+      <div className="overflow-y-auto" style={{ backgroundColor: 'var(--card)', minHeight: 560 }}>
         {children}
+      </div>
+      {/* Stand */}
+      <div className="flex justify-center">
+        <div style={{ width: 120, height: 20, backgroundColor: 'var(--border)', clipPath: 'polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%)' }} />
+      </div>
+      <div className="flex justify-center -mt-px">
+        <div className="rounded-b-lg" style={{ width: 200, height: 6, backgroundColor: 'var(--border)' }} />
       </div>
     </div>
   );
@@ -653,23 +714,36 @@ function AppDesigner() {
           <div className="flex items-center gap-2">
             {/* Device toggle */}
             <div className="flex items-center rounded border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-              {([
-                { key: 'desktop' as const, label: 'Desktop', icon: Monitor },
-                { key: 'phone' as const, label: 'Phone', icon: Smartphone },
-                { key: 'tablet' as const, label: 'Tablet', icon: Tablet },
-              ]).map((d) => (
-                <button
-                  key={d.key}
-                  onClick={() => setPreviewDevice(d.key)}
-                  className={cn('flex items-center gap-1 px-3 py-1.5 text-xs transition-colors')}
-                  style={{
-                    backgroundColor: previewDevice === d.key ? 'var(--sidebar-accent)' : 'transparent',
-                    color: previewDevice === d.key ? 'var(--primary-foreground)' : 'var(--foreground)',
-                  }}
-                >
-                  <d.icon size={13} /> {d.label}
-                </button>
-              ))}
+              <button
+                onClick={() => setPreviewDevice('phone')}
+                className={cn('flex items-center gap-1 px-3 py-1.5 text-xs transition-colors')}
+                style={{
+                  backgroundColor: previewDevice === 'phone' ? 'var(--sidebar-accent)' : 'transparent',
+                  color: previewDevice === 'phone' ? 'var(--primary-foreground)' : 'var(--foreground)',
+                }}
+              >
+                <Smartphone size={13} /> Phone
+              </button>
+              <button
+                onClick={() => setPreviewDevice('tablet')}
+                className={cn('flex items-center gap-1 px-3 py-1.5 text-xs transition-colors')}
+                style={{
+                  backgroundColor: previewDevice === 'tablet' ? 'var(--sidebar-accent)' : 'transparent',
+                  color: previewDevice === 'tablet' ? 'var(--primary-foreground)' : 'var(--foreground)',
+                }}
+              >
+                <Tablet size={13} /> Tablet
+              </button>
+              <button
+                onClick={() => setPreviewDevice('desktop')}
+                className={cn('flex items-center gap-1 px-3 py-1.5 text-xs transition-colors')}
+                style={{
+                  backgroundColor: previewDevice === 'desktop' ? 'var(--sidebar-accent)' : 'transparent',
+                  color: previewDevice === 'desktop' ? 'var(--primary-foreground)' : 'var(--foreground)',
+                }}
+              >
+                <Monitor size={13} /> Desktop
+              </button>
             </div>
             <button onClick={() => setPreviewMode(false)} className="px-3 py-1.5 rounded text-sm border" style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}>
               Exit Preview
