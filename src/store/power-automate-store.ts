@@ -67,17 +67,23 @@ interface PowerAutomateState {
   templates: FlowTemplate[];
   flowRuns: FlowRun[];
   connectors: Connector[];
-  activeView: 'my-flows' | 'templates' | 'runs' | 'connectors' | 'designer';
+  activeView: 'my-flows' | 'templates' | 'runs' | 'connectors' | 'designer' | 'analytics';
   selectedFlowId: string | null;
   designerFlow: Flow | null;
   selectedNodeId: string | null;
   searchQuery: string;
+  showExpressionEditor: boolean;
+  expressionValue: string;
+  showToolbox: boolean;
 
   setActiveView: (view: PowerAutomateState['activeView']) => void;
   setSelectedFlowId: (id: string | null) => void;
   setDesignerFlow: (flow: Flow | null) => void;
   setSelectedNodeId: (id: string | null) => void;
   setSearchQuery: (query: string) => void;
+  setShowExpressionEditor: (show: boolean) => void;
+  setExpressionValue: (value: string) => void;
+  setShowToolbox: (show: boolean) => void;
   toggleFlowStatus: (id: string) => void;
   addNodeToDesigner: (node: FlowNode) => void;
   removeNodeFromDesigner: (nodeId: string) => void;
@@ -211,6 +217,12 @@ const sampleRuns: FlowRun[] = [
   { id: 'r6', flowId: 'flow-2', flowName: 'Email Notification on Form Submit', status: 'succeeded', startTime: '2026-03-23T14:10:00Z', duration: '2s', trigger: 'Form submission' },
   { id: 'r7', flowId: 'flow-1', flowName: 'Document Approval Workflow', status: 'running', startTime: '2026-03-24T10:05:00Z', duration: '—', trigger: 'File upload' },
   { id: 'r8', flowId: 'flow-4', flowName: 'Task Assignment on Issue Create', status: 'cancelled', startTime: '2026-03-10T16:45:00Z', duration: '1s', trigger: 'Issue created' },
+  { id: 'r9', flowId: 'flow-1', flowName: 'Document Approval Workflow', status: 'succeeded', startTime: '2026-03-22T11:10:00Z', duration: '9s', trigger: 'File upload' },
+  { id: 'r10', flowId: 'flow-3', flowName: 'Daily Data Sync', status: 'failed', startTime: '2026-03-22T06:00:00Z', duration: '15s', trigger: 'Schedule' },
+  { id: 'r11', flowId: 'flow-2', flowName: 'Email Notification on Form Submit', status: 'succeeded', startTime: '2026-03-21T09:45:00Z', duration: '2s', trigger: 'Form submission' },
+  { id: 'r12', flowId: 'flow-1', flowName: 'Document Approval Workflow', status: 'succeeded', startTime: '2026-03-21T15:30:00Z', duration: '10s', trigger: 'File upload' },
+  { id: 'r13', flowId: 'flow-3', flowName: 'Daily Data Sync', status: 'succeeded', startTime: '2026-03-21T06:00:00Z', duration: '38s', trigger: 'Schedule' },
+  { id: 'r14', flowId: 'flow-1', flowName: 'Document Approval Workflow', status: 'failed', startTime: '2026-03-20T14:00:00Z', duration: '5s', trigger: 'File upload' },
 ];
 
 const sampleConnectors: Connector[] = [
@@ -236,8 +248,14 @@ export const usePowerAutomateStore = create<PowerAutomateState>((set, get) => ({
   designerFlow: null,
   selectedNodeId: null,
   searchQuery: '',
+  showExpressionEditor: false,
+  expressionValue: '',
+  showToolbox: true,
 
   setActiveView: (view) => set({ activeView: view }),
+  setShowExpressionEditor: (show) => set({ showExpressionEditor: show }),
+  setExpressionValue: (value) => set({ expressionValue: value }),
+  setShowToolbox: (show) => set({ showToolbox: show }),
   setSelectedFlowId: (id) => set({ selectedFlowId: id }),
   setDesignerFlow: (flow) => set({ designerFlow: flow, activeView: 'designer' }),
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),

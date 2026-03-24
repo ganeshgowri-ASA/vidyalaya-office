@@ -51,6 +51,8 @@ interface PowerAppsState {
   selectedFieldId: string | null;
   searchQuery: string;
   previewMode: boolean;
+  previewDevice: 'phone' | 'tablet';
+  showConnectionsPanel: boolean;
 
   setActiveView: (view: PowerAppsState['activeView']) => void;
   setSelectedAppId: (id: string | null) => void;
@@ -59,6 +61,8 @@ interface PowerAppsState {
   setSelectedFieldId: (id: string | null) => void;
   setSearchQuery: (query: string) => void;
   setPreviewMode: (preview: boolean) => void;
+  setPreviewDevice: (device: 'phone' | 'tablet') => void;
+  setShowConnectionsPanel: (show: boolean) => void;
   addFieldToScreen: (screenId: string, field: AppField) => void;
   removeFieldFromScreen: (screenId: string, fieldId: string) => void;
   updateField: (screenId: string, fieldId: string, updates: Partial<AppField>) => void;
@@ -223,8 +227,12 @@ export const usePowerAppsStore = create<PowerAppsState>((set) => ({
   selectedFieldId: null,
   searchQuery: '',
   previewMode: false,
+  previewDevice: 'phone',
+  showConnectionsPanel: false,
 
   setActiveView: (view) => set({ activeView: view }),
+  setPreviewDevice: (device) => set({ previewDevice: device }),
+  setShowConnectionsPanel: (show) => set({ showConnectionsPanel: show }),
   setSelectedAppId: (id) => set({ selectedAppId: id }),
   setDesignerApp: (app) =>
     set({
