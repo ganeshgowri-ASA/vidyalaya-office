@@ -51,7 +51,7 @@ interface PowerAppsState {
   selectedFieldId: string | null;
   searchQuery: string;
   previewMode: boolean;
-  previewDevice: 'phone' | 'tablet';
+  previewDevice: 'desktop' | 'phone' | 'tablet';
   showConnectionsPanel: boolean;
 
   setActiveView: (view: PowerAppsState['activeView']) => void;
@@ -61,7 +61,7 @@ interface PowerAppsState {
   setSelectedFieldId: (id: string | null) => void;
   setSearchQuery: (query: string) => void;
   setPreviewMode: (preview: boolean) => void;
-  setPreviewDevice: (device: 'phone' | 'tablet') => void;
+  setPreviewDevice: (device: 'desktop' | 'phone' | 'tablet') => void;
   setShowConnectionsPanel: (show: boolean) => void;
   addFieldToScreen: (screenId: string, field: AppField) => void;
   removeFieldFromScreen: (screenId: string, fieldId: string) => void;
