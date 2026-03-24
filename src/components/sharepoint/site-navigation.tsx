@@ -168,26 +168,38 @@ export function QuickLaunchSidebar() {
 }
 
 // ── Hub Site Navigation ───────────────────────────────
+const hubTabs: { id: string; label: string }[] = [
+  { id: "contoso", label: "Contoso Intranet" },
+  { id: "engineering", label: "Engineering Hub" },
+  { id: "marketing", label: "Marketing Hub" },
+  { id: "hr", label: "HR Portal" },
+  { id: "sales", label: "Sales Hub" },
+  { id: "procurement", label: "Procurement Hub" },
+  { id: "finance", label: "Finance Hub" },
+  { id: "operations", label: "Operations Hub" },
+  { id: "it", label: "IT Hub" },
+  { id: "quality", label: "Quality Hub" },
+];
+
 export function HubNavigation() {
-  const hubSites = [
-    { label: "Contoso Intranet", active: true },
-    { label: "Engineering Hub", active: false },
-    { label: "Marketing Hub", active: false },
-    { label: "HR Portal", active: false },
-  ];
+  const { currentHubId, setCurrentHub } = useSharePointStore();
 
   return (
-    <div className="h-9 flex items-center gap-4 px-4 border-b" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
-      <Globe size={14} style={{ color: "var(--foreground)", opacity: 0.4 }} />
-      {hubSites.map((site) => (
-        <button
-          key={site.label}
-          className={cn("text-xs font-medium", site.active ? "opacity-100" : "opacity-40 hover:opacity-60")}
-          style={{ color: site.active ? "var(--primary)" : "var(--foreground)" }}
-        >
-          {site.label}
-        </button>
-      ))}
+    <div className="h-9 flex items-center gap-4 px-4 border-b overflow-x-auto" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
+      <Globe size={14} className="shrink-0" style={{ color: "var(--foreground)", opacity: 0.4 }} />
+      {hubTabs.map((tab) => {
+        const isActive = tab.id === currentHubId;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => setCurrentHub(tab.id)}
+            className={cn("text-xs font-medium whitespace-nowrap", isActive ? "opacity-100" : "opacity-40 hover:opacity-60")}
+            style={{ color: isActive ? "var(--primary)" : "var(--foreground)" }}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
