@@ -9,6 +9,7 @@ import {
   FileDown,
   LayoutTemplate,
   ClipboardCheck,
+  ListChecks,
   ChevronLeft,
   ChevronRight,
   Settings,
@@ -53,6 +54,7 @@ const editorNav = [
   { label: "Presentation", href: "/presentation", icon: Presentation },
   { label: "Graphics", href: "/graphics", icon: Workflow },
   { label: "PDF Tools", href: "/pdf", icon: FileDown },
+  { label: "Forms", href: "/forms", icon: ListChecks },
 ];
 
 const communicateNav = [
