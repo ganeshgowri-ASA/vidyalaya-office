@@ -259,6 +259,171 @@ const mockLists: SPList[] = [
   },
 ];
 
+// ── Hub Sites ─────────────────────────────────────────
+export interface HubSiteEntry {
+  site: SPSite;
+  aiSuggestions: string[];
+}
+
+function makeHubSite(id: string, title: string, description: string, themeColor: string, docs: { name: string; fileType: string }[], aiSuggestions: string[]): HubSiteEntry {
+  const baseSite: SPSite = {
+    id,
+    title,
+    description,
+    type: "hub",
+    url: `/sharepoint?hub=${id}`,
+    themeColor,
+    owner: "Site Admin",
+    members: ["p1", "p2"],
+    createdAt: "2026-01-01",
+    navigation: [
+      { id: `${id}-nav1`, label: "Home", href: "/sharepoint" },
+      { id: `${id}-nav2`, label: "Documents", href: "/sharepoint?view=library" },
+      { id: `${id}-nav3`, label: "Lists", href: "/sharepoint?view=lists" },
+      { id: `${id}-nav4`, label: "Pages", href: "/sharepoint?view=pages" },
+      { id: `${id}-nav5`, label: "News", href: "/sharepoint?view=news" },
+    ],
+    quickLaunch: [
+      { id: `${id}-ql1`, label: "Home", href: "/sharepoint" },
+      { id: `${id}-ql2`, label: "Shared Documents", href: "/sharepoint?view=library" },
+      { id: `${id}-ql3`, label: "Site Pages", href: "/sharepoint?view=pages" },
+    ],
+    pages: [{
+      id: `${id}-pg1`,
+      title: "Home",
+      slug: "home",
+      isHomePage: true,
+      author: "Site Admin",
+      publishedAt: "2026-01-01",
+      modifiedAt: "2026-03-20",
+      description: `Welcome to ${title}`,
+      sections: [
+        { id: `${id}-s1`, columns: 1, webParts: [{ id: `${id}-wp1`, type: "hero", config: { layout: "tiles", items: [{ title, description, category: "Hub", author: "Site Admin" }] } }], backgroundShading: "none" },
+        { id: `${id}-s2`, columns: 2, webParts: [
+          { id: `${id}-wp2`, type: "recentDocuments", title: "Recent Documents", config: { count: 4 } },
+          { id: `${id}-wp3`, type: "news", title: "Hub News", config: { count: 3 } },
+        ], backgroundShading: "none" },
+      ],
+    }],
+  };
+  return { site: baseSite, aiSuggestions };
+}
+
+const hubSites: Record<string, HubSiteEntry> = {
+  contoso: {
+    site: null as unknown as SPSite, // placeholder, replaced below with defaultSite
+    aiSuggestions: [
+      "Summarize the latest company news",
+      "Find documents modified this week",
+      "Show upcoming company events",
+      "Who are the leadership team members?",
+      "What projects are currently in progress?",
+    ],
+  },
+  engineering: makeHubSite("engineering", "Engineering Hub", "Engineering team resources and documentation", "#059669", [
+    { name: "Architecture Decision Records.md", fileType: "md" },
+    { name: "Sprint Retrospective Notes.docx", fileType: "docx" },
+    { name: "CI-CD Pipeline Guide.pdf", fileType: "pdf" },
+    { name: "Code Review Standards.docx", fileType: "docx" },
+  ], [
+    "Show the latest sprint retrospective notes",
+    "Find architecture decision records",
+    "What are our code review standards?",
+    "List open engineering projects",
+    "Summarize the CI/CD pipeline guide",
+  ]),
+  marketing: makeHubSite("marketing", "Marketing Hub", "Campaign management and brand assets", "#DC2626", [
+    { name: "Q2 Campaign Plan.pptx", fileType: "pptx" },
+    { name: "Brand Assets Guide.pdf", fileType: "pdf" },
+    { name: "Social Media Calendar.xlsx", fileType: "xlsx" },
+  ], [
+    "What campaigns are planned for Q2?",
+    "Find the latest brand guidelines",
+    "Show the social media calendar",
+    "Summarize recent campaign performance",
+    "List upcoming marketing events",
+  ]),
+  hr: makeHubSite("hr", "HR Portal", "Employee resources, policies, and benefits", "#7C3AED", [
+    { name: "Employee Handbook 2026.pdf", fileType: "pdf" },
+    { name: "Benefits Guide.pdf", fileType: "pdf" },
+    { name: "Onboarding Checklist.docx", fileType: "docx" },
+    { name: "PTO Policy.docx", fileType: "docx" },
+  ], [
+    "What are the PTO policies?",
+    "Show the onboarding checklist",
+    "Summarize employee benefits",
+    "Find the latest HR announcements",
+    "How do I submit an expense report?",
+  ]),
+  sales: makeHubSite("sales", "Sales Hub", "Sales resources, pipeline tracking, and client materials", "#D97706", [
+    { name: "Sales Playbook 2026.pptx", fileType: "pptx" },
+    { name: "Client Proposal Template.docx", fileType: "docx" },
+    { name: "Q1 Pipeline Report.xlsx", fileType: "xlsx" },
+  ], [
+    "Show the current sales pipeline",
+    "Find the client proposal template",
+    "Summarize Q1 sales performance",
+    "What deals are closing this month?",
+    "List top accounts by revenue",
+  ]),
+  procurement: makeHubSite("procurement", "Procurement Hub", "Vendor management and purchase approvals", "#0891B2", [
+    { name: "Vendor List 2026.xlsx", fileType: "xlsx" },
+    { name: "Procurement Policy.pdf", fileType: "pdf" },
+    { name: "Purchase Order Template.docx", fileType: "docx" },
+  ], [
+    "List approved vendors",
+    "Find the procurement policy",
+    "Show pending purchase orders",
+    "What is the approval workflow for purchases?",
+    "Summarize vendor performance reviews",
+  ]),
+  finance: makeHubSite("finance", "Finance Hub", "Financial reports, budgets, and compliance", "#BE185D", [
+    { name: "Q1 Financial Summary.xlsx", fileType: "xlsx" },
+    { name: "Budget Allocation 2026.xlsx", fileType: "xlsx" },
+    { name: "Audit Compliance Report.pdf", fileType: "pdf" },
+  ], [
+    "Show the Q1 financial summary",
+    "What is the current budget allocation?",
+    "Find the latest audit report",
+    "Summarize expense trends",
+    "List upcoming financial deadlines",
+  ]),
+  operations: makeHubSite("operations", "Operations Hub", "Operational workflows, SOPs, and facilities", "#065F46", [
+    { name: "Standard Operating Procedures.pdf", fileType: "pdf" },
+    { name: "Facilities Request Form.docx", fileType: "docx" },
+    { name: "Incident Response Plan.pdf", fileType: "pdf" },
+  ], [
+    "Find the incident response plan",
+    "Show standard operating procedures",
+    "How do I submit a facilities request?",
+    "List active operational projects",
+    "Summarize recent incident reports",
+  ]),
+  it: makeHubSite("it", "IT Hub", "IT support, infrastructure, and security resources", "#4338CA", [
+    { name: "IT Service Catalog.pdf", fileType: "pdf" },
+    { name: "Security Best Practices.docx", fileType: "docx" },
+    { name: "System Status Dashboard.xlsx", fileType: "xlsx" },
+    { name: "VPN Setup Guide.pdf", fileType: "pdf" },
+  ], [
+    "How do I set up VPN access?",
+    "Show the IT service catalog",
+    "What are the security best practices?",
+    "Check current system status",
+    "How do I request new software?",
+  ]),
+  quality: makeHubSite("quality", "Quality Hub", "Quality assurance standards and testing processes", "#92400E", [
+    { name: "QA Test Plan Template.docx", fileType: "docx" },
+    { name: "Quality Standards Manual.pdf", fileType: "pdf" },
+    { name: "Defect Tracking Report.xlsx", fileType: "xlsx" },
+  ], [
+    "Show the QA test plan template",
+    "Find the quality standards manual",
+    "Summarize the defect tracking report",
+    "What are the release quality gates?",
+    "List quality metrics for this quarter",
+  ]),
+};
+
 const defaultSite: SPSite = {
   id: "site1",
   title: "Contoso Intranet",
@@ -335,10 +500,17 @@ const defaultSite: SPSite = {
   ],
 };
 
+// Assign defaultSite to contoso hub entry
+hubSites.contoso.site = defaultSite;
+
+export { hubSites };
+
 // ── Store ──────────────────────────────────────────────
 interface SharePointStore {
   // Site
+  currentHubId: string;
   currentSite: SPSite;
+  aiSuggestions: string[];
   activePage: SPPage | null;
   activeView: "home" | "library" | "lists" | "pages" | "news" | "settings";
 
@@ -369,6 +541,7 @@ interface SharePointStore {
   showSettingsPanel: boolean;
 
   // Actions
+  setCurrentHub: (hubId: string) => void;
   setActiveView: (view: SharePointStore["activeView"]) => void;
   setActivePage: (page: SPPage | null) => void;
   setCurrentFolderId: (id: string) => void;
@@ -395,7 +568,9 @@ interface SharePointStore {
 }
 
 export const useSharePointStore = create<SharePointStore>((set) => ({
+  currentHubId: "contoso",
   currentSite: defaultSite,
+  aiSuggestions: hubSites.contoso.aiSuggestions,
   activePage: defaultSite.pages[0],
   activeView: "home",
   documents: mockDocuments,
@@ -417,6 +592,17 @@ export const useSharePointStore = create<SharePointStore>((set) => ({
   showShareModal: false,
   showSettingsPanel: false,
 
+  setCurrentHub: (hubId) => set(() => {
+    const entry = hubSites[hubId];
+    if (!entry) return {};
+    return {
+      currentHubId: hubId,
+      currentSite: entry.site,
+      aiSuggestions: entry.aiSuggestions,
+      activePage: entry.site.pages[0] ?? null,
+      activeView: "home" as const,
+    };
+  }),
   setActiveView: (view) => set({ activeView: view }),
   setActivePage: (page) => set({ activePage: page }),
   setCurrentFolderId: (id) => set({ currentFolderId: id, selectedDocIds: [] }),
