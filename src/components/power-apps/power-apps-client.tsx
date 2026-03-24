@@ -457,7 +457,7 @@ function ConnectionsPanel() {
     if (!connected) {
       health = 'Error';
       lastSync = 'Never';
-    } else if (ds.name === 'Dataverse') {
+    } else if (ds.name === 'Railway PostgreSQL') {
       health = 'Warning';
       lastSync = '15 min ago';
     } else if (ds.name === 'SQL Server') {
