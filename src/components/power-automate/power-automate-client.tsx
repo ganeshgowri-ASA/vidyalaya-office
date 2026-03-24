@@ -479,7 +479,7 @@ function FlowDetailOverlay({ flow, onClose }: { flow: Flow; onClose: () => void 
 }
 
 function FlowCard({ flow }: { flow: Flow }) {
-  const { setDesignerFlow, toggleFlowStatus } = usePowerAutomateStore();
+  const { setDetailFlow, toggleFlowStatus } = usePowerAutomateStore();
   const statusColors: Record<string, string> = {
     active: '#10b981',
     inactive: '#6b7280',
@@ -560,6 +560,10 @@ export function PowerAutomateClient() {
 
   const detailFlow = flowDetailId ? flows.find((f) => f.id === flowDetailId) ?? null : null;
 
+  if (activeView === 'detail' && detailFlow) {
+    return <FlowDetailView />;
+  }
+
   if (activeView === 'designer' && designerFlow) {
     return (
       <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--background)' }}>
@@ -567,6 +571,9 @@ export function PowerAutomateClient() {
       </div>
     );
   }
+
+  const templateCategories = ['All', ...Array.from(new Set(templates.map((t) => t.category)))];
+  const filteredTemplates = templateCategory === 'All' ? templates : templates.filter((t) => t.category === templateCategory);
 
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--background)' }}>
@@ -616,6 +623,24 @@ export function PowerAutomateClient() {
       <div className="flex-1 overflow-y-auto p-6">
         {activeView === 'my-flows' && (
           <div>
+            {/* Cloud / Desktop toggle */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+                {([{ key: 'cloud' as const, label: 'Cloud Flows', icon: Cloud }, { key: 'desktop' as const, label: 'Desktop Flows', icon: Monitor }]).map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setFlowTypeFilter(tab.key)}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors"
+                    style={{
+                      backgroundColor: flowTypeFilter === tab.key ? 'var(--sidebar-accent)' : 'transparent',
+                      color: flowTypeFilter === tab.key ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                    }}
+                  >
+                    <tab.icon size={14} /> {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="flex items-center gap-3 mb-5">
               <div className="relative flex-1 max-w-md">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
@@ -695,9 +720,8 @@ export function PowerAutomateClient() {
                 return (
                   <div
                     key={tmpl.id}
-                    className="rounded-lg border p-4 cursor-pointer hover:border-opacity-60 transition-colors"
+                    className="rounded-lg border p-4 hover:border-opacity-60 transition-colors"
                     style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
-                    onClick={() => usePowerAutomateStore.getState().createFlowFromTemplate(tmpl.id)}
                   >
                     <div className="p-2.5 rounded-lg w-fit mb-3" style={{ backgroundColor: 'var(--sidebar-accent)' + '20' }}>
                       <Icon size={20} style={{ color: 'var(--sidebar-accent)' }} />
@@ -771,13 +795,30 @@ export function PowerAutomateClient() {
               {connectors.map((conn) => {
                 const Icon = connectorIcons[conn.icon] ?? Globe;
                 return (
-                  <div key={conn.id} className="rounded-lg border p-4 flex items-center gap-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                    <div className="p-2.5 rounded-lg" style={{ backgroundColor: 'var(--background)' }}>
-                      <Icon size={20} style={{ color: 'var(--sidebar-accent)' }} />
+                  <div key={conn.id} className="rounded-lg border p-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 rounded-lg" style={{ backgroundColor: 'var(--background)' }}>
+                        <Icon size={20} style={{ color: 'var(--sidebar-accent)' }} />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>{conn.name}</h3>
+                        <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{conn.category}</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>{conn.name}</h3>
-                      <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{conn.category}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium" style={{ color: conn.connected ? '#10b981' : 'var(--muted-foreground)' }}>
+                        {conn.connected ? 'Connected' : 'Disconnected'}
+                      </span>
+                      <button
+                        onClick={() => toggleConnector(conn.id)}
+                        className="text-xs px-3 py-1.5 rounded font-medium transition-colors"
+                        style={{
+                          backgroundColor: conn.connected ? '#ef444420' : '#10b98120',
+                          color: conn.connected ? '#ef4444' : '#10b981',
+                        }}
+                      >
+                        {conn.connected ? 'Disconnect' : 'Connect'}
+                      </button>
                     </div>
                     <button
                       onClick={() => toggleConnector(conn.id)}

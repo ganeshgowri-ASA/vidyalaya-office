@@ -8,6 +8,7 @@ import {
   Globe, Code, Play, ArrowLeft, Monitor, Receipt, CalendarOff,
   ClipboardList, Headphones, FileText, Settings, LayoutGrid,
   Smartphone, Tablet, RefreshCw, Wifi, WifiOff, ArrowUpDown, ChevronLeft,
+  File, Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePowerAppsStore, PowerApp, AppField, AppScreen } from '@/store/power-apps-store';
@@ -438,7 +439,7 @@ function FieldRenderer({ field, preview }: { field: AppField; preview?: boolean 
             {checked && <CheckSquare size={12} color="white" />}
           </button>
           <span className="text-sm" style={{ color: 'var(--foreground)' }}>{field.placeholder ?? 'Enabled'}</span>
-        </div>
+        </label>
       ) : field.type === 'dataTable' ? (
         <DataTableRenderer />
       ) : null}

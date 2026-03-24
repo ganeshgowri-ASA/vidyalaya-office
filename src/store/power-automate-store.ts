@@ -68,29 +68,44 @@ interface PowerAutomateState {
   templates: FlowTemplate[];
   flowRuns: FlowRun[];
   connectors: Connector[];
-  activeView: 'my-flows' | 'templates' | 'runs' | 'connectors' | 'designer' | 'analytics';
+  activeView: 'my-flows' | 'templates' | 'runs' | 'connectors' | 'designer' | 'detail' | 'analytics';
   selectedFlowId: string | null;
   designerFlow: Flow | null;
+  detailFlow: Flow | null;
+  detailTab: 'designer' | 'settings';
   selectedNodeId: string | null;
   flowTypeFilter: 'all' | 'cloud' | 'desktop';
   flowDetailId: string | null;
   searchQuery: string;
+  flowTypeFilter: 'cloud' | 'desktop';
+  templateCategory: string;
   showExpressionEditor: boolean;
   expressionValue: string;
   showToolbox: boolean;
+  showTestDialog: boolean;
+  testStepIndex: number;
+  testRunning: boolean;
 
   setActiveView: (view: PowerAutomateState['activeView']) => void;
   setSelectedFlowId: (id: string | null) => void;
   setDesignerFlow: (flow: Flow | null) => void;
+  setDetailFlow: (flow: Flow | null) => void;
+  setDetailTab: (tab: 'designer' | 'settings') => void;
   setSelectedNodeId: (id: string | null) => void;
   setFlowTypeFilter: (filter: PowerAutomateState['flowTypeFilter']) => void;
   setFlowDetailId: (id: string | null) => void;
   toggleConnector: (id: string) => void;
   setSearchQuery: (query: string) => void;
+  setFlowTypeFilter: (filter: 'cloud' | 'desktop') => void;
+  setTemplateCategory: (category: string) => void;
   setShowExpressionEditor: (show: boolean) => void;
   setExpressionValue: (value: string) => void;
   setShowToolbox: (show: boolean) => void;
+  setShowTestDialog: (show: boolean) => void;
+  setTestStepIndex: (index: number) => void;
+  setTestRunning: (running: boolean) => void;
   toggleFlowStatus: (id: string) => void;
+  toggleConnector: (id: string) => void;
   addNodeToDesigner: (node: FlowNode) => void;
   removeNodeFromDesigner: (nodeId: string) => void;
   updateNodePosition: (nodeId: string, x: number, y: number) => void;
@@ -257,13 +272,20 @@ export const usePowerAutomateStore = create<PowerAutomateState>((set, get) => ({
   activeView: 'my-flows',
   selectedFlowId: null,
   designerFlow: null,
+  detailFlow: null,
+  detailTab: 'designer',
   selectedNodeId: null,
   flowTypeFilter: 'all',
   flowDetailId: null,
   searchQuery: '',
+  flowTypeFilter: 'cloud',
+  templateCategory: 'All',
   showExpressionEditor: false,
   expressionValue: '',
   showToolbox: true,
+  showTestDialog: false,
+  testStepIndex: -1,
+  testRunning: false,
 
   setActiveView: (view) => set({ activeView: view }),
   setShowExpressionEditor: (show) => set({ showExpressionEditor: show }),
@@ -271,11 +293,18 @@ export const usePowerAutomateStore = create<PowerAutomateState>((set, get) => ({
   setShowToolbox: (show) => set({ showToolbox: show }),
   setSelectedFlowId: (id) => set({ selectedFlowId: id }),
   setDesignerFlow: (flow) => set({ designerFlow: flow, activeView: 'designer' }),
+  setDetailFlow: (flow) => set({ detailFlow: flow, activeView: flow ? 'detail' : 'my-flows', detailTab: 'designer' }),
+  setDetailTab: (tab) => set({ detailTab: tab }),
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
   setFlowTypeFilter: (filter) => set({ flowTypeFilter: filter }),
   setFlowDetailId: (id) => set({ flowDetailId: id }),
   toggleConnector: (id) => set((s) => ({ connectors: s.connectors.map((c) => c.id === id ? { ...c, connected: !c.connected } : c) })),
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setFlowTypeFilter: (filter) => set({ flowTypeFilter: filter }),
+  setTemplateCategory: (category) => set({ templateCategory: category }),
+  setShowTestDialog: (show) => set({ showTestDialog: show, testStepIndex: -1, testRunning: false }),
+  setTestStepIndex: (index) => set({ testStepIndex: index }),
+  setTestRunning: (running) => set({ testRunning: running }),
 
   toggleFlowStatus: (id) =>
     set((s) => ({
@@ -283,6 +312,13 @@ export const usePowerAutomateStore = create<PowerAutomateState>((set, get) => ({
         f.id === id
           ? { ...f, status: f.status === 'active' ? 'inactive' : 'active' as Flow['status'] }
           : f
+      ),
+    })),
+
+  toggleConnector: (id) =>
+    set((s) => ({
+      connectors: s.connectors.map((c) =>
+        c.id === id ? { ...c, connected: !c.connected } : c
       ),
     })),
 
