@@ -66,6 +66,7 @@ interface PowerAppsState {
   addFieldToScreen: (screenId: string, field: AppField) => void;
   removeFieldFromScreen: (screenId: string, fieldId: string) => void;
   updateField: (screenId: string, fieldId: string, updates: Partial<AppField>) => void;
+  reorderFields: (screenId: string, fromIndex: number, toIndex: number) => void;
   addScreen: (screen: AppScreen) => void;
   deleteScreen: (screenId: string) => void;
 }
@@ -284,6 +285,23 @@ export const usePowerAppsStore = create<PowerAppsState>((set) => ({
               ? { ...scr, fields: scr.fields.map((f) => (f.id === fieldId ? { ...f, ...updates } : f)) }
               : scr
           ),
+        },
+      };
+    }),
+
+  reorderFields: (screenId, fromIndex, toIndex) =>
+    set((s) => {
+      if (!s.designerApp) return s;
+      return {
+        designerApp: {
+          ...s.designerApp,
+          screens: s.designerApp.screens.map((scr) => {
+            if (scr.id !== screenId) return scr;
+            const fields = [...scr.fields];
+            const [moved] = fields.splice(fromIndex, 1);
+            fields.splice(toIndex, 0, moved);
+            return { ...scr, fields };
+          }),
         },
       };
     }),
