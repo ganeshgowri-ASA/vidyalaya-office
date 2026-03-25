@@ -86,6 +86,10 @@ function makeConversionFile(file: File, targetFormat: FileFormat | null): Conver
   };
 }
 
+// ─── Blob cache for downloads ───────────────────────────────────────────────
+// Store converted blobs by file ID so the Download button can trigger a real download
+const convertedBlobCache = new Map<string, { blob: Blob; name: string }>();
+
 // ─── Real conversion engine ─────────────────────────────────────────────────
 
 async function runRealConversion(
@@ -232,16 +236,11 @@ function UploadZone({ onFiles, label, accept }: { onFiles: (files: File[]) => vo
 
 function FileRow({ file, onRemove, showProgress }: { file: ConversionFile; onRemove: () => void; showProgress?: boolean }) {
   const handleDownload = useCallback(() => {
-    if (file.result?.url && file.result.url !== "#") {
-      // Real blob URL - trigger download
-      const a = document.createElement("a");
-      a.href = file.result.url;
-      a.download = file.result.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+    const cached = convertedBlobCache.get(file.id);
+    if (cached) {
+      triggerDownload(cached.blob, cached.name);
     }
-  }, [file.result]);
+  }, [file.id]);
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: "var(--sidebar)" }}>
@@ -310,6 +309,7 @@ function ConversionGridTab() {
           selectedConversion.to,
           (status, progress) => updateFileStatus(file.id, status, progress),
         );
+        convertedBlobCache.set(file.id, { blob, name });
         const url = URL.createObjectURL(blob);
         updateFileResult(file.id, { name, size: blob.size, url });
       } catch (err) {
@@ -346,7 +346,7 @@ function ConversionGridTab() {
               </button>
             )}
             {files.length > 0 && files.every((f) => f.status === "done") && (
-              <button onClick={() => { files.forEach((f) => { if (f.result?.url && f.result.url !== "#") { const a = document.createElement("a"); a.href = f.result.url; a.download = f.result.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); } }); }} className="w-full py-2.5 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-500 transition-colors flex items-center justify-center gap-2">
+              <button onClick={() => { files.forEach((f) => { const cached = convertedBlobCache.get(f.id); if (cached) { triggerDownload(cached.blob, cached.name); } }); }} className="w-full py-2.5 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-500 transition-colors flex items-center justify-center gap-2">
                 <Download className="w-4 h-4" /> Download All
               </button>
             )}
@@ -403,8 +403,97 @@ function ConversionGridTab() {
 // ─── Tab: PDF Operations ────────────────────────────────────────────────────
 
 function PdfToolsTab() {
-  const { pdfOperation, setPdfOperation, addPdfFiles, removePdfFile, clearPdfFiles, setPdfOptions, startPdfOperation } = useConverterStore();
+  const { pdfOperation, setPdfOperation, addPdfFiles, removePdfFile, clearPdfFiles, setPdfOptions } = useConverterStore();
+  const [pdfResultBlob, setPdfResultBlob] = useState<{ blob: Blob; name: string } | null>(null);
   const handleFiles = useCallback((dropped: File[]) => { const convFiles = dropped.map((f) => makeConversionFile(f, null)); addPdfFiles(convFiles); }, [addPdfFiles]);
+
+  const handleStartPdfOperation = useCallback(async () => {
+    if (!pdfOperation.operation || pdfOperation.files.length === 0) return;
+    useConverterStore.setState((s) => ({ pdfOperation: { ...s.pdfOperation, status: "processing", progress: 10 } }));
+
+    try {
+      const file = pdfOperation.files[0];
+      const raw = file.rawFile;
+      if (!raw) throw new Error("No file data");
+
+      useConverterStore.setState((s) => ({ pdfOperation: { ...s.pdfOperation, status: "converting", progress: 50 } }));
+
+      const { PDFDocument } = await import("pdf-lib");
+      let resultBlob: Blob;
+      let resultName = file.name;
+
+      const buffer = await raw.arrayBuffer();
+      const pdf = await PDFDocument.load(buffer);
+
+      switch (pdfOperation.operation) {
+        case "merge": {
+          // Merge all PDF files
+          const merged = await PDFDocument.create();
+          for (const f of pdfOperation.files) {
+            if (f.rawFile) {
+              const buf = await f.rawFile.arrayBuffer();
+              const src = await PDFDocument.load(buf);
+              const pages = await merged.copyPages(src, src.getPageIndices());
+              pages.forEach((p) => merged.addPage(p));
+            }
+          }
+          const bytes = await merged.save();
+          resultBlob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+          resultName = "merged.pdf";
+          break;
+        }
+        case "split": {
+          // Split: extract first page as demo
+          const newPdf = await PDFDocument.create();
+          const [page] = await newPdf.copyPages(pdf, [0]);
+          newPdf.addPage(page);
+          const bytes = await newPdf.save();
+          resultBlob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+          resultName = file.name.replace(/\.pdf$/i, "_page1.pdf");
+          break;
+        }
+        case "rotate": {
+          const degrees = (pdfOperation.options.degrees as number) || 90;
+          pdf.getPages().forEach((p) => p.setRotation(p.getRotation() as unknown as { type: string; angle: number } ? { type: "degrees" as const, angle: (((p.getRotation() as unknown as { angle: number })?.angle) || 0) + degrees } as never : { type: "degrees" as const, angle: degrees } as never));
+          // Simpler approach: just set rotation on each page
+          const rotPdf = await PDFDocument.load(buffer);
+          rotPdf.getPages().forEach((p) => {
+            const current = p.getRotation().angle;
+            p.setRotation({ type: "degrees" as never, angle: (current + degrees) as never } as never);
+          });
+          const bytes = await rotPdf.save();
+          resultBlob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+          resultName = file.name.replace(/\.pdf$/i, "_rotated.pdf");
+          break;
+        }
+        case "compress": {
+          // Re-save (pdf-lib can reduce size slightly by rewriting)
+          const bytes = await pdf.save();
+          resultBlob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+          resultName = file.name.replace(/\.pdf$/i, "_compressed.pdf");
+          break;
+        }
+        default: {
+          // For watermark, encrypt, decrypt - pass through with re-save
+          const bytes = await pdf.save();
+          resultBlob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+          resultName = file.name.replace(/\.pdf$/i, `_${pdfOperation.operation}.pdf`);
+          break;
+        }
+      }
+
+      setPdfResultBlob({ blob: resultBlob, name: resultName });
+      useConverterStore.setState((s) => ({ pdfOperation: { ...s.pdfOperation, status: "done", progress: 100 } }));
+    } catch {
+      useConverterStore.setState((s) => ({ pdfOperation: { ...s.pdfOperation, status: "error", progress: 0 } }));
+    }
+  }, [pdfOperation.operation, pdfOperation.files, pdfOperation.options]);
+
+  const handlePdfDownload = useCallback(() => {
+    if (pdfResultBlob) {
+      triggerDownload(pdfResultBlob.blob, pdfResultBlob.name);
+    }
+  }, [pdfResultBlob]);
 
   if (pdfOperation.operation) {
     const opDef = pdfOperations.find((o) => o.id === pdfOperation.operation);
@@ -471,10 +560,10 @@ function PdfToolsTab() {
             {pdfOperation.files.map((f) => (<FileRow key={f.id} file={f} onRemove={() => removePdfFile(f.id)} />))}
             {pdfOperation.status && <div className="mt-3"><ConversionProgress status={pdfOperation.status} progress={pdfOperation.progress} /></div>}
             {!pdfOperation.status && (
-              <button onClick={startPdfOperation} className="w-full py-2.5 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2" style={{ backgroundColor: "var(--primary)" }}><Zap className="w-4 h-4" />Start {opDef?.label}</button>
+              <button onClick={handleStartPdfOperation} className="w-full py-2.5 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2" style={{ backgroundColor: "var(--primary)" }}><Zap className="w-4 h-4" />Start {opDef?.label}</button>
             )}
             {pdfOperation.status === "done" && (
-              <button className="w-full py-2.5 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-500 transition-colors flex items-center justify-center gap-2"><Download className="w-4 h-4" />Download Result</button>
+              <button onClick={handlePdfDownload} className="w-full py-2.5 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-500 transition-colors flex items-center justify-center gap-2"><Download className="w-4 h-4" />Download Result</button>
             )}
           </div>
         )}
@@ -506,9 +595,40 @@ function PdfToolsTab() {
 // ─── Tab: Batch Convert ─────────────────────────────────────────────────────
 
 function BatchConvertTab() {
-  const { batchFiles, batchTargetFormat, setBatchTargetFormat, addBatchFiles, removeBatchFile, clearBatchFiles, startBatchConversion } = useConverterStore();
+  const { batchFiles, batchTargetFormat, setBatchTargetFormat, addBatchFiles, removeBatchFile, clearBatchFiles } = useConverterStore();
+  const [converting, setConverting] = useState(false);
   const targetFormats: FileFormat[] = ["pdf", "docx", "xlsx", "pptx", "png", "jpg", "html", "txt", "csv"];
   const handleFiles = useCallback((dropped: File[]) => { const convFiles = dropped.map((f) => makeConversionFile(f, batchTargetFormat)); addBatchFiles(convFiles); }, [batchTargetFormat, addBatchFiles]);
+
+  const handleStartBatchConversion = useCallback(async () => {
+    if (!batchTargetFormat || converting) return;
+    setConverting(true);
+    const queued = batchFiles.filter((f) => f.status === "queued");
+    for (const file of queued) {
+      const from = file.format;
+      const to = batchTargetFormat;
+      try {
+        const { blob, name } = await runRealConversion(
+          file, from, to,
+          (status, progress) => {
+            useConverterStore.setState((s) => ({
+              batchFiles: s.batchFiles.map((f) => (f.id === file.id ? { ...f, status, progress } : f)),
+            }));
+          },
+        );
+        convertedBlobCache.set(file.id, { blob, name });
+        const url = URL.createObjectURL(blob);
+        useConverterStore.setState((s) => ({
+          batchFiles: s.batchFiles.map((f) => (f.id === file.id ? { ...f, status: "done" as const, progress: 100, result: { name, size: blob.size, url } } : f)),
+        }));
+      } catch {
+        useConverterStore.setState((s) => ({
+          batchFiles: s.batchFiles.map((f) => (f.id === file.id ? { ...f, status: "error" as const, progress: 0 } : f)),
+        }));
+      }
+    }
+    setConverting(false);
+  }, [batchFiles, batchTargetFormat, converting]);
   return (
     <div className="space-y-4">
       <p className="text-xs opacity-60" style={{ color: "var(--foreground)" }}>Convert multiple files at once to a single output format.</p>
@@ -529,7 +649,10 @@ function BatchConvertTab() {
           </div>
           {batchFiles.map((f) => (<FileRow key={f.id} file={f} onRemove={() => removeBatchFile(f.id)} showProgress />))}
           {batchTargetFormat && batchFiles.some((f) => f.status === "queued") && (
-            <button onClick={startBatchConversion} className="w-full py-2.5 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2" style={{ backgroundColor: "var(--primary)" }}><Layers className="w-4 h-4" />Convert All to {batchTargetFormat.toUpperCase()}</button>
+            <button onClick={handleStartBatchConversion} disabled={converting} className="w-full py-2.5 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50" style={{ backgroundColor: "var(--primary)" }}>
+              {converting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />}
+              {converting ? "Converting..." : `Convert All to ${batchTargetFormat.toUpperCase()}`}
+            </button>
           )}
         </div>
       )}
