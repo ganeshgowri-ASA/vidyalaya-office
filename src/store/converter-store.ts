@@ -216,22 +216,8 @@ export const useConverterStore = create<ConverterStore>((set, get) => ({
       files: s.files.map((f) => (f.id === id ? { ...f, result, status: "done" as const, progress: 100 } : f)),
     })),
   startConversion: () => {
-    const { files, updateFileStatus, updateFileResult, selectedConversion } = get();
-    if (!selectedConversion) return;
-    files.forEach((file) => {
-      if (file.status !== "queued") return;
-      updateFileStatus(file.id, "uploading", 10);
-      setTimeout(() => updateFileStatus(file.id, "processing", 40), 800);
-      setTimeout(() => updateFileStatus(file.id, "converting", 70), 1600);
-      setTimeout(() => {
-        const resultName = file.name.replace(/\.[^.]+$/, `.${selectedConversion.to}`);
-        updateFileResult(file.id, {
-          name: resultName,
-          size: Math.round(file.size * 0.8),
-          url: "#",
-        });
-      }, 2400);
-    });
+    // Conversion is now handled by the component using real conversion functions
+    // This is kept for interface compatibility
   },
 
   batchFiles: [],
@@ -241,36 +227,8 @@ export const useConverterStore = create<ConverterStore>((set, get) => ({
   removeBatchFile: (id) => set((s) => ({ batchFiles: s.batchFiles.filter((f) => f.id !== id) })),
   clearBatchFiles: () => set({ batchFiles: [] }),
   startBatchConversion: () => {
-    const { batchFiles, batchTargetFormat, updateFileStatus, updateFileResult } = get();
-    if (!batchTargetFormat) return;
-    batchFiles.forEach((file, i) => {
-      const delay = i * 500;
-      setTimeout(() => set((s) => ({
-        batchFiles: s.batchFiles.map((f) => (f.id === file.id ? { ...f, status: "uploading" as const, progress: 10 } : f)),
-      })), delay);
-      setTimeout(() => set((s) => ({
-        batchFiles: s.batchFiles.map((f) => (f.id === file.id ? { ...f, status: "processing" as const, progress: 40 } : f)),
-      })), delay + 600);
-      setTimeout(() => set((s) => ({
-        batchFiles: s.batchFiles.map((f) => (f.id === file.id ? { ...f, status: "converting" as const, progress: 70 } : f)),
-      })), delay + 1200);
-      setTimeout(() => set((s) => ({
-        batchFiles: s.batchFiles.map((f) =>
-          f.id === file.id
-            ? {
-                ...f,
-                status: "done" as const,
-                progress: 100,
-                result: {
-                  name: f.name.replace(/\.[^.]+$/, `.${batchTargetFormat}`),
-                  size: Math.round(f.size * 0.8),
-                  url: "#",
-                },
-              }
-            : f
-        ),
-      })), delay + 2000);
-    });
+    // Batch conversion is now handled by the component using real conversion functions
+    // This is kept for interface compatibility
   },
 
   pdfOperation: { operation: null, files: [], options: {}, status: null, progress: 0 },
@@ -292,12 +250,8 @@ export const useConverterStore = create<ConverterStore>((set, get) => ({
   setPdfOptions: (opts) =>
     set((s) => ({ pdfOperation: { ...s.pdfOperation, options: { ...s.pdfOperation.options, ...opts } } })),
   startPdfOperation: () => {
-    const { pdfOperation } = get();
-    if (!pdfOperation.operation || pdfOperation.files.length === 0) return;
-    set((s) => ({ pdfOperation: { ...s.pdfOperation, status: "processing", progress: 0 } }));
-    setTimeout(() => set((s) => ({ pdfOperation: { ...s.pdfOperation, progress: 30 } })), 500);
-    setTimeout(() => set((s) => ({ pdfOperation: { ...s.pdfOperation, status: "converting", progress: 60 } })), 1000);
-    setTimeout(() => set((s) => ({ pdfOperation: { ...s.pdfOperation, status: "done", progress: 100 } })), 2000);
+    // PDF operations are now handled by the component using real pdf-lib functions
+    // This is kept for interface compatibility
   },
 
   recentConversions: mockRecentConversions,
