@@ -36,6 +36,7 @@ export interface ConversionFile {
   result?: { name: string; size: number; url: string };
   error?: string;
   addedAt: number;
+  rawFile?: File;
 }
 
 export interface RecentConversion {
@@ -117,12 +118,30 @@ const mockRecentConversions: RecentConversion[] = [
   { id: "r10", fileName: "Financial_Data.xlsx", fromFormat: "xlsx", toFormat: "csv", fileSize: 716800, resultSize: 204800, date: "2026-03-22T08:30:00Z", status: "completed", downloadUrl: "#" },
 ];
 
+// ─── OCR Types ──────────────────────────────────────────────────────────────
+
+export interface OcrResult {
+  text: string;
+  confidence: number;
+  language: string;
+}
+
+export interface OcrState {
+  file: File | null;
+  imageUrl: string | null;
+  processing: boolean;
+  progress: number;
+  result: OcrResult | null;
+  error: string | null;
+  language: string;
+}
+
 // ─── Store ──────────────────────────────────────────────────────────────────
 
 interface ConverterStore {
   // View state
-  activeTab: "convert" | "pdf-tools" | "batch" | "recent";
-  setActiveTab: (tab: "convert" | "pdf-tools" | "batch" | "recent") => void;
+  activeTab: "convert" | "pdf-tools" | "batch" | "recent" | "ocr";
+  setActiveTab: (tab: "convert" | "pdf-tools" | "batch" | "recent" | "ocr") => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
   searchQuery: string;
@@ -160,6 +179,15 @@ interface ConverterStore {
   // Recent
   recentConversions: RecentConversion[];
   clearRecentConversions: () => void;
+
+  // OCR
+  ocr: OcrState;
+  setOcrFile: (file: File | null) => void;
+  setOcrLanguage: (lang: string) => void;
+  setOcrProcessing: (processing: boolean, progress?: number) => void;
+  setOcrResult: (result: OcrResult | null) => void;
+  setOcrError: (error: string | null) => void;
+  resetOcr: () => void;
 }
 
 let idCounter = 0;
@@ -274,4 +302,34 @@ export const useConverterStore = create<ConverterStore>((set, get) => ({
 
   recentConversions: mockRecentConversions,
   clearRecentConversions: () => set({ recentConversions: [] }),
+
+  // OCR
+  ocr: { file: null, imageUrl: null, processing: false, progress: 0, result: null, error: null, language: "eng" },
+  setOcrFile: (file) => {
+    const prev = get().ocr;
+    if (prev.imageUrl) URL.revokeObjectURL(prev.imageUrl);
+    set({
+      ocr: {
+        ...prev,
+        file,
+        imageUrl: file ? URL.createObjectURL(file) : null,
+        result: null,
+        error: null,
+        processing: false,
+        progress: 0,
+      },
+    });
+  },
+  setOcrLanguage: (lang) => set((s) => ({ ocr: { ...s.ocr, language: lang } })),
+  setOcrProcessing: (processing, progress) =>
+    set((s) => ({ ocr: { ...s.ocr, processing, progress: progress ?? s.ocr.progress } })),
+  setOcrResult: (result) => set((s) => ({ ocr: { ...s.ocr, result, processing: false, progress: 100 } })),
+  setOcrError: (error) => set((s) => ({ ocr: { ...s.ocr, error, processing: false } })),
+  resetOcr: () => {
+    const prev = get().ocr;
+    if (prev.imageUrl) URL.revokeObjectURL(prev.imageUrl);
+    set({
+      ocr: { file: null, imageUrl: null, processing: false, progress: 0, result: null, error: null, language: "eng" },
+    });
+  },
 }));
