@@ -38,6 +38,7 @@ import {
   Brain,
   GanttChart,
   KanbanSquare,
+  RefreshCw,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ const editorNav = [
   { label: "Presentation", href: "/presentation", icon: Presentation },
   { label: "Graphics", href: "/graphics", icon: Workflow },
   { label: "PDF Tools", href: "/pdf", icon: FileDown },
+  { label: "File Converter", href: "/converter", icon: RefreshCw },
   { label: "Forms", href: "/forms", icon: ListChecks },
 ];
 
