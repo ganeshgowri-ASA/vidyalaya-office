@@ -479,7 +479,7 @@ function FlowDetailOverlay({ flow, onClose }: { flow: Flow; onClose: () => void 
 }
 
 function FlowCard({ flow }: { flow: Flow }) {
-  const { setDetailFlow, toggleFlowStatus } = usePowerAutomateStore();
+  const { setDetailFlow, toggleFlowStatus, setDesignerFlow } = usePowerAutomateStore();
   const statusColors: Record<string, string> = {
     active: '#10b981',
     inactive: '#6b7280',
@@ -561,7 +561,7 @@ export function PowerAutomateClient() {
   const detailFlow = flowDetailId ? flows.find((f) => f.id === flowDetailId) ?? null : null;
 
   if (activeView === 'detail' && detailFlow) {
-    return <FlowDetailView />;
+    return <FlowDetailOverlay flow={detailFlow} onClose={() => setFlowDetailId(null)} />;
   }
 
   if (activeView === 'designer' && designerFlow) {
@@ -571,9 +571,6 @@ export function PowerAutomateClient() {
       </div>
     );
   }
-
-  const templateCategories = ['All', ...Array.from(new Set(templates.map((t) => t.category)))];
-  const filteredTemplates = templateCategory === 'All' ? templates : templates.filter((t) => t.category === templateCategory);
 
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--background)' }}>

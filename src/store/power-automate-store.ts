@@ -77,7 +77,6 @@ interface PowerAutomateState {
   flowTypeFilter: 'all' | 'cloud' | 'desktop';
   flowDetailId: string | null;
   searchQuery: string;
-  flowTypeFilter: 'cloud' | 'desktop';
   templateCategory: string;
   showExpressionEditor: boolean;
   expressionValue: string;
@@ -96,7 +95,6 @@ interface PowerAutomateState {
   setFlowDetailId: (id: string | null) => void;
   toggleConnector: (id: string) => void;
   setSearchQuery: (query: string) => void;
-  setFlowTypeFilter: (filter: 'cloud' | 'desktop') => void;
   setTemplateCategory: (category: string) => void;
   setShowExpressionEditor: (show: boolean) => void;
   setExpressionValue: (value: string) => void;
@@ -105,7 +103,6 @@ interface PowerAutomateState {
   setTestStepIndex: (index: number) => void;
   setTestRunning: (running: boolean) => void;
   toggleFlowStatus: (id: string) => void;
-  toggleConnector: (id: string) => void;
   addNodeToDesigner: (node: FlowNode) => void;
   removeNodeFromDesigner: (nodeId: string) => void;
   updateNodePosition: (nodeId: string, x: number, y: number) => void;
@@ -278,7 +275,6 @@ export const usePowerAutomateStore = create<PowerAutomateState>((set, get) => ({
   flowTypeFilter: 'all',
   flowDetailId: null,
   searchQuery: '',
-  flowTypeFilter: 'cloud',
   templateCategory: 'All',
   showExpressionEditor: false,
   expressionValue: '',
@@ -298,9 +294,7 @@ export const usePowerAutomateStore = create<PowerAutomateState>((set, get) => ({
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
   setFlowTypeFilter: (filter) => set({ flowTypeFilter: filter }),
   setFlowDetailId: (id) => set({ flowDetailId: id }),
-  toggleConnector: (id) => set((s) => ({ connectors: s.connectors.map((c) => c.id === id ? { ...c, connected: !c.connected } : c) })),
   setSearchQuery: (query) => set({ searchQuery: query }),
-  setFlowTypeFilter: (filter) => set({ flowTypeFilter: filter }),
   setTemplateCategory: (category) => set({ templateCategory: category }),
   setShowTestDialog: (show) => set({ showTestDialog: show, testStepIndex: -1, testRunning: false }),
   setTestStepIndex: (index) => set({ testStepIndex: index }),
