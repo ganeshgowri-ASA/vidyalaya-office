@@ -36,6 +36,8 @@ import {
   Zap,
   AppWindow,
   Brain,
+  GanttChart,
+  KanbanSquare,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
@@ -63,6 +65,11 @@ const communicateNav = [
   { label: "Meetings", href: "/meetings", icon: Video },
   { label: "Meeting Bot", href: "/meetings/bot", icon: Bot },
   { label: "Calendar", href: "/calendar", icon: CalendarDays },
+];
+
+const planNav = [
+  { label: "Project", href: "/project", icon: GanttChart },
+  { label: "Planner", href: "/planner", icon: KanbanSquare },
 ];
 
 const automateNav = [
@@ -201,6 +208,8 @@ export function Sidebar() {
           <NavSection label="Editors" items={editorNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Communicate" items={communicateNav} pathname={pathname} sidebarOpen={sidebarOpen} />
+          {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
+          <NavSection label="Plan" items={planNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
           <NavSection label="Automate" items={automateNav} pathname={pathname} sidebarOpen={sidebarOpen} />
           {sidebarOpen && <div className="mx-3 my-2 border-t" style={{ borderColor: "var(--border)", opacity: 0.3 }} />}
