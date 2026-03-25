@@ -8,10 +8,12 @@ import {
   Globe, Code, Play, ArrowLeft, Monitor, Receipt, CalendarOff,
   ClipboardList, Headphones, FileText, Settings, LayoutGrid,
   Smartphone, Tablet, RefreshCw, Wifi, WifiOff, ArrowUpDown, ChevronLeft,
-  File, Check,
+  File, Check, GripVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePowerAppsStore, PowerApp, AppField, AppScreen } from '@/store/power-apps-store';
+import { FieldPropertiesPanel } from './field-properties-panel';
+import { ComponentToolbar } from './component-toolbar';
 
 const fieldTypeIcons: Record<string, React.ElementType> = {
   text: Type,
@@ -340,7 +342,7 @@ function FileDropZone() {
   );
 }
 
-function FieldRenderer({ field, preview }: { field: AppField; preview?: boolean }) {
+function FieldRenderer({ field, preview, designerMode, onLabelDoubleClick }: { field: AppField; preview?: boolean; designerMode?: boolean; onLabelDoubleClick?: () => void }) {
   const [value, setValue] = useState(field.value ?? '');
   const [showCalendar, setShowCalendar] = useState(false);
   const [checked, setChecked] = useState(false);
@@ -364,7 +366,12 @@ function FieldRenderer({ field, preview }: { field: AppField; preview?: boolean 
 
   return (
     <div className={cn('mb-3', field.width === 'half' ? 'w-[calc(50%-0.375rem)]' : 'w-full')}>
-      <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted-foreground)' }}>
+      <label
+        className="text-xs font-medium mb-1 block"
+        style={{ color: 'var(--muted-foreground)', cursor: designerMode ? 'text' : 'default' }}
+        onDoubleClick={(e) => { if (designerMode && onLabelDoubleClick) { e.stopPropagation(); onLabelDoubleClick(); } }}
+        title={designerMode ? 'Double-click to edit label' : undefined}
+      >
         {field.label} {field.required && <span style={{ color: '#ef4444' }}>*</span>}
       </label>
       {field.type === 'text' || field.type === 'email' ? (
@@ -375,6 +382,7 @@ function FieldRenderer({ field, preview }: { field: AppField; preview?: boolean 
           placeholder={field.placeholder}
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          onClick={(e) => { if (designerMode) e.stopPropagation(); }}
         />
       ) : field.type === 'number' ? (
         <input
@@ -384,6 +392,7 @@ function FieldRenderer({ field, preview }: { field: AppField; preview?: boolean 
           placeholder={field.placeholder}
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          onClick={(e) => { if (designerMode) e.stopPropagation(); }}
         />
       ) : field.type === 'textarea' ? (
         <textarea
@@ -393,6 +402,7 @@ function FieldRenderer({ field, preview }: { field: AppField; preview?: boolean 
           placeholder={field.placeholder}
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          onClick={(e) => { if (designerMode) e.stopPropagation(); }}
         />
       ) : field.type === 'dropdown' ? (
         <select
@@ -400,6 +410,7 @@ function FieldRenderer({ field, preview }: { field: AppField; preview?: boolean 
           style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          onClick={(e) => { if (designerMode) e.stopPropagation(); }}
         >
           <option value="">Select...</option>
           {field.options?.map((opt) => (
@@ -439,7 +450,7 @@ function FieldRenderer({ field, preview }: { field: AppField; preview?: boolean 
             {checked && <CheckSquare size={12} color="white" />}
           </button>
           <span className="text-sm" style={{ color: 'var(--foreground)' }}>{field.placeholder ?? 'Enabled'}</span>
-        </label>
+        </div>
       ) : field.type === 'dataTable' ? (
         <DataTableRenderer />
       ) : null}
@@ -653,9 +664,15 @@ function AppDesigner() {
   const {
     designerApp, setDesignerApp, activeScreenId, setActiveScreenId,
     selectedFieldId, setSelectedFieldId, previewMode, setPreviewMode,
-    addFieldToScreen, removeFieldFromScreen, addScreen,
+    addFieldToScreen, removeFieldFromScreen, addScreen, updateField,
+    reorderFields,
     previewDevice, setPreviewDevice, showConnectionsPanel, setShowConnectionsPanel,
   } = usePowerAppsStore();
+
+  const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
+  const [editingLabelValue, setEditingLabelValue] = useState('');
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragIndexRef = useRef<number | null>(null);
 
   if (!designerApp) return null;
 
@@ -681,6 +698,61 @@ function AppDesigner() {
       name: `Screen ${designerApp.screens.length + 1}`,
       fields: [],
     });
+  };
+
+  const handleLabelDoubleClick = (field: AppField) => {
+    setEditingLabelId(field.id);
+    setEditingLabelValue(field.label);
+  };
+
+  const commitLabelEdit = () => {
+    if (editingLabelId && activeScreenId && editingLabelValue.trim()) {
+      updateField(activeScreenId, editingLabelId, { label: editingLabelValue.trim() });
+    }
+    setEditingLabelId(null);
+  };
+
+  /* Drag-drop reorder handlers */
+  const handleFieldDragStart = (e: React.DragEvent, idx: number) => {
+    dragIndexRef.current = idx;
+    e.dataTransfer.setData('application/x-field-reorder', String(idx));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleFieldDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    /* Accept both reorder and new-field drops */
+    e.dataTransfer.dropEffect = dragIndexRef.current !== null ? 'move' : 'copy';
+    setDragOverIndex(idx);
+  };
+
+  const handleFieldDrop = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+    if (!activeScreenId) return;
+
+    /* Handle drop of a new component from toolbar */
+    const newFieldType = e.dataTransfer.getData('application/x-new-field-type') as AppField['type'] | '';
+    if (newFieldType) {
+      handleAddField(newFieldType);
+      return;
+    }
+
+    /* Handle reorder */
+    const fromIndex = dragIndexRef.current;
+    dragIndexRef.current = null;
+    if (fromIndex === null || fromIndex === toIndex) return;
+    reorderFields(activeScreenId, fromIndex, toIndex);
+  };
+
+  const handleCanvasDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+    if (!activeScreenId) return;
+    const newFieldType = e.dataTransfer.getData('application/x-new-field-type') as AppField['type'] | '';
+    if (newFieldType) {
+      handleAddField(newFieldType);
+    }
   };
 
   if (previewMode) {
@@ -788,6 +860,9 @@ function AppDesigner() {
         </div>
       </div>
 
+      {/* Component toolbar */}
+      <ComponentToolbar />
+
       <div className="flex flex-1 overflow-hidden">
         {/* Screens sidebar */}
         <div className="w-48 border-r overflow-y-auto" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}>
@@ -814,21 +889,59 @@ function AppDesigner() {
         </div>
 
         {/* Form canvas */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div
+          className="flex-1 overflow-y-auto p-6"
+          onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+          onDrop={handleCanvasDrop}
+        >
           <div className="max-w-2xl mx-auto">
             <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--foreground)' }}>{activeScreen?.name}</h3>
             <div className="flex flex-wrap gap-3">
-              {activeScreen?.fields.map((field) => (
+              {activeScreen?.fields.map((field, idx) => (
                 <div
                   key={field.id}
+                  draggable
+                  onDragStart={(e) => handleFieldDragStart(e, idx)}
+                  onDragOver={(e) => handleFieldDragOver(e, idx)}
+                  onDragEnd={() => { dragIndexRef.current = null; setDragOverIndex(null); }}
+                  onDrop={(e) => handleFieldDrop(e, idx)}
                   className={cn(
                     'relative group',
                     field.width === 'half' ? 'w-[calc(50%-0.375rem)]' : 'w-full'
                   )}
                   onClick={() => setSelectedFieldId(field.id)}
                 >
-                  <div className={cn('rounded-lg border p-3 transition-colors')} style={{ borderColor: selectedFieldId === field.id ? 'var(--sidebar-accent)' : 'var(--border)', boxShadow: selectedFieldId === field.id ? '0 0 0 2px var(--sidebar-accent)' : 'none' }}>
-                    <FieldRenderer field={field} />
+                  {/* Drop indicator line */}
+                  {dragOverIndex === idx && (
+                    <div className="absolute -top-1.5 left-0 right-0 h-0.5 rounded" style={{ backgroundColor: 'var(--sidebar-accent)' }} />
+                  )}
+                  <div
+                    className={cn('rounded-lg border p-3 transition-colors cursor-grab active:cursor-grabbing')}
+                    style={{
+                      borderColor: selectedFieldId === field.id ? 'var(--sidebar-accent)' : 'var(--border)',
+                      boxShadow: selectedFieldId === field.id ? '0 0 0 2px var(--sidebar-accent)' : 'none',
+                    }}
+                  >
+                    {/* Inline label editor on double-click */}
+                    {editingLabelId === field.id ? (
+                      <div className="mb-1">
+                        <input
+                          autoFocus
+                          className="text-xs font-medium px-1 py-0.5 rounded border w-full"
+                          style={{ backgroundColor: 'var(--background)', borderColor: 'var(--sidebar-accent)', color: 'var(--foreground)' }}
+                          value={editingLabelValue}
+                          onChange={(e) => setEditingLabelValue(e.target.value)}
+                          onBlur={commitLabelEdit}
+                          onKeyDown={(e) => { if (e.key === 'Enter') commitLabelEdit(); if (e.key === 'Escape') setEditingLabelId(null); }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    ) : null}
+                    <FieldRenderer
+                      field={field}
+                      designerMode
+                      onLabelDoubleClick={() => handleLabelDoubleClick(field)}
+                    />
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); if (activeScreenId) removeFieldFromScreen(activeScreenId, field.id); }}
@@ -840,31 +953,17 @@ function AppDesigner() {
                 </div>
               ))}
             </div>
-
-            {/* Add field buttons */}
-            <div className="mt-6 p-4 rounded-lg border border-dashed" style={{ borderColor: 'var(--border)' }}>
-              <p className="text-xs font-medium mb-3" style={{ color: 'var(--muted-foreground)' }}>Add Field</p>
-              <div className="flex flex-wrap gap-2">
-                {(['text', 'number', 'dropdown', 'date', 'file', 'checkbox', 'textarea', 'email'] as const).map((type) => {
-                  const Icon = fieldTypeIcons[type];
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => handleAddField(type)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs capitalize"
-                      style={{ borderColor: 'var(--border)', color: 'var(--foreground)', backgroundColor: 'var(--card)' }}
-                    >
-                      <Icon size={13} /> {type}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Right panel: Connections or Data Sources */}
-        {showConnectionsPanel ? <ConnectionsPanel /> : <DataSourcesPanel />}
+        {/* Right panel: Field Properties when selected, else Connections or Data Sources */}
+        {selectedFieldId ? (
+          <FieldPropertiesPanel />
+        ) : showConnectionsPanel ? (
+          <ConnectionsPanel />
+        ) : (
+          <DataSourcesPanel />
+        )}
       </div>
     </div>
   );
