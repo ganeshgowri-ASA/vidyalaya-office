@@ -21,15 +21,12 @@ export function triggerDownload(blob: Blob, filename: string) {
 async function extractTextWithPdfJs(buffer: ArrayBuffer): Promise<string[]> {
   const pdfjsLib = await import("pdfjs-dist");
 
-  // Use the bundled worker
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+  // Point to the worker file copied to public/ for proper Next.js compatibility
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
   const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(buffer),
-    useWorkerFetch: false,
-    isEvalSupported: false,
     useSystemFonts: true,
-    disableAutoFetch: true,
   });
   const pdf = await loadingTask.promise;
   const textParts: string[] = [];
@@ -60,8 +57,8 @@ export async function pdfToTxt(file: File): Promise<{ blob: Blob; text: string }
   // Primary: use pdf.js for text extraction
   try {
     textParts = await extractTextWithPdfJs(buffer);
-  } catch {
-    // pdf.js failed, continue to fallback
+  } catch (err) {
+    console.error("[PDF Conversion] pdf.js text extraction failed:", err);
   }
 
   // Fallback: pdf-lib content stream parsing
@@ -86,8 +83,8 @@ export async function pdfToTxt(file: File): Promise<{ blob: Blob; text: string }
             if (extracted) textParts.push(extracted);
           }
         }
-      } catch {
-        // skip page
+      } catch (err) {
+        console.error(`[PDF Conversion] pdf-lib fallback failed on page ${i + 1}:`, err);
       }
     }
 
