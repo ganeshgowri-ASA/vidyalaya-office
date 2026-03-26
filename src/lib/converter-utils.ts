@@ -1,6 +1,7 @@
 "use client";
 
 import { PDFDocument } from "pdf-lib";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 
 // ─── Download helper ─────────────────────────────────────────────────────────
 
@@ -15,52 +16,95 @@ export function triggerDownload(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+// ─── PDF text extraction via pdf.js ─────────────────────────────────────────
+
+async function extractTextWithPdfJs(buffer: ArrayBuffer): Promise<string[]> {
+  const pdfjsLib = await import("pdfjs-dist");
+
+  // Use the bundled worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(buffer),
+    useWorkerFetch: false,
+    isEvalSupported: false,
+    useSystemFonts: true,
+    disableAutoFetch: true,
+  });
+  const pdf = await loadingTask.promise;
+  const textParts: string[] = [];
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      .filter((item) => "str" in item)
+      .map((item) => (item as { str: string }).str)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (pageText) {
+      textParts.push(pageText);
+    }
+  }
+
+  return textParts;
+}
+
 // ─── PDF → TXT ───────────────────────────────────────────────────────────────
 
 export async function pdfToTxt(file: File): Promise<{ blob: Blob; text: string }> {
   const buffer = await file.arrayBuffer();
-  const pdf = await PDFDocument.load(buffer);
-  const pages = pdf.getPages();
+  let textParts: string[] = [];
 
-  // pdf-lib doesn't directly extract text; we use the low-level page content
-  // For proper text extraction we parse the PDF content streams
-  const textParts: string[] = [];
+  // Primary: use pdf.js for text extraction
+  try {
+    textParts = await extractTextWithPdfJs(buffer);
+  } catch {
+    // pdf.js failed, continue to fallback
+  }
 
-  for (let i = 0; i < pages.length; i++) {
-    const page = pages[i];
-    // Access raw content via page node
-    const node = page.node;
-    const contentsRef = node.get(node.context.obj("Contents"));
-    if (!contentsRef) continue;
+  // Fallback: pdf-lib content stream parsing
+  if (textParts.length === 0) {
+    const pdf = await PDFDocument.load(buffer);
+    const pages = pdf.getPages();
 
-    try {
-      // Try to get the content stream
-      const ref = node.context.lookupMaybe(contentsRef, node.context.obj("PDFStream") as never);
-      if (ref) {
-        const stream = ref as unknown as { getContents: () => Uint8Array };
-        if (typeof stream.getContents === "function") {
-          const bytes = stream.getContents();
-          const decoded = new TextDecoder("latin1").decode(bytes);
-          const extracted = extractTextFromStream(decoded);
-          if (extracted) textParts.push(extracted);
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      const node = page.node;
+      const contentsRef = node.get(node.context.obj("Contents"));
+      if (!contentsRef) continue;
+
+      try {
+        const ref = node.context.lookupMaybe(contentsRef, node.context.obj("PDFStream") as never);
+        if (ref) {
+          const stream = ref as unknown as { getContents: () => Uint8Array };
+          if (typeof stream.getContents === "function") {
+            const bytes = stream.getContents();
+            const decoded = new TextDecoder("latin1").decode(bytes);
+            const extracted = extractTextFromStream(decoded);
+            if (extracted) textParts.push(extracted);
+          }
         }
+      } catch {
+        // skip page
       }
-    } catch {
-      // Fallback: try iterating indirect objects
+    }
+
+    // Raw byte parsing as last resort
+    if (textParts.length === 0) {
+      const rawText = extractTextFromRawPdf(buffer);
+      if (rawText.trim()) {
+        textParts.push(rawText);
+      }
     }
   }
 
-  // If pdf-lib extraction fails, try raw byte parsing
+  // Get page count for placeholder message
   if (textParts.length === 0) {
-    const rawText = extractTextFromRawPdf(buffer);
-    if (rawText.trim()) {
-      textParts.push(rawText);
-    }
-  }
-
-  // If still empty, add a placeholder
-  if (textParts.length === 0) {
-    textParts.push(`[PDF contains ${pages.length} page(s). Text extraction found embedded fonts/images that could not be decoded as plain text. For scanned PDFs, use the OCR tab.]`);
+    const pdf = await PDFDocument.load(buffer);
+    const pageCount = pdf.getPages().length;
+    textParts.push(`[PDF contains ${pageCount} page(s). Text extraction found embedded fonts/images that could not be decoded as plain text. For scanned PDFs, use the OCR tab.]`);
   }
 
   const text = textParts.join("\n\n--- Page Break ---\n\n");
@@ -123,35 +167,35 @@ function extractTextFromRawPdf(buffer: ArrayBuffer): string {
   return textParts.join("\n");
 }
 
-// ─── PDF → Word (simple HTML-based docx) ─────────────────────────────────────
+// ─── PDF → Word (real OOXML .docx via docx library) ─────────────────────────
 
 export async function pdfToDocx(file: File): Promise<Blob> {
   const { text } = await pdfToTxt(file);
 
-  // Create a simple HTML-based document that Word can open
-  const html = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office"
-      xmlns:w="urn:schemas-microsoft-com:office:word"
-      xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-<meta charset="utf-8">
-<title>Converted Document</title>
-<style>
-  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; }
-  p { margin: 0 0 8pt 0; }
-</style>
-</head>
-<body>
-${text
-  .split("\n")
-  .map((line) => `<p>${line.replace(/</g, "&lt;").replace(/>/g, "&gt;") || "&nbsp;"}</p>`)
-  .join("\n")}
-</body>
-</html>`;
+  const lines = text.split("\n");
+  const paragraphs = lines.map(
+    (line) =>
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: line || "",
+            font: "Calibri",
+            size: 22, // 11pt in half-points
+          }),
+        ],
+      })
+  );
 
-  return new Blob([html], {
-    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
+        children: paragraphs,
+      },
+    ],
   });
+
+  return Packer.toBlob(doc);
 }
 
 // ─── Image → PDF ─────────────────────────────────────────────────────────────
