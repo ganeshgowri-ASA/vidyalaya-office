@@ -1151,6 +1151,8 @@ export default function PdfToolsPage() {
             <button style={btnStyle} onClick={() => setActiveTab("split")}><Scissors size={14} /> Split PDF</button>
             <button style={btnStyle} onClick={() => setActiveTab("compress")}><Minimize2 size={14} /> Compress</button>
             <button style={btnStyle} onClick={() => setActiveTab("create")}><FilePlus2 size={14} /> Create PDF</button>
+                            <button style={btnStyle} onClick={() => setActiveTab("batch")}><Layers size={14} /> Batch Process</button>
+                            <button style={btnStyle} onClick={() => setActiveTab("scanner")}><Camera size={14} /> Image Scanner</button>
             {pdfDoc && (
               <>
                 <div style={{ width: 1, height: 24, backgroundColor: "var(--border)", margin: "0 4px" }} />
