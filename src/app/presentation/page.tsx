@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useEffect, useCallback } from 'react';
+import { UploadCloud, Check, Loader2, AlertCircle } from 'lucide-react';
 import { usePresentationStore } from '@/store/presentation-store';
+import { useCloudAutoSave } from '@/hooks/use-cloud-autosave';
 import SlidePanel from '@/components/presentation/slide-panel';
 import SlideCanvas from '@/components/presentation/slide-canvas';
 import RibbonToolbar from '@/components/presentation/ribbon-toolbar';
@@ -52,6 +54,19 @@ export default function PresentationPage() {
 
   const slides = usePresentationStore((s) => s.slides);
   const presentationTitle = 'Presentation';
+
+  // Cloud auto-save
+  const getPresentationContent = useCallback(() => {
+    return JSON.stringify(slides);
+  }, [slides]);
+
+  const { saveNow: cloudSave, saveStatus: cloudSaveStatus } = useCloudAutoSave({
+    type: 'presentation',
+    getTitle: () => presentationTitle,
+    getContent: getPresentationContent,
+    intervalMs: 30000,
+    enabled: true,
+  });
 
   const getSlidesData = useCallback(() => {
     return slides.map((slide) => {
@@ -265,6 +280,24 @@ export default function PresentationPage() {
           className="no-print flex items-center justify-end gap-2 border-b px-4 py-1"
           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
         >
+          <button
+            onClick={() => cloudSave()}
+            className="flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs transition-colors hover:bg-[var(--muted)]"
+            style={{
+              borderColor: cloudSaveStatus === 'saved' ? '#22c55e' : cloudSaveStatus === 'error' ? '#dc2626' : 'var(--border)',
+              color: cloudSaveStatus === 'saved' ? '#22c55e' : cloudSaveStatus === 'error' ? '#dc2626' : 'var(--foreground)',
+            }}
+            title="Save to Supabase Cloud"
+          >
+            {cloudSaveStatus === 'saving' ? <Loader2 size={14} className="animate-spin" /> :
+             cloudSaveStatus === 'saved' ? <Check size={14} /> :
+             cloudSaveStatus === 'error' ? <AlertCircle size={14} /> :
+             <UploadCloud size={14} />}
+            {cloudSaveStatus === 'saving' ? 'Saving...' :
+             cloudSaveStatus === 'saved' ? 'Saved' :
+             cloudSaveStatus === 'error' ? 'Error' :
+             'Save to Cloud'}
+          </button>
           <button
             onClick={() => setShowImportDialog(true)}
             className="flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs transition-colors hover:bg-[var(--muted)]"

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useCallback } from "react";
-import { Upload, FileText } from "lucide-react";
+import { Upload, FileText, UploadCloud, Check, Loader2, AlertCircle } from "lucide-react";
+import { useCloudAutoSave } from "@/hooks/use-cloud-autosave";
 import { RibbonToolbar } from "@/components/document/ribbon-toolbar";
 import { EditorArea, getEditorContent } from "@/components/document/editor-area";
 import { StatusBar } from "@/components/document/status-bar";
@@ -85,6 +86,15 @@ export default function DocumentPage() {
     getContent: getContentForVersions,
   });
 
+  // Cloud auto-save (every 30 seconds)
+  const { saveNow: cloudSave, saveStatus: cloudSaveStatus } = useCloudAutoSave({
+    type: "document",
+    getTitle: () => fileName,
+    getContent: () => (typeof window !== "undefined" ? getEditorContent() : ""),
+    intervalMs: 30000,
+    enabled: true,
+  });
+
   const [showPageSetup, setShowPageSetup] = React.useState(false);
   const [showHeaderFooterEditor, setShowHeaderFooterEditor] = React.useState(false);
   const [showVersionControl, setShowVersionControl] = React.useState(false);
@@ -117,13 +127,15 @@ export default function DocumentPage() {
             break;
           case "s":
             e.preventDefault();
-            // Trigger save
-            const editor = document.getElementById("doc-editor");
-            if (editor) {
-              localStorage.setItem("vidyalaya-doc-content", editor.innerHTML);
-              useDocumentStore.getState().setLastSaved(new Date().toLocaleTimeString());
-              // Also create a version snapshot on manual save
-              saveManualVersion("Manual save (Ctrl+S)");
+            // Trigger local + cloud save
+            {
+              const editor = document.getElementById("doc-editor");
+              if (editor) {
+                localStorage.setItem("vidyalaya-doc-content", editor.innerHTML);
+                useDocumentStore.getState().setLastSaved(new Date().toLocaleTimeString());
+                saveManualVersion("Manual save (Ctrl+S)");
+              }
+              cloudSave();
             }
             break;
           case "b":
@@ -187,7 +199,7 @@ export default function DocumentPage() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [setShowFindReplace, showKeyboardShortcuts, setShowKeyboardShortcuts, saveManualVersion]);
+  }, [setShowFindReplace, showKeyboardShortcuts, setShowKeyboardShortcuts, saveManualVersion, cloudSave]);
 
   // Pick up imported document content from sessionStorage (set by import engine)
   useEffect(() => {
@@ -262,6 +274,24 @@ export default function DocumentPage() {
           />
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => cloudSave()}
+            className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors hover:bg-[var(--muted)]"
+            style={{
+              borderColor: cloudSaveStatus === "saved" ? "#22c55e" : cloudSaveStatus === "error" ? "#dc2626" : "var(--border)",
+              color: cloudSaveStatus === "saved" ? "#22c55e" : cloudSaveStatus === "error" ? "#dc2626" : "var(--foreground)",
+            }}
+            title="Save to Supabase Cloud"
+          >
+            {cloudSaveStatus === "saving" ? <Loader2 size={14} className="animate-spin" /> :
+             cloudSaveStatus === "saved" ? <Check size={14} /> :
+             cloudSaveStatus === "error" ? <AlertCircle size={14} /> :
+             <UploadCloud size={14} />}
+            {cloudSaveStatus === "saving" ? "Saving..." :
+             cloudSaveStatus === "saved" ? "Saved" :
+             cloudSaveStatus === "error" ? "Error" :
+             "Save to Cloud"}
+          </button>
           <button
             onClick={() => setShowImport(true)}
             className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors hover:bg-[var(--muted)]"

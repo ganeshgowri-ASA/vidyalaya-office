@@ -93,6 +93,7 @@ const productivityNav = [
 ];
 
 const storageNav = [
+  { label: "My Documents", href: "/my-documents", icon: FileText },
   { label: "Cloud Storage", href: "/cloud-storage", icon: Cloud },
 ];
 
