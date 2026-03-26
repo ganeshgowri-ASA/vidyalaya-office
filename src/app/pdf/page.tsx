@@ -11,6 +11,7 @@ import {
   Layers, Info, FileCheck, Lock, AlignCenter, Presentation, CheckSquare,
   Square, Fullscreen, LayoutGrid, Eye, Wrench, Award, MessageSquare,
   LayoutTemplate,
+  Camera,
 } from "lucide-react";
 import { PDFDocument, degrees, PageSizes } from "pdf-lib";
 import { RibbonToolbar } from "@/components/pdf";
@@ -22,7 +23,7 @@ import { PrintModal } from "@/components/pdf";
 import { ExportModal } from "@/components/pdf";
 import { BookmarksPanel } from "@/components/pdf";
 import { OrganizePagesPanel } from "@/components/pdf";
-import { BatchPanel } from "@/components/pdf";
+import { BatchPanel, ImageScannerPanel } from "@/components/pdf";
 import { StampPanel } from "@/components/pdf";
 import { RedactionPanel } from "@/components/pdf";
 import { CommentPanel } from "@/components/pdf";
@@ -63,7 +64,7 @@ import { ExportManager, type ExportFormat as UnifiedExportFormat } from "@/lib/e
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TabId = "view" | "edit" | "merge" | "split" | "convert" | "compress" | "forms" | "compare" | "ocr" | "create" | "redact" | "stamp" | "batch";
+type TabId = "view" | "edit" | "merge" | "split" | "convert" | "compress" | "forms" | "compare" | "ocr" | "create" | "redact" | "stamp" | "batch" | "scanner";
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "view", label: "View", icon: FileText },
@@ -78,6 +79,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "redact", label: "Redact", icon: EyeOff },
   { id: "stamp", label: "Stamp", icon: Stamp },
   { id: "batch", label: "Batch", icon: Layers },
+  { id: "scanner", label: "Scanner", icon: Camera },
   { id: "create", label: "Create", icon: FilePlus2 },
 ];
 
@@ -1355,6 +1357,12 @@ export default function PdfToolsPage() {
         return (
           <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--background)" }}>
             <BatchPanel />
+          </div>
+        );
+      case "scanner":
+        return (
+          <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--background)" }}>
+            <ImageScannerPanel />
           </div>
         );
       case "create":

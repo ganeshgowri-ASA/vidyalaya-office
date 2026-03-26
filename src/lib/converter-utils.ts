@@ -15,6 +15,7 @@ import {
   AlignmentType,
   PageBreak,
   WidthType,
+  ShadingType,
   convertInchesToTwip,
 } from "docx";
 
@@ -196,6 +197,7 @@ interface StructuredLine {
   y: number;
   type: "heading1" | "heading2" | "heading3" | "bullet" | "normal" | "table-row";
   cells?: string[]; // for table rows
+  cellWidths?: number[]; // proportional widths from PDF coordinates
 }
 
 /** Render a single PDF page to a PNG buffer using an OffscreenCanvas or DOM canvas */
@@ -225,6 +227,93 @@ async function renderPageToImage(
   return { pngBuffer, width, height };
 }
 
+/** Cluster X-positions using a gap-based approach to find column boundaries */
+function clusterXPositions(xValues: number[], gapThreshold: number): number[] {
+  if (xValues.length === 0) return [];
+  const sorted = [...xValues].sort((a, b) => a - b);
+  const clusters: number[][] = [[sorted[0]]];
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] - sorted[i - 1] > gapThreshold) {
+      clusters.push([sorted[i]]);
+    } else {
+      clusters[clusters.length - 1].push(sorted[i]);
+    }
+  }
+  // Return the median of each cluster as the canonical column position
+  return clusters.map((c) => c[Math.floor(c.length / 2)]);
+}
+
+/** Detect table regions by finding consecutive lines with consistent multi-column layout */
+function detectTableRegions(
+  lineGroups: Map<number, TextItem[]>,
+  sortedYs: number[]
+): { startIdx: number; endIdx: number; columns: number[] }[] {
+  // For each line, collect X-start positions of items
+  const lineXPositions: { y: number; xs: number[]; items: TextItem[] }[] = [];
+  for (const y of sortedYs) {
+    const items = lineGroups.get(y)!;
+    const sorted = [...items].sort((a, b) => a.transform[4] - b.transform[4]);
+    const xs = sorted.map((it) => it.transform[4]);
+    lineXPositions.push({ y, xs, items: sorted });
+  }
+
+  // Build X-position histogram across ALL lines (finer granularity: 5-unit buckets)
+  const xHist: Map<number, number> = new Map();
+  for (const lp of lineXPositions) {
+    // Deduplicate per-line: only count unique bucket positions per line
+    const seen = new Set<number>();
+    for (const x of lp.xs) {
+      const bucket = Math.round(x / 5) * 5;
+      if (!seen.has(bucket)) {
+        seen.add(bucket);
+        xHist.set(bucket, (xHist.get(bucket) || 0) + 1);
+      }
+    }
+  }
+
+  // Find column positions: X-buckets that appear in at least 3 lines
+  const minLineCount = Math.max(3, Math.floor(sortedYs.length * 0.15));
+  const frequentXs = Array.from(xHist.entries())
+    .filter(([, count]) => count >= Math.min(minLineCount, 3))
+    .map(([x]) => x)
+    .sort((a, b) => a - b);
+
+  // Cluster nearby frequent X-positions (within 15 units) into column groups
+  const columns = clusterXPositions(frequentXs, 15);
+
+  if (columns.length < 2) return [];
+
+  // Scan for consecutive line runs where items align to >= 2 columns
+  const regions: { startIdx: number; endIdx: number; columns: number[] }[] = [];
+  let regionStart = -1;
+
+  for (let i = 0; i < lineXPositions.length; i++) {
+    const lp = lineXPositions[i];
+    // Count how many columns this line has items near
+    let colHits = 0;
+    for (const col of columns) {
+      const hasItem = lp.xs.some((x) => Math.abs(x - col) <= 15);
+      if (hasItem) colHits++;
+    }
+    const isTableLine = colHits >= 2 && lp.items.length >= 2;
+
+    if (isTableLine && regionStart === -1) {
+      regionStart = i;
+    } else if (!isTableLine && regionStart !== -1) {
+      if (i - regionStart >= 2) {
+        regions.push({ startIdx: regionStart, endIdx: i - 1, columns });
+      }
+      regionStart = -1;
+    }
+  }
+  // Close any open region
+  if (regionStart !== -1 && lineXPositions.length - regionStart >= 2) {
+    regions.push({ startIdx: regionStart, endIdx: lineXPositions.length - 1, columns });
+  }
+
+  return regions;
+}
+
 /** Analyze text content items to detect structure (headings, bullets, tables) */
 function analyzeTextStructure(
   items: TextItem[],
@@ -232,14 +321,22 @@ function analyzeTextStructure(
 ): StructuredLine[] {
   if (items.length === 0) return [];
 
-  // Group items by Y position (same line if Y within 2 units)
+  // Group items by Y position (same line if Y within 3 units)
   const lineGroups: Map<number, TextItem[]> = new Map();
   for (const item of items) {
-    const y = Math.round(item.transform[5] / 2) * 2; // quantize Y
-    const existing = lineGroups.get(y);
-    if (existing) {
-      existing.push(item);
-    } else {
+    const y = Math.round(item.transform[5]);
+    // Find an existing line within tolerance
+    let matched = false;
+    const existingKeys = Array.from(lineGroups.keys());
+    for (let k = 0; k < existingKeys.length; k++) {
+      const existingY = existingKeys[k];
+      if (Math.abs(y - existingY) <= 3) {
+        lineGroups.get(existingY)!.push(item);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
       lineGroups.set(y, [item]);
     }
   }
@@ -253,26 +350,28 @@ function analyzeTextStructure(
     const fontSize = Math.abs(item.transform[3]) || Math.abs(item.transform[0]);
     if (fontSize > 0) fontSizes.push(fontSize);
   }
-  const medianFontSize = fontSizes.length > 0
-    ? fontSizes.sort((a, b) => a - b)[Math.floor(fontSizes.length / 2)]
+  const sortedFontSizes = [...fontSizes].sort((a, b) => a - b);
+  const medianFontSize = sortedFontSizes.length > 0
+    ? sortedFontSizes[Math.floor(sortedFontSizes.length / 2)]
     : 12;
 
-  // Detect if there's a table-like grid: multiple items at similar X positions across lines
-  const xPositions: Map<number, number> = new Map();
-  for (const item of items) {
-    const x = Math.round(item.transform[4] / 10) * 10; // quantize X to 10-unit grid
-    xPositions.set(x, (xPositions.get(x) || 0) + 1);
+  // Detect table regions using X-position clustering
+  const tableRegions = detectTableRegions(lineGroups, sortedYs);
+
+  // Build a set of Y-indices that are within table regions
+  const tableLineIndices = new Set<number>();
+  const tableLineColumns = new Map<number, number[]>();
+  for (const region of tableRegions) {
+    for (let i = region.startIdx; i <= region.endIdx; i++) {
+      tableLineIndices.add(i);
+      tableLineColumns.set(i, region.columns);
+    }
   }
-  // Column positions that repeat in many lines suggest table columns
-  const columnXs = Array.from(xPositions.entries())
-    .filter(([, count]) => count >= 3)
-    .map(([x]) => x)
-    .sort((a, b) => a - b);
-  const isLikelyTable = columnXs.length >= 3;
 
   const lines: StructuredLine[] = [];
 
-  for (const y of sortedYs) {
+  for (let idx = 0; idx < sortedYs.length; idx++) {
+    const y = sortedYs[idx];
     const lineItems = lineGroups.get(y)!;
     // Sort left to right
     lineItems.sort((a, b) => a.transform[4] - b.transform[4]);
@@ -293,8 +392,41 @@ function analyzeTextStructure(
     // Detect type
     let type: StructuredLine["type"] = "normal";
     let cells: string[] | undefined;
+    let cellWidths: number[] | undefined;
 
-    if (avgFontSize > medianFontSize * 1.6) {
+    if (tableLineIndices.has(idx)) {
+      // This line is in a detected table region
+      const columns = tableLineColumns.get(idx)!;
+      type = "table-row";
+      cells = [];
+      cellWidths = [];
+
+      for (let ci = 0; ci < columns.length; ci++) {
+        const colX = columns[ci];
+        const nextColX = ci < columns.length - 1 ? columns[ci + 1] : Infinity;
+        const tolerance = 15;
+
+        // Items belong to this column if their X is closest to colX
+        const cellItems = lineItems.filter((it) => {
+          const ix = it.transform[4];
+          if (ci === 0) return ix < (columns.length > 1 ? (colX + columns[ci + 1]) / 2 : Infinity);
+          if (ci === columns.length - 1) return ix >= (columns[ci - 1] + colX) / 2;
+          const prevMid = (columns[ci - 1] + colX) / 2;
+          const nextMid = (colX + nextColX) / 2;
+          return ix >= prevMid && ix < nextMid;
+        });
+        cells.push(cellItems.map((it) => it.str).join(" ").trim());
+
+        // Compute proportional width based on column spacing
+        if (ci < columns.length - 1) {
+          cellWidths.push(nextColX - colX);
+        } else {
+          // Last column gets remaining width (estimate based on page width ~595 pts for A4)
+          const pageWidth = 595;
+          cellWidths.push(Math.max(pageWidth - colX, columns.length > 1 ? columns[1] - columns[0] : 100));
+        }
+      }
+    } else if (avgFontSize > medianFontSize * 1.6) {
       type = "heading1";
     } else if (avgFontSize > medianFontSize * 1.3) {
       type = "heading2";
@@ -302,27 +434,9 @@ function analyzeTextStructure(
       type = "heading3";
     } else if (/^[\u2022\u2023\u25E6\u2043\u2219•●○▪◦‣-]\s/.test(lineText)) {
       type = "bullet";
-    } else if (isLikelyTable && lineItems.length >= 3) {
-      // Check if items align to column positions
-      const itemXs = lineItems.map((it) => Math.round(it.transform[4] / 10) * 10);
-      const matchCount = itemXs.filter((ix) => columnXs.includes(ix)).length;
-      if (matchCount >= 2) {
-        type = "table-row";
-        // Group items into cells by closest column position
-        cells = [];
-        for (let ci = 0; ci < columnXs.length; ci++) {
-          const colX = columnXs[ci];
-          const nextColX = ci < columnXs.length - 1 ? columnXs[ci + 1] : Infinity;
-          const cellItems = lineItems.filter((it) => {
-            const ix = Math.round(it.transform[4] / 10) * 10;
-            return ix >= colX && ix < nextColX;
-          });
-          cells.push(cellItems.map((it) => it.str).join(" ").trim());
-        }
-      }
     }
 
-    lines.push({ text: lineText, fontSize: avgFontSize, x, y, type, cells });
+    lines.push({ text: lineText, fontSize: avgFontSize, x, y, type, cells, cellWidths });
   }
 
   return lines;
@@ -341,40 +455,69 @@ function buildStructuredParagraphs(lines: StructuredLine[]): (Paragraph | Table)
       return;
     }
 
+    // Compute proportional column widths from cellWidths data
+    // Use the first row with cellWidths as reference, or distribute evenly
+    const totalTableWidth = 9000; // DXA units for ~6.25 inches
+    let colWidths: number[];
+
+    const refRow = tableRows.find((r) => r.cellWidths && r.cellWidths.length === maxCols);
+    if (refRow && refRow.cellWidths) {
+      const totalPdfWidth = refRow.cellWidths.reduce((a, b) => a + b, 0);
+      colWidths = refRow.cellWidths.map((w) =>
+        Math.max(Math.round((w / totalPdfWidth) * totalTableWidth), 500)
+      );
+      // Adjust to ensure total matches
+      const sum = colWidths.reduce((a, b) => a + b, 0);
+      if (sum !== totalTableWidth) {
+        colWidths[colWidths.length - 1] += totalTableWidth - sum;
+      }
+    } else {
+      colWidths = Array.from({ length: maxCols }, () => Math.round(totalTableWidth / maxCols));
+    }
+
+    const borderConfig = {
+      top: { style: BorderStyle.SINGLE, size: 1, color: "999999" },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: "999999" },
+      left: { style: BorderStyle.SINGLE, size: 1, color: "999999" },
+      right: { style: BorderStyle.SINGLE, size: 1, color: "999999" },
+    };
+
     const rows = tableRows.map(
-      (row) =>
+      (row, rowIdx) =>
         new TableRow({
-          children: Array.from({ length: maxCols }, (_, i) =>
-            new TableCell({
+          children: Array.from({ length: maxCols }, (_, i) => {
+            const cellText = row.cells?.[i] || "";
+            // First row is treated as header with bold text
+            const isHeader = rowIdx === 0;
+            return new TableCell({
               children: [
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: row.cells?.[i] || "",
+                      text: cellText,
                       font: "Calibri",
                       size: 20,
+                      bold: isHeader,
                     }),
                   ],
+                  spacing: { before: 40, after: 40 },
                 }),
               ],
-              width: { size: Math.round(9000 / maxCols), type: WidthType.DXA },
-              borders: {
-                top: { style: BorderStyle.SINGLE, size: 1 },
-                bottom: { style: BorderStyle.SINGLE, size: 1 },
-                left: { style: BorderStyle.SINGLE, size: 1 },
-                right: { style: BorderStyle.SINGLE, size: 1 },
-              },
-            })
-          ),
+              width: { size: colWidths[i], type: WidthType.DXA },
+              borders: borderConfig,
+              shading: isHeader ? { type: ShadingType.CLEAR, fill: "E8E8E8", color: "auto" } : undefined,
+            });
+          }),
         })
     );
 
     elements.push(
       new Table({
         rows,
-        width: { size: 9000, type: WidthType.DXA },
+        width: { size: totalTableWidth, type: WidthType.DXA },
       })
     );
+    elements.push(new Paragraph({ children: [], spacing: { before: 80, after: 80 } }));
     tableRows = [];
   };
 
